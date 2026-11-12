@@ -46,7 +46,7 @@
           關鍵K・突破20MA實戰儀表板
         </h1>
         <p class="text-xs text-slate-400">
-          昨日首日由下往上穿越20MA ＝ <span class="text-amber-400 font-semibold">關鍵K</span>（可手動勾選嚴格/放寬條件）｜ 今日收盤/尾盤站上昨高 ＝ <span class="text-rose-400 font-semibold">確認K買進</span>
+          昨日首日由下往上穿越20MA ＝ <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 ＝ <span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">粉紅泡泡</span>＝主力買盤強
         </p>
       </div>
     </div>
@@ -132,13 +132,13 @@
 
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
-        <span class="text-xs font-bold text-sky-400">STEP 2・今日盤中與盤後</span>
+        <span class="text-xs font-bold text-sky-400">STEP 2・今日盤中與主力力道</span>
         <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">即時追蹤</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• 追蹤今日開盤後是否在昨高之上成交</li>
+        <li>• <span class="text-pink-400 font-semibold">粉紅泡泡（K棒上方）</span>：買方主力大單占優，泡泡越大買力越強</li>
+        <li>• <span class="text-emerald-400 font-semibold">青綠泡泡（K棒下方）</span>：賣方主力大單占優（力道相近不顯示）</li>
         <li>• 檢視 <span class="text-fuchsia-400 font-semibold">▼ 今日扣抵</span> 與 <span class="text-cyan-300 font-semibold">▲ 明日扣抵</span> 判斷均線助漲力道</li>
-        <li>• 過濾假突破，等待尾盤收盤確認</li>
       </ul>
     </div>
 
@@ -268,7 +268,7 @@
         </div>
       </div>
 
-      <!-- 五大核心數據卡 (加入 20MA 扣抵價卡片) -->
+      <!-- 五大核心數據卡 -->
       <div class="grid grid-cols-5 gap-2 mb-3">
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
           <div class="text-[10px] text-slate-400">昨 / 今 20MA</div>
@@ -295,7 +295,7 @@
       <!-- K線圖控制工具列 -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex items-center gap-3">
-          <span class="font-semibold text-slate-200">真實日K線 ＋ 20MA扣抵 ＋ 成交量</span>
+          <span class="font-semibold text-slate-200">真實日K線 ＋ 主力力道泡泡 ＋ 成交量</span>
           <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
         </div>
 
@@ -314,20 +314,21 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[450px]">
-        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 + 20MA 三色與扣抵說明 -->
+        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 + 圖例說明 -->
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col items-start gap-1.5">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收與成交量</span>
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力買賣力道與成交量</span>
           </div>
 
-          <!-- 20MA 線三色與扣抵位置圖例說明（固定於左上角） -->
+          <!-- 20MA 線三色、扣抵與主力泡泡圖例說明 -->
           <div class="flex flex-wrap items-center gap-2.5 text-[10px] text-slate-300 bg-slate-900/85 border border-slate-800 px-2.5 py-1 rounded-md">
             <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
             <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
             <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
+            <span class="flex items-center gap-1 font-medium text-pink-400"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/75 border border-pink-300 inline-block"></span>主力買力強</span>
+            <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/75 border border-emerald-300 inline-block"></span>主力賣力強</span>
             <span class="flex items-center gap-1 font-medium text-fuchsia-300">▼今日扣抵</span>
             <span class="flex items-center gap-1 font-medium text-cyan-300">▲明日扣抵</span>
-            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-purple-400 inline-block"></span>5日均量</span>
           </div>
         </div>
 
@@ -343,7 +344,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 操作提示：滾動滑鼠滾輪可放大/縮小；按住左鍵左右拖曳可檢視歷史 K 棒</span>
+        <span>💡 泡泡大小代表主力淨買賣力道強弱（買賣力道相近時自動隱藏）；滾輪可縮放、按住可拖曳</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -507,7 +508,7 @@
         if (!isSilent && rawFirstBreak20MaStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `
             <tr><td colspan="6" class="py-10 text-center text-rose-400">
-              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟，或後端正在初始化 90 天歷史資料（請稍候 10 秒再點刷新）。
+              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟，或後端正在初始化資料。
             </td></tr>`;
         }
       }
@@ -555,6 +556,39 @@
       }
     }
 
+    // 計算單根 K 棒的主力淨買賣力道 (-1.0 ~ +1.0 之間，正數代表買方主力強，負數代表賣方主力強)
+    function calcBarForceScore(bar, prevClose, bigBuyVol = 0, bigSellVol = 0) {
+      // 1. 若有盤中即時內外盤大單數據，優先採用真實大單買賣差
+      if (bigBuyVol > 0 || bigSellVol > 0) {
+        const totalBig = bigBuyVol + bigSellVol;
+        if (totalBig > 0) {
+          const netRatio = (bigBuyVol - bigSellVol) / totalBig; // -1 ~ +1
+          const volWeight = bar.ma5Vol > 0 ? Math.min(1.8, Math.max(0.6, (bar.vol || 0) / bar.ma5Vol)) : 1.0;
+          return Number((netRatio * volWeight).toFixed(2));
+        }
+      }
+
+      // 2. 否則依據 K 棒高低位置、實體強弱與量能倍數推算主力買賣力道 (Money Flow Multiplier)
+      const range = bar.high - bar.low;
+      if (range <= 0) {
+        // 一字鎖漲停或跌停
+        if (prevClose > 0 && bar.close > prevClose) return 1.2;
+        if (prevClose > 0 && bar.close < prevClose) return -1.2;
+        return 0;
+      }
+
+      // 收盤在當日高低區間的位置 (-1 = 收最低, +1 = 收最高)
+      const closePos = ((bar.close - bar.low) - (bar.high - bar.close)) / range;
+      // 實體方向加成 (-1 ~ +1)
+      const bodyRatio = (bar.close - bar.open) / range;
+      // 綜合價格力道 (-1 ~ +1)
+      const priceForce = closePos * 0.65 + bodyRatio * 0.35;
+      // 量能放大權重（量比越高，主力介入越深）
+      const volMult = bar.ma5Vol > 0 ? Math.min(1.6, Math.max(0.5, (bar.vol || 0) / bar.ma5Vol)) : 1.0;
+
+      return Number((priceForce * volMult).toFixed(2));
+    }
+
     function normalizeStockItem(raw) {
       const code = String(raw.code || "");
       const name = String(raw.name || "");
@@ -574,6 +608,8 @@
       const rawTodayLow = parseFloat(raw.todayLow || raw.low) || 0;
       const todayLow = rawTodayLow > 0 ? Math.min(rawTodayLow, todayOpen, todayPrice) : Math.min(todayOpen, todayPrice);
       const todayVol = parseFloat(raw.todayVol || raw.volume) || 0;
+      const todayBigBuyVol = parseFloat(raw.todayBigBuyVol) || 0;
+      const todayBigSellVol = parseFloat(raw.todayBigSellVol) || 0;
 
       const rawHistory = raw.history || raw.klines || raw.bars || [];
       const realBars = Array.isArray(rawHistory) ? rawHistory.map(b => ({
@@ -599,6 +635,9 @@
         let sumVol5 = 0;
         for (let j = volStartIdx; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
         realBars[i].ma5Vol = sumVol5 / volCount;
+
+        const prevC = i > 0 ? realBars[i - 1].close : realBars[i].open;
+        realBars[i].forceScore = calcBarForceScore(realBars[i], prevC);
       }
 
       const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
@@ -665,6 +704,7 @@
         yestOpen, yestHigh, yestLow, yestClose,
         yestGainPct: parseFloat(yestGainPct.toFixed(2)),
         todayOpen, todayHigh, todayLow, todayPrice, todayVol,
+        todayBigBuyVol, todayBigSellVol,
         yestVol: rawYestVol,
         avgVol5: Math.round(rawAvgVol5),
         volRatio,
@@ -846,7 +886,7 @@
       if (bars.length === 0) {
         warningEl.classList.remove("hidden");
         if (stock.yestOpen > 0 && stock.yestHigh > 0) {
-          bars.push({
+          const yBar = {
             date: "昨日(關鍵K)",
             open: stock.yestOpen,
             high: stock.yestHigh,
@@ -854,11 +894,14 @@
             close: stock.yestClose,
             ma20: stock.yestMa20,
             vol: stock.yestVol,
+            ma5Vol: stock.avgVol5,
             isKeyK: true
-          });
+          };
+          yBar.forceScore = calcBarForceScore(yBar, stock.yestOpen);
+          bars.push(yBar);
         }
         if (stock.todayPrice > 0) {
-          bars.push({
+          const tBar = {
             date: "今日",
             open: stock.todayOpen,
             high: stock.todayHigh,
@@ -866,8 +909,13 @@
             close: stock.todayPrice,
             ma20: stock.yestMa20,
             vol: stock.todayVol || 0,
+            ma5Vol: stock.avgVol5,
+            bigBuyVol: stock.todayBigBuyVol,
+            bigSellVol: stock.todayBigSellVol,
             isToday: true
-          });
+          };
+          tBar.forceScore = calcBarForceScore(tBar, stock.yestClose, stock.todayBigBuyVol, stock.todayBigSellVol);
+          bars.push(tBar);
         }
       } else {
         warningEl.classList.add("hidden");
@@ -880,7 +928,7 @@
           const todayVolVal = stock.todayVol > 0 ? stock.todayVol : 0;
           const todayMa5Vol = (last4Vols + todayVolVal) / 5;
 
-          bars.push({
+          const todayBar = {
             date: "今日",
             open: stock.todayOpen,
             high: stock.todayHigh,
@@ -889,19 +937,28 @@
             ma20: todayMa20,
             vol: todayVolVal,
             ma5Vol: todayMa5Vol,
+            bigBuyVol: stock.todayBigBuyVol,
+            bigSellVol: stock.todayBigSellVol,
             isToday: true
-          });
+          };
+          todayBar.forceScore = calcBarForceScore(todayBar, lastBar.close, stock.todayBigBuyVol, stock.todayBigSellVol);
+          bars.push(todayBar);
         } else if (lastBar.date === todayStr || lastBar.date === "今日") {
           lastBar.open = stock.todayOpen > 0 ? stock.todayOpen : lastBar.open;
           lastBar.close = stock.todayPrice;
           lastBar.high = Math.max(lastBar.high, stock.todayHigh, stock.todayPrice);
           lastBar.low = Math.min(lastBar.low, stock.todayLow, stock.todayPrice);
           if (stock.todayVol > 0) lastBar.vol = stock.todayVol;
+          lastBar.bigBuyVol = stock.todayBigBuyVol;
+          lastBar.bigSellVol = stock.todayBigSellVol;
           lastBar.isToday = true;
 
           const prev19Bars = bars.slice(0, -1);
           todayMa20 = computeDynamicTodayMa20(prev19Bars, stock.todayPrice, stock.yestMa20);
           lastBar.ma20 = todayMa20;
+
+          const prevCloseForToday = bars.length >= 2 ? bars[bars.length - 2].close : lastBar.open;
+          lastBar.forceScore = calcBarForceScore(lastBar, prevCloseForToday, stock.todayBigBuyVol, stock.todayBigSellVol);
         }
 
         if (bars.length >= 2) {
@@ -1061,8 +1118,8 @@
       const rawMax = Math.max(...allPrices);
       const rawMin = Math.min(...allPrices);
       const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
-      const maxY = rawMax + span * 0.12;
-      const minY = rawMin - span * 0.12;
+      const maxY = rawMax + span * 0.14;
+      const minY = rawMin - span * 0.14;
 
       const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH;
       const yToPrice = (y) => maxY - ((y - padTop) / pricePlotH) * (maxY - minY);
@@ -1170,6 +1227,55 @@
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
+        }
+
+        // 【繪製主力買賣力道泡泡】
+        // forceScore >= 0.20 -> 粉紅色泡泡（買方主力大單占優，畫在 K 棒上方）
+        // forceScore <= -0.20 -> 青綠色泡泡（賣方主力大單占優，畫在 K 棒下方）
+        // -0.20 < forceScore < 0.20 -> 力道差不多，不顯示泡泡
+        const force = b.forceScore || 0;
+        const absForce = Math.abs(force);
+        if (absForce >= 0.20) {
+          const maxBubbleR = Math.min(18, stepX * 0.45);
+          const minBubbleR = 5;
+          const normStrength = Math.min(1, (absForce - 0.20) / 1.1);
+          const radius = minBubbleR + normStrength * (maxBubbleR - minBubbleR);
+
+          ctx.save();
+          if (force > 0) {
+            // 粉紅色買方主力泡泡
+            const bubbleY = Math.max(padTop + radius + 4, yHigh - radius - 5);
+            const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
+            grad.addColorStop(0, "rgba(251, 207, 232, 0.92)");
+            grad.addColorStop(0.55, "rgba(244, 114, 182, 0.65)");
+            grad.addColorStop(1, "rgba(219, 39, 119, 0.25)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "rgba(249, 168, 212, 0.9)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          } else {
+            // 青綠色賣方主力泡泡
+            const bubbleY = Math.min(padTop + pricePlotH - radius - 4, yLow + radius + 5);
+            const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
+            grad.addColorStop(0, "rgba(167, 243, 208, 0.90)");
+            grad.addColorStop(0.55, "rgba(52, 211, 153, 0.60)");
+            grad.addColorStop(1, "rgba(5, 150, 105, 0.22)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "rgba(110, 231, 183, 0.85)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
+          ctx.restore();
         }
 
         if (b.isTodayDeduct) {
@@ -1323,10 +1429,23 @@
         maHtml = `<span class="${maColor} font-bold">20MA:${bar.ma20.toFixed(2)}${maDir}</span>`;
       }
 
+      // 主力買賣力道顯示標籤
+      const force = bar.forceScore || 0;
+      let forceHtml = `<span class="text-slate-400">主力:均勢</span>`;
+      if (force >= 0.20) {
+        const pctForce = Math.round(Math.min(100, (force / 1.3) * 100));
+        const detailLot = (bar.bigBuyVol > 0 || bar.bigSellVol > 0) ? ` (大單買${bar.bigBuyVol}/賣${bar.bigSellVol}張)` : "";
+        forceHtml = `<span class="text-pink-400 font-bold">●主力買力:+${pctForce}%${detailLot}</span>`;
+      } else if (force <= -0.20) {
+        const pctForce = Math.round(Math.min(100, (Math.abs(force) / 1.3) * 100));
+        const detailLot = (bar.bigBuyVol > 0 || bar.bigSellVol > 0) ? ` (大單買${bar.bigBuyVol}/賣${bar.bigSellVol}張)` : "";
+        forceHtml = `<span class="text-emerald-300 font-bold">●主力賣力:-${pctForce}%${detailLot}</span>`;
+      }
+
       const volText = `<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>`;
       const deductTag = bar.isTodayDeduct
-        ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[今日扣抵基準]</span>`
-        : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明日扣抵基準]</span>` : "");
+        ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[今日扣抵]</span>`
+        : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明日扣抵]</span>` : "");
 
       hud.innerHTML = `
         <span class="text-amber-300 font-bold">${bar.date}</span>
@@ -1337,6 +1456,7 @@
         <span class="${colorClass}">(${sign}${pct}%)</span>
         ${volText}
         ${maHtml}
+        ${forceHtml}
         ${deductTag}
       `;
     }
