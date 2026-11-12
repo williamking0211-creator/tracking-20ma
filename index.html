@@ -498,10 +498,11 @@
       const statusText = document.getElementById("apiStatusText");
 
       try {
-        const response = await fetch(apiUrl, {
-          cache: "no-store",
-          headers: { "ngrok-skip-browser-warning": "true" }
-        });
+        // 加上 ngrok 略過參數並移除自訂 headers，避免觸發瀏覽器 OPTIONS 預檢被 ngrok 警告頁攔截
+        const separator = apiUrl.includes("?") ? "&" : "?";
+        const fetchUrl = `${apiUrl}${separator}ngrok-skip-browser-warning=true&_t=${Date.now()}`;
+
+        const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const rawData = await response.json();
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
