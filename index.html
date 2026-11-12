@@ -97,7 +97,7 @@
       </div>
       <ul class="text-xs text-slate-300 space-y-1">
         <li>• 追蹤今日開盤後是否在昨高之上成交</li>
-        <li>• 標記盤中最高價與即時價格相對昨高距離</li>
+        <li>• 檢視 <span class="text-fuchsia-400 font-semibold">▼ 今日扣抵</span> 與 <span class="text-cyan-300 font-semibold">▲ 明日扣抵</span> 判斷均線助漲力道</li>
         <li>• 過濾假突破，等待尾盤收盤確認</li>
       </ul>
     </div>
@@ -208,7 +208,7 @@
             <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 首日突破20MA大長紅</span>
           </div>
           <p id="detailSubTitle" class="text-xs text-slate-300 mt-1">
-            昨日收盤 -- ｜ 昨量 -- 張 ｜ 前5日均量 -- 張
+            昨日收盤 -- ｜ 今日量 -- 張
           </p>
         </div>
         <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
@@ -228,31 +228,35 @@
         </div>
       </div>
 
-      <!-- 四大核心數據卡 -->
-      <div class="grid grid-cols-4 gap-2 mb-3">
+      <!-- 五大核心數據卡 (加入 20MA 扣抵價卡片) -->
+      <div class="grid grid-cols-5 gap-2 mb-3">
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
-          <div class="text-[11px] text-slate-400">昨日 / 今日 20MA</div>
-          <div id="cardMa20" class="text-xs md:text-sm font-bold text-amber-400 mt-0.5">--</div>
+          <div class="text-[10px] text-slate-400">昨 / 今 20MA</div>
+          <div id="cardMa20" class="text-xs font-bold text-amber-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-slate-900/90 border border-fuchsia-500/30 rounded-lg p-2 text-center">
+          <div class="text-[10px] text-fuchsia-300">今 / 明 扣抵價</div>
+          <div id="cardDeductPrice" class="text-xs font-bold text-fuchsia-300 mt-0.5">--</div>
         </div>
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
-          <div class="text-[11px] text-slate-400">關鍵K 昨高</div>
-          <div id="cardYestHigh" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+          <div class="text-[10px] text-slate-400">關鍵K 昨高</div>
+          <div id="cardYestHigh" class="text-xs md:text-sm font-bold text-rose-400 mt-0.5">--</div>
         </div>
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
-          <div class="text-[11px] text-slate-400">關鍵K 昨低</div>
-          <div id="cardYestLow" class="text-sm font-bold text-emerald-400 mt-0.5">--</div>
+          <div class="text-[10px] text-slate-400">關鍵K 昨低</div>
+          <div id="cardYestLow" class="text-xs md:text-sm font-bold text-emerald-400 mt-0.5">--</div>
         </div>
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
-          <div class="text-[11px] text-slate-400">今日開 / 收</div>
-          <div id="cardTodayPrice" class="text-xs md:text-sm font-bold text-white mt-0.5">--</div>
+          <div class="text-[10px] text-slate-400">今日開 / 收</div>
+          <div id="cardTodayPrice" class="text-xs font-bold text-white mt-0.5">--</div>
         </div>
       </div>
 
       <!-- K線圖控制工具列 -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex items-center gap-3">
-          <span class="font-semibold text-slate-200">真實日K線 ＋ 成交量</span>
-          <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 10 根</span>
+          <span class="font-semibold text-slate-200">真實日K線 ＋ 20MA扣抵 ＋ 成交量</span>
+          <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -262,25 +266,27 @@
           <button onclick="zoomChart(2)" title="縮小 (增加顯示根數)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
             － 縮小
           </button>
-          <button onclick="resetChartZoom()" title="恢復預設10根與最新位置" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
-            重置 10 根
+          <button onclick="resetChartZoom()" title="恢復預設22根以完整顯示20MA扣抵位置" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            重置 22 根
           </button>
         </div>
       </div>
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[450px]">
-        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 + 20MA 三色說明 -->
+        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 + 20MA 三色與扣抵說明 -->
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col items-start gap-1.5">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收與成交量</span>
           </div>
 
-          <!-- 20MA 線三色圖例說明（固定於左上角） -->
+          <!-- 20MA 線三色與扣抵位置圖例說明（固定於左上角） -->
           <div class="flex flex-wrap items-center gap-2.5 text-[10px] text-slate-300 bg-slate-900/85 border border-slate-800 px-2.5 py-1 rounded-md">
-            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-amber-500 inline-block"></span>20MA 往上走</span>
-            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-slate-200 inline-block"></span>20MA 走平</span>
-            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-sky-400 inline-block"></span>20MA 往下走</span>
+            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
+            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
+            <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
+            <span class="flex items-center gap-1 font-medium text-fuchsia-300">▼今日扣抵</span>
+            <span class="flex items-center gap-1 font-medium text-cyan-300">▲明日扣抵</span>
             <span class="flex items-center gap-1 font-medium"><span class="w-3 h-0.5 bg-purple-400 inline-block"></span>5日均量</span>
           </div>
         </div>
@@ -342,7 +348,6 @@
     let selectedStockCode = null;
     let syncTimer = null;
 
-    // 表格欄位排序狀態：{ field: 'yestGainPct' | 'yestHigh' | 'volExtraPct' | 'todayPrice' | null, dir: 'desc' | 'asc' | null }
     let sortState = {
       field: null,
       dir: null
@@ -350,7 +355,7 @@
 
     const chartState = {
       bars: [],
-      visibleCount: 10,
+      visibleCount: 22, // 預設顯示 22 根，讓第 20 根前的 20MA 扣抵位置一眼可見
       rightOffset: 0,
       mouseX: -1,
       mouseY: -1,
@@ -385,7 +390,6 @@
       applyFiltersAndRender();
     }
 
-    // 切換欄位排序（大到小 desc -> 小到大 asc -> 預設 null）
     function toggleSort(field) {
       if (sortState.field !== field) {
         sortState.field = field;
@@ -614,7 +618,6 @@
         return matchFilter && matchKeyword;
       });
 
-      // 套用欄位排序（大到小 desc 或 小到大 asc）
       if (sortState.field && sortState.dir) {
         const f = sortState.field;
         const factor = sortState.dir === 'desc' ? -1 : 1;
@@ -735,7 +738,7 @@
       const isTodayRed = stock.todayPrice >= stock.todayOpen;
       const cardTodayEl = document.getElementById("cardTodayPrice");
       cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
-      cardTodayEl.className = `text-xs md:text-sm font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+      cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
 
       const badge = document.getElementById("detailDecisionBadge");
       if (stock.status === "BREAKOUT") {
@@ -819,14 +822,37 @@
         }
       }
 
+      // 標記 20MA 扣抵位置：
+      // 1. 今日扣抵 (bars.length - 20)：今日收盤價須高於此價，今日 20MA 才會往上走
+      // 2. 明日扣抵 (bars.length - 19)：明日盤中將被扣掉的基準價格
+      let todayDeductPrice = 0;
+      let tomorrowDeductPrice = 0;
+      if (bars.length >= 20) {
+        const todayDeductIdx = bars.length - 20;
+        bars[todayDeductIdx].isTodayDeduct = true;
+        todayDeductPrice = bars[todayDeductIdx].close;
+      }
+      if (bars.length >= 19) {
+        const tomorrowDeductIdx = bars.length - 19;
+        bars[tomorrowDeductIdx].isTomorrowDeduct = true;
+        tomorrowDeductPrice = bars[tomorrowDeductIdx].close;
+      }
+
+      const deductCardEl = document.getElementById("cardDeductPrice");
+      if (todayDeductPrice > 0) {
+        deductCardEl.textContent = `${todayDeductPrice.toFixed(2)} / ${tomorrowDeductPrice.toFixed(2)}`;
+      } else {
+        deductCardEl.textContent = "--";
+      }
+
       const maArrow = todayMa20 > stock.yestMa20 ? "↗" : (todayMa20 < stock.yestMa20 ? "↘" : "→");
       const cardMaEl = document.getElementById("cardMa20");
       cardMaEl.textContent = `${stock.yestMa20.toFixed(2)} / ${todayMa20.toFixed(2)} ${maArrow}`;
-      cardMaEl.className = `text-xs md:text-sm font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
+      cardMaEl.className = `text-xs font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
 
       chartState.bars = bars;
       if (resetView) {
-        chartState.visibleCount = 10;
+        chartState.visibleCount = 22;
         chartState.rightOffset = 0;
       }
 
@@ -836,7 +862,7 @@
 
     function zoomChart(delta) {
       const total = chartState.bars.length;
-      const maxAllow = Math.max(10, total);
+      const maxAllow = Math.max(22, total);
       let nextCount = chartState.visibleCount + delta;
       nextCount = Math.max(5, Math.min(maxAllow, nextCount));
       chartState.visibleCount = nextCount;
@@ -845,7 +871,7 @@
     }
 
     function resetChartZoom() {
-      chartState.visibleCount = 10;
+      chartState.visibleCount = 22;
       chartState.rightOffset = 0;
       renderCanvasChart();
     }
@@ -951,8 +977,8 @@
       const rawMax = Math.max(...allPrices);
       const rawMin = Math.min(...allPrices);
       const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
-      const maxY = rawMax + span * 0.1;
-      const minY = rawMin - span * 0.1;
+      const maxY = rawMax + span * 0.12;
+      const minY = rawMin - span * 0.12;
 
       const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH;
       const yToPrice = (y) => maxY - ((y - padTop) / pricePlotH) * (maxY - minY);
@@ -997,7 +1023,7 @@
 
       const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
       const stepX = plotW / slotCount;
-      const candleW = Math.max(6, Math.min(34, stepX * 0.62));
+      const candleW = Math.max(5, Math.min(34, stepX * 0.62));
 
       let hoveredBar = null;
       let hoveredPrevBar = null;
@@ -1062,6 +1088,37 @@
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
         }
 
+        // 【繪製 20MA 扣抵位置標記】
+        // 1. 今日扣抵 (bars.length - 20)：紫紅色倒三角 + 扣抵收盤水平引線
+        if (b.isTodayDeduct) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(232, 121, 249, 0.7)";
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(cx, yClose);
+          ctx.lineTo(width - padRight, yClose);
+          ctx.stroke();
+          ctx.restore();
+
+          const markerY = Math.max(padTop + 14, yHigh - 6);
+          ctx.fillStyle = "#e879f9";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("▼今日扣抵", cx, markerY - 8);
+          ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 2);
+        }
+
+        // 2. 明日扣抵 (bars.length - 19)：亮青色正三角 + 預告明日扣抵價格
+        if (b.isTomorrowDeduct) {
+          const markerY = Math.min(padTop + pricePlotH - 6, yLow + 14);
+          ctx.fillStyle = "#22d3ee";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("▲明日扣抵", cx, markerY);
+          ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 10);
+        }
+
         if (b.vol !== undefined && b.vol !== null && b.vol > 0) {
           const yVolTop = volToY(b.vol);
           const volBarH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
@@ -1077,11 +1134,15 @@
           }
         }
 
+        // X 軸日期標籤（若顯示根數較多則自動隔根顯示避免重疊，但關鍵K、今日、扣抵日必定顯示）
         const shortDate = b.date.length >= 10 ? b.date.slice(5) : b.date;
-        ctx.fillStyle = b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8");
-        ctx.font = (b.isKeyK || b.isToday) ? "bold 10px sans-serif" : "10px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(shortDate, cx, height - 6);
+        const showLabel = visibleBars.length <= 14 || idx % 2 === 0 || b.isKeyK || b.isToday || b.isTodayDeduct;
+        if (showLabel) {
+          ctx.fillStyle = b.isTodayDeduct ? "#e879f9" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8"));
+          ctx.font = (b.isKeyK || b.isToday || b.isTodayDeduct) ? "bold 10px sans-serif" : "10px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(shortDate, cx, height - 6);
+        }
       });
 
       if (ma20Points.length >= 2) {
@@ -1183,6 +1244,9 @@
       }
 
       const volText = `<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>`;
+      const deductTag = bar.isTodayDeduct
+        ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[今日扣抵基準]</span>`
+        : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明日扣抵基準]</span>` : "");
 
       hud.innerHTML = `
         <span class="text-amber-300 font-bold">${bar.date}</span>
@@ -1193,6 +1257,7 @@
         <span class="${colorClass}">(${sign}${pct}%)</span>
         ${volText}
         ${maHtml}
+        ${deductTag}
       `;
     }
 
