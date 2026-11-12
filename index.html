@@ -1,272 +1,1127 @@
-const express = require('express');
-const cors = require('cors');
-const YahooFinance = require('yahoo-finance2').default;
-
-const yahooFinance = new YahooFinance({
-  suppressNotices: ['yahooSurvey', 'ripHistorical'],
-  validation: { logErrors: false }
-});
-
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  res.header('Access-Control-Allow-Private-Network', 'true');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
-
-const calcMA = (arr) => arr.reduce((sum, v) => sum + v, 0) / arr.length;
-
-function formatTwPrice(price) {
-  if (typeof price !== 'number' || isNaN(price)) return 0;
-  const clean = Math.round(price * 10000) / 10000;
-  if (clean < 10) return Number(clean.toFixed(2));
-  if (clean < 50) return Number((Math.round(clean * 20) / 20).toFixed(2));
-  if (clean < 100) return Number(clean.toFixed(1));
-  if (clean < 500) return Number((Math.round(clean * 2) / 2).toFixed(1));
-  if (clean < 1000) return Math.round(clean);
-  return Math.round(clean / 5) * 5;
-}
-
-let stockListCache = [];
-let latestCombinedStocks = [];
-let lastHistoryDate = '';
-let isHistoryUpdating = false;
-let isRealtimeUpdating = false;
-
-async function getAllTaiwanStocks() {
-  const [twseRes, tpexRes] = await Promise.all([
-    fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL'),
-    fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes')
-  ]);
-  const twseList = await twseRes.json();
-  const tpexList = await tpexRes.json();
-
-  const twseStocks = twseList
-    .filter(item => /^[1-9]\d{3}$/.test(item.Code))
-    .map(item => ({
-      code: item.Code,
-      name: (item.CompanyNa_me || item.CompanyNames || item.Name || '').trim(),
-      suffix: '.TW',
-      market: 'tse'
-    }));
-
-  const tpexStocks = tpexList
-    .filter(item => /^[1-9]\d{3}$/.test(item.SecuritiesCompanyCode))
-    .map(item => ({
-      code: item.SecuritiesCompanyCode,
-      name: (item.CompanyName || '').trim(),
-      suffix: '.TWO',
-      market: 'otc'
-    }));
-
-  return [...twseStocks, ...tpexStocks];
-}
-
-// 獲取歷史資料並組合成每日 OHLC 陣列
-async function fetchSingleHistory(stock) {
-  const symbol = `${stock.code}${stock.suffix}`;
-  const period2 = new Date();
-  const period1 = new Date();
-  period1.setDate(period2.getDate() - 45);
-
-  try {
-    const queryOptions = {
-      period1: period1.toISOString().split('T')[0],
-      period2: period2.toISOString().split('T')[0],
-      interval: '1d'
-    };
-    const chartData = await yahooFinance.chart(symbol, queryOptions);
-    const quotes = chartData.quotes
-      ? chartData.quotes.filter(q => q.close !== null && q.open !== null && q.high !== null && q.low !== null)
-      : [];
-
-    if (quotes.length < 21) return null;
-
-    const todayTaipei = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
-
-    const allBars = quotes.map(q => ({
-      date: new Date(q.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' }),
-      open: formatTwPrice(q.open),
-      high: formatTwPrice(q.high),
-      low: formatTwPrice(q.low),
-      close: formatTwPrice(q.close),
-      vol: Math.round((q.volume || 0) / 1000) // Yahoo Finance 單位為股，統一除以 1000 換算為「張」
-    }));
-
-    // 區分「昨日(含以前)歷史線」與「今日線」
-    const lastBar = allBars[allBars.length - 1];
-    const hasTodayInChart = lastBar.date === todayTaipei;
-    const history = hasTodayInChart ? allBars.slice(0, -1) : allBars;
-    const todayFromChart = hasTodayInChart ? lastBar : null;
-
-    if (history.length < 21) return null;
-
-    const yestBar = history[history.length - 1];
-    const prevBar = history[history.length - 2];
-
-    const closes = history.map(h => h.close);
-    const vols = history.map(h => h.vol);
-    const prev20Closes = closes.slice(-21, -1);
-    const yest20Closes = closes.slice(-20);
-    const prev5Vols = vols.slice(-6, -1);
-    const avgVol5 = prev5Vols.length > 0 ? calcMA(prev5Vols) : 1;
-
-    const prevMa20 = Number(calcMA(prev20Closes).toFixed(2));
-    const yestMa20 = Number(calcMA(yest20Closes).toFixed(2));
-
-    return {
-      code: stock.code,
-      name: stock.name,
-      market: stock.market,
-      prevClose: prevBar.close,
-      prevMa20,
-      yestMa20,
-      yestOpen: yestBar.open,
-      yestHigh: yestBar.high,
-      yestLow: yestBar.low,
-      yestClose: yestBar.close,
-      yestVol: yestBar.vol,
-      avgVol5: Number(avgVol5.toFixed(0)),
-      todayOpen: todayFromChart ? todayFromChart.open : 0,
-      todayHigh: todayFromChart ? todayFromChart.high : 0,
-      todayLow: todayFromChart ? todayFromChart.low : 0,
-      todayClose: todayFromChart ? todayFromChart.close : 0,
-      todayVol: todayFromChart ? todayFromChart.vol : 0,
-      history
-    };
-  } catch (err) {
-    return null;
-  }
-}
-
-async function initAndScheduleBackgroundSync() {
-  const todayTaipei = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
-  if (lastHistoryDate === todayTaipei) return;
-  if (isHistoryUpdating) return;
-  isHistoryUpdating = true;
-
-  try {
-    console.log('正在初始化上市櫃清單與歷史數據清算...');
-    stockListCache = await getAllTaiwanStocks();
-    let historyResults = [];
-    const batchSize = 30;
-
-    for (let i = 0; i < stockListCache.length; i += batchSize) {
-      const batch = stockListCache.slice(i, i + batchSize);
-      const promises = batch.map(s => fetchSingleHistory(s));
-      const results = await Promise.all(promises);
-      historyResults.push(...results.filter(r => r !== null));
-      process.stdout.write(`\r歷史基準檔建立進度: ${Math.min(i + batchSize, stockListCache.length)} / ${stockListCache.length}`);
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    #klineCanvas {
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #klineCanvas:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-3 md:p-5">
 
-    console.log(`\n基礎檔完成! 共 ${historyResults.length} 檔。`);
-    latestCombinedStocks = historyResults;
-    lastHistoryDate = todayTaipei;
+  <!-- 頂部標題列 -->
+  <header class="max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-lg">
+        20
+      </div>
+      <div>
+        <h1 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+          關鍵K・突破20MA實戰儀表板
+        </h1>
+        <p class="text-xs text-slate-400">
+          昨日大長紅K(漲幅6%~10%)＋<span class="text-amber-400 font-semibold">首日由下往上穿越20MA</span> = 關鍵K ｜ 今日收盤/尾盤站上昨高 = <span class="text-rose-400 font-semibold">確認K買進</span>
+        </p>
+      </div>
+    </div>
 
-    // 基準建立完成後立刻抓一次個股今日真實開高低收與成交量
-    await refreshRealtimePricesOnly();
-  } catch (err) {
-    console.error('背景初始化失敗:', err);
-  } finally {
-    isHistoryUpdating = false;
-  }
-}
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="openApiModal()" id="apiStatusBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-2 hover:bg-emerald-500/25 transition">
+        <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="apiStatusText">API 串接設定</span>
+      </button>
 
-// 針對符合關鍵K候選池的個股，向證交所/櫃買中心抓取真實「今日開盤、最高、最低、收盤與當日成交量」
-async function refreshRealtimePricesOnly() {
-  if (isRealtimeUpdating || latestCombinedStocks.length === 0) return;
-  isRealtimeUpdating = true;
+      <button onclick="fetchStocksData()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium hover:bg-slate-700 transition">
+        🔄 刷新報價
+      </button>
+    </div>
+  </header>
 
-  try {
-    // 篩選出符合基本關鍵K條件的標的優先同步即時報價，加快速度並避免被證交所限流
-    const candidates = latestCombinedStocks.filter(s => {
-      const gainPct = s.prevClose > 0 ? ((s.yestClose - s.prevClose) / s.prevClose) * 100 : 0;
-      return s.prevClose <= s.prevMa20 && s.yestClose > s.yestMa20 && s.yestClose > s.yestOpen && gainPct >= 5.5;
+  <!-- 策略說明三步驟卡片 -->
+  <section class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-amber-400">STEP 1・昨日「關鍵K」篩選</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">盤前必備</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1.5">
+        <li>• <span class="text-amber-300 font-semibold">前日收盤 ≤ 前日20MA，昨日正式站上20MA（首日穿越）</span>且 20MA 斜率向上</li>
+        <li>• <span class="text-rose-400 font-semibold">必須收紅K (昨收 > 昨開)，且當根漲幅 6% ~ 10%</span></li>
+        <li class="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span>• 昨日成交量</span>
+          <select id="volOperatorSelect" onchange="applyFiltersAndRender()" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-bold text-xs focus:outline-none focus:border-blue-500">
+            <option value="GTE" selected>≥ (大於等於)</option>
+            <option value="LTE">≤ (小於等於)</option>
+            <option value="ALL">不限條件</option>
+          </select>
+          <span>前5日均量 ×</span>
+          <div class="inline-flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+            <input type="number" id="volThresholdInput" value="100" min="0" max="5000" step="10" oninput="applyFiltersAndRender()" 
+                   class="w-12 bg-transparent text-amber-300 font-bold text-right focus:outline-none text-xs" />
+            <span class="text-amber-300 font-bold ml-0.5">%</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-sky-400">STEP 2・今日盤中與盤後</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">即時追蹤</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1">
+        <li>• 追蹤今日開盤後是否在昨高之上成交</li>
+        <li>• 標記盤中最高價與即時價格相對昨高距離</li>
+        <li>• 過濾假突破，等待尾盤收盤確認</li>
+      </ul>
+    </div>
+
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-rose-400">STEP 3・收盤「確認K」決策</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">尾盤檢核</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1">
+        <li>• <span class="text-rose-400 font-semibold">收盤 > 昨高</span>：確認突破 → 尾盤/收盤買進</li>
+        <li>• <span class="text-amber-400 font-semibold">昨低 ≤ 收盤 ≤ 昨高</span>：區間內 → 繼續觀察</li>
+        <li>• <span class="text-emerald-400 font-semibold">收盤 < 昨低</span>：跌破昨低 → 不考慮(剔除)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 統計篩選器卡片 -->
+  <section class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+    <button onclick="setFilter('ALL')" id="tab-ALL" class="filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition">
+      <div class="text-xs text-slate-400 mb-1">符合昨日「首日突破長紅關鍵K」</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-ALL" class="text-2xl font-bold text-white">0</span>
+        <span class="text-xs text-slate-400">檔進入今日確認池</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('BREAKOUT')" id="tab-BREAKOUT" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-rose-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-rose-300 mb-1">🔥 確認K：高於昨高 (買進)</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-BREAKOUT" class="text-2xl font-bold text-rose-400">0</span>
+        <span class="text-xs text-slate-400">檔收盤/尾盤站上昨高</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('CONSOLIDATE')" id="tab-CONSOLIDATE" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-amber-300 mb-1">👀 區間內：昨高~昨低之間</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-CONSOLIDATE" class="text-2xl font-bold text-amber-400">0</span>
+        <span class="text-xs text-slate-400">檔等待突破方向確認</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('BREAKDOWN')" id="tab-BREAKDOWN" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-emerald-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-emerald-300 mb-1">❄️ 破底K：低於昨低 (不考慮)</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-BREAKDOWN" class="text-2xl font-bold text-emerald-400">0</span>
+        <span class="text-xs text-slate-400">檔跌破昨低剔除</span>
+      </div>
+    </button>
+  </section>
+
+  <!-- 主內容區：左側清單 + 右側真實互動K線與成交量圖 -->
+  <main class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
+    
+    <!-- 左側股票清單 (佔 6 欄) -->
+    <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+      <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <input type="text" id="searchInput" oninput="renderTable()" placeholder="搜尋代號或名稱 (例如 2330 或 台積電)..." 
+               class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full sm:w-64" />
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:flex items-center gap-1 text-[11px]">
+            <button onclick="quickSetVol(100)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥100%</button>
+            <button onclick="quickSetVol(150)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥150%</button>
+            <button onclick="quickSetVol(200)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥200%</button>
+          </div>
+          <button onclick="exportCSV()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
+            📥 匯出 CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto max-h-[670px]">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-900/90 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">股票代號/名稱</th>
+              <th class="py-2.5 px-2 text-right">昨日長紅漲幅</th>
+              <th class="py-2.5 px-2 text-right">昨高 / 昨低</th>
+              <th class="py-2.5 px-2 text-right">昨量比</th>
+              <th class="py-2.5 px-2 text-right">今日收盤/現價</th>
+              <th class="py-2.5 px-3 text-center">確認K 決策</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody" class="divide-y divide-slate-800/60 text-xs">
+            <tr>
+              <td colspan="6" class="py-10 text-center text-slate-500">載入資料中，請確認 API 網址設定...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 右側真實歷史 K 線與成交量面板 (佔 6 欄) -->
+    <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 id="detailTitle" class="text-xl font-bold text-white">--</h2>
+            <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 首日突破20MA大長紅</span>
+          </div>
+          <p id="detailSubTitle" class="text-xs text-slate-400 mt-1">昨日收盤 -- ｜ 昨量 -- 張 ｜ 今日量 -- 張</p>
+        </div>
+        <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
+          等待選取
+        </div>
+      </div>
+
+      <!-- 四大核心數據卡 -->
+      <div class="grid grid-cols-4 gap-2 mb-3">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
+          <div class="text-[11px] text-slate-400">昨日 / 今日 20MA</div>
+          <div id="cardMa20" class="text-xs md:text-sm font-bold text-amber-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
+          <div class="text-[11px] text-slate-400">關鍵K 昨高</div>
+          <div id="cardYestHigh" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
+          <div class="text-[11px] text-slate-400">關鍵K 昨低</div>
+          <div id="cardYestLow" class="text-sm font-bold text-emerald-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
+          <div class="text-[11px] text-slate-400">今日開 / 收</div>
+          <div id="cardTodayPrice" class="text-xs md:text-sm font-bold text-white mt-0.5">--</div>
+        </div>
+      </div>
+
+      <!-- K線圖控制工具列 -->
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
+        <div class="flex items-center gap-3">
+          <span class="font-semibold text-slate-200">真實日K線 ＋ 成交量</span>
+          <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 10 根</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button onclick="zoomChart(-2)" title="放大 (減少顯示根數)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+            ＋ 放大
+          </button>
+          <button onclick="zoomChart(2)" title="縮小 (增加顯示根數)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+            － 縮小
+          </button>
+          <button onclick="resetChartZoom()" title="恢復預設10根與最新位置" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+            重置 10 根
+          </button>
+        </div>
+      </div>
+
+      <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
+      <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[450px]">
+        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 -->
+        <div id="ohlcHud" class="absolute top-2 left-3 z-10 pointer-events-none bg-slate-900/85 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收與成交量</span>
+        </div>
+
+        <!-- 右上角圖例 (20MA 三色無紅無綠) -->
+        <div class="absolute top-12 right-3 z-10 pointer-events-none flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/80 border border-slate-800 px-2 py-1 rounded">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-purple-400 inline-block"></span>5MV</span>
+        </div>
+
+        <!-- 缺少歷史明細提示遮罩 -->
+        <div id="noHistoryWarning" class="hidden absolute inset-0 z-20 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
+          <div class="text-amber-400 font-bold text-sm mb-2">⚠️ 後端 API 尚未提供此檔股票的歷史逐日 OHLC 陣列</div>
+          <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+            目前後端 <code class="text-sky-400">/stocks</code> 僅回傳單日欄位，缺少前幾日的逐日開高低收與成交量（<code class="text-sky-400">history</code> 陣列）。請確認後端 `index.js` 已重啟並完成抓取。
+          </p>
+        </div>
+
+        <canvas id="klineCanvas" class="w-full h-[450px] block"></canvas>
+      </div>
+
+      <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
+        <span>💡 操作提示：滾動滑鼠滾輪可放大/縮小；按住左鍵左右拖曳可檢視歷史 K 棒</span>
+        <span id="dataRangeInfo">--</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- API 設定彈窗 -->
+  <div id="apiModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white">🔌 API 串接設定</h3>
+        <button onclick="closeApiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3">
+        請輸入後端資料來源網址（例如 ngrok 網址並加上 <code class="text-sky-400">/stocks</code>）：
+      </p>
+      <input type="text" id="apiUrlInput" placeholder="https://xxxx.ngrok-free.dev/stocks" 
+             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
+      
+      <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
+        <input type="checkbox" id="autoSyncCheckbox" checked class="rounded bg-slate-800 border-slate-600 text-blue-500" />
+        啟用盤中即時自動同步 (每 5 秒背景更新報價)
+      </label>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeApiModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">
+          取消
+        </button>
+        <button onclick="saveAndSyncApi()" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500">
+          儲存並立即同步
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
+    let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
+    let rawBaseKeyKStocks = [];
+    let allStocks = [];
+    let filteredStocks = [];
+    let currentFilter = "ALL";
+    let selectedStockCode = null;
+    let syncTimer = null;
+
+    const chartState = {
+      bars: [],
+      visibleCount: 10,
+      rightOffset: 0,
+      mouseX: -1,
+      mouseY: -1,
+      isDragging: false,
+      dragStartX: 0,
+      dragStartOffset: 0
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("apiUrlInput").value = apiUrl;
+      initCanvasEvents();
+      fetchStocksData();
+      startAutoSync();
     });
 
-    const targetList = candidates.length > 0 ? candidates : latestCombinedStocks.slice(0, 100);
-    const realtimeMap = new Map();
-    const chunkSize = 40;
+    window.addEventListener("resize", () => {
+      renderCanvasChart();
+    });
 
-    for (let i = 0; i < targetList.length; i += chunkSize) {
-      const chunk = targetList.slice(i, i + chunkSize);
-      const exCh = chunk.map(s => `${s.market}_${s.code}.tw`).join('|');
-      const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${encodeURIComponent(exCh)}&json=1&delay=0`;
-
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Referer': 'https://mis.twse.com.tw/stock/fibest.jsp'
+    function startAutoSync() {
+      if (syncTimer) clearInterval(syncTimer);
+      syncTimer = setInterval(() => {
+        if (document.getElementById("autoSyncCheckbox").checked) {
+          fetchStocksData(true);
         }
-      }).catch(() => null);
+      }, 5000);
+    }
 
-      if (res && res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.msgArray)) {
-          data.msgArray.forEach(item => {
-            const code = item.c;
-            const lastPrice = parseFloat(item.z) || parseFloat(item.y) || 0;
-            const openPrice = parseFloat(item.o) || 0;
-            const highPrice = parseFloat(item.h) || 0;
-            const lowPrice = parseFloat(item.l) || 0;
-            const totalVol = parseInt(item.v, 10) || 0; // MIS API 回傳的 v 單位即為「張」
+    function quickSetVol(pct) {
+      document.getElementById("volOperatorSelect").value = "GTE";
+      document.getElementById("volThresholdInput").value = pct;
+      applyFiltersAndRender();
+    }
 
-            if (code && lastPrice > 0) {
-              realtimeMap.set(code, {
-                open: openPrice > 0 ? formatTwPrice(openPrice) : formatTwPrice(lastPrice),
-                high: highPrice > 0 ? formatTwPrice(highPrice) : formatTwPrice(lastPrice),
-                low: lowPrice > 0 ? formatTwPrice(lowPrice) : formatTwPrice(lastPrice),
-                price: formatTwPrice(lastPrice),
-                vol: totalVol
-              });
-            }
+    async function fetchStocksData(isSilent = false) {
+      const statusDot = document.getElementById("apiStatusDot");
+      const statusText = document.getElementById("apiStatusText");
+
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rawData = await response.json();
+        const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
+
+        rawBaseKeyKStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isPricePatternKeyK);
+
+        statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        statusText.textContent = `即時同步中 (${list.length}檔)`;
+
+        applyFiltersAndRender();
+      } catch (err) {
+        console.error("API 讀取失敗:", err);
+        statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
+        statusText.textContent = "連線中斷 (點此設定)";
+        if (!isSilent && rawBaseKeyKStocks.length === 0) {
+          document.getElementById("stockTableBody").innerHTML = `
+            <tr><td colspan="6" class="py-10 text-center text-rose-400">
+              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟。
+            </td></tr>`;
+        }
+      }
+    }
+
+    function applyFiltersAndRender() {
+      const op = document.getElementById("volOperatorSelect").value;
+      const threshold = parseFloat(document.getElementById("volThresholdInput").value);
+      const validThreshold = isNaN(threshold) ? 100 : threshold;
+
+      allStocks = rawBaseKeyKStocks.filter(s => {
+        if (op === "ALL") return true;
+        if (op === "GTE") return s.volRatio >= validThreshold;
+        if (op === "LTE") return s.volRatio <= validThreshold;
+        return true;
+      });
+
+      document.getElementById("count-ALL").textContent = allStocks.length;
+      document.getElementById("count-BREAKOUT").textContent = allStocks.filter(s => s.status === "BREAKOUT").length;
+      document.getElementById("count-CONSOLIDATE").textContent = allStocks.filter(s => s.status === "CONSOLIDATE").length;
+      document.getElementById("count-BREAKDOWN").textContent = allStocks.filter(s => s.status === "BREAKDOWN").length;
+
+      renderTable();
+
+      if ((!selectedStockCode || !allStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
+        selectStock(filteredStocks[0].code);
+      } else if (selectedStockCode) {
+        const current = allStocks.find(s => s.code === selectedStockCode);
+        if (current) updateDetailPanel(current, false);
+      }
+    }
+
+    function normalizeStockItem(raw) {
+      const code = String(raw.code || "");
+      const name = String(raw.name || "");
+
+      const prevMa20 = parseFloat(raw.prevMa20) || 0;
+      const yestMa20 = parseFloat(raw.yestMa20) || 0;
+
+      const yestOpen = parseFloat(raw.yestOpen) || 0;
+      const yestHigh = parseFloat(raw.yestHigh) || 0;
+      const yestLow = parseFloat(raw.yestLow) || 0;
+      const yestClose = parseFloat(raw.yestClose) || 0;
+
+      const todayPrice = parseFloat(raw.price || raw.todayClose || raw.close) || 0;
+      // 【修正】確保今日開盤價優先採用真實 todayOpen；若無則採用 yestClose，絕不誤抓 yestLow 造成綠K變紅K
+      const rawTodayOpen = parseFloat(raw.todayOpen || raw.open) || 0;
+      const todayOpen = rawTodayOpen > 0 ? rawTodayOpen : (todayPrice > 0 ? yestClose : 0);
+      const todayHigh = Math.max(parseFloat(raw.todayHigh || raw.high) || 0, todayOpen, todayPrice);
+      const rawTodayLow = parseFloat(raw.todayLow || raw.low) || 0;
+      const todayLow = rawTodayLow > 0 ? Math.min(rawTodayLow, todayOpen, todayPrice) : Math.min(todayOpen, todayPrice);
+      const todayVol = parseFloat(raw.todayVol || raw.volume) || 0;
+
+      const rawHistory = raw.history || raw.klines || raw.bars || [];
+      const realBars = Array.isArray(rawHistory) ? rawHistory.map(b => ({
+        date: String(b.date || b.time || ""),
+        open: parseFloat(b.open),
+        high: parseFloat(b.high),
+        low: parseFloat(b.low),
+        close: parseFloat(b.close),
+        ma20: b.ma20 !== undefined && b.ma20 !== null ? parseFloat(b.ma20) : null,
+        vol: parseFloat(b.vol || b.volume || 0)
+      })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
+
+      for (let i = 0; i < realBars.length; i++) {
+        if ((!realBars[i].ma20 || realBars[i].ma20 <= 0) && i >= 19) {
+          let sum20 = 0;
+          for (let j = i - 19; j <= i; j++) sum20 += realBars[j].close;
+          realBars[i].ma20 = Number((sum20 / 20).toFixed(2));
+        }
+        if (i >= 4) {
+          let sumVol5 = 0;
+          for (let j = i - 4; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
+          realBars[i].ma5Vol = sumVol5 / 5;
+        }
+      }
+
+      const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
+      const rawMa5Vol = parseFloat(raw.ma5Vol || raw.avgVol5) || 1;
+      const volRatio = raw.volRatio ? parseFloat(raw.volRatio) : Math.round((rawYestVol / rawMa5Vol) * 100);
+
+      let prevClose = parseFloat(raw.prevClose || raw.beforeYestClose) || 0;
+      let calculatedPrevMa20 = prevMa20;
+
+      if (realBars.length >= 2) {
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+        const lastBar = realBars[realBars.length - 1];
+        const prevBarIdx = (lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3
+          ? realBars.length - 3
+          : realBars.length - 2;
+
+        if (prevClose <= 0 && prevBarIdx >= 0) {
+          prevClose = realBars[prevBarIdx].close;
+        }
+        if (calculatedPrevMa20 <= 0 && prevBarIdx >= 0 && realBars[prevBarIdx].ma20) {
+          calculatedPrevMa20 = realBars[prevBarIdx].ma20;
+        }
+      }
+
+      const baseRefPrice = prevClose > 0 ? prevClose : yestOpen;
+      const yestGainPct = baseRefPrice > 0 ? ((yestClose - baseRefPrice) / baseRefPrice) * 100 : 0;
+
+      const isBullishRedK = yestClose > yestOpen;
+      const isBigGain = yestGainPct >= 6.0 && yestGainPct <= 10.1;
+
+      const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0
+        ? (prevClose <= calculatedPrevMa20)
+        : (yestOpen <= yestMa20);
+
+      const isFirstDayBreak20Ma = wasBelowOrOnMa20 && (yestClose > yestMa20) && (yestMa20 >= calculatedPrevMa20) && (yestHigh > 0);
+      const isPricePatternKeyK = isFirstDayBreak20Ma && isBullishRedK && isBigGain;
+
+      let status = "CONSOLIDATE";
+      if (todayPrice > yestHigh) status = "BREAKOUT";
+      else if (todayPrice < yestLow) status = "BREAKDOWN";
+
+      const changePct = yestClose > 0 ? (((todayPrice - yestClose) / yestClose) * 100).toFixed(2) : "0.00";
+
+      return {
+        code, name,
+        prevMa20: calculatedPrevMa20,
+        yestMa20,
+        yestOpen, yestHigh, yestLow, yestClose,
+        yestGainPct: parseFloat(yestGainPct.toFixed(2)),
+        todayOpen, todayHigh, todayLow, todayPrice, todayVol,
+        yestVol: rawYestVol,
+        volRatio,
+        changePct: parseFloat(changePct),
+        isPricePatternKeyK,
+        status,
+        realBars
+      };
+    }
+
+    function setFilter(filterType) {
+      currentFilter = filterType;
+      document.querySelectorAll(".filter-card").forEach(btn => {
+        btn.classList.remove("border-2", "border-blue-500");
+        btn.classList.add("border", "border-slate-800");
+      });
+      const activeBtn = document.getElementById(`tab-${filterType}`);
+      if (activeBtn) {
+        activeBtn.classList.remove("border", "border-slate-800");
+        activeBtn.classList.add("border-2", "border-blue-500");
+      }
+      renderTable();
+    }
+
+    function renderTable() {
+      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+      filteredStocks = allStocks.filter(s => {
+        const matchFilter = currentFilter === "ALL" || s.status === currentFilter;
+        const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
+        return matchFilter && matchKeyword;
+      });
+
+      const tbody = document.getElementById("stockTableBody");
+      if (filteredStocks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合「首日穿越20MA＋大長紅K(6%~10%)」條件的標的</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filteredStocks.map(s => {
+        const isSelected = s.code === selectedStockCode;
+        const rowBg = isSelected ? "bg-blue-900/25" : "hover:bg-slate-800/40";
+        const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
+        const pctSign = s.changePct > 0 ? "+" : "";
+
+        let badgeHtml = "";
+        if (s.status === "BREAKOUT") {
+          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進</span>`;
+        } else if (s.status === "BREAKDOWN") {
+          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低</span>`;
+        } else {
+          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 觀察中</span>`;
+        }
+
+        return `
+          <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
+            <td class="py-2.5 px-3">
+              <div class="font-bold text-white">${s.code} ${s.name}</div>
+              <div class="text-[11px] text-amber-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗ (首日突破)</div>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">
+                +${s.yestGainPct.toFixed(2)}%
+              </span>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div>
+              <div class="text-emerald-400">${s.yestLow.toFixed(2)}</div>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-amber-300 font-semibold">${s.volRatio}%</div>
+              <div class="text-[11px] text-slate-400">${formatVolDisplay(s.yestVol)}</div>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
+              <div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div>
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              ${badgeHtml}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function formatVolDisplay(vol) {
+      if (!vol || vol <= 0) return "0張";
+      if (vol >= 100000) return `${Math.round(vol / 1000).toLocaleString()}張`;
+      return `${Math.round(vol).toLocaleString()}張`;
+    }
+
+    function formatShortVol(vol) {
+      if (!vol || vol <= 0) return "0";
+      const lots = vol >= 100000 ? vol / 1000 : vol;
+      if (lots >= 10000) return `${(lots / 10000).toFixed(1)}萬張`;
+      return `${Math.round(lots).toLocaleString()}張`;
+    }
+
+    function selectStock(code) {
+      selectedStockCode = code;
+      renderTable();
+      const stock = allStocks.find(s => s.code === code);
+      if (stock) {
+        updateDetailPanel(stock, true);
+      }
+    }
+
+    function computeDynamicTodayMa20(bars, todayPrice, fallbackYestMa20) {
+      if (!bars || bars.length < 19 || !todayPrice || todayPrice <= 0) {
+        return fallbackYestMa20;
+      }
+      const last19 = bars.slice(-19);
+      const sum19 = last19.reduce((acc, b) => acc + b.close, 0);
+      return Number(((sum19 + todayPrice) / 20).toFixed(2));
+    }
+
+    function updateDetailPanel(stock, resetView = false) {
+      document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
+      document.getElementById("detailKeyKTag").textContent = `★ 首日突破20MA大長紅 (+${stock.yestGainPct.toFixed(2)}%)`;
+      document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 昨量 ${formatVolDisplay(stock.yestVol)} (${stock.volRatio}%) ｜ 今日量 ${formatVolDisplay(stock.todayVol)}`;
+
+      document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
+      document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
+
+      // 顯示今日開盤與今日收盤/現價，並依實際開收決定顏色（收 < 開為綠，收 >= 開為紅）
+      const isTodayRed = stock.todayPrice >= stock.todayOpen;
+      const cardTodayEl = document.getElementById("cardTodayPrice");
+      cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
+      cardTodayEl.className = `text-xs md:text-sm font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+
+      const badge = document.getElementById("detailDecisionBadge");
+      if (stock.status === "BREAKOUT") {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300";
+        badge.textContent = "🔥 確認買進 (收盤 > 昨高)";
+      } else if (stock.status === "BREAKDOWN") {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300";
+        badge.textContent = "❄️ 跌破昨低 (不考慮)";
+      } else {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300";
+        badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
+      }
+
+      let bars = stock.realBars.map(b => ({ ...b }));
+      const warningEl = document.getElementById("noHistoryWarning");
+      let todayMa20 = stock.yestMa20;
+
+      if (bars.length === 0) {
+        warningEl.classList.remove("hidden");
+        if (stock.yestOpen > 0 && stock.yestHigh > 0) {
+          bars.push({
+            date: "昨日(關鍵K)",
+            open: stock.yestOpen,
+            high: stock.yestHigh,
+            low: stock.yestLow,
+            close: stock.yestClose,
+            ma20: stock.yestMa20,
+            vol: stock.yestVol,
+            isKeyK: true
           });
         }
+        if (stock.todayPrice > 0) {
+          bars.push({
+            date: "今日",
+            open: stock.todayOpen,
+            high: stock.todayHigh,
+            low: stock.todayLow,
+            close: stock.todayPrice,
+            ma20: stock.yestMa20,
+            vol: stock.todayVol || 0,
+            isToday: true
+          });
+        }
+      } else {
+        warningEl.classList.add("hidden");
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+        const lastBar = bars[bars.length - 1];
+
+        if (lastBar.date !== todayStr && lastBar.date !== "今日" && stock.todayPrice > 0) {
+          todayMa20 = computeDynamicTodayMa20(bars, stock.todayPrice, stock.yestMa20);
+          const last4Vols = bars.slice(-4).reduce((acc, b) => acc + (b.vol || 0), 0);
+          const todayVolVal = stock.todayVol > 0 ? stock.todayVol : 0;
+          const todayMa5Vol = (last4Vols + todayVolVal) / 5;
+
+          bars.push({
+            date: "今日",
+            open: stock.todayOpen,
+            high: stock.todayHigh,
+            low: stock.todayLow,
+            close: stock.todayPrice,
+            ma20: todayMa20,
+            vol: todayVolVal,
+            ma5Vol: todayMa5Vol,
+            isToday: true
+          });
+        } else if (lastBar.date === todayStr || lastBar.date === "今日") {
+          lastBar.open = stock.todayOpen > 0 ? stock.todayOpen : lastBar.open;
+          lastBar.close = stock.todayPrice;
+          lastBar.high = Math.max(lastBar.high, stock.todayHigh, stock.todayPrice);
+          lastBar.low = Math.min(lastBar.low, stock.todayLow, stock.todayPrice);
+          if (stock.todayVol > 0) lastBar.vol = stock.todayVol;
+          lastBar.isToday = true;
+
+          const prev19Bars = bars.slice(0, -1);
+          todayMa20 = computeDynamicTodayMa20(prev19Bars, stock.todayPrice, stock.yestMa20);
+          lastBar.ma20 = todayMa20;
+        }
+
+        if (bars.length >= 2) {
+          bars[bars.length - 2].isKeyK = true;
+        }
+      }
+
+      const maArrow = todayMa20 > stock.yestMa20 ? "↗" : (todayMa20 < stock.yestMa20 ? "↘" : "→");
+      const cardMaEl = document.getElementById("cardMa20");
+      cardMaEl.textContent = `${stock.yestMa20.toFixed(2)} / ${todayMa20.toFixed(2)} ${maArrow}`;
+      cardMaEl.className = `text-xs md:text-sm font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
+
+      chartState.bars = bars;
+      if (resetView) {
+        chartState.visibleCount = 10;
+        chartState.rightOffset = 0;
+      }
+
+      updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
+      renderCanvasChart();
+    }
+
+    function zoomChart(delta) {
+      const total = chartState.bars.length;
+      const maxAllow = Math.max(10, total);
+      let nextCount = chartState.visibleCount + delta;
+      nextCount = Math.max(5, Math.min(maxAllow, nextCount));
+      chartState.visibleCount = nextCount;
+      clampRightOffset();
+      renderCanvasChart();
+    }
+
+    function resetChartZoom() {
+      chartState.visibleCount = 10;
+      chartState.rightOffset = 0;
+      renderCanvasChart();
+    }
+
+    function clampRightOffset() {
+      const maxOffset = Math.max(0, chartState.bars.length - chartState.visibleCount);
+      chartState.rightOffset = Math.max(0, Math.min(maxOffset, chartState.rightOffset));
+    }
+
+    function initCanvasEvents() {
+      const canvas = document.getElementById("klineCanvas");
+
+      canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 2 : -2;
+        zoomChart(delta);
+      }, { passive: false });
+
+      canvas.addEventListener("mousedown", (e) => {
+        chartState.isDragging = true;
+        chartState.dragStartX = e.clientX;
+        chartState.dragStartOffset = chartState.rightOffset;
+      });
+
+      window.addEventListener("mouseup", () => {
+        chartState.isDragging = false;
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        chartState.mouseX = x;
+        chartState.mouseY = y;
+
+        if (chartState.isDragging) {
+          const dx = e.clientX - chartState.dragStartX;
+          const plotW = rect.width - 80;
+          const pxPerBar = plotW / chartState.visibleCount;
+          const shiftBars = Math.round(dx / pxPerBar);
+          chartState.rightOffset = chartState.dragStartOffset + shiftBars;
+          clampRightOffset();
+        }
+
+        renderCanvasChart();
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        chartState.mouseX = -1;
+        chartState.mouseY = -1;
+        renderCanvasChart();
+      });
+    }
+
+    function renderCanvasChart() {
+      const canvas = document.getElementById("klineCanvas");
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      ctx.fillStyle = "#080c14";
+      ctx.fillRect(0, 0, width, height);
+
+      const stock = allStocks.find(s => s.code === selectedStockCode);
+      const bars = chartState.bars;
+      if (!stock || bars.length === 0) return;
+
+      clampRightOffset();
+      const endIdx = bars.length - chartState.rightOffset;
+      const startIdx = Math.max(0, endIdx - chartState.visibleCount);
+      const visibleBars = bars.slice(startIdx, endIdx);
+
+      document.getElementById("visibleCountBadge").textContent = `顯示 ${visibleBars.length} 根 (共 ${bars.length} 根)`;
+      if (visibleBars.length > 0) {
+        document.getElementById("dataRangeInfo").textContent = `區間：${visibleBars[0].date} ～ ${visibleBars[visibleBars.length - 1].date}`;
+      }
+
+      const padLeft = 14;
+      const padRight = 68;
+      const padTop = 46;
+      const padBottom = 22;
+      const gapBetweenCharts = 16;
+
+      const totalPlotH = height - padTop - padBottom - gapBetweenCharts;
+      const pricePlotH = Math.floor(totalPlotH * 0.72);
+      const volPlotTop = padTop + pricePlotH + gapBetweenCharts;
+      const volPlotH = totalPlotH - pricePlotH;
+      const plotW = width - padLeft - padRight;
+
+      const allPrices = [
+        ...visibleBars.flatMap(b => [b.open, b.high, b.low, b.close, b.ma20]),
+        stock.yestHigh,
+        stock.yestLow
+      ].filter(v => v !== null && !isNaN(v) && v > 0);
+
+      const rawMax = Math.max(...allPrices);
+      const rawMin = Math.min(...allPrices);
+      const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
+      const maxY = rawMax + span * 0.1;
+      const minY = rawMin - span * 0.1;
+
+      const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH;
+      const yToPrice = (y) => maxY - ((y - padTop) / pricePlotH) * (maxY - minY);
+
+      const allVols = visibleBars.flatMap(b => [b.vol || 0, b.ma5Vol || 0]).filter(v => v > 0);
+      const maxVol = allVols.length > 0 ? Math.max(...allVols) * 1.15 : 100;
+      const volToY = (v) => volPlotTop + volPlotH - (Math.max(0, v) / maxVol) * volPlotH;
+
+      ctx.font = "11px monospace";
+      ctx.textAlign = "left";
+      for (let i = 0; i <= 4; i++) {
+        const val = maxY - ((maxY - minY) * i) / 4;
+        const y = Math.round(priceToY(val)) + 0.5;
+
+        ctx.strokeStyle = "#162033";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#64748b";
+        ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
+      }
+
+      // 成交量副圖分隔線與當日成交量提示
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, volPlotTop - 6);
+      ctx.lineTo(width - padRight, volPlotTop - 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "10px monospace";
+      ctx.fillText("今日量", width - padRight + 6, volPlotTop + 10);
+      ctx.fillStyle = "#c084fc";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText(formatShortVol(stock.todayVol), width - padRight + 6, volPlotTop + 23);
+
+      drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
+      drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
+
+      const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
+      const stepX = plotW / slotCount;
+      const candleW = Math.max(6, Math.min(34, stepX * 0.62));
+
+      let hoveredBar = null;
+      let hoveredPrevBar = null;
+      let hoveredCx = -1;
+
+      visibleBars.forEach((b, idx) => {
+        const cx = padLeft + stepX * idx + stepX / 2;
+        const leftEdge = padLeft + stepX * idx;
+        const rightEdge = leftEdge + stepX;
+
+        if (chartState.mouseX >= leftEdge && chartState.mouseX < rightEdge && chartState.mouseY >= padTop && chartState.mouseY <= height - padBottom) {
+          hoveredBar = b;
+          const globalIdx = startIdx + idx;
+          hoveredPrevBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+          hoveredCx = cx;
+        }
+      });
+
+      const ma20Points = [];
+      const ma5VolPoints = [];
+
+      visibleBars.forEach((b, idx) => {
+        const cx = padLeft + stepX * idx + stepX / 2;
+        const yOpen = priceToY(b.open);
+        const yClose = priceToY(b.close);
+        const yHigh = priceToY(b.high);
+        const yLow = priceToY(b.low);
+
+        const globalIdx = startIdx + idx;
+        const prevGlobalBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+
+        if (b.ma20 && b.ma20 > 0) {
+          ma20Points.push({
+            x: cx,
+            y: priceToY(b.ma20),
+            val: b.ma20,
+            prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20
+          });
+        }
+        if (b.ma5Vol && b.ma5Vol > 0) {
+          ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
+        }
+
+        // 台股紅漲綠跌：收盤 >= 開盤為紅 (#f43f5e)，收盤 < 開盤為綠 (#10b981)
+        const isUp = b.close >= b.open;
+        const color = isUp ? "#f43f5e" : "#10b981";
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(cx, yHigh);
+        ctx.lineTo(cx, yLow);
+        ctx.stroke();
+
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+        ctx.fillStyle = color;
+        ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
+
+        if (b.isKeyK) {
+          ctx.strokeStyle = "#fbbf24";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
+        }
+
+        // 繪製下方成交量柱狀圖（若當日有成交量，即使很小也至少給 3px 高度清楚顯示）
+        if (b.vol !== undefined && b.vol !== null && b.vol > 0) {
+          const yVolTop = volToY(b.vol);
+          const volBarH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
+          ctx.fillStyle = isUp ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
+          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
+
+          // 在「今日」成交量柱上方直接標示張數數字，方便一眼看到當日量
+          if (b.isToday) {
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = "bold 9px monospace";
+            ctx.textAlign = "center";
+            const shortV = b.vol >= 100000 ? Math.round(b.vol / 1000) : Math.round(b.vol);
+            ctx.fillText(`${shortV}張`, cx, Math.max(volPlotTop + 9, yVolTop - 3));
+          }
+        }
+
+        const shortDate = b.date.length >= 10 ? b.date.slice(5) : b.date;
+        ctx.fillStyle = b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8");
+        ctx.font = (b.isKeyK || b.isToday) ? "bold 10px sans-serif" : "10px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(shortDate, cx, height - 6);
+      });
+
+      // 20MA 三色趨勢線 (無紅無綠：上升=亮橘金、走平=純白銀、下降=亮電光藍)
+      if (ma20Points.length >= 2) {
+        ctx.lineWidth = 2.4;
+        for (let i = 1; i < ma20Points.length; i++) {
+          const p0 = ma20Points[i - 1];
+          const p1 = ma20Points[i];
+          const diff = Number((p1.val - p0.val).toFixed(2));
+
+          let slopeColor = "#e2e8f0";
+          if (diff > 0) slopeColor = "#f59e0b";
+          else if (diff < 0) slopeColor = "#38bdf8";
+
+          ctx.strokeStyle = slopeColor;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+      }
+
+      if (ma5VolPoints.length >= 2) {
+        ctx.strokeStyle = "#c084fc";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ma5VolPoints.forEach((pt, i) => {
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+      }
+
+      if (hoveredBar && hoveredCx > 0) {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(hoveredCx, padTop);
+        ctx.lineTo(hoveredCx, height - padBottom);
+        ctx.stroke();
+
+        const clampedY = Math.max(padTop, Math.min(height - padBottom, chartState.mouseY));
+        ctx.beginPath();
+        ctx.moveTo(padLeft, clampedY);
+        ctx.lineTo(width - padRight, clampedY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (clampedY <= padTop + pricePlotH) {
+          const hoverPrice = yToPrice(clampedY);
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(width - padRight + 2, clampedY - 9, 60, 18);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(hoverPrice.toFixed(2), width - padRight + 6, clampedY + 4);
+        }
+
+        updateHudDisplay(hoveredBar, hoveredPrevBar);
       }
     }
 
-    latestCombinedStocks.forEach(stock => {
-      const rt = realtimeMap.get(stock.code);
-      if (rt) {
-        stock.todayOpen = rt.open;
-        stock.todayHigh = Math.max(rt.high, rt.open, rt.price);
-        stock.todayLow = Math.min(rt.low, rt.open, rt.price);
-        stock.todayClose = rt.price;
-        stock.price = rt.price;
-        if (rt.vol > 0) stock.todayVol = rt.vol;
-      } else {
-        stock.todayOpen = stock.todayOpen || stock.yestClose;
-        stock.todayHigh = stock.todayHigh || stock.yestClose;
-        stock.todayLow = stock.todayLow || stock.yestClose;
-        stock.todayClose = stock.todayClose || stock.yestClose;
-        stock.price = stock.todayClose;
+    function drawHorizontalRefLine(ctx, price, y, color, label, x1, x2) {
+      if (!price || price <= 0) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = color;
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${label} ${price.toFixed(2)}`, x2 + 6, y - 3);
+    }
+
+    function updateHudDisplay(bar, prevBar) {
+      const hud = document.getElementById("ohlcHud");
+      if (!bar) return;
+
+      const refClose = prevBar ? prevBar.close : bar.open;
+      const diff = bar.close - refClose;
+      const pct = refClose > 0 ? ((diff / refClose) * 100).toFixed(2) : "0.00";
+      const isUp = diff >= 0;
+      const colorClass = isUp ? "text-rose-400" : "text-emerald-400";
+      const sign = diff > 0 ? "+" : "";
+
+      let maHtml = "";
+      if (bar.ma20) {
+        const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
+        const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
+        const maColor = maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200");
+        const maDir = maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→");
+        maHtml = `<span class="${maColor} font-bold">20MA:${bar.ma20.toFixed(2)}${maDir}</span>`;
       }
-    });
 
-    console.log(`[${new Date().toLocaleTimeString()}] 個股今日開高低收與成交量已更新 (同步 ${realtimeMap.size} 檔)`);
-  } catch (err) {
-    console.error('即時報價更新失敗:', err);
-  } finally {
-    isRealtimeUpdating = false;
-  }
-}
+      const volText = `<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>`;
 
-app.get('/stocks', (req, res) => {
-  if (latestCombinedStocks.length === 0) {
-    return res.status(503).json({ error: '後端剛啟動，正在載入歷史資料與計算基準，請稍候幾秒後重整網頁。' });
-  }
-  res.json(latestCombinedStocks);
-});
+      hud.innerHTML = `
+        <span class="text-amber-300 font-bold">${bar.date}</span>
+        <span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span>
+        <span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span>
+        <span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>
+        <span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span>
+        <span class="${colorClass}">(${sign}${pct}%)</span>
+        ${volText}
+        ${maHtml}
+      `;
+    }
 
-app.listen(PORT, async () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  await initAndScheduleBackgroundSync();
-  setInterval(initAndScheduleBackgroundSync, 3600000);
-  setInterval(refreshRealtimePricesOnly, 5000);
-});
+    function openApiModal() {
+      document.getElementById("apiModal").classList.remove("hidden");
+      document.getElementById("apiModal").classList.add("flex");
+    }
+
+    function closeApiModal() {
+      document.getElementById("apiModal").classList.add("hidden");
+      document.getElementById("apiModal").classList.remove("flex");
+    }
+
+    function saveAndSyncApi() {
+      const inputVal = document.getElementById("apiUrlInput").value.trim();
+      if (inputVal) {
+        apiUrl = inputVal;
+        localStorage.setItem("custom_stock_api_url", apiUrl);
+      }
+      closeApiModal();
+      fetchStocksData();
+    }
+
+    function exportCSV() {
+      if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
+      const headers = ["股票代號", "股票名稱", "昨日長紅漲幅%", "昨日20MA", "昨高", "昨低", "昨收", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "今日成交量", "確認狀態"];
+      const rows = filteredStocks.map(s => [
+        s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.yestHigh, s.yestLow, s.yestClose, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status
+      ]);
+      const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `首日突破20MA大長紅關鍵K清單_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
