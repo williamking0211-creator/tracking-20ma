@@ -22,6 +22,15 @@
     #klineCanvas:active {
       cursor: grabbing;
     }
+    .sortable-th {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s, background-color 0.15s;
+    }
+    .sortable-th:hover {
+      color: #ffffff;
+      background-color: rgba(30, 41, 59, 0.85);
+    }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -163,13 +172,21 @@
 
       <div class="overflow-x-auto max-h-[670px]">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-slate-900/90 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
+          <thead class="bg-slate-900/95 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
             <tr>
               <th class="py-2.5 px-3">股票代號/名稱</th>
-              <th class="py-2.5 px-2 text-right">昨日長紅漲幅</th>
-              <th class="py-2.5 px-2 text-right">昨高 / 昨低</th>
-              <th class="py-2.5 px-2 text-right">昨量 vs 5日均量</th>
-              <th class="py-2.5 px-2 text-right">今日收盤/現價</th>
+              <th onclick="toggleSort('yestGainPct')" title="點擊切換大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+                昨日長紅漲幅 <span id="sort-icon-yestGainPct" class="text-slate-500 ml-0.5">⇅</span>
+              </th>
+              <th onclick="toggleSort('yestHigh')" title="點擊切換昨高大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+                昨高 / 昨低 <span id="sort-icon-yestHigh" class="text-slate-500 ml-0.5">⇅</span>
+              </th>
+              <th onclick="toggleSort('volExtraPct')" title="點擊切換昨量比大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+                昨量 vs 5日均量 <span id="sort-icon-volExtraPct" class="text-slate-500 ml-0.5">⇅</span>
+              </th>
+              <th onclick="toggleSort('todayPrice')" title="點擊切換今日現價大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+                今日收盤/現價 <span id="sort-icon-todayPrice" class="text-slate-500 ml-0.5">⇅</span>
+              </th>
               <th class="py-2.5 px-3 text-center">確認K 決策</th>
             </tr>
           </thead>
@@ -325,6 +342,12 @@
     let selectedStockCode = null;
     let syncTimer = null;
 
+    // 表格欄位排序狀態：{ field: 'yestGainPct' | 'yestHigh' | 'volExtraPct' | 'todayPrice' | null, dir: 'desc' | 'asc' | null }
+    let sortState = {
+      field: null,
+      dir: null
+    };
+
     const chartState = {
       bars: [],
       visibleCount: 10,
@@ -360,6 +383,36 @@
       document.getElementById("volOperatorSelect").value = "GTE";
       document.getElementById("volThresholdInput").value = pct;
       applyFiltersAndRender();
+    }
+
+    // 切換欄位排序（大到小 desc -> 小到大 asc -> 預設 null）
+    function toggleSort(field) {
+      if (sortState.field !== field) {
+        sortState.field = field;
+        sortState.dir = 'desc';
+      } else if (sortState.dir === 'desc') {
+        sortState.dir = 'asc';
+      } else {
+        sortState.field = null;
+        sortState.dir = null;
+      }
+      updateSortIcons();
+      renderTable();
+    }
+
+    function updateSortIcons() {
+      const fields = ['yestGainPct', 'yestHigh', 'volExtraPct', 'todayPrice'];
+      fields.forEach(f => {
+        const el = document.getElementById(`sort-icon-${f}`);
+        if (!el) return;
+        if (sortState.field === f) {
+          el.textContent = sortState.dir === 'desc' ? '▼' : '▲';
+          el.className = 'text-amber-400 font-bold ml-0.5';
+        } else {
+          el.textContent = '⇅';
+          el.className = 'text-slate-500 ml-0.5';
+        }
+      });
     }
 
     async function fetchStocksData(isSilent = false) {
@@ -464,11 +517,9 @@
         }
       }
 
-      // 取得昨日成交量與前5日平均量，並換算昨日比前5日均量多了幾%
       const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
       let rawAvgVol5 = parseFloat(raw.avgVol5 || raw.ma5Vol) || 0;
 
-      // 若後端沒帶 avgVol5，從歷史陣列中取「昨日之前5天（不含昨日）」的成交量計算平均
       if (rawAvgVol5 <= 0 && realBars.length >= 6) {
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = realBars[realBars.length - 1];
@@ -484,7 +535,6 @@
       if (rawAvgVol5 <= 0) rawAvgVol5 = 1;
 
       const volRatio = Math.round((rawYestVol / rawAvgVol5) * 100);
-      // 換算「昨天相較前5日均量多了幾%」：例如 477張 vs 200張 -> (477-200)/200 = +138.5%
       const volExtraPct = Number((((rawYestVol - rawAvgVol5) / rawAvgVol5) * 100).toFixed(1));
 
       let prevClose = parseFloat(raw.prevClose || raw.beforeYestClose) || 0;
@@ -558,11 +608,24 @@
 
     function renderTable() {
       const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-      filteredStocks = allStocks.filter(s => {
+      let list = allStocks.filter(s => {
         const matchFilter = currentFilter === "ALL" || s.status === currentFilter;
         const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
         return matchFilter && matchKeyword;
       });
+
+      // 套用欄位排序（大到小 desc 或 小到大 asc）
+      if (sortState.field && sortState.dir) {
+        const f = sortState.field;
+        const factor = sortState.dir === 'desc' ? -1 : 1;
+        list = [...list].sort((a, b) => {
+          const valA = Number(a[f]) || 0;
+          const valB = Number(b[f]) || 0;
+          return (valA - valB) * factor;
+        });
+      }
+
+      filteredStocks = list;
 
       const tbody = document.getElementById("stockTableBody");
       if (filteredStocks.length === 0) {
@@ -658,7 +721,6 @@
       const diffActionText = stock.volExtraPct >= 0 ? `多了 ${extraSign}${stock.volExtraPct}%` : `少了 ${stock.volExtraPct}%`;
       document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 今日量 ${formatVolDisplay(stock.todayVol)}`;
 
-      // 更新專屬成交量對比條（前五日平均量、前一天成交量、昨天相較前五日多了幾%）
       document.getElementById("bannerAvgVol5").textContent = formatVolDisplay(stock.avgVol5);
       document.getElementById("bannerYestVol").textContent = formatVolDisplay(stock.yestVol);
       const diffBadge = document.getElementById("bannerVolDiffBadge");
