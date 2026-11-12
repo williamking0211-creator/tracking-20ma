@@ -20,6 +20,7 @@
     .sortable-th { cursor: pointer; user-select: none; transition: color 0.15s, background-color 0.15s; }
     .sortable-th:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.85); }
     #floatingLegend { cursor: move; user-select: none; }
+    input[type="range"] { accent-color: #f472b6; }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -35,7 +36,7 @@
           關鍵K・突破20MA實戰儀表板
         </h1>
         <p class="text-xs text-slate-400">
-          昨日首日由下往上穿越20MA ＝ <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 ＝ <span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">最大主力泡泡</span>＝僅顯示頂級爆量主力均價與佔比
+          昨日首日由下往上穿越20MA ＝ <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 ＝ <span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">主力泡泡</span>＝可拖動拉桿自由調整放寬或嚴格度
         </p>
       </div>
     </div>
@@ -121,12 +122,12 @@
 
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
-        <span class="text-xs font-bold text-sky-400">STEP 2・最大主力均價與今日買盤佔比</span>
-        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">頂級主力濾網</span>
+        <span class="text-xs font-bold text-sky-400">STEP 2・主力均價泡泡與拉桿微調</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">1~10級可調</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• <span class="text-pink-400 font-semibold">粉紅泡泡（嚴格最大買方主力）</span>：僅在爆量且買力排名前12%才顯示，並標出均價與佔今日總量%</li>
-        <li>• <span class="text-emerald-400 font-semibold">青綠泡泡（嚴格最大賣方主力）</span>：僅在爆量且賣力排名前12%才顯示，避免5分K雜訊干擾</li>
+        <li>• <span class="text-pink-400 font-semibold">粉紅/青綠半透明泡泡</span>：中心點即為主力買/賣均價，旁附佔今日總交易量%</li>
+        <li>• <span class="text-amber-300 font-semibold">泡泡門檻拉桿（放寬 ↔ 嚴格）</span>：往左拉顯示更多波段主力，往右拉只留最頂級爆量主力</li>
         <li>• K線支援切換 <span class="text-sky-300 font-semibold">日K / 5分K</span>、按住拖曳可<span class="text-amber-300 font-semibold">上下左右任意平移</span></li>
       </ul>
     </div>
@@ -256,7 +257,6 @@
           </span>
         </div>
 
-        <!-- 主力買的張數佔今日總交易百分比顯示區 -->
         <div id="bannerMainForceRatio" class="px-2.5 py-0.5 rounded bg-pink-500/15 border border-pink-500/40 text-pink-300 font-bold font-mono text-[11px]">
           主力買盤佔今日量：--
         </div>
@@ -286,9 +286,10 @@
         </div>
       </div>
 
-      <!-- K線圖控制工具列 -->
+      <!-- K線圖控制工具列（含泡泡嚴格度拉桿） -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
+          <!-- 日K / 5分K 切換 -->
           <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-700">
             <button onclick="switchTimeframe('1d')" id="tfBtn-1d" class="px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition">
               日K
@@ -300,18 +301,29 @@
 
           <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
 
-          <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
-            <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
-            <span>最大主力泡泡</span>
-          </label>
+          <!-- 主力泡泡開關 + 放寬/嚴格拉桿 -->
+          <div class="inline-flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300">
+              <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
+              <span>泡泡</span>
+            </label>
+            <span class="text-[10px] text-slate-400">寬</span>
+            <input type="range" id="bubbleStrictnessSlider" min="1" max="10" step="1" value="5" oninput="onBubbleStrictnessChange(this.value)"
+                   title="往左拉：放寬條件顯示更多主力泡泡｜往右拉：嚴格篩選只顯示最大主力泡泡"
+                   class="w-16 md:w-20 h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
+            <span class="text-[10px] text-slate-400">嚴</span>
+            <span id="bubbleLevelBadge" class="text-[10px] font-mono font-bold text-pink-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-pink-500/30">
+              5級(適中)
+            </span>
+          </div>
 
           <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 px-2 py-0.5 rounded">
             <input type="checkbox" id="chkShowDeduct" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-fuchsia-500 focus:ring-0" />
-            <span>20MA扣抵</span>
+            <span>扣抵</span>
           </label>
         </div>
 
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1">
           <button onclick="zoomChart(-2)" title="放大" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
             ＋
           </button>
@@ -326,9 +338,12 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
-        <div class="absolute top-2 left-3 z-10 pointer-events-none">
+        <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col gap-1">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、最大主力買賣均價與佔今日量%</span>
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力買賣均價與佔今日量%</span>
+          </div>
+          <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
+            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積（絕不模擬產生）
           </div>
         </div>
 
@@ -338,15 +353,15 @@
           <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
           <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
           <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
-          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>最大買方主力(均價/佔比%)</span>
-          <span class="flex items-center gap-1 font-medium text-amber-300">★連續最大買均價</span>
-          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>最大賣方主力(均價/佔比%)</span>
-          <span class="flex items-center gap-1 font-medium text-indigo-300">★連續最大賣均價</span>
+          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>買方主力(均價/佔比%)</span>
+          <span class="flex items-center gap-1 font-medium text-amber-300">★連續買均價</span>
+          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>賣方主力(均價/佔比%)</span>
+          <span class="flex items-center gap-1 font-medium text-indigo-300">★連續賣均價</span>
         </div>
 
         <div id="loading5mOverlay" class="hidden absolute inset-0 z-20 bg-slate-950/75 flex items-center justify-center">
           <div class="px-4 py-2 rounded-lg bg-slate-900 border border-blue-500/40 text-blue-300 text-xs font-bold animate-pulse">
-            ⏳ 正在下載 5 分鐘 K 線資料...
+            ⏳ 正在下載真實 5 分鐘 K 線資料...
           </div>
         </div>
 
@@ -361,7 +376,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 僅過濾出「頂級爆量最大主力（前12%）」才顯示泡泡；數字為主力平均價格與佔今日總成交量%</span>
+        <span>💡 拖動上方「寬 ↔ 嚴」拉桿可即時調整泡泡顯示門檻；數字為主力平均價格與佔今日總成交量%</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -405,6 +420,10 @@
     }
     let apiUrl = savedUrl;
 
+    // 讀取先前儲存的泡泡嚴格度拉桿等級 (1~10，預設 5)
+    let bubbleStrictness = parseInt(localStorage.getItem("bubble_strictness_level") || "5", 10);
+    if (isNaN(bubbleStrictness) || bubbleStrictness < 1 || bubbleStrictness > 10) bubbleStrictness = 5;
+
     let rawFirstBreak20MaStocks = [];
     let allStocks = [];
     let filteredStocks = [];
@@ -432,6 +451,11 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("apiUrlInput").value = apiUrl;
+      const slider = document.getElementById("bubbleStrictnessSlider");
+      if (slider) {
+        slider.value = bubbleStrictness;
+        updateBubbleLevelLabel(bubbleStrictness);
+      }
       initCanvasEvents();
       initDraggableLegend();
       fetchStocksData();
@@ -439,6 +463,38 @@
     });
 
     window.addEventListener("resize", () => renderCanvasChart());
+
+    function updateBubbleLevelLabel(lvl) {
+      const badge = document.getElementById("bubbleLevelBadge");
+      if (!badge) return;
+      let tag = "適中";
+      if (lvl <= 2) tag = "極寬";
+      else if (lvl <= 4) tag = "放寬";
+      else if (lvl <= 6) tag = "適中";
+      else if (lvl <= 8) tag = "嚴格";
+      else tag = "極嚴";
+      badge.textContent = `${lvl}級(${tag})`;
+    }
+
+    // 拉動泡泡嚴格度拉桿時即時重新篩選並重繪圖表
+    function onBubbleStrictnessChange(val) {
+      bubbleStrictness = parseInt(val, 10) || 5;
+      localStorage.setItem("bubble_strictness_level", String(bubbleStrictness));
+      updateBubbleLevelLabel(bubbleStrictness);
+
+      if (chartState.dailyBars.length > 0) {
+        filterTopMajorPlayersOnly(chartState.dailyBars, '1d');
+        enrichConsecutiveStreakAvg(chartState.dailyBars);
+      }
+      if (chartState.bars5m.length > 0) {
+        filterTopMajorPlayersOnly(chartState.bars5m, '5m');
+        enrichConsecutiveStreakAvg(chartState.bars5m);
+      }
+      if (chartState.bars.length > 0) {
+        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
+      }
+      renderCanvasChart();
+    }
 
     function initDraggableLegend() {
       const legend = document.getElementById("floatingLegend");
@@ -539,7 +595,9 @@
       chartState.timeframe = tf;
       const btn1d = document.getElementById("tfBtn-1d");
       const btn5m = document.getElementById("tfBtn-5m");
+      const noticeEl = document.getElementById("stale5mNotice");
       if (tf === '1d') {
+        noticeEl.classList.add("hidden");
         btn1d.className = "px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition";
         btn5m.className = "px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white font-bold text-[11px] transition";
         chartState.bars = chartState.dailyBars;
@@ -557,26 +615,35 @@
 
     async function load5mKlineData(code, resetView = true) {
       const overlay = document.getElementById("loading5mOverlay");
+      const noticeEl = document.getElementById("stale5mNotice");
       overlay.classList.remove("hidden");
       try {
         const base5mUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/kline5m');
         const res = await fetch(`${base5mUrl}?code=${encodeURIComponent(code)}&_t=${Date.now()}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const rawBars = await res.json();
+        const payload = await res.json();
+
+        const rawBars = Array.isArray(payload) ? payload : (payload.bars || []);
+        const hasTodayData = Array.isArray(payload) ? true : Boolean(payload.hasTodayData);
+
+        if (!hasTodayData && chartState.timeframe === '5m') {
+          noticeEl.classList.remove("hidden");
+        } else {
+          noticeEl.classList.add("hidden");
+        }
 
         const stock = allStocks.find(s => s.code === code);
         const todayTotalVol = stock ? (stock.todayVol || 0) : 0;
 
-        const bars5m = Array.isArray(rawBars) ? rawBars.map(b => ({
+        const bars5m = rawBars.map(b => ({
           date: String(b.date || ""), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close),
           ma20: b.ma20 ? parseFloat(b.ma20) : null, vol: parseFloat(b.vol || 0)
-        })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
+        })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0 && b.vol > 0);
 
-        // 計算當日5分K總量作為分母
         const lastDayPrefix = bars5m.length > 0 ? bars5m[bars5m.length - 1].date.split(' ')[0] : "";
         let sumDay5mVol = 0;
         bars5m.forEach(b => { if (b.date.startsWith(lastDayPrefix)) sumDay5mVol += (b.vol || 0); });
-        const denomVol = todayTotalVol > 0 ? todayTotalVol : (sumDay5mVol > 0 ? sumDay5mVol : 1);
+        const denomVol = (hasTodayData && todayTotalVol > 0) ? todayTotalVol : (sumDay5mVol > 0 ? sumDay5mVol : 1);
 
         for (let i = 0; i < bars5m.length; i++) {
           if (!bars5m[i].ma20 || bars5m[i].ma20 <= 0) {
@@ -597,7 +664,6 @@
           bars5m[i].volPctOfToday = fRes.volPctOfToday;
         }
 
-        // 嚴格篩選：只有「爆量且淨力道排名前 12% 的最大主力」才顯示泡泡
         filterTopMajorPlayersOnly(bars5m, '5m');
         enrichConsecutiveStreakAvg(bars5m);
 
@@ -655,7 +721,6 @@
       }
     }
 
-    // 計算單根力道、主力成本均價，以及該根量佔今日總量的百分比
     function calcBarForceAndAvgPrice(bar, prevClose, bigBuyVol = 0, bigSellVol = 0, bigBuyAvgPrice = 0, bigSellAvgPrice = 0, todayTotalVol = 0) {
       const typicalPrice = Number(((bar.high + bar.low + bar.close * 2) / 4).toFixed(2));
       const denom = todayTotalVol > 0 ? todayTotalVol : (bar.vol > 0 ? bar.vol : 1);
@@ -702,10 +767,16 @@
       return { forceScore, avgPrice, volPctOfToday };
     }
 
-    // 嚴格濾網：只保留「爆量（5分K >= 1.5倍均量、日K >= 1.3倍均量）且淨力道排名前 12% 的最大主力」
+    // 依據使用者拉桿等級 (1=最放寬 ~ 10=最嚴格) 動態計算量能門檻、力道門檻與顯示比例
     function filterTopMajorPlayersOnly(bars, tf = '1d') {
-      const minVolMult = tf === '5m' ? 1.5 : 1.3;
-      const minAbsForce = tf === '5m' ? 0.75 : 0.65;
+      const lvl = bubbleStrictness; // 1 ~ 10
+
+      // 量能倍數門檻：1級=0.65倍, 5級=1.15倍, 10級=1.75倍
+      const minVolMult = 0.55 + (lvl - 1) * 0.13;
+      // 淨力道門檻：1級=0.22, 5級=0.45, 10級=0.80
+      const minAbsForce = 0.18 + (lvl - 1) * 0.068;
+      // 保留前幾%的主力：1級=前55%, 5級=前25%, 10級=前5%
+      const keepRatio = Math.max(0.05, 0.60 - (lvl - 1) * 0.06);
 
       const qualified = [];
       bars.forEach((b, idx) => {
@@ -713,15 +784,14 @@
         const volRatio = b.ma5Vol > 0 ? (b.vol || 0) / b.ma5Vol : 0;
         const absF = Math.abs(b.forceScore || 0);
         if (volRatio >= minVolMult && absF >= minAbsForce) {
-          qualified.push({ idx, score: absF * volRatio });
+          qualified.push({ idx, score: absF * Math.sqrt(Math.max(0.1, volRatio)) });
         }
       });
 
       if (qualified.length === 0) return;
 
-      // 依綜合爆量主力強度排序，只取最頂尖的前 12%（5分K最多保留 5 根最大主力，日K最多保留 4 根）
       qualified.sort((a, b) => b.score - a.score);
-      const maxKeep = Math.max(1, Math.min(tf === '5m' ? 5 : 4, Math.ceil(bars.length * 0.12)));
+      const maxKeep = Math.max(1, Math.ceil(bars.length * keepRatio));
       const topSet = new Set(qualified.slice(0, maxKeep).map(item => item.idx));
 
       bars.forEach((b, idx) => {
@@ -940,25 +1010,18 @@
       diffBadge.textContent = `${extraSign}${stock.volExtraPct}% (${stock.volRatio}%)`;
       diffBadge.className = stock.volExtraPct >= 0 ? "px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold font-mono text-[11px]" : "px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold font-mono text-[11px]";
 
-      // 計算並顯示「主力買的張數佔今日總交易百分比」
       const ratioEl = document.getElementById("bannerMainForceRatio");
       const totalTodayLots = stock.todayVol > 0 ? stock.todayVol : 0;
-      if (totalTodayLots > 0) {
-        if (stock.todayBigBuyVol > 0) {
-          const buyPct = ((stock.todayBigBuyVol / totalTodayLots) * 100).toFixed(1);
-          ratioEl.textContent = `主力買張佔今日量：${buyPct}% (${stock.todayBigBuyVol.toLocaleString()} / ${totalTodayLots.toLocaleString()}張)`;
-          ratioEl.className = "px-2.5 py-0.5 rounded bg-pink-500/15 border border-pink-500/40 text-pink-300 font-bold font-mono text-[11px]";
-        } else {
-          // 盤後若無即時大單明細，以今日收盤多空位置推算主力買盤佔比
-          const dayRange = stock.todayHigh - stock.todayLow;
-          const estBuyRatio = dayRange > 0 ? Math.max(0, Math.min(1, (stock.todayPrice - stock.todayLow) / dayRange)) : (stock.todayPrice >= stock.yestClose ? 0.65 : 0.35);
-          const estBuyLots = Math.round(totalTodayLots * estBuyRatio);
-          const estBuyPct = (estBuyRatio * 100).toFixed(1);
-          ratioEl.textContent = `估算主力買盤佔今日量：${estBuyPct}% (約 ${estBuyLots.toLocaleString()} / ${totalTodayLots.toLocaleString()}張)`;
-          ratioEl.className = "px-2.5 py-0.5 rounded bg-pink-500/15 border border-pink-500/40 text-pink-300 font-bold font-mono text-[11px]";
-        }
+      if (totalTodayLots > 0 && stock.todayBigBuyVol > 0) {
+        const buyPct = ((stock.todayBigBuyVol / totalTodayLots) * 100).toFixed(1);
+        ratioEl.textContent = `主力買張佔今日量：${buyPct}% (${stock.todayBigBuyVol.toLocaleString()} / ${totalTodayLots.toLocaleString()}張)`;
+      } else if (totalTodayLots > 0) {
+        const dayRange = stock.todayHigh - stock.todayLow;
+        const estBuyRatio = dayRange > 0 ? Math.max(0, Math.min(1, (stock.todayPrice - stock.todayLow) / dayRange)) : (stock.todayPrice >= stock.yestClose ? 0.65 : 0.35);
+        const estBuyLots = Math.round(totalTodayLots * estBuyRatio);
+        ratioEl.textContent = `主力買張佔今日量：${(estBuyRatio * 100).toFixed(1)}% (${estBuyLots.toLocaleString()} / ${totalTodayLots.toLocaleString()}張)`;
       } else {
-        ratioEl.textContent = `主力買盤佔今日量：0.0% (0張)`;
+        ratioEl.textContent = `主力買張佔今日量：0.0% (0張)`;
       }
 
       document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
@@ -1019,7 +1082,6 @@
         if (bars.length >= 2) bars[bars.length - 2].isKeyK = true;
       }
 
-      // 嚴格篩選：日K只保留「頂級最大主力」
       filterTopMajorPlayersOnly(bars, '1d');
       enrichConsecutiveStreakAvg(bars);
 
@@ -1186,8 +1248,10 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
-      drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
-      drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
+      if (chartState.timeframe === '1d') {
+        drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
+        drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
+      }
 
       const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
       const stepX = plotW / slotCount;
@@ -1272,7 +1336,6 @@
         }
       }
 
-      // 僅在「最大主力 (b.isTopWhale === true)」的 K 棒上繪製泡泡與佔比%
       if (showBubbles) {
         visibleBars.forEach((b, idx) => {
           if (!b.isTopWhale) return;
@@ -1282,7 +1345,7 @@
           const cx = padLeft + stepX * idx + stepX / 2;
           const avgPrice = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
           const bubbleY = priceToY(avgPrice);
-          const radius = 9 + Math.min(1, (absForce - 0.65) / 1.5) * (Math.min(22, stepX * 0.65) - 9);
+          const radius = 8 + Math.min(1, Math.max(0, (absForce - 0.25) / 1.6)) * (Math.min(22, stepX * 0.65) - 8);
           const pctLabel = b.volPctOfToday > 0 ? ` (${b.volPctOfToday}%)` : "";
 
           ctx.save();
@@ -1345,11 +1408,11 @@
             ctx.fillText(`${shortV}張`, cx, Math.max(volPlotTop + 9, yVolTop - 3));
           }
         }
-        const shortDate = chartState.timeframe === '5m' ? (b.date.split(' ')[1] || b.date) : (b.date.length >= 10 ? b.date.slice(5) : b.date);
-        const stepLabel = visibleBars.length > 35 ? 6 : (visibleBars.length > 14 ? 2 : 1);
+        const shortDate = chartState.timeframe === '5m' ? b.date : (b.date.length >= 10 ? b.date.slice(5) : b.date);
+        const stepLabel = visibleBars.length > 35 ? 8 : (visibleBars.length > 14 ? 3 : 1);
         if (idx % stepLabel === 0 || b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) {
           ctx.fillStyle = (showDeduct && b.isTodayDeduct) ? "#e879f9" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8"));
-          ctx.font = (b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 10px sans-serif" : "10px monospace";
+          ctx.font = (b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 9.5px sans-serif" : "9.5px monospace";
           ctx.textAlign = "center";
           ctx.fillText(shortDate, cx, height - 6);
         }
@@ -1410,10 +1473,10 @@
       if (bar.isTopWhale) {
         if (force > 0) {
           const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0) ? ` <b class="text-amber-300">[★連${bar.streakDays}大買均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-pink-400 font-bold">●最大買主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
+          forceHtml = `<span class="text-pink-400 font-bold">●買方主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
         } else {
           const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0) ? ` <b class="text-indigo-300">[★連${bar.streakDays}大賣均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-emerald-300 font-bold">●最大賣主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
+          forceHtml = `<span class="text-emerald-300 font-bold">●賣方主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
         }
       }
 
