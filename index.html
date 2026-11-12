@@ -37,7 +37,7 @@
           關鍵K・突破20MA實戰儀表板
         </h1>
         <p class="text-xs text-slate-400">
-          昨日大長紅K(漲幅6%~10%)突破20MA = <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 = <span class="text-rose-400 font-semibold">確認K買進</span>
+          昨日大長紅K(漲幅6%~10%)＋<span class="text-amber-400 font-semibold">首日由下往上穿越20MA</span> = 關鍵K ｜ 今日收盤/尾盤站上昨高 = <span class="text-rose-400 font-semibold">確認K買進</span>
         </p>
       </div>
     </div>
@@ -62,7 +62,7 @@
         <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">盤前必備</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• 昨日收盤價由下往上穿越 20MA，且 20MA 斜率向上</li>
+        <li>• <span class="text-amber-300 font-semibold">前日收盤 ≤ 前日20MA，昨日正式站上20MA（首日穿越）</span>且 20MA 斜率向上</li>
         <li>• <span class="text-rose-400 font-semibold">必須收紅K (昨收 > 昨開)，且當根漲幅 6% ~ 10%</span></li>
         <li class="flex flex-wrap items-center gap-1.5 pt-0.5">
           <span>• 昨日成交量</span>
@@ -109,7 +109,7 @@
   <!-- 統計篩選器卡片 -->
   <section class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
     <button onclick="setFilter('ALL')" id="tab-ALL" class="filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition">
-      <div class="text-xs text-slate-400 mb-1">符合昨日「大長紅關鍵K」總數</div>
+      <div class="text-xs text-slate-400 mb-1">符合昨日「首日突破長紅關鍵K」</div>
       <div class="flex items-baseline gap-2">
         <span id="count-ALL" class="text-2xl font-bold text-white">0</span>
         <span class="text-xs text-slate-400">檔進入今日確認池</span>
@@ -188,7 +188,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h2 id="detailTitle" class="text-xl font-bold text-white">--</h2>
-            <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 昨日大長紅關鍵K</span>
+            <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 首日突破20MA大長紅</span>
           </div>
           <p id="detailSubTitle" class="text-xs text-slate-400 mt-1">昨日收盤 -- ｜ 昨量 -- 張</p>
         </div>
@@ -450,24 +450,43 @@
       const rawMa5Vol = parseFloat(raw.ma5Vol || raw.avgVol5) || 1;
       const volRatio = raw.volRatio ? parseFloat(raw.volRatio) : Math.round((rawYestVol / rawMa5Vol) * 100);
 
+      // 取得前一日（大前天）的真實收盤價與前一日 20MA，用於精準驗證「昨日是否為第一天由下往上穿越 20MA」
       let prevClose = parseFloat(raw.prevClose || raw.beforeYestClose) || 0;
-      if (prevClose <= 0 && realBars.length >= 2) {
+      let calculatedPrevMa20 = prevMa20;
+
+      if (realBars.length >= 2) {
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = realBars[realBars.length - 1];
-        if ((lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3) {
-          prevClose = realBars[realBars.length - 3].close;
-        } else {
-          prevClose = realBars[realBars.length - 2].close;
+        const prevBarIdx = (lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3
+          ? realBars.length - 3
+          : realBars.length - 2;
+
+        if (prevClose <= 0 && prevBarIdx >= 0) {
+          prevClose = realBars[prevBarIdx].close;
+        }
+        if (calculatedPrevMa20 <= 0 && prevBarIdx >= 0 && realBars[prevBarIdx].ma20) {
+          calculatedPrevMa20 = realBars[prevBarIdx].ma20;
         }
       }
 
       const baseRefPrice = prevClose > 0 ? prevClose : yestOpen;
       const yestGainPct = baseRefPrice > 0 ? ((yestClose - baseRefPrice) / baseRefPrice) * 100 : 0;
 
+      // 【嚴格關鍵K條件】
+      // 1. 昨日必須是大長紅K（昨收 > 昨開，不能收綠K），且當根漲幅介於 6% ~ 10%
       const isBullishRedK = yestClose > yestOpen;
       const isBigGain = yestGainPct >= 6.0 && yestGainPct <= 10.1;
-      const isCross20Ma = yestClose > yestMa20 && yestMa20 >= prevMa20 && yestHigh > 0;
-      const isPricePatternKeyK = isCross20Ma && isBullishRedK && isBigGain;
+
+      // 2. 昨日必須是「第一天剛好由下往上穿越 20MA」：
+      //    前一日收盤價 <= 前一日 20MA（前一天還在均線下方或壓在線上，尚未站上）
+      //    且 昨日收盤價 > 昨日 20MA，同時 20MA 斜率向上（昨日 20MA >= 前日 20MA）
+      const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0
+        ? (prevClose <= calculatedPrevMa20)
+        : (yestOpen <= yestMa20); // 若無前日歷史資料，則退而求其次檢查昨日開盤在 20MA 之下
+
+      const isFirstDayBreak20Ma = wasBelowOrOnMa20 && (yestClose > yestMa20) && (yestMa20 >= calculatedPrevMa20) && (yestHigh > 0);
+
+      const isPricePatternKeyK = isFirstDayBreak20Ma && isBullishRedK && isBigGain;
 
       let status = "CONSOLIDATE";
       if (todayPrice > yestHigh) status = "BREAKOUT";
@@ -477,7 +496,8 @@
 
       return {
         code, name,
-        prevMa20, yestMa20,
+        prevMa20: calculatedPrevMa20,
+        yestMa20,
         yestOpen, yestHigh, yestLow, yestClose,
         yestGainPct: parseFloat(yestGainPct.toFixed(2)),
         todayOpen, todayHigh, todayLow, todayPrice, todayVol,
@@ -514,7 +534,7 @@
 
       const tbody = document.getElementById("stockTableBody");
       if (filteredStocks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合篩選條件的標的（可嘗試放寬上方成交量百分比條件）</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合「首日穿越20MA＋大長紅K(6%~10%)」條件的標的</td></tr>`;
         return;
       }
 
@@ -537,7 +557,7 @@
           <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
             <td class="py-2.5 px-3">
               <div class="font-bold text-white">${s.code} ${s.name}</div>
-              <div class="text-[11px] text-amber-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗</div>
+              <div class="text-[11px] text-amber-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗ (首日突破)</div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
               <span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">
@@ -597,7 +617,7 @@
 
     function updateDetailPanel(stock, resetView = false) {
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
-      document.getElementById("detailKeyKTag").textContent = `★ 昨日大長紅關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
+      document.getElementById("detailKeyKTag").textContent = `★ 首日突破20MA大長紅 (+${stock.yestGainPct.toFixed(2)}%)`;
       document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 昨量 ${formatVolDisplay(stock.yestVol)} (${stock.volRatio}%)`;
 
       document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
@@ -769,7 +789,6 @@
       });
     }
 
-    // 繪製高精度 Canvas 真實 K 線主圖 + 成交量副圖 + 三色無紅無綠 20MA
     function renderCanvasChart() {
       const canvas = document.getElementById("klineCanvas");
       if (!canvas) return;
@@ -831,7 +850,6 @@
       const maxVol = allVols.length > 0 ? Math.max(...allVols) * 1.15 : 100;
       const volToY = (v) => volPlotTop + volPlotH - (Math.max(0, v) / maxVol) * volPlotH;
 
-      // 價格主圖網格與刻度
       ctx.font = "11px monospace";
       ctx.textAlign = "left";
       for (let i = 0; i <= 4; i++) {
@@ -849,7 +867,6 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
-      // 成交量副圖分隔線與刻度標籤
       ctx.strokeStyle = "#1e293b";
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -862,7 +879,6 @@
       ctx.fillText("成交量", width - padRight + 6, volPlotTop + 8);
       ctx.fillText(formatShortVol(maxVol / 1.15), width - padRight + 6, volPlotTop + 20);
 
-      // 繪製昨高 / 昨低參考線
       drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
       drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
 
@@ -897,7 +913,6 @@
         const yHigh = priceToY(b.high);
         const yLow = priceToY(b.low);
 
-        // 取得前一根真實 20MA（包含可視範圍左側前一根，確保第一根線段也能正確變色）
         const globalIdx = startIdx + idx;
         const prevGlobalBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
 
@@ -914,9 +929,8 @@
         }
 
         const isUp = b.close >= b.open;
-        const color = isUp ? "#f43f5e" : "#10b981"; // 台股 K 棒紅漲綠跌
+        const color = isUp ? "#f43f5e" : "#10b981";
 
-        // 上方：K 棒上下影線
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -924,20 +938,17 @@
         ctx.lineTo(cx, yLow);
         ctx.stroke();
 
-        // 上方：K 棒實體
         const bodyTop = Math.min(yOpen, yClose);
         const bodyH = Math.max(2, Math.abs(yClose - yOpen));
         ctx.fillStyle = color;
         ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
 
-        // 關鍵K金色外框高亮
         if (b.isKeyK) {
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
         }
 
-        // 下方：成交量柱狀圖
         if (b.vol && b.vol > 0) {
           const yVolTop = volToY(b.vol);
           const volBarH = Math.max(2, (volPlotTop + volPlotH) - yVolTop);
@@ -945,7 +956,6 @@
           ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
         }
 
-        // 最底部：X 軸日期標籤
         const shortDate = b.date.length >= 10 ? b.date.slice(5) : b.date;
         ctx.fillStyle = b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8");
         ctx.font = (b.isKeyK || b.isToday) ? "bold 10px sans-serif" : "10px monospace";
@@ -953,10 +963,7 @@
         ctx.fillText(shortDate, cx, height - 6);
       });
 
-      // 【20MA 三色趨勢線繪製：無紅無綠】
-      // 往上走 (val > prevVal) = 亮橘金色 #f59e0b
-      // 走平 (val == prevVal) = 純白銀色 #e2e8f0
-      // 往下走 (val < prevVal) = 亮電光藍 #38bdf8
+      // 20MA 三色趨勢線 (無紅無綠：上升=亮橘金、走平=純白銀、下降=亮電光藍)
       if (ma20Points.length >= 2) {
         ctx.lineWidth = 2.4;
         for (let i = 1; i < ma20Points.length; i++) {
@@ -964,9 +971,9 @@
           const p1 = ma20Points[i];
           const diff = Number((p1.val - p0.val).toFixed(2));
 
-          let slopeColor = "#e2e8f0"; // 走平：純白銀色
-          if (diff > 0) slopeColor = "#f59e0b"; // 往上走：亮橘金色
-          else if (diff < 0) slopeColor = "#38bdf8"; // 往下走：亮電光藍
+          let slopeColor = "#e2e8f0";
+          if (diff > 0) slopeColor = "#f59e0b";
+          else if (diff < 0) slopeColor = "#38bdf8";
 
           ctx.strokeStyle = slopeColor;
           ctx.beginPath();
@@ -976,7 +983,6 @@
         }
       }
 
-      // 繪製 5日均量線 (紫色，避免與橘金色 20MA 混淆)
       if (ma5VolPoints.length >= 2) {
         ctx.strokeStyle = "#c084fc";
         ctx.lineWidth = 1.6;
@@ -988,7 +994,6 @@
         ctx.stroke();
       }
 
-      // 繪製滑鼠十字準心與即時價位提示
       if (hoveredBar && hoveredCx > 0) {
         ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
         ctx.lineWidth = 1;
@@ -1048,7 +1053,6 @@
       const colorClass = isUp ? "text-rose-400" : "text-emerald-400";
       const sign = diff > 0 ? "+" : "";
 
-      // 判斷 20MA 方向文字與對應無紅無綠配色
       let maHtml = "";
       if (bar.ma20) {
         const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
@@ -1102,7 +1106,7 @@
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `大長紅關鍵K突破20MA清單_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `首日突破20MA大長紅關鍵K清單_${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
     }
   </script>
