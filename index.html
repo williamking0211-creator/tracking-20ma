@@ -15,26 +15,11 @@
     ::-webkit-scrollbar-track { background: #111827; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    #klineCanvas {
-      cursor: grab;
-      touch-action: none;
-    }
-    #klineCanvas:active {
-      cursor: grabbing;
-    }
-    .sortable-th {
-      cursor: pointer;
-      user-select: none;
-      transition: color 0.15s, background-color 0.15s;
-    }
-    .sortable-th:hover {
-      color: #ffffff;
-      background-color: rgba(30, 41, 59, 0.85);
-    }
-    #floatingLegend {
-      cursor: move;
-      user-select: none;
-    }
+    #klineCanvas { cursor: grab; touch-action: none; }
+    #klineCanvas:active { cursor: grabbing; }
+    .sortable-th { cursor: pointer; user-select: none; transition: color 0.15s, background-color 0.15s; }
+    .sortable-th:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.85); }
+    #floatingLegend { cursor: move; user-select: none; }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -296,10 +281,9 @@
         </div>
       </div>
 
-      <!-- K線圖控制工具列（新增：日K / 5分K 切換＋泡泡與扣抵勾選＋重置視角） -->
+      <!-- K線圖控制工具列 -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
-          <!-- 日K / 5分K 週期切換器 -->
           <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-700">
             <button onclick="switchTimeframe('1d')" id="tfBtn-1d" class="px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition">
               日K
@@ -337,14 +321,12 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
-        <!-- 左上角固定即時 OHLC 查價 HUD -->
         <div class="absolute top-2 left-3 z-10 pointer-events-none">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力買賣均價與成交量</span>
           </div>
         </div>
 
-        <!-- 可讓使用者「隨意拖拉到喜歡位置」的圖例懸浮條 -->
         <div id="floatingLegend" style="top: 46px; left: 12px;" title="按住此圖例面板可隨意拖曳到喜歡的位置"
              class="absolute z-20 flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/90 backdrop-blur-sm border border-slate-700/90 hover:border-blue-400/70 shadow-lg px-2.5 py-1 rounded-md transition-colors">
           <span class="text-slate-500 font-bold pr-0.5">⋮⋮</span>
@@ -357,14 +339,12 @@
           <span class="flex items-center gap-1 font-medium text-indigo-300">★連續賣波段均價</span>
         </div>
 
-        <!-- 5分K 載入中提示 -->
         <div id="loading5mOverlay" class="hidden absolute inset-0 z-20 bg-slate-950/75 flex items-center justify-center">
           <div class="px-4 py-2 rounded-lg bg-slate-900 border border-blue-500/40 text-blue-300 text-xs font-bold animate-pulse">
             ⏳ 正在下載 5 分鐘 K 線資料...
           </div>
         </div>
 
-        <!-- 缺少歷史明細提示遮罩 -->
         <div id="noHistoryWarning" class="hidden absolute inset-0 z-20 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
           <div class="text-amber-400 font-bold text-sm mb-2">⚠️ 尚未取得此檔股票的歷史 K 線陣列</div>
           <p class="text-xs text-slate-400 max-w-md leading-relaxed">
@@ -426,20 +406,16 @@
     let currentFilter = "ALL";
     let selectedStockCode = null;
     let syncTimer = null;
-
-    let sortState = {
-      field: null,
-      dir: null
-    };
+    let sortState = { field: null, dir: null };
 
     const chartState = {
-      timeframe: '1d',      // '1d' (日K) 或 '5m' (5分K)
-      dailyBars: [],        // 日K陣列
-      bars5m: [],           // 5分K陣列
-      bars: [],             // 當前顯示的 K 線陣列
+      timeframe: '1d',
+      dailyBars: [],
+      bars5m: [],
+      bars: [],
       visibleCount: 22,
       rightOffset: 0,
-      verticalOffsetPx: 0,  // 垂直上下平移像素偏移量
+      verticalOffsetPx: 0,
       mouseX: -1,
       mouseY: -1,
       isDragging: false,
@@ -457,58 +433,37 @@
       startAutoSync();
     });
 
-    window.addEventListener("resize", () => {
-      renderCanvasChart();
-    });
+    window.addEventListener("resize", () => renderCanvasChart());
 
-    // 讓圖例面板可以讓使用者隨意拖拉到喜歡的位置
     function initDraggableLegend() {
       const legend = document.getElementById("floatingLegend");
       const container = document.getElementById("chartContainer");
       if (!legend || !container) return;
 
-      let isLegendDragging = false;
-      let startMouseX = 0;
-      let startMouseY = 0;
-      let startLeft = 12;
-      let startTop = 46;
-
+      let isLegendDragging = false, startMouseX = 0, startMouseY = 0, startLeft = 12, startTop = 46;
       legend.addEventListener("mousedown", (e) => {
-        e.stopPropagation(); // 避免觸發底層 K 線畫布拖曳
+        e.stopPropagation();
         isLegendDragging = true;
         startMouseX = e.clientX;
         startMouseY = e.clientY;
         startLeft = legend.offsetLeft;
         startTop = legend.offsetTop;
       });
-
       window.addEventListener("mousemove", (e) => {
         if (!isLegendDragging) return;
-        const dx = e.clientX - startMouseX;
-        const dy = e.clientY - startMouseY;
-
         const maxLeft = Math.max(0, container.clientWidth - legend.offsetWidth);
         const maxTop = Math.max(0, container.clientHeight - legend.offsetHeight);
-
-        const nextLeft = Math.max(0, Math.min(maxLeft, startLeft + dx));
-        const nextTop = Math.max(0, Math.min(maxTop, startTop + dy));
-
-        legend.style.left = `${nextLeft}px`;
-        legend.style.top = `${nextTop}px`;
+        legend.style.left = `${Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startMouseX)))}px`;
+        legend.style.top = `${Math.max(0, Math.min(maxTop, startTop + (e.clientY - startMouseY)))}px`;
       });
-
-      window.addEventListener("mouseup", () => {
-        isLegendDragging = false;
-      });
+      window.addEventListener("mouseup", () => { isLegendDragging = false; });
     }
 
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
       syncTimer = setInterval(() => {
         const cb = document.getElementById("autoSyncCheckbox");
-        if (cb && cb.checked) {
-          fetchStocksData(true);
-        }
+        if (cb && cb.checked) fetchStocksData(true);
       }, 30000);
     }
 
@@ -527,7 +482,7 @@
         document.getElementById("maxGainInput").value = "10.1";
         document.getElementById("volOperatorSelect").value = "GTE";
         document.getElementById("volThresholdInput").value = "70";
-      } else if (mode === 'STRICT') {
+      } else {
         document.getElementById("chkMa20Up").checked = true;
         document.getElementById("chkSolidRedK").checked = true;
         document.getElementById("chkGainRange").checked = true;
@@ -540,72 +495,43 @@
     }
 
     function toggleSort(field) {
-      if (sortState.field !== field) {
-        sortState.field = field;
-        sortState.dir = 'desc';
-      } else if (sortState.dir === 'desc') {
-        sortState.dir = 'asc';
-      } else {
-        sortState.field = null;
-        sortState.dir = null;
-      }
-      updateSortIcons();
-      renderTable();
-    }
-
-    function updateSortIcons() {
-      const fields = ['yestGainPct', 'yestHigh', 'volExtraPct', 'todayPrice'];
-      fields.forEach(f => {
+      if (sortState.field !== field) { sortState.field = field; sortState.dir = 'desc'; }
+      else if (sortState.dir === 'desc') { sortState.dir = 'asc'; }
+      else { sortState.field = null; sortState.dir = null; }
+      ['yestGainPct', 'yestHigh', 'volExtraPct', 'todayPrice'].forEach(f => {
         const el = document.getElementById(`sort-icon-${f}`);
         if (!el) return;
-        if (sortState.field === f) {
-          el.textContent = sortState.dir === 'desc' ? '▼' : '▲';
-          el.className = 'text-amber-400 font-bold ml-0.5';
-        } else {
-          el.textContent = '⇅';
-          el.className = 'text-slate-500 ml-0.5';
-        }
+        if (sortState.field === f) { el.textContent = sortState.dir === 'desc' ? '▼' : '▲'; el.className = 'text-amber-400 font-bold ml-0.5'; }
+        else { el.textContent = '⇅'; el.className = 'text-slate-500 ml-0.5'; }
       });
+      renderTable();
     }
 
     async function fetchStocksData(isSilent = false) {
       const statusDot = document.getElementById("apiStatusDot");
       const statusText = document.getElementById("apiStatusText");
-
       try {
-        const separator = apiUrl.includes("?") ? "&" : "?";
-        const fetchUrl = `${apiUrl}${separator}_t=${Date.now()}`;
-
-        const response = await fetch(fetchUrl);
+        const sep = apiUrl.includes("?") ? "&" : "?";
+        const response = await fetch(`${apiUrl}${sep}_t=${Date.now()}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const rawData = await response.json();
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-        rawFirstBreak20MaStocks = list
-          .map(item => normalizeStockItem(item))
-          .filter(s => s.isFirstDayBreak20Ma && s.isUpDay);
-
+        rawFirstBreak20MaStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isFirstDayBreak20Ma && s.isUpDay);
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         statusText.textContent = `即時同步中 (${list.length}檔候選)`;
-
         applyFiltersAndRender();
       } catch (err) {
-        console.error("API 讀取失敗:", err);
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
         statusText.textContent = `連線失敗: ${err.message}`;
         if (!isSilent && rawFirstBreak20MaStocks.length === 0) {
-          document.getElementById("stockTableBody").innerHTML = `
-            <tr><td colspan="6" class="py-10 text-center text-rose-400">
-              無法連線至 API (${apiUrl})，錯誤訊息：${err.message}
-            </td></tr>`;
+          document.getElementById("stockTableBody").innerHTML = `<tr><td colspan="6" class="py-10 text-center text-rose-400">無法連線至 API (${apiUrl})，錯誤：${err.message}</td></tr>`;
         }
       }
     }
 
-    // 切換日K / 5分K
     async function switchTimeframe(tf) {
       chartState.timeframe = tf;
-
       const btn1d = document.getElementById("tfBtn-1d");
       const btn5m = document.getElementById("tfBtn-5m");
       if (tf === '1d') {
@@ -615,23 +541,18 @@
         chartState.visibleCount = 22;
         chartState.rightOffset = 0;
         chartState.verticalOffsetPx = 0;
-        if (chartState.bars.length > 0) {
-          updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
-        }
+        if (chartState.bars.length > 0) updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
         renderCanvasChart();
       } else {
         btn5m.className = "px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition";
         btn1d.className = "px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white font-bold text-[11px] transition";
-        if (selectedStockCode) {
-          await load5mKlineData(selectedStockCode, true);
-        }
+        if (selectedStockCode) await load5mKlineData(selectedStockCode, true);
       }
     }
 
     async function load5mKlineData(code, resetView = true) {
       const overlay = document.getElementById("loading5mOverlay");
       overlay.classList.remove("hidden");
-
       try {
         const base5mUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/kline5m');
         const res = await fetch(`${base5mUrl}?code=${encodeURIComponent(code)}&_t=${Date.now()}`);
@@ -639,63 +560,41 @@
         const rawBars = await res.json();
 
         const bars5m = Array.isArray(rawBars) ? rawBars.map(b => ({
-          date: String(b.date || ""),
-          open: parseFloat(b.open),
-          high: parseFloat(b.high),
-          low: parseFloat(b.low),
-          close: parseFloat(b.close),
-          ma20: b.ma20 ? parseFloat(b.ma20) : null,
-          vol: parseFloat(b.vol || 0)
+          date: String(b.date || ""), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close),
+          ma20: b.ma20 ? parseFloat(b.ma20) : null, vol: parseFloat(b.vol || 0)
         })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
 
         for (let i = 0; i < bars5m.length; i++) {
           if (!bars5m[i].ma20 || bars5m[i].ma20 <= 0) {
-            const startIdx = Math.max(0, i - 19);
-            const count = i - startIdx + 1;
-            let sum20 = 0;
-            for (let j = startIdx; j <= i; j++) sum20 += bars5m[j].close;
-            bars5m[i].ma20 = Number((sum20 / count).toFixed(2));
+            const sIdx = Math.max(0, i - 19);
+            let sum = 0;
+            for (let j = sIdx; j <= i; j++) sum += bars5m[j].close;
+            bars5m[i].ma20 = Number((sum / (i - sIdx + 1)).toFixed(2));
           }
-          const volStartIdx = Math.max(0, i - 4);
-          const volCount = i - volStartIdx + 1;
-          let sumVol5 = 0;
-          for (let j = volStartIdx; j <= i; j++) sumVol5 += (bars5m[j].vol || 0);
-          bars5m[i].ma5Vol = sumVol5 / volCount;
+          const vIdx = Math.max(0, i - 4);
+          let sumV = 0;
+          for (let j = vIdx; j <= i; j++) sumV += (bars5m[j].vol || 0);
+          bars5m[i].ma5Vol = sumV / (i - vIdx + 1);
 
           const prevC = i > 0 ? bars5m[i - 1].close : bars5m[i].open;
-          const forceRes = calcBarForceAndAvgPrice(bars5m[i], prevC);
-          bars5m[i].forceScore = forceRes.forceScore;
-          bars5m[i].forceAvgPrice = forceRes.avgPrice;
+          const fRes = calcBarForceAndAvgPrice(bars5m[i], prevC);
+          bars5m[i].forceScore = fRes.forceScore;
+          bars5m[i].forceAvgPrice = fRes.avgPrice;
         }
-
         enrichConsecutiveStreakAvg(bars5m);
-
-        if (bars5m.length >= 20) {
-          bars5m[bars5m.length - 20].isTodayDeduct = true;
-        }
-        if (bars5m.length >= 19) {
-          bars5m[bars5m.length - 19].isTomorrowDeduct = true;
-        }
-        if (bars5m.length >= 1) {
-          bars5m[bars5m.length - 1].isToday = true;
-        }
+        if (bars5m.length >= 20) bars5m[bars5m.length - 20].isTodayDeduct = true;
+        if (bars5m.length >= 19) bars5m[bars5m.length - 19].isTomorrowDeduct = true;
+        if (bars5m.length >= 1) bars5m[bars5m.length - 1].isToday = true;
 
         chartState.bars5m = bars5m;
         if (chartState.timeframe === '5m') {
           chartState.bars = bars5m;
-          if (resetView) {
-            chartState.visibleCount = Math.min(48, Math.max(22, bars5m.length)); // 5分K預設顯示約 48 根 (4小時走勢)
-            chartState.rightOffset = 0;
-            chartState.verticalOffsetPx = 0;
-          }
-          if (bars5m.length > 0) {
-            updateHudDisplay(bars5m[bars5m.length - 1], bars5m.length >= 2 ? bars5m[bars5m.length - 2] : null);
-          }
+          if (resetView) { chartState.visibleCount = Math.min(48, Math.max(22, bars5m.length)); chartState.rightOffset = 0; chartState.verticalOffsetPx = 0; }
+          if (bars5m.length > 0) updateHudDisplay(bars5m[bars5m.length - 1], bars5m.length >= 2 ? bars5m[bars5m.length - 2] : null);
           renderCanvasChart();
         }
       } catch (err) {
-        console.error("5分K載入失敗:", err);
-        alert(`無法載入 ${code} 的 5 分鐘 K 線，請確認後端 index.js 已更新為最新版本。`);
+        alert(`無法載入 ${code} 的 5 分鐘 K 線：${err.message}`);
       } finally {
         overlay.classList.add("hidden");
       }
@@ -707,7 +606,6 @@
       const useGainRange = document.getElementById("chkGainRange").checked;
       const minGain = parseFloat(document.getElementById("minGainInput").value);
       const maxGain = parseFloat(document.getElementById("maxGainInput").value);
-
       const volOp = document.getElementById("volOperatorSelect").value;
       const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
       const validVolThreshold = isNaN(volThreshold) ? 70 : volThreshold;
@@ -715,16 +613,11 @@
       allStocks = rawFirstBreak20MaStocks.filter(s => {
         if (requireMa20Up && !s.isMa20SlopeUp) return false;
         if (requireSolidRedK && !s.isBullishRedK) return false;
-
         if (useGainRange) {
-          const lowBound = isNaN(minGain) ? -100 : minGain;
-          const highBound = isNaN(maxGain) ? 100 : maxGain;
-          if (s.yestGainPct < lowBound || s.yestGainPct > highBound) return false;
+          if (s.yestGainPct < (isNaN(minGain) ? -100 : minGain) || s.yestGainPct > (isNaN(maxGain) ? 100 : maxGain)) return false;
         }
-
         if (volOp === "GTE" && s.volRatio < validVolThreshold) return false;
         if (volOp === "LTE" && s.volRatio > validVolThreshold) return false;
-
         return true;
       });
 
@@ -745,7 +638,6 @@
 
     function calcBarForceAndAvgPrice(bar, prevClose, bigBuyVol = 0, bigSellVol = 0, bigBuyAvgPrice = 0, bigSellAvgPrice = 0) {
       const typicalPrice = Number(((bar.high + bar.low + bar.close * 2) / 4).toFixed(2));
-
       if (bigBuyVol > 0 || bigSellVol > 0) {
         const totalBig = bigBuyVol + bigSellVol;
         if (totalBig > 0) {
@@ -755,18 +647,15 @@
           let avgPrice = typicalPrice;
           if (forceScore >= 0.20 && bigBuyAvgPrice > 0) avgPrice = bigBuyAvgPrice;
           else if (forceScore <= -0.20 && bigSellAvgPrice > 0) avgPrice = bigSellAvgPrice;
-
           return { forceScore, avgPrice };
         }
       }
-
       const range = bar.high - bar.low;
       if (range <= 0) {
         if (prevClose > 0 && bar.close > prevClose) return { forceScore: 1.2, avgPrice: bar.close };
         if (prevClose > 0 && bar.close < prevClose) return { forceScore: -1.2, avgPrice: bar.close };
         return { forceScore: 0, avgPrice: bar.close };
       }
-
       const closePos = ((bar.close - bar.low) - (bar.high - bar.close)) / range;
       const bodyRatio = (bar.close - bar.open) / range;
       const priceForce = closePos * 0.65 + bodyRatio * 0.35;
@@ -774,70 +663,42 @@
       const forceScore = Number((priceForce * volMult).toFixed(2));
 
       let avgPrice = typicalPrice;
-      if (forceScore >= 0.20) {
-        avgPrice = Number(((bar.open + bar.close * 2 + bar.high) / 4).toFixed(2));
-      } else if (forceScore <= -0.20) {
-        avgPrice = Number(((bar.open + bar.close * 2 + bar.low) / 4).toFixed(2));
-      }
-
+      if (forceScore >= 0.20) avgPrice = Number(((bar.open + bar.close * 2 + bar.high) / 4).toFixed(2));
+      else if (forceScore <= -0.20) avgPrice = Number(((bar.open + bar.close * 2 + bar.low) / 4).toFixed(2));
       return { forceScore, avgPrice };
     }
 
     function enrichConsecutiveStreakAvg(bars) {
-      for (let i = 0; i < bars.length; i++) {
-        bars[i].streakAvgPrice = 0;
-        bars[i].streakDir = 0;
-        bars[i].streakDays = 0;
-      }
-
+      for (let i = 0; i < bars.length; i++) { bars[i].streakAvgPrice = 0; bars[i].streakDir = 0; bars[i].streakDays = 0; }
       let i = 0;
       while (i < bars.length) {
         const f = bars[i].forceScore || 0;
         const dir = f >= 0.20 ? 1 : (f <= -0.20 ? -1 : 0);
-        if (dir === 0) {
-          i++;
-          continue;
-        }
-
-        let j = i;
-        let sumAmount = 0;
-        let sumVol = 0;
+        if (dir === 0) { i++; continue; }
+        let j = i, sumAmount = 0, sumVol = 0;
         while (j < bars.length) {
           const jf = bars[j].forceScore || 0;
           const jdir = jf >= 0.20 ? 1 : (jf <= -0.20 ? -1 : 0);
           if (jdir !== dir) break;
-
           const wVol = bars[j].vol > 0 ? bars[j].vol : 1;
           const p = bars[j].forceAvgPrice > 0 ? bars[j].forceAvgPrice : bars[j].close;
           sumAmount += p * wVol;
           sumVol += wVol;
           j++;
         }
-
-        const streakLen = j - i;
-        if (streakLen >= 2 && sumVol > 0) {
-          const lastIdx = j - 1;
-          bars[lastIdx].streakAvgPrice = Number((sumAmount / sumVol).toFixed(2));
-          bars[lastIdx].streakDir = dir;
-          bars[lastIdx].streakDays = streakLen;
+        if (j - i >= 2 && sumVol > 0) {
+          bars[j - 1].streakAvgPrice = Number((sumAmount / sumVol).toFixed(2));
+          bars[j - 1].streakDir = dir;
+          bars[j - 1].streakDays = j - i;
         }
-
         i = j;
       }
     }
 
     function normalizeStockItem(raw) {
-      const code = String(raw.code || "");
-      const name = String(raw.name || "");
-
-      const prevMa20 = parseFloat(raw.prevMa20) || 0;
-      const yestMa20 = parseFloat(raw.yestMa20) || 0;
-
-      const yestOpen = parseFloat(raw.yestOpen) || 0;
-      const yestHigh = parseFloat(raw.yestHigh) || 0;
-      const yestLow = parseFloat(raw.yestLow) || 0;
-      const yestClose = parseFloat(raw.yestClose) || 0;
-
+      const code = String(raw.code || ""), name = String(raw.name || "");
+      const prevMa20 = parseFloat(raw.prevMa20) || 0, yestMa20 = parseFloat(raw.yestMa20) || 0;
+      const yestOpen = parseFloat(raw.yestOpen) || 0, yestHigh = parseFloat(raw.yestHigh) || 0, yestLow = parseFloat(raw.yestLow) || 0, yestClose = parseFloat(raw.yestClose) || 0;
       const todayPrice = parseFloat(raw.price || raw.todayClose || raw.close) || 0;
       const rawTodayOpen = parseFloat(raw.todayOpen || raw.open) || 0;
       const todayOpen = rawTodayOpen > 0 ? rawTodayOpen : (todayPrice > 0 ? yestClose : 0);
@@ -845,35 +706,26 @@
       const rawTodayLow = parseFloat(raw.todayLow || raw.low) || 0;
       const todayLow = rawTodayLow > 0 ? Math.min(rawTodayLow, todayOpen, todayPrice) : Math.min(todayOpen, todayPrice);
       const todayVol = parseFloat(raw.todayVol || raw.volume) || 0;
-      const todayBigBuyVol = parseFloat(raw.todayBigBuyVol) || 0;
-      const todayBigSellVol = parseFloat(raw.todayBigSellVol) || 0;
-      const todayBigBuyAvgPrice = parseFloat(raw.todayBigBuyAvgPrice) || 0;
-      const todayBigSellAvgPrice = parseFloat(raw.todayBigSellAvgPrice) || 0;
+      const todayBigBuyVol = parseFloat(raw.todayBigBuyVol) || 0, todayBigSellVol = parseFloat(raw.todayBigSellVol) || 0;
+      const todayBigBuyAvgPrice = parseFloat(raw.todayBigBuyAvgPrice) || 0, todayBigSellAvgPrice = parseFloat(raw.todayBigSellAvgPrice) || 0;
 
       const rawHistory = raw.history || raw.klines || raw.bars || [];
       const realBars = Array.isArray(rawHistory) ? rawHistory.map(b => ({
-        date: String(b.date || b.time || ""),
-        open: parseFloat(b.open),
-        high: parseFloat(b.high),
-        low: parseFloat(b.low),
-        close: parseFloat(b.close),
-        ma20: b.ma20 !== undefined && b.ma20 !== null ? parseFloat(b.ma20) : null,
-        vol: parseFloat(b.vol || b.volume || 0)
+        date: String(b.date || b.time || ""), open: parseFloat(b.open), high: parseFloat(b.high), low: parseFloat(b.low), close: parseFloat(b.close),
+        ma20: b.ma20 !== undefined && b.ma20 !== null ? parseFloat(b.ma20) : null, vol: parseFloat(b.vol || b.volume || 0)
       })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
 
       for (let i = 0; i < realBars.length; i++) {
         if (!realBars[i].ma20 || realBars[i].ma20 <= 0) {
-          const startIdx = Math.max(0, i - 19);
-          const count = i - startIdx + 1;
-          let sum20 = 0;
-          for (let j = startIdx; j <= i; j++) sum20 += realBars[j].close;
-          realBars[i].ma20 = Number((sum20 / count).toFixed(2));
+          const sIdx = Math.max(0, i - 19);
+          let sum = 0;
+          for (let j = sIdx; j <= i; j++) sum += realBars[j].close;
+          realBars[i].ma20 = Number((sum / (i - sIdx + 1)).toFixed(2));
         }
-        const volStartIdx = Math.max(0, i - 4);
-        const volCount = i - volStartIdx + 1;
-        let sumVol5 = 0;
-        for (let j = volStartIdx; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
-        realBars[i].ma5Vol = sumVol5 / volCount;
+        const vIdx = Math.max(0, i - 4);
+        let sumV = 0;
+        for (let j = vIdx; j <= i; j++) sumV += (realBars[j].vol || 0);
+        realBars[i].ma5Vol = sumV / (i - vIdx + 1);
 
         const prevC = i > 0 ? realBars[i - 1].close : realBars[i].open;
         const res = calcBarForceAndAvgPrice(realBars[i], prevC);
@@ -883,16 +735,13 @@
 
       const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
       let rawAvgVol5 = parseFloat(raw.avgVol5 || raw.ma5Vol) || 0;
-
       if (rawAvgVol5 <= 0 && realBars.length >= 6) {
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = realBars[realBars.length - 1];
         const yestIdx = (lastBar.date === todayStr || lastBar.date === "今日") ? realBars.length - 2 : realBars.length - 1;
         if (yestIdx >= 5) {
           let sum5 = 0;
-          for (let k = yestIdx - 5; k < yestIdx; k++) {
-            sum5 += (realBars[k].vol || 0);
-          }
+          for (let k = yestIdx - 5; k < yestIdx; k++) sum5 += (realBars[k].vol || 0);
           rawAvgVol5 = Math.round(sum5 / 5);
         }
       }
@@ -900,64 +749,36 @@
 
       const volRatio = Math.round((rawYestVol / rawAvgVol5) * 100);
       const volExtraPct = Number((((rawYestVol - rawAvgVol5) / rawAvgVol5) * 100).toFixed(1));
-
       let prevClose = parseFloat(raw.prevClose || raw.beforeYestClose) || 0;
       let calculatedPrevMa20 = prevMa20;
 
       if (realBars.length >= 2) {
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = realBars[realBars.length - 1];
-        const prevBarIdx = (lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3
-          ? realBars.length - 3
-          : realBars.length - 2;
-
-        if (prevClose <= 0 && prevBarIdx >= 0) {
-          prevClose = realBars[prevBarIdx].close;
-        }
-        if (calculatedPrevMa20 <= 0 && prevBarIdx >= 0 && realBars[prevBarIdx].ma20) {
-          calculatedPrevMa20 = realBars[prevBarIdx].ma20;
-        }
+        const prevBarIdx = (lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3 ? realBars.length - 3 : realBars.length - 2;
+        if (prevClose <= 0 && prevBarIdx >= 0) prevClose = realBars[prevBarIdx].close;
+        if (calculatedPrevMa20 <= 0 && prevBarIdx >= 0 && realBars[prevBarIdx].ma20) calculatedPrevMa20 = realBars[prevBarIdx].ma20;
       }
 
       const baseRefPrice = prevClose > 0 ? prevClose : yestOpen;
       const yestGainPct = baseRefPrice > 0 ? ((yestClose - baseRefPrice) / baseRefPrice) * 100 : 0;
-
       const isUpDay = prevClose > 0 ? (yestClose > prevClose) : (yestClose >= yestOpen);
       const isBullishRedK = yestClose > yestOpen;
       const isMa20SlopeUp = yestMa20 >= calculatedPrevMa20;
-
-      const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0
-        ? (prevClose <= calculatedPrevMa20)
-        : (yestOpen <= yestMa20);
-
+      const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0 ? (prevClose <= calculatedPrevMa20) : (yestOpen <= yestMa20);
       const isFirstDayBreak20Ma = wasBelowOrOnMa20 && (yestClose > yestMa20) && (yestHigh > 0);
 
       let status = "CONSOLIDATE";
       if (todayPrice > yestHigh) status = "BREAKOUT";
       else if (todayPrice < yestLow) status = "BREAKDOWN";
-
       const changePct = yestClose > 0 ? (((todayPrice - yestClose) / yestClose) * 100).toFixed(2) : "0.00";
 
       return {
-        code, name,
-        prevMa20: calculatedPrevMa20,
-        yestMa20,
-        yestOpen, yestHigh, yestLow, yestClose,
-        yestGainPct: parseFloat(yestGainPct.toFixed(2)),
-        todayOpen, todayHigh, todayLow, todayPrice, todayVol,
-        todayBigBuyVol, todayBigSellVol,
-        todayBigBuyAvgPrice, todayBigSellAvgPrice,
-        yestVol: rawYestVol,
-        avgVol5: Math.round(rawAvgVol5),
-        volRatio,
-        volExtraPct,
-        changePct: parseFloat(changePct),
-        isUpDay,
-        isBullishRedK,
-        isMa20SlopeUp,
-        isFirstDayBreak20Ma,
-        status,
-        realBars
+        code, name, prevMa20: calculatedPrevMa20, yestMa20, yestOpen, yestHigh, yestLow, yestClose,
+        yestGainPct: parseFloat(yestGainPct.toFixed(2)), todayOpen, todayHigh, todayLow, todayPrice, todayVol,
+        todayBigBuyVol, todayBigSellVol, todayBigBuyAvgPrice, todayBigSellAvgPrice,
+        yestVol: rawYestVol, avgVol5: Math.round(rawAvgVol5), volRatio, volExtraPct, changePct: parseFloat(changePct),
+        isUpDay, isBullishRedK, isMa20SlopeUp, isFirstDayBreak20Ma, status, realBars
       };
     }
 
@@ -968,10 +789,7 @@
         btn.classList.add("border", "border-slate-800");
       });
       const activeBtn = document.getElementById(`tab-${filterType}`);
-      if (activeBtn) {
-        activeBtn.classList.remove("border", "border-slate-800");
-        activeBtn.classList.add("border-2", "border-blue-500");
-      }
+      if (activeBtn) { activeBtn.classList.remove("border", "border-slate-800"); activeBtn.classList.add("border-2", "border-blue-500"); }
       renderTable();
     }
 
@@ -982,17 +800,10 @@
         const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
         return matchFilter && matchKeyword;
       });
-
       if (sortState.field && sortState.dir) {
-        const f = sortState.field;
-        const factor = sortState.dir === 'desc' ? -1 : 1;
-        list = [...list].sort((a, b) => {
-          const valA = Number(a[f]) || 0;
-          const valB = Number(b[f]) || 0;
-          return (valA - valB) * factor;
-        });
+        const f = sortState.field, factor = sortState.dir === 'desc' ? -1 : 1;
+        list = [...list].sort((a, b) => ((Number(a[f]) || 0) - (Number(b[f]) || 0)) * factor);
       }
-
       filteredStocks = list;
 
       const tbody = document.getElementById("stockTableBody");
@@ -1002,26 +813,18 @@
       }
 
       tbody.innerHTML = filteredStocks.map(s => {
-        const isSelected = s.code === selectedStockCode;
-        const rowBg = isSelected ? "bg-blue-900/25" : "hover:bg-slate-800/40";
+        const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
         const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
         const pctSign = s.changePct > 0 ? "+" : "";
-
         const extraSign = s.volExtraPct >= 0 ? "+" : "";
         const extraColor = s.volExtraPct >= 0 ? "text-amber-300" : "text-sky-400";
-
         const maDirArrow = s.isMa20SlopeUp ? "↗" : "↘";
         const maTextColor = s.isMa20SlopeUp ? "text-amber-400" : "text-sky-400";
         const kTypeTag = s.isBullishRedK ? "" : `<span class="ml-1 text-[10px] px-1 rounded bg-slate-800 text-slate-300">跳空/十字</span>`;
 
-        let badgeHtml = "";
-        if (s.status === "BREAKOUT") {
-          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進</span>`;
-        } else if (s.status === "BREAKDOWN") {
-          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低</span>`;
-        } else {
-          badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 觀察中</span>`;
-        }
+        let badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 觀察中</span>`;
+        if (s.status === "BREAKOUT") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進</span>`;
+        else if (s.status === "BREAKDOWN") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低</span>`;
 
         return `
           <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
@@ -1029,59 +832,36 @@
               <div class="font-bold text-white flex items-center">${s.code} ${s.name}${kTypeTag}</div>
               <div class="text-[11px] ${maTextColor}">昨20MA: ${s.yestMa20.toFixed(2)} ${maDirArrow} (首日突破)</div>
             </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">
-                +${s.yestGainPct.toFixed(2)}%
-              </span>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div>
-              <div class="text-emerald-400">${s.yestLow.toFixed(2)}</div>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div>
-              <div class="text-[10px] text-slate-300">昨:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
-              <div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div>
-            </td>
-            <td class="py-2.5 px-3 text-center">
-              ${badgeHtml}
-            </td>
-          </tr>
-        `;
+            <td class="py-2.5 px-2 text-right font-mono"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">+${s.yestGainPct.toFixed(2)}%</span></td>
+            <td class="py-2.5 px-2 text-right font-mono"><div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div><div class="text-emerald-400">${s.yestLow.toFixed(2)}</div></td>
+            <td class="py-2.5 px-2 text-right font-mono"><div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div><div class="text-[10px] text-slate-300">昨:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div></td>
+            <td class="py-2.5 px-2 text-right font-mono"><div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div><div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div></td>
+            <td class="py-2.5 px-3 text-center">${badgeHtml}</td>
+          </tr>`;
       }).join("");
     }
 
     function formatVolDisplay(vol) {
       if (!vol || vol <= 0) return "0張";
-      if (vol >= 100000) return `${Math.round(vol / 1000).toLocaleString()}張`;
-      return `${Math.round(vol).toLocaleString()}張`;
+      return vol >= 100000 ? `${Math.round(vol / 1000).toLocaleString()}張` : `${Math.round(vol).toLocaleString()}張`;
     }
 
     function formatShortVol(vol) {
       if (!vol || vol <= 0) return "0張";
       const lots = vol >= 100000 ? vol / 1000 : vol;
-      if (lots >= 10000) return `${(lots / 10000).toFixed(1)}萬張`;
-      return `${Math.round(lots).toLocaleString()}張`;
+      return lots >= 10000 ? `${(lots / 10000).toFixed(1)}萬張` : `${Math.round(lots).toLocaleString()}張`;
     }
 
     function selectStock(code) {
       selectedStockCode = code;
       renderTable();
       const stock = allStocks.find(s => s.code === code);
-      if (stock) {
-        updateDetailPanel(stock, true);
-      }
+      if (stock) updateDetailPanel(stock, true);
     }
 
     function computeDynamicTodayMa20(bars, todayPrice, fallbackYestMa20) {
-      if (!bars || bars.length < 19 || !todayPrice || todayPrice <= 0) {
-        return fallbackYestMa20;
-      }
-      const last19 = bars.slice(-19);
-      const sum19 = last19.reduce((acc, b) => acc + b.close, 0);
+      if (!bars || bars.length < 19 || !todayPrice || todayPrice <= 0) return fallbackYestMa20;
+      const sum19 = bars.slice(-19).reduce((acc, b) => acc + b.close, 0);
       return Number(((sum19 + todayPrice) / 20).toFixed(2));
     }
 
@@ -1097,9 +877,7 @@
       document.getElementById("bannerYestVol").textContent = formatVolDisplay(stock.yestVol);
       const diffBadge = document.getElementById("bannerVolDiffBadge");
       diffBadge.textContent = `昨天比前5日均量 ${diffActionText}（量比 ${stock.volRatio}%）`;
-      diffBadge.className = stock.volExtraPct >= 0
-        ? "px-2.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold font-mono"
-        : "px-2.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 font-bold font-mono";
+      diffBadge.className = stock.volExtraPct >= 0 ? "px-2.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold font-mono" : "px-2.5 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 font-bold font-mono";
 
       document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
       document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
@@ -1110,16 +888,9 @@
       cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
 
       const badge = document.getElementById("detailDecisionBadge");
-      if (stock.status === "BREAKOUT") {
-        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300";
-        badge.textContent = "🔥 確認買進 (收盤 > 昨高)";
-      } else if (stock.status === "BREAKDOWN") {
-        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300";
-        badge.textContent = "❄️ 跌破昨低 (不考慮)";
-      } else {
-        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300";
-        badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
-      }
+      if (stock.status === "BREAKOUT") { badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300"; badge.textContent = "🔥 確認買進 (收盤 > 昨高)"; }
+      else if (stock.status === "BREAKDOWN") { badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300"; badge.textContent = "❄️ 跌破昨低 (不考慮)"; }
+      else { badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300"; badge.textContent = "👀 繼續觀察 (介於昨高昨低)"; }
 
       let bars = stock.realBars.map(b => ({ ...b }));
       const warningEl = document.getElementById("noHistoryWarning");
@@ -1127,42 +898,6 @@
 
       if (bars.length === 0) {
         warningEl.classList.remove("hidden");
-        if (stock.yestOpen > 0 && stock.yestHigh > 0) {
-          const yBar = {
-            date: "昨日(關鍵K)",
-            open: stock.yestOpen,
-            high: stock.yestHigh,
-            low: stock.yestLow,
-            close: stock.yestClose,
-            ma20: stock.yestMa20,
-            vol: stock.yestVol,
-            ma5Vol: stock.avgVol5,
-            isKeyK: true
-          };
-          const resY = calcBarForceAndAvgPrice(yBar, stock.yestOpen);
-          yBar.forceScore = resY.forceScore;
-          yBar.forceAvgPrice = resY.avgPrice;
-          bars.push(yBar);
-        }
-        if (stock.todayPrice > 0) {
-          const tBar = {
-            date: "今日",
-            open: stock.todayOpen,
-            high: stock.todayHigh,
-            low: stock.todayLow,
-            close: stock.todayPrice,
-            ma20: stock.yestMa20,
-            vol: stock.todayVol || 0,
-            ma5Vol: stock.avgVol5,
-            bigBuyVol: stock.todayBigBuyVol,
-            bigSellVol: stock.todayBigSellVol,
-            isToday: true
-          };
-          const resT = calcBarForceAndAvgPrice(tBar, stock.yestClose, stock.todayBigBuyVol, stock.todayBigSellVol, stock.todayBigBuyAvgPrice, stock.todayBigSellAvgPrice);
-          tBar.forceScore = resT.forceScore;
-          tBar.forceAvgPrice = resT.avgPrice;
-          bars.push(tBar);
-        }
       } else {
         warningEl.classList.add("hidden");
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
@@ -1172,20 +907,9 @@
           todayMa20 = computeDynamicTodayMa20(bars, stock.todayPrice, stock.yestMa20);
           const last4Vols = bars.slice(-4).reduce((acc, b) => acc + (b.vol || 0), 0);
           const todayVolVal = stock.todayVol > 0 ? stock.todayVol : 0;
-          const todayMa5Vol = (last4Vols + todayVolVal) / 5;
-
           const todayBar = {
-            date: "今日",
-            open: stock.todayOpen,
-            high: stock.todayHigh,
-            low: stock.todayLow,
-            close: stock.todayPrice,
-            ma20: todayMa20,
-            vol: todayVolVal,
-            ma5Vol: todayMa5Vol,
-            bigBuyVol: stock.todayBigBuyVol,
-            bigSellVol: stock.todayBigSellVol,
-            isToday: true
+            date: "今日", open: stock.todayOpen, high: stock.todayHigh, low: stock.todayLow, close: stock.todayPrice,
+            ma20: todayMa20, vol: todayVolVal, ma5Vol: (last4Vols + todayVolVal) / 5, bigBuyVol: stock.todayBigBuyVol, bigSellVol: stock.todayBigSellVol, isToday: true
           };
           const resT = calcBarForceAndAvgPrice(todayBar, lastBar.close, stock.todayBigBuyVol, stock.todayBigSellVol, stock.todayBigBuyAvgPrice, stock.todayBigSellAvgPrice);
           todayBar.forceScore = resT.forceScore;
@@ -1201,70 +925,42 @@
           lastBar.bigSellVol = stock.todayBigSellVol;
           lastBar.isToday = true;
 
-          const prev19Bars = bars.slice(0, -1);
-          todayMa20 = computeDynamicTodayMa20(prev19Bars, stock.todayPrice, stock.yestMa20);
+          todayMa20 = computeDynamicTodayMa20(bars.slice(0, -1), stock.todayPrice, stock.yestMa20);
           lastBar.ma20 = todayMa20;
-
-          const prevCloseForToday = bars.length >= 2 ? bars[bars.length - 2].close : lastBar.open;
-          const resT = calcBarForceAndAvgPrice(lastBar, prevCloseForToday, stock.todayBigBuyVol, stock.todayBigSellVol, stock.todayBigBuyAvgPrice, stock.todayBigSellAvgPrice);
+          const prevC = bars.length >= 2 ? bars[bars.length - 2].close : lastBar.open;
+          const resT = calcBarForceAndAvgPrice(lastBar, prevC, stock.todayBigBuyVol, stock.todayBigSellVol, stock.todayBigBuyAvgPrice, stock.todayBigSellAvgPrice);
           lastBar.forceScore = resT.forceScore;
           lastBar.forceAvgPrice = resT.avgPrice;
         }
-
-        if (bars.length >= 2) {
-          bars[bars.length - 2].isKeyK = true;
-        }
+        if (bars.length >= 2) bars[bars.length - 2].isKeyK = true;
       }
 
       enrichConsecutiveStreakAvg(bars);
 
-      let todayDeductPrice = 0;
-      let tomorrowDeductPrice = 0;
-      if (bars.length >= 20) {
-        const todayDeductIdx = bars.length - 20;
-        bars[todayDeductIdx].isTodayDeduct = true;
-        todayDeductPrice = bars[todayDeductIdx].close;
-      }
-      if (bars.length >= 19) {
-        const tomorrowDeductIdx = bars.length - 19;
-        bars[tomorrowDeductIdx].isTomorrowDeduct = true;
-        tomorrowDeductPrice = bars[tomorrowDeductIdx].close;
-      }
+      let todayDeductPrice = 0, tomorrowDeductPrice = 0;
+      if (bars.length >= 20) { bars[bars.length - 20].isTodayDeduct = true; todayDeductPrice = bars[bars.length - 20].close; }
+      if (bars.length >= 19) { bars[bars.length - 19].isTomorrowDeduct = true; tomorrowDeductPrice = bars[bars.length - 19].close; }
 
-      const deductCardEl = document.getElementById("cardDeductPrice");
-      if (todayDeductPrice > 0) {
-        deductCardEl.textContent = `${todayDeductPrice.toFixed(2)} / ${tomorrowDeductPrice.toFixed(2)}`;
-      } else {
-        deductCardEl.textContent = "--";
-      }
-
+      document.getElementById("cardDeductPrice").textContent = todayDeductPrice > 0 ? `${todayDeductPrice.toFixed(2)} / ${tomorrowDeductPrice.toFixed(2)}` : "--";
       const maArrow = todayMa20 > stock.yestMa20 ? "↗" : (todayMa20 < stock.yestMa20 ? "↘" : "→");
       const cardMaEl = document.getElementById("cardMa20");
       cardMaEl.textContent = `${stock.yestMa20.toFixed(2)} / ${todayMa20.toFixed(2)} ${maArrow}`;
       cardMaEl.className = `text-xs font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
 
       chartState.dailyBars = bars;
-
       if (chartState.timeframe === '5m') {
         load5mKlineData(stock.code, resetView);
       } else {
         chartState.bars = bars;
-        if (resetView) {
-          chartState.visibleCount = 22;
-          chartState.rightOffset = 0;
-          chartState.verticalOffsetPx = 0;
-        }
+        if (resetView) { chartState.visibleCount = 22; chartState.rightOffset = 0; chartState.verticalOffsetPx = 0; }
         updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
         renderCanvasChart();
       }
     }
 
     function zoomChart(delta) {
-      const total = chartState.bars.length;
-      const maxAllow = Math.max(22, total);
-      let nextCount = chartState.visibleCount + delta;
-      nextCount = Math.max(5, Math.min(maxAllow, nextCount));
-      chartState.visibleCount = nextCount;
+      const maxAllow = Math.max(22, chartState.bars.length);
+      chartState.visibleCount = Math.max(5, Math.min(maxAllow, chartState.visibleCount + delta));
       clampRightOffset();
       renderCanvasChart();
     }
@@ -1283,11 +979,9 @@
 
     function initCanvasEvents() {
       const canvas = document.getElementById("klineCanvas");
-
       canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? 2 : -2;
-        zoomChart(delta);
+        zoomChart(e.deltaY > 0 ? 2 : -2);
       }, { passive: false });
 
       canvas.addEventListener("mousedown", (e) => {
@@ -1298,31 +992,23 @@
         chartState.dragStartVerticalPx = chartState.verticalOffsetPx;
       });
 
-      window.addEventListener("mouseup", () => {
-        chartState.isDragging = false;
-      });
+      window.addEventListener("mouseup", () => { chartState.isDragging = false; });
 
       canvas.addEventListener("mousemove", (e) => {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        chartState.mouseX = x;
-        chartState.mouseY = y;
+        chartState.mouseX = e.clientX - rect.left;
+        chartState.mouseY = e.clientY - rect.top;
 
         if (chartState.isDragging) {
-          // 水平左右拖曳（移動歷史根數）
           const dx = e.clientX - chartState.dragStartX;
           const plotW = rect.width - 80;
           const pxPerBar = plotW / chartState.visibleCount;
-          const shiftBars = Math.round(dx / pxPerBar);
-          chartState.rightOffset = chartState.dragStartOffset + shiftBars;
+          chartState.rightOffset = chartState.dragStartOffset + Math.round(dx / pxPerBar);
           clampRightOffset();
 
-          // 垂直上下拖曳（整個 K 線與均線上下平移）
           const dy = e.clientY - chartState.dragStartY;
           chartState.verticalOffsetPx = chartState.dragStartVerticalPx + dy;
         }
-
         renderCanvasChart();
       });
 
@@ -1338,8 +1024,7 @@
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
+      const width = rect.width, height = rect.height;
 
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -1363,16 +1048,9 @@
 
       const tfLabel = chartState.timeframe === '5m' ? '5分K' : '日K';
       document.getElementById("visibleCountBadge").textContent = `${tfLabel} 顯示 ${visibleBars.length} 根 (共 ${bars.length} 根)`;
-      if (visibleBars.length > 0) {
-        document.getElementById("dataRangeInfo").textContent = `區間：${visibleBars[0].date} ～ ${visibleBars[visibleBars.length - 1].date}`;
-      }
+      if (visibleBars.length > 0) document.getElementById("dataRangeInfo").textContent = `區間：${visibleBars[0].date} ～ ${visibleBars[visibleBars.length - 1].date}`;
 
-      const padLeft = 14;
-      const padRight = 68;
-      const padTop = 76;
-      const padBottom = 22;
-      const gapBetweenCharts = 16;
-
+      const padLeft = 14, padRight = 68, padTop = 76, padBottom = 22, gapBetweenCharts = 16;
       const totalPlotH = height - padTop - padBottom - gapBetweenCharts;
       const pricePlotH = Math.floor(totalPlotH * 0.72);
       const volPlotTop = padTop + pricePlotH + gapBetweenCharts;
@@ -1384,13 +1062,10 @@
         ...(chartState.timeframe === '1d' ? [stock.yestHigh, stock.yestLow] : [])
       ].filter(v => v !== null && !isNaN(v) && v > 0);
 
-      const rawMax = Math.max(...allPrices);
-      const rawMin = Math.min(...allPrices);
+      const rawMax = Math.max(...allPrices), rawMin = Math.min(...allPrices);
       const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
-      const maxY = rawMax + span * 0.14;
-      const minY = rawMin - span * 0.14;
+      const maxY = rawMax + span * 0.14, minY = rawMin - span * 0.14;
 
-      // 加上 verticalOffsetPx，讓整個 K 線圖可以隨滑鼠垂直上下平移
       const vShift = chartState.verticalOffsetPx || 0;
       const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH + vShift;
       const yToPrice = (y) => maxY - ((y - vShift - padTop) / pricePlotH) * (maxY - minY);
@@ -1399,7 +1074,6 @@
       const maxVol = allVols.length > 0 ? Math.max(...allVols) * 1.18 : 100;
       const volToY = (v) => volPlotTop + volPlotH - (Math.max(0, v) / maxVol) * volPlotH;
 
-      // 限制主圖繪製裁切區域（避免垂直向上或向下平移時蓋到下方成交量副圖）
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, width, volPlotTop - 6);
@@ -1407,11 +1081,9 @@
 
       ctx.font = "11px monospace";
       ctx.textAlign = "left";
-      // 根據垂直偏移動態繪製價格水平格線
       const stepPrice = (maxY - minY) / 4;
       const startGridIdx = Math.floor(-vShift / (pricePlotH / 4)) - 1;
-      const endGridIdx = startGridIdx + 6;
-      for (let i = startGridIdx; i <= endGridIdx; i++) {
+      for (let i = startGridIdx; i <= startGridIdx + 6; i++) {
         const val = maxY - stepPrice * i;
         if (val <= 0) continue;
         const y = Math.round(priceToY(val)) + 0.5;
@@ -1428,7 +1100,6 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
-      // 僅在日K模式或昨高/昨低在合理範圍時繪製昨高/昨低參考線
       drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
       drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
 
@@ -1436,52 +1107,27 @@
       const stepX = plotW / slotCount;
       const candleW = Math.max(4, Math.min(34, stepX * 0.62));
 
-      let hoveredBar = null;
-      let hoveredPrevBar = null;
-      let hoveredCx = -1;
-
+      let hoveredBar = null, hoveredPrevBar = null, hoveredCx = -1;
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
         const leftEdge = padLeft + stepX * idx;
-        const rightEdge = leftEdge + stepX;
-
-        if (chartState.mouseX >= leftEdge && chartState.mouseX < rightEdge && chartState.mouseY >= 0 && chartState.mouseY <= height - padBottom) {
+        if (chartState.mouseX >= leftEdge && chartState.mouseX < leftEdge + stepX && chartState.mouseY >= 0 && chartState.mouseY <= height - padBottom) {
           hoveredBar = b;
-          const globalIdx = startIdx + idx;
-          hoveredPrevBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+          hoveredPrevBar = (startIdx + idx) > 0 ? bars[startIdx + idx - 1] : null;
           hoveredCx = cx;
         }
       });
 
-      const ma20Points = [];
-      const ma5VolPoints = [];
-
-      // 繪製主圖 K 棒本體
+      const ma20Points = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
-        const yOpen = priceToY(b.open);
-        const yClose = priceToY(b.close);
-        const yHigh = priceToY(b.high);
-        const yLow = priceToY(b.low);
+        const yOpen = priceToY(b.open), yClose = priceToY(b.close), yHigh = priceToY(b.high), yLow = priceToY(b.low);
+        const prevGlobalBar = (startIdx + idx) > 0 ? bars[startIdx + idx - 1] : null;
 
-        const globalIdx = startIdx + idx;
-        const prevGlobalBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+        if (b.ma20 && b.ma20 > 0) ma20Points.push({ x: cx, y: priceToY(b.ma20), val: b.ma20, prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20 });
+        if (b.ma5Vol && b.ma5Vol > 0) ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
 
-        if (b.ma20 && b.ma20 > 0) {
-          ma20Points.push({
-            x: cx,
-            y: priceToY(b.ma20),
-            val: b.ma20,
-            prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20
-          });
-        }
-        if (b.ma5Vol && b.ma5Vol > 0) {
-          ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
-        }
-
-        const isUp = b.close >= b.open;
-        const color = isUp ? "#f43f5e" : "#10b981";
-
+        const color = b.close >= b.open ? "#f43f5e" : "#10b981";
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -1489,8 +1135,7 @@
         ctx.lineTo(cx, yLow);
         ctx.stroke();
 
-        const bodyTop = Math.min(yOpen, yClose);
-        const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+        const bodyTop = Math.min(yOpen, yClose), bodyH = Math.max(2, Math.abs(yClose - yOpen));
         ctx.fillStyle = color;
         ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
 
@@ -1512,38 +1157,28 @@
             ctx.stroke();
             ctx.restore();
 
-            const markerY = yHigh - 6;
             ctx.fillStyle = "#e879f9";
             ctx.font = "bold 10px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("▼扣抵", cx, markerY - 8);
-            ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 2);
+            ctx.fillText("▼扣抵", cx, yHigh - 14);
+            ctx.fillText(`${b.close.toFixed(2)}`, cx, yHigh - 4);
           }
-
           if (b.isTomorrowDeduct) {
-            const markerY = yLow + 14;
             ctx.fillStyle = "#22d3ee";
             ctx.font = "bold 10px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("▲明扣抵", cx, markerY);
-            ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 10);
+            ctx.fillText("▲明扣抵", cx, yLow + 14);
+            ctx.fillText(`${b.close.toFixed(2)}`, cx, yLow + 24);
           }
         }
       });
 
-      // 繪製 20MA 三色趨勢線
       if (ma20Points.length >= 2) {
         ctx.lineWidth = 2.4;
         for (let i = 1; i < ma20Points.length; i++) {
-          const p0 = ma20Points[i - 1];
-          const p1 = ma20Points[i];
+          const p0 = ma20Points[i - 1], p1 = ma20Points[i];
           const diff = Number((p1.val - p0.val).toFixed(2));
-
-          let slopeColor = "#e2e8f0";
-          if (diff > 0) slopeColor = "#f59e0b";
-          else if (diff < 0) slopeColor = "#38bdf8";
-
-          ctx.strokeStyle = slopeColor;
+          ctx.strokeStyle = diff > 0 ? "#f59e0b" : (diff < 0 ? "#38bdf8" : "#e2e8f0");
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
           ctx.lineTo(p1.x, p1.y);
@@ -1551,21 +1186,14 @@
         }
       }
 
-      // 繪製主力買賣均價半透明泡泡
       if (showBubbles) {
         visibleBars.forEach((b, idx) => {
-          const force = b.forceScore || 0;
-          const absForce = Math.abs(force);
+          const force = b.forceScore || 0, absForce = Math.abs(force);
           if (absForce < 0.20) return;
-
           const cx = padLeft + stepX * idx + stepX / 2;
           const avgPrice = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
           const bubbleY = priceToY(avgPrice);
-
-          const maxBubbleR = Math.min(20, stepX * 0.52);
-          const minBubbleR = 6;
-          const normStrength = Math.min(1, (absForce - 0.20) / 1.1);
-          const radius = minBubbleR + normStrength * (maxBubbleR - minBubbleR);
+          const radius = 6 + Math.min(1, (absForce - 0.20) / 1.1) * (Math.min(20, stepX * 0.52) - 6);
 
           ctx.save();
           if (force > 0) {
@@ -1573,29 +1201,15 @@
             grad.addColorStop(0, "rgba(251, 207, 232, 0.45)");
             grad.addColorStop(0.55, "rgba(244, 114, 182, 0.30)");
             grad.addColorStop(1, "rgba(219, 39, 119, 0.12)");
-
             ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "rgba(244, 114, 182, 0.65)"; ctx.lineWidth = 1.1; ctx.stroke();
+            ctx.fillStyle = "rgba(253, 242, 248, 0.85)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2); ctx.fill();
 
-            ctx.strokeStyle = "rgba(244, 114, 182, 0.65)";
-            ctx.lineWidth = 1.1;
-            ctx.stroke();
-
-            ctx.fillStyle = "rgba(253, 242, 248, 0.85)";
-            ctx.beginPath();
-            ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#f9a8d4";
-            ctx.font = "bold 9.5px monospace";
-            ctx.textAlign = "center";
+            ctx.fillStyle = "#f9a8d4"; ctx.font = "bold 9.5px monospace"; ctx.textAlign = "center";
             ctx.fillText(avgPrice.toFixed(2), cx, bubbleY - radius - 3);
-
             if (b.streakDir === 1 && b.streakAvgPrice > 0) {
-              ctx.fillStyle = "#fde047";
-              ctx.font = "bold 10px sans-serif";
+              ctx.fillStyle = "#fde047"; ctx.font = "bold 10px sans-serif";
               ctx.fillText(`★連${b.streakDays}買均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY - radius - 14);
             }
           } else {
@@ -1603,81 +1217,47 @@
             grad.addColorStop(0, "rgba(167, 243, 208, 0.42)");
             grad.addColorStop(0.55, "rgba(52, 211, 153, 0.28)");
             grad.addColorStop(1, "rgba(5, 150, 105, 0.10)");
-
             ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "rgba(52, 211, 153, 0.65)"; ctx.lineWidth = 1.1; ctx.stroke();
+            ctx.fillStyle = "rgba(236, 253, 245, 0.85)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2); ctx.fill();
 
-            ctx.strokeStyle = "rgba(52, 211, 153, 0.65)";
-            ctx.lineWidth = 1.1;
-            ctx.stroke();
-
-            ctx.fillStyle = "rgba(236, 253, 245, 0.85)";
-            ctx.beginPath();
-            ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#6ee7b7";
-            ctx.font = "bold 9.5px monospace";
-            ctx.textAlign = "center";
+            ctx.fillStyle = "#6ee7b7"; ctx.font = "bold 9.5px monospace"; ctx.textAlign = "center";
             ctx.fillText(avgPrice.toFixed(2), cx, bubbleY + radius + 10);
-
             if (b.streakDir === -1 && b.streakAvgPrice > 0) {
-              ctx.fillStyle = "#a5b4fc";
-              ctx.font = "bold 10px sans-serif";
+              ctx.fillStyle = "#a5b4fc"; ctx.font = "bold 10px sans-serif";
               ctx.fillText(`★連${b.streakDays}賣均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY + radius + 21);
             }
           }
           ctx.restore();
         });
       }
+      ctx.restore();
 
-      ctx.restore(); // 結束主圖裁切區
+      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(padLeft, volPlotTop - 6); ctx.lineTo(width - padRight, volPlotTop - 6); ctx.stroke();
 
-      // 下方成交量副圖與 X 軸時間標籤（保持固定在底部，不受垂直平移影響）
-      ctx.strokeStyle = "#1e293b";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(padLeft, volPlotTop - 6);
-      ctx.lineTo(width - padRight, volPlotTop - 6);
-      ctx.stroke();
-
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "10px monospace";
-      ctx.textAlign = "left";
+      ctx.fillStyle = "#94a3b8"; ctx.font = "10px monospace"; ctx.textAlign = "left";
       ctx.fillText(chartState.timeframe === '5m' ? "最新量" : "今日量", width - padRight + 6, volPlotTop + 10);
-      ctx.fillStyle = "#c084fc";
-      ctx.font = "bold 10px monospace";
+      ctx.fillStyle = "#c084fc"; ctx.font = "bold 10px monospace";
       const latestVolVal = visibleBars.length > 0 ? visibleBars[visibleBars.length - 1].vol : stock.todayVol;
       ctx.fillText(formatShortVol(latestVolVal), width - padRight + 6, volPlotTop + 23);
 
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
-        const isUp = b.close >= b.open;
-
-        if (b.vol !== undefined && b.vol !== null && b.vol > 0) {
+        if (b.vol > 0) {
           const yVolTop = volToY(b.vol);
-          const volBarH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
-          ctx.fillStyle = isUp ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
-          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
-
+          ctx.fillStyle = b.close >= b.open ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
+          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, Math.max(3, (volPlotTop + volPlotH) - yVolTop));
           if (b.isToday) {
-            ctx.fillStyle = "#e2e8f0";
-            ctx.font = "bold 9px monospace";
-            ctx.textAlign = "center";
+            ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center";
             const shortV = b.vol >= 100000 ? Math.round(b.vol / 1000) : Math.round(b.vol);
             ctx.fillText(`${shortV}張`, cx, Math.max(volPlotTop + 9, yVolTop - 3));
           }
         }
-
-        const shortDate = chartState.timeframe === '5m'
-          ? (b.date.split(' ')[1] || b.date)
-          : (b.date.length >= 10 ? b.date.slice(5) : b.date);
-
+        const shortDate = chartState.timeframe === '5m' ? (b.date.split(' ')[1] || b.date) : (b.date.length >= 10 ? b.date.slice(5) : b.date);
         const stepLabel = visibleBars.length > 35 ? 6 : (visibleBars.length > 14 ? 2 : 1);
-        const showLabel = idx % stepLabel === 0 || b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct);
-        if (showLabel) {
+        if (idx % stepLabel === 0 || b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) {
           ctx.fillStyle = (showDeduct && b.isTodayDeduct) ? "#e879f9" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8"));
           ctx.font = (b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 10px sans-serif" : "10px monospace";
           ctx.textAlign = "center";
@@ -1686,137 +1266,72 @@
       });
 
       if (ma5VolPoints.length >= 2) {
-        ctx.strokeStyle = "#c084fc";
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = "#c084fc"; ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ma5VolPoints.forEach((pt, i) => {
-          if (i === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        });
+        ma5VolPoints.forEach((pt, i) => { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
         ctx.stroke();
       }
 
-      // 滑鼠十字游標與即時價位標籤
       if (hoveredBar && hoveredCx > 0) {
-        ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(hoveredCx, 10);
-        ctx.lineTo(hoveredCx, height - padBottom);
-        ctx.stroke();
-
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.55)"; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(hoveredCx, 10); ctx.lineTo(hoveredCx, height - padBottom); ctx.stroke();
         const clampedY = Math.max(10, Math.min(height - padBottom, chartState.mouseY));
-        ctx.beginPath();
-        ctx.moveTo(padLeft, clampedY);
-        ctx.lineTo(width - padRight, clampedY);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(padLeft, clampedY); ctx.lineTo(width - padRight, clampedY); ctx.stroke();
         ctx.setLineDash([]);
 
         if (clampedY <= volPlotTop - 6) {
-          const hoverPrice = yToPrice(clampedY);
-          ctx.fillStyle = "#334155";
-          ctx.fillRect(width - padRight + 2, clampedY - 9, 60, 18);
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 11px monospace";
-          ctx.textAlign = "left";
-          ctx.fillText(hoverPrice.toFixed(2), width - padRight + 6, clampedY + 4);
+          ctx.fillStyle = "#334155"; ctx.fillRect(width - padRight + 2, clampedY - 9, 60, 18);
+          ctx.fillStyle = "#ffffff"; ctx.font = "bold 11px monospace"; ctx.textAlign = "left";
+          ctx.fillText(yToPrice(clampedY).toFixed(2), width - padRight + 6, clampedY + 4);
         }
-
         updateHudDisplay(hoveredBar, hoveredPrevBar);
       }
     }
 
     function drawHorizontalRefLine(ctx, price, y, color, label, x1, x2) {
       if (!price || price <= 0) return;
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.2;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      ctx.moveTo(x1, y);
-      ctx.lineTo(x2, y);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.fillStyle = color;
-      ctx.font = "bold 10px sans-serif";
-      ctx.textAlign = "left";
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = color; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "left";
       ctx.fillText(`${label} ${price.toFixed(2)}`, x2 + 6, y - 3);
     }
 
     function updateHudDisplay(bar, prevBar) {
       const hud = document.getElementById("ohlcHud");
       if (!bar) return;
-
       const refClose = prevBar ? prevBar.close : bar.open;
       const diff = bar.close - refClose;
       const pct = refClose > 0 ? ((diff / refClose) * 100).toFixed(2) : "0.00";
-      const isUp = diff >= 0;
-      const colorClass = isUp ? "text-rose-400" : "text-emerald-400";
+      const colorClass = diff >= 0 ? "text-rose-400" : "text-emerald-400";
       const sign = diff > 0 ? "+" : "";
 
       let maHtml = "";
       if (bar.ma20) {
         const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
         const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
-        const maColor = maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200");
-        const maDir = maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→");
-        maHtml = `<span class="${maColor} font-bold">20MA:${bar.ma20.toFixed(2)}${maDir}</span>`;
+        maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
       }
 
       const force = bar.forceScore || 0;
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
       let forceHtml = `<span class="text-slate-400">主力:均勢</span>`;
       if (force >= 0.20) {
-        const pctForce = Math.round(Math.min(100, (force / 1.3) * 100));
-        const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0)
-          ? ` <b class="text-amber-300">[★連${bar.streakDays}買均:${bar.streakAvgPrice.toFixed(2)}]</b>`
-          : "";
-        forceHtml = `<span class="text-pink-400 font-bold">●主力買均:${avgP}(+${pctForce}%)${streakTag}</span>`;
+        const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0) ? ` <b class="text-amber-300">[★連${bar.streakDays}買均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
+        forceHtml = `<span class="text-pink-400 font-bold">●主力買均:${avgP}(+${Math.round(Math.min(100, (force / 1.3) * 100))}%)${streakTag}</span>`;
       } else if (force <= -0.20) {
-        const pctForce = Math.round(Math.min(100, (Math.abs(force) / 1.3) * 100));
-        const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0)
-          ? ` <b class="text-indigo-300">[★連${bar.streakDays}賣均:${bar.streakAvgPrice.toFixed(2)}]</b>`
-          : "";
-        forceHtml = `<span class="text-emerald-300 font-bold">●主力賣均:${avgP}(-${pctForce}%)${streakTag}</span>`;
+        const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0) ? ` <b class="text-indigo-300">[★連${bar.streakDays}賣均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
+        forceHtml = `<span class="text-emerald-300 font-bold">●主力賣均:${avgP}(-${Math.round(Math.min(100, (Math.abs(force) / 1.3) * 100))}%)${streakTag}</span>`;
       }
 
-      const volText = `<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>`;
-      const deductTag = bar.isTodayDeduct
-        ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[扣抵]</span>`
-        : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明扣抵]</span>` : "");
-
-      hud.innerHTML = `
-        <span class="text-amber-300 font-bold">${bar.date}</span>
-        <span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span>
-        <span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span>
-        <span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>
-        <span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span>
-        <span class="${colorClass}">(${sign}${pct}%)</span>
-        ${volText}
-        ${maHtml}
-        ${forceHtml}
-        ${deductTag}
-      `;
+      const deductTag = bar.isTodayDeduct ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[扣抵]</span>` : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明扣抵]</span>` : "");
+      hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span><span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span><span class="${colorClass}">(${sign}${pct}%)</span><span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}`;
     }
 
-    function openApiModal() {
-      document.getElementById("apiModal").classList.remove("hidden");
-      document.getElementById("apiModal").classList.add("flex");
-    }
-
-    function closeApiModal() {
-      document.getElementById("apiModal").classList.add("hidden");
-      document.getElementById("apiModal").classList.remove("flex");
-    }
-
+    function openApiModal() { document.getElementById("apiModal").classList.remove("hidden"); document.getElementById("apiModal").classList.add("flex"); }
+    function closeApiModal() { document.getElementById("apiModal").classList.add("hidden"); document.getElementById("apiModal").classList.remove("flex"); }
     function saveAndSyncApi() {
       const inputVal = document.getElementById("apiUrlInput").value.trim();
-      if (inputVal) {
-        apiUrl = inputVal;
-        localStorage.setItem("custom_stock_api_url", apiUrl);
-      }
+      if (inputVal) { apiUrl = inputVal; localStorage.setItem("custom_stock_api_url", apiUrl); }
       closeApiModal();
       fetchStocksData();
     }
@@ -1824,11 +1339,8 @@
     function exportCSV() {
       if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
       const headers = ["股票代號", "股票名稱", "昨日漲幅%", "昨日20MA", "20MA斜率", "K棒型態", "昨高", "昨低", "昨收", "前5日均量(張)", "昨日成交量(張)", "昨日比前5日均量增減%", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "今日成交量", "確認狀態"];
-      const rows = filteredStocks.map(s => [
-        s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status
-      ]);
-      const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const rows = filteredStocks.map(s => [s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status]);
+      const blob = new Blob(["\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `首日突破20MA關鍵K清單_${new Date().toISOString().slice(0, 10)}.csv`;
