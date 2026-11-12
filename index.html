@@ -61,10 +61,23 @@
         <span class="text-xs font-bold text-amber-400">STEP 1・昨日「關鍵K」篩選</span>
         <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">盤前必備</span>
       </div>
-      <ul class="text-xs text-slate-300 space-y-1">
+      <ul class="text-xs text-slate-300 space-y-1.5">
         <li>• 昨日收盤價由下往上穿越 20MA，且 20MA 斜率向上</li>
         <li>• <span class="text-rose-400 font-semibold">必須收紅K (昨收 > 昨開)，且當根漲幅 6% ~ 10%</span></li>
-        <li>• 昨日成交量 > 前5日均量 × 100%</li>
+        <li class="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span>• 昨日成交量</span>
+          <select id="volOperatorSelect" onchange="applyFiltersAndRender()" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-bold text-xs focus:outline-none focus:border-blue-500">
+            <option value="GTE" selected>≥ (大於等於)</option>
+            <option value="LTE">≤ (小於等於)</option>
+            <option value="ALL">不限條件</option>
+          </select>
+          <span>前5日均量 ×</span>
+          <div class="inline-flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+            <input type="number" id="volThresholdInput" value="100" min="0" max="5000" step="10" oninput="applyFiltersAndRender()" 
+                   class="w-12 bg-transparent text-amber-300 font-bold text-right focus:outline-none text-xs" />
+            <span class="text-amber-300 font-bold ml-0.5">%</span>
+          </div>
+        </li>
       </ul>
     </div>
 
@@ -128,7 +141,7 @@
     </button>
   </section>
 
-  <!-- 主內容區：左側清單 + 右側真實互動K線圖 -->
+  <!-- 主內容區：左側清單 + 右側真實互動K線與成交量圖 -->
   <main class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
     
     <!-- 左側股票清單 (佔 6 欄) -->
@@ -136,12 +149,19 @@
       <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
         <input type="text" id="searchInput" oninput="renderTable()" placeholder="搜尋代號或名稱 (例如 2330 或 台積電)..." 
                class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full sm:w-64" />
-        <button onclick="exportCSV()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
-          📥 匯出 CSV
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:flex items-center gap-1 text-[11px]">
+            <button onclick="quickSetVol(100)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥100%</button>
+            <button onclick="quickSetVol(150)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥150%</button>
+            <button onclick="quickSetVol(200)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥200%</button>
+          </div>
+          <button onclick="exportCSV()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
+            📥 匯出 CSV
+          </button>
+        </div>
       </div>
 
-      <div class="overflow-x-auto max-h-[650px]">
+      <div class="overflow-x-auto max-h-[670px]">
         <table class="w-full text-left border-collapse">
           <thead class="bg-slate-900/90 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
             <tr>
@@ -162,9 +182,8 @@
       </div>
     </div>
 
-    <!-- 右側真實歷史 K 線走勢面板 (佔 6 欄) -->
+    <!-- 右側真實歷史 K 線與成交量面板 (佔 6 欄) -->
     <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
-      <!-- 個股標題與狀態 -->
       <div class="flex items-start justify-between gap-2 mb-3">
         <div>
           <div class="flex items-center gap-2">
@@ -181,8 +200,8 @@
       <!-- 四大核心數據卡 -->
       <div class="grid grid-cols-4 gap-2 mb-3">
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
-          <div class="text-[11px] text-slate-400">昨日 20MA</div>
-          <div id="cardMa20" class="text-sm font-bold text-sky-400 mt-0.5">--</div>
+          <div class="text-[11px] text-slate-400">昨日 / 今日 20MA</div>
+          <div id="cardMa20" class="text-xs md:text-sm font-bold text-amber-400 mt-0.5">--</div>
         </div>
         <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-center">
           <div class="text-[11px] text-slate-400">關鍵K 昨高</div>
@@ -201,7 +220,7 @@
       <!-- K線圖控制工具列 -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex items-center gap-3">
-          <span class="font-semibold text-slate-200">真實日K線走勢</span>
+          <span class="font-semibold text-slate-200">真實日K線 ＋ 成交量</span>
           <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 10 根</span>
         </div>
 
@@ -218,29 +237,30 @@
         </div>
       </div>
 
-      <!-- 互動式 Canvas K 線圖畫布區 -->
-      <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[410px]">
-        <!-- 左上角即時 OHLC 懸停查價資訊列 -->
-        <div id="ohlcHud" class="absolute top-2 left-3 z-10 pointer-events-none bg-slate-900/85 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收</span>
+      <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
+      <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[450px]">
+        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 -->
+        <div id="ohlcHud" class="absolute top-2 left-3 z-10 pointer-events-none bg-slate-900/85 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收與成交量</span>
         </div>
 
-        <!-- 右上角圖例 -->
-        <div class="absolute top-2 right-3 z-10 pointer-events-none flex items-center gap-2.5 text-[10px] text-slate-400 bg-slate-900/70 px-2 py-1 rounded">
-          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span>20MA</span>
-          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-rose-400 inline-block"></span>昨高</span>
-          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span>昨低</span>
+        <!-- 右上角圖例 (20MA 三色無紅無綠) -->
+        <div class="absolute top-12 right-3 z-10 pointer-events-none flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/80 border border-slate-800 px-2 py-1 rounded">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-purple-400 inline-block"></span>5MV</span>
         </div>
 
         <!-- 缺少歷史明細提示遮罩 -->
         <div id="noHistoryWarning" class="hidden absolute inset-0 z-20 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
           <div class="text-amber-400 font-bold text-sm mb-2">⚠️ 後端 API 尚未提供此檔股票的歷史逐日 OHLC 陣列</div>
           <p class="text-xs text-slate-400 max-w-md leading-relaxed">
-            目前後端 <code class="text-sky-400">/stocks</code> 僅回傳單日欄位（昨高/昨低/昨收），缺少前幾日的逐日開高低收（<code class="text-sky-400">history</code> 陣列）。請更新後端資料格式以顯示完整真實走勢。
+            目前後端 <code class="text-sky-400">/stocks</code> 僅回傳單日欄位，缺少前幾日的逐日開高低收與成交量（<code class="text-sky-400">history</code> 陣列）。請確認後端 `index.js` 已重啟並完成抓取。
           </p>
         </div>
 
-        <canvas id="klineCanvas" class="w-full h-[410px] block"></canvas>
+        <canvas id="klineCanvas" class="w-full h-[450px] block"></canvas>
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
@@ -282,18 +302,17 @@
   <script>
     const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
     let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
+    let rawBaseKeyKStocks = [];
     let allStocks = [];
     let filteredStocks = [];
     let currentFilter = "ALL";
     let selectedStockCode = null;
     let syncTimer = null;
 
-    // K 線圖互動狀態
     const chartState = {
       bars: [],
       visibleCount: 10,
       rightOffset: 0,
-      hoverIndex: -1,
       mouseX: -1,
       mouseY: -1,
       isDragging: false,
@@ -321,6 +340,12 @@
       }, 5000);
     }
 
+    function quickSetVol(pct) {
+      document.getElementById("volOperatorSelect").value = "GTE";
+      document.getElementById("volThresholdInput").value = pct;
+      applyFiltersAndRender();
+    }
+
     async function fetchStocksData(isSilent = false) {
       const statusDot = document.getElementById("apiStatusDot");
       const statusText = document.getElementById("apiStatusText");
@@ -333,18 +358,17 @@
         const rawData = await response.json();
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-        // 只保留符合「突破20MA + 20MA向上 + 昨日收紅K(不能收綠K) + 漲幅6%~10%」的關鍵K標的
-        allStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isKeyK);
+        rawBaseKeyKStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isPricePatternKeyK);
 
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         statusText.textContent = `即時同步中 (${list.length}檔)`;
 
-        updateDashboard();
+        applyFiltersAndRender();
       } catch (err) {
         console.error("API 讀取失敗:", err);
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
         statusText.textContent = "連線中斷 (點此設定)";
-        if (!isSilent && allStocks.length === 0) {
+        if (!isSilent && rawBaseKeyKStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `
             <tr><td colspan="6" class="py-10 text-center text-rose-400">
               無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟。
@@ -353,7 +377,33 @@
       }
     }
 
-    // 解析並正規化真實資料，嚴格檢核「大長紅K (漲幅 6%~10%，不能收綠K)」
+    function applyFiltersAndRender() {
+      const op = document.getElementById("volOperatorSelect").value;
+      const threshold = parseFloat(document.getElementById("volThresholdInput").value);
+      const validThreshold = isNaN(threshold) ? 100 : threshold;
+
+      allStocks = rawBaseKeyKStocks.filter(s => {
+        if (op === "ALL") return true;
+        if (op === "GTE") return s.volRatio >= validThreshold;
+        if (op === "LTE") return s.volRatio <= validThreshold;
+        return true;
+      });
+
+      document.getElementById("count-ALL").textContent = allStocks.length;
+      document.getElementById("count-BREAKOUT").textContent = allStocks.filter(s => s.status === "BREAKOUT").length;
+      document.getElementById("count-CONSOLIDATE").textContent = allStocks.filter(s => s.status === "CONSOLIDATE").length;
+      document.getElementById("count-BREAKDOWN").textContent = allStocks.filter(s => s.status === "BREAKDOWN").length;
+
+      renderTable();
+
+      if ((!selectedStockCode || !allStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
+        selectStock(filteredStocks[0].code);
+      } else if (selectedStockCode) {
+        const current = allStocks.find(s => s.code === selectedStockCode);
+        if (current) updateDetailPanel(current, false);
+      }
+    }
+
     function normalizeStockItem(raw) {
       const code = String(raw.code || "");
       const name = String(raw.name || "");
@@ -370,12 +420,8 @@
       const todayPrice = parseFloat(raw.price || raw.close || raw.todayClose) || 0;
       const todayHigh = parseFloat(raw.todayHigh || raw.high) || todayPrice;
       const todayLow = parseFloat(raw.todayLow || raw.low) || todayPrice;
+      const todayVol = parseFloat(raw.todayVol || raw.volume) || 0;
 
-      const yestVol = parseFloat(raw.yestVol || raw.vol) || 0;
-      const ma5Vol = parseFloat(raw.ma5Vol || raw.avgVol5) || 1;
-      const volRatio = raw.volRatio ? parseFloat(raw.volRatio) : Math.round((yestVol / ma5Vol) * 100);
-
-      // 解析真實歷史逐日 K 棒陣列
       const rawHistory = raw.history || raw.klines || raw.bars || [];
       const realBars = Array.isArray(rawHistory) ? rawHistory.map(b => ({
         date: String(b.date || b.time || ""),
@@ -387,11 +433,26 @@
         vol: parseFloat(b.vol || b.volume || 0)
       })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
 
-      // 取得前一日收盤價（用於精準計算昨日關鍵K的漲跌幅）
+      for (let i = 0; i < realBars.length; i++) {
+        if ((!realBars[i].ma20 || realBars[i].ma20 <= 0) && i >= 19) {
+          let sum20 = 0;
+          for (let j = i - 19; j <= i; j++) sum20 += realBars[j].close;
+          realBars[i].ma20 = Number((sum20 / 20).toFixed(2));
+        }
+        if (i >= 4) {
+          let sumVol5 = 0;
+          for (let j = i - 4; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
+          realBars[i].ma5Vol = sumVol5 / 5;
+        }
+      }
+
+      const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
+      const rawMa5Vol = parseFloat(raw.ma5Vol || raw.avgVol5) || 1;
+      const volRatio = raw.volRatio ? parseFloat(raw.volRatio) : Math.round((rawYestVol / rawMa5Vol) * 100);
+
       let prevClose = parseFloat(raw.prevClose || raw.beforeYestClose) || 0;
       if (prevClose <= 0 && realBars.length >= 2) {
-        // 若 history 最後一根是昨日，倒數第二根即為前日；若最後一根是今日，倒數第三根為前日
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = realBars[realBars.length - 1];
         if ((lastBar.date === todayStr || lastBar.date === "今日") && realBars.length >= 3) {
           prevClose = realBars[realBars.length - 3].close;
@@ -400,19 +461,13 @@
         }
       }
 
-      // 計算昨日關鍵K漲幅（優先對比前日收盤；若無前日收盤則對比昨日開盤）
       const baseRefPrice = prevClose > 0 ? prevClose : yestOpen;
       const yestGainPct = baseRefPrice > 0 ? ((yestClose - baseRefPrice) / baseRefPrice) * 100 : 0;
 
-      // 【新增關鍵K嚴格條件】
-      // 1. 昨日收盤站上 20MA，且 20MA 斜率向上
-      // 2. 不能收綠K（昨收必須嚴格大於昨開：yestClose > yestOpen）
-      // 3. 昨日漲幅介於 6% ~ 10% 之間（保留 10.1% 容錯避免漲停價位四捨五入誤差）
       const isBullishRedK = yestClose > yestOpen;
       const isBigGain = yestGainPct >= 6.0 && yestGainPct <= 10.1;
       const isCross20Ma = yestClose > yestMa20 && yestMa20 >= prevMa20 && yestHigh > 0;
-
-      const isKeyK = isCross20Ma && isBullishRedK && isBigGain;
+      const isPricePatternKeyK = isCross20Ma && isBullishRedK && isBigGain;
 
       let status = "CONSOLIDATE";
       if (todayPrice > yestHigh) status = "BREAKOUT";
@@ -425,28 +480,14 @@
         prevMa20, yestMa20,
         yestOpen, yestHigh, yestLow, yestClose,
         yestGainPct: parseFloat(yestGainPct.toFixed(2)),
-        todayOpen, todayHigh, todayLow, todayPrice,
-        yestVol, volRatio,
+        todayOpen, todayHigh, todayLow, todayPrice, todayVol,
+        yestVol: rawYestVol,
+        volRatio,
         changePct: parseFloat(changePct),
-        isKeyK, status,
+        isPricePatternKeyK,
+        status,
         realBars
       };
-    }
-
-    function updateDashboard() {
-      document.getElementById("count-ALL").textContent = allStocks.length;
-      document.getElementById("count-BREAKOUT").textContent = allStocks.filter(s => s.status === "BREAKOUT").length;
-      document.getElementById("count-CONSOLIDATE").textContent = allStocks.filter(s => s.status === "CONSOLIDATE").length;
-      document.getElementById("count-BREAKDOWN").textContent = allStocks.filter(s => s.status === "BREAKDOWN").length;
-
-      renderTable();
-
-      if ((!selectedStockCode || !allStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
-        selectStock(filteredStocks[0].code);
-      } else if (selectedStockCode) {
-        const current = allStocks.find(s => s.code === selectedStockCode);
-        if (current) updateDetailPanel(current, false);
-      }
     }
 
     function setFilter(filterType) {
@@ -473,7 +514,7 @@
 
       const tbody = document.getElementById("stockTableBody");
       if (filteredStocks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合「大長紅K (6%~10%) 突破20MA」條件的標的</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合篩選條件的標的（可嘗試放寬上方成交量百分比條件）</td></tr>`;
         return;
       }
 
@@ -496,7 +537,7 @@
           <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
             <td class="py-2.5 px-3">
               <div class="font-bold text-white">${s.code} ${s.name}</div>
-              <div class="text-[11px] text-sky-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗</div>
+              <div class="text-[11px] text-amber-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗</div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
               <span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">
@@ -509,7 +550,7 @@
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
               <div class="text-amber-300 font-semibold">${s.volRatio}%</div>
-              <div class="text-[11px] text-slate-400">${s.yestVol}張</div>
+              <div class="text-[11px] text-slate-400">${formatVolDisplay(s.yestVol)}</div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
               <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
@@ -523,6 +564,19 @@
       }).join("");
     }
 
+    function formatVolDisplay(vol) {
+      if (!vol || vol <= 0) return "0張";
+      if (vol >= 100000) return `${Math.round(vol / 1000).toLocaleString()}張`;
+      return `${Math.round(vol).toLocaleString()}張`;
+    }
+
+    function formatShortVol(vol) {
+      if (!vol || vol <= 0) return "0";
+      const lots = vol >= 100000 ? vol / 1000 : vol;
+      if (lots >= 10000) return `${(lots / 10000).toFixed(1)}萬張`;
+      return `${Math.round(lots).toLocaleString()}張`;
+    }
+
     function selectStock(code) {
       selectedStockCode = code;
       renderTable();
@@ -532,12 +586,20 @@
       }
     }
 
+    function computeDynamicTodayMa20(bars, todayPrice, fallbackYestMa20) {
+      if (!bars || bars.length < 19 || !todayPrice || todayPrice <= 0) {
+        return fallbackYestMa20;
+      }
+      const last19 = bars.slice(-19);
+      const sum19 = last19.reduce((acc, b) => acc + b.close, 0);
+      return Number(((sum19 + todayPrice) / 20).toFixed(2));
+    }
+
     function updateDetailPanel(stock, resetView = false) {
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
       document.getElementById("detailKeyKTag").textContent = `★ 昨日大長紅關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
-      document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 昨量 ${stock.yestVol} 張 (${stock.volRatio}%)`;
+      document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 昨量 ${formatVolDisplay(stock.yestVol)} (${stock.volRatio}%)`;
 
-      document.getElementById("cardMa20").textContent = `${stock.yestMa20.toFixed(2)} ↗`;
       document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
       document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
       document.getElementById("cardTodayPrice").textContent = stock.todayPrice.toFixed(2);
@@ -554,8 +616,9 @@
         badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
       }
 
-      let bars = [...stock.realBars];
+      let bars = stock.realBars.map(b => ({ ...b }));
       const warningEl = document.getElementById("noHistoryWarning");
+      let todayMa20 = stock.yestMa20;
 
       if (bars.length === 0) {
         warningEl.classList.remove("hidden");
@@ -567,6 +630,7 @@
             low: stock.yestLow,
             close: stock.yestClose,
             ma20: stock.yestMa20,
+            vol: stock.yestVol,
             isKeyK: true
           });
         }
@@ -578,30 +642,45 @@
             high: Math.max(stock.todayHigh, tOpen, stock.todayPrice),
             low: Math.min(stock.todayLow > 0 ? stock.todayLow : tOpen, tOpen, stock.todayPrice),
             close: stock.todayPrice,
-            ma20: null,
+            ma20: stock.yestMa20,
+            vol: stock.todayVol || 0,
             isToday: true
           });
         }
       } else {
         warningEl.classList.add("hidden");
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         const lastBar = bars[bars.length - 1];
+
         if (lastBar.date !== todayStr && lastBar.date !== "今日" && stock.todayPrice > 0) {
+          todayMa20 = computeDynamicTodayMa20(bars, stock.todayPrice, stock.yestMa20);
           const tOpen = stock.todayOpen > 0 ? stock.todayOpen : stock.yestClose;
+
+          const last4Vols = bars.slice(-4).reduce((acc, b) => acc + (b.vol || 0), 0);
+          const todayVolVal = stock.todayVol > 0 ? stock.todayVol : 0;
+          const todayMa5Vol = (last4Vols + todayVolVal) / 5;
+
           bars.push({
             date: "今日",
             open: tOpen,
             high: Math.max(stock.todayHigh, tOpen, stock.todayPrice),
             low: Math.min(stock.todayLow > 0 ? stock.todayLow : tOpen, tOpen, stock.todayPrice),
             close: stock.todayPrice,
-            ma20: null,
+            ma20: todayMa20,
+            vol: todayVolVal,
+            ma5Vol: todayMa5Vol,
             isToday: true
           });
         } else if (lastBar.date === todayStr || lastBar.date === "今日") {
           lastBar.close = stock.todayPrice;
           lastBar.high = Math.max(lastBar.high, stock.todayPrice);
           lastBar.low = Math.min(lastBar.low, stock.todayPrice);
+          if (stock.todayVol > 0) lastBar.vol = stock.todayVol;
           lastBar.isToday = true;
+
+          const prev19Bars = bars.slice(0, -1);
+          todayMa20 = computeDynamicTodayMa20(prev19Bars, stock.todayPrice, stock.yestMa20);
+          lastBar.ma20 = todayMa20;
         }
 
         if (bars.length >= 2) {
@@ -609,11 +688,15 @@
         }
       }
 
+      const maArrow = todayMa20 > stock.yestMa20 ? "↗" : (todayMa20 < stock.yestMa20 ? "↘" : "→");
+      const cardMaEl = document.getElementById("cardMa20");
+      cardMaEl.textContent = `${stock.yestMa20.toFixed(2)} / ${todayMa20.toFixed(2)} ${maArrow}`;
+      cardMaEl.className = `text-xs md:text-sm font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
+
       chartState.bars = bars;
       if (resetView) {
         chartState.visibleCount = 10;
         chartState.rightOffset = 0;
-        chartState.hoverIndex = -1;
       }
 
       updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
@@ -669,7 +752,7 @@
 
         if (chartState.isDragging) {
           const dx = e.clientX - chartState.dragStartX;
-          const plotW = rect.width - 110;
+          const plotW = rect.width - 80;
           const pxPerBar = plotW / chartState.visibleCount;
           const shiftBars = Math.round(dx / pxPerBar);
           chartState.rightOffset = chartState.dragStartOffset + shiftBars;
@@ -682,11 +765,11 @@
       canvas.addEventListener("mouseleave", () => {
         chartState.mouseX = -1;
         chartState.mouseY = -1;
-        chartState.hoverIndex = -1;
         renderCanvasChart();
       });
     }
 
+    // 繪製高精度 Canvas 真實 K 線主圖 + 成交量副圖 + 三色無紅無綠 20MA
     function renderCanvasChart() {
       const canvas = document.getElementById("klineCanvas");
       if (!canvas) return;
@@ -718,11 +801,16 @@
       }
 
       const padLeft = 14;
-      const padRight = 64;
-      const padTop = 44;
-      const padBottom = 26;
+      const padRight = 66;
+      const padTop = 46;
+      const padBottom = 22;
+      const gapBetweenCharts = 16;
+
+      const totalPlotH = height - padTop - padBottom - gapBetweenCharts;
+      const pricePlotH = Math.floor(totalPlotH * 0.72);
+      const volPlotTop = padTop + pricePlotH + gapBetweenCharts;
+      const volPlotH = totalPlotH - pricePlotH;
       const plotW = width - padLeft - padRight;
-      const plotH = height - padTop - padBottom;
 
       const allPrices = [
         ...visibleBars.flatMap(b => [b.open, b.high, b.low, b.close, b.ma20]),
@@ -736,14 +824,18 @@
       const maxY = rawMax + span * 0.1;
       const minY = rawMin - span * 0.1;
 
-      const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * plotH;
-      const yToPrice = (y) => maxY - ((y - padTop) / plotH) * (maxY - minY);
+      const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH;
+      const yToPrice = (y) => maxY - ((y - padTop) / pricePlotH) * (maxY - minY);
 
+      const allVols = visibleBars.flatMap(b => [b.vol || 0, b.ma5Vol || 0]).filter(v => v > 0);
+      const maxVol = allVols.length > 0 ? Math.max(...allVols) * 1.15 : 100;
+      const volToY = (v) => volPlotTop + volPlotH - (Math.max(0, v) / maxVol) * volPlotH;
+
+      // 價格主圖網格與刻度
       ctx.font = "11px monospace";
       ctx.textAlign = "left";
-      const gridCount = 5;
-      for (let i = 0; i <= gridCount; i++) {
-        const val = maxY - ((maxY - minY) * i) / gridCount;
+      for (let i = 0; i <= 4; i++) {
+        const val = maxY - ((maxY - minY) * i) / 4;
         const y = Math.round(priceToY(val)) + 0.5;
 
         ctx.strokeStyle = "#162033";
@@ -757,6 +849,20 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
+      // 成交量副圖分隔線與刻度標籤
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, volPlotTop - 6);
+      ctx.lineTo(width - padRight, volPlotTop - 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "10px monospace";
+      ctx.fillText("成交量", width - padRight + 6, volPlotTop + 8);
+      ctx.fillText(formatShortVol(maxVol / 1.15), width - padRight + 6, volPlotTop + 20);
+
+      // 繪製昨高 / 昨低參考線
       drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
       drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
 
@@ -781,7 +887,8 @@
         }
       });
 
-      const maCoords = [];
+      const ma20Points = [];
+      const ma5VolPoints = [];
 
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
@@ -790,13 +897,26 @@
         const yHigh = priceToY(b.high);
         const yLow = priceToY(b.low);
 
+        // 取得前一根真實 20MA（包含可視範圍左側前一根，確保第一根線段也能正確變色）
+        const globalIdx = startIdx + idx;
+        const prevGlobalBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+
         if (b.ma20 && b.ma20 > 0) {
-          maCoords.push({ x: cx, y: priceToY(b.ma20) });
+          ma20Points.push({
+            x: cx,
+            y: priceToY(b.ma20),
+            val: b.ma20,
+            prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20
+          });
+        }
+        if (b.ma5Vol && b.ma5Vol > 0) {
+          ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
         }
 
         const isUp = b.close >= b.open;
-        const color = isUp ? "#f43f5e" : "#10b981";
+        const color = isUp ? "#f43f5e" : "#10b981"; // 台股 K 棒紅漲綠跌
 
+        // 上方：K 棒上下影線
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -804,35 +924,71 @@
         ctx.lineTo(cx, yLow);
         ctx.stroke();
 
+        // 上方：K 棒實體
         const bodyTop = Math.min(yOpen, yClose);
         const bodyH = Math.max(2, Math.abs(yClose - yOpen));
         ctx.fillStyle = color;
         ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
 
+        // 關鍵K金色外框高亮
         if (b.isKeyK) {
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
         }
 
+        // 下方：成交量柱狀圖
+        if (b.vol && b.vol > 0) {
+          const yVolTop = volToY(b.vol);
+          const volBarH = Math.max(2, (volPlotTop + volPlotH) - yVolTop);
+          ctx.fillStyle = isUp ? "rgba(244, 63, 94, 0.78)" : "rgba(16, 185, 129, 0.78)";
+          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
+        }
+
+        // 最底部：X 軸日期標籤
         const shortDate = b.date.length >= 10 ? b.date.slice(5) : b.date;
         ctx.fillStyle = b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8");
         ctx.font = (b.isKeyK || b.isToday) ? "bold 10px sans-serif" : "10px monospace";
         ctx.textAlign = "center";
-        ctx.fillText(shortDate, cx, height - 8);
+        ctx.fillText(shortDate, cx, height - 6);
       });
 
-      if (maCoords.length >= 2) {
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 2;
+      // 【20MA 三色趨勢線繪製：無紅無綠】
+      // 往上走 (val > prevVal) = 亮橘金色 #f59e0b
+      // 走平 (val == prevVal) = 純白銀色 #e2e8f0
+      // 往下走 (val < prevVal) = 亮電光藍 #38bdf8
+      if (ma20Points.length >= 2) {
+        ctx.lineWidth = 2.4;
+        for (let i = 1; i < ma20Points.length; i++) {
+          const p0 = ma20Points[i - 1];
+          const p1 = ma20Points[i];
+          const diff = Number((p1.val - p0.val).toFixed(2));
+
+          let slopeColor = "#e2e8f0"; // 走平：純白銀色
+          if (diff > 0) slopeColor = "#f59e0b"; // 往上走：亮橘金色
+          else if (diff < 0) slopeColor = "#38bdf8"; // 往下走：亮電光藍
+
+          ctx.strokeStyle = slopeColor;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+      }
+
+      // 繪製 5日均量線 (紫色，避免與橘金色 20MA 混淆)
+      if (ma5VolPoints.length >= 2) {
+        ctx.strokeStyle = "#c084fc";
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
-        maCoords.forEach((pt, i) => {
+        ma5VolPoints.forEach((pt, i) => {
           if (i === 0) ctx.moveTo(pt.x, pt.y);
           else ctx.lineTo(pt.x, pt.y);
         });
         ctx.stroke();
       }
 
+      // 繪製滑鼠十字準心與即時價位提示
       if (hoveredBar && hoveredCx > 0) {
         ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
         ctx.lineWidth = 1;
@@ -849,13 +1005,15 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        const hoverPrice = yToPrice(clampedY);
-        ctx.fillStyle = "#334155";
-        ctx.fillRect(width - padRight + 2, clampedY - 9, 58, 18);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px monospace";
-        ctx.textAlign = "left";
-        ctx.fillText(hoverPrice.toFixed(2), width - padRight + 6, clampedY + 4);
+        if (clampedY <= padTop + pricePlotH) {
+          const hoverPrice = yToPrice(clampedY);
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(width - padRight + 2, clampedY - 9, 60, 18);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(hoverPrice.toFixed(2), width - padRight + 6, clampedY + 4);
+        }
 
         updateHudDisplay(hoveredBar, hoveredPrevBar);
       }
@@ -889,7 +1047,18 @@
       const isUp = diff >= 0;
       const colorClass = isUp ? "text-rose-400" : "text-emerald-400";
       const sign = diff > 0 ? "+" : "";
-      const maText = bar.ma20 ? `<span class="text-sky-400">20MA:${bar.ma20.toFixed(2)}</span>` : "";
+
+      // 判斷 20MA 方向文字與對應無紅無綠配色
+      let maHtml = "";
+      if (bar.ma20) {
+        const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
+        const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
+        const maColor = maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200");
+        const maDir = maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→");
+        maHtml = `<span class="${maColor} font-bold">20MA:${bar.ma20.toFixed(2)}${maDir}</span>`;
+      }
+
+      const volText = bar.vol ? `<span class="text-purple-300">量:${formatVolDisplay(bar.vol)}</span>` : "";
 
       hud.innerHTML = `
         <span class="text-amber-300 font-bold">${bar.date}</span>
@@ -898,7 +1067,8 @@
         <span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>
         <span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span>
         <span class="${colorClass}">(${sign}${pct}%)</span>
-        ${maText}
+        ${volText}
+        ${maHtml}
       `;
     }
 
@@ -924,9 +1094,9 @@
 
     function exportCSV() {
       if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
-      const headers = ["股票代號", "股票名稱", "昨日長紅漲幅%", "昨日20MA", "昨高", "昨低", "昨收", "今日現價", "今日漲跌幅%", "確認狀態"];
+      const headers = ["股票代號", "股票名稱", "昨日長紅漲幅%", "昨日20MA", "昨高", "昨低", "昨收", "昨量比%", "今日現價", "今日漲跌幅%", "確認狀態"];
       const rows = filteredStocks.map(s => [
-        s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.yestHigh, s.yestLow, s.yestClose, s.todayPrice, `${s.changePct}%`, s.status
+        s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.yestHigh, s.yestLow, s.yestClose, `${s.volRatio}%`, s.todayPrice, `${s.changePct}%`, s.status
       ]);
       const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
