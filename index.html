@@ -417,7 +417,6 @@
       const yestClose = parseFloat(raw.yestClose) || 0;
 
       const todayPrice = parseFloat(raw.price || raw.todayClose || raw.close) || 0;
-      // 【修正】確保今日開盤價優先採用真實 todayOpen；若無則採用 yestClose，絕不誤抓 yestLow 造成綠K變紅K
       const rawTodayOpen = parseFloat(raw.todayOpen || raw.open) || 0;
       const todayOpen = rawTodayOpen > 0 ? rawTodayOpen : (todayPrice > 0 ? yestClose : 0);
       const todayHigh = Math.max(parseFloat(raw.todayHigh || raw.high) || 0, todayOpen, todayPrice);
@@ -619,7 +618,6 @@
       document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
       document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
 
-      // 顯示今日開盤與今日收盤/現價，並依實際開收決定顏色（收 < 開為綠，收 >= 開為紅）
       const isTodayRed = stock.todayPrice >= stock.todayOpen;
       const cardTodayEl = document.getElementById("cardTodayPrice");
       cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
@@ -866,7 +864,6 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
-      // 成交量副圖分隔線與當日成交量提示
       ctx.strokeStyle = "#1e293b";
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -930,7 +927,6 @@
           ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
         }
 
-        // 台股紅漲綠跌：收盤 >= 開盤為紅 (#f43f5e)，收盤 < 開盤為綠 (#10b981)
         const isUp = b.close >= b.open;
         const color = isUp ? "#f43f5e" : "#10b981";
 
@@ -952,14 +948,12 @@
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
         }
 
-        // 繪製下方成交量柱狀圖（若當日有成交量，即使很小也至少給 3px 高度清楚顯示）
         if (b.vol !== undefined && b.vol !== null && b.vol > 0) {
           const yVolTop = volToY(b.vol);
           const volBarH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
           ctx.fillStyle = isUp ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
           ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
 
-          // 在「今日」成交量柱上方直接標示張數數字，方便一眼看到當日量
           if (b.isToday) {
             ctx.fillStyle = "#e2e8f0";
             ctx.font = "bold 9px monospace";
@@ -976,7 +970,6 @@
         ctx.fillText(shortDate, cx, height - 6);
       });
 
-      // 20MA 三色趨勢線 (無紅無綠：上升=亮橘金、走平=純白銀、下降=亮電光藍)
       if (ma20Points.length >= 2) {
         ctx.lineWidth = 2.4;
         for (let i = 1; i < ma20Points.length; i++) {
