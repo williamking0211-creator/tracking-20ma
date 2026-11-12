@@ -63,7 +63,7 @@
     </div>
   </header>
 
-  <!-- 策略說明三步驟卡片（STEP 1 支援手動勾選條件與快速切換模式） -->
+  <!-- 策略說明三步驟卡片 -->
   <section class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-2">
@@ -79,12 +79,10 @@
       </div>
 
       <div class="text-xs text-slate-300 space-y-2">
-        <!-- 基礎核心條件 -->
         <div class="text-[11px] text-amber-300 font-medium">
           • 基礎核心：前日收盤 ≤ 前日20MA，昨日正式站上20MA（首日穿越）且昨日上漲
         </div>
 
-        <!-- 可勾選條件列 1：20MA斜率 + 實體紅K -->
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 bg-slate-900/80 border border-slate-800 rounded-lg px-2.5 py-1.5">
           <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
             <input type="checkbox" id="chkMa20Up" onchange="applyFiltersAndRender()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
@@ -97,7 +95,6 @@
           </label>
         </div>
 
-        <!-- 可勾選條件列 2：漲幅區間限制 -->
         <div class="flex flex-wrap items-center gap-1.5">
           <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
             <input type="checkbox" id="chkGainRange" checked onchange="applyFiltersAndRender()" class="rounded bg-slate-800 border-slate-600 text-rose-500 focus:ring-0" />
@@ -116,7 +113,6 @@
           </div>
         </div>
 
-        <!-- 成交量倍數條件 -->
         <div class="flex flex-wrap items-center gap-1.5">
           <span class="text-[11px]">• 昨日成交量</span>
           <select id="volOperatorSelect" onchange="applyFiltersAndRender()" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-bold text-[11px] focus:outline-none focus:border-blue-500">
@@ -385,8 +381,8 @@
   <script>
     const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
     let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
-    let rawFirstBreak20MaStocks = []; // 所有「首日由下往上穿越 20MA 且昨日收漲」的基礎候選池
-    let allStocks = [];               // 經過使用者勾選條件動態過濾後的關鍵K池
+    let rawFirstBreak20MaStocks = [];
+    let allStocks = [];
     let filteredStocks = [];
     let currentFilter = "ALL";
     let selectedStockCode = null;
@@ -434,7 +430,6 @@
       applyFiltersAndRender();
     }
 
-    // 快速切換「放寬模式」與「嚴格飆股模式」
     function applyPresetMode(mode) {
       if (mode === 'RELAXED') {
         document.getElementById("chkMa20Up").checked = false;
@@ -497,7 +492,6 @@
         const rawData = await response.json();
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-        // 先篩出所有「首日由下往上穿越 20MA 且昨日實質上漲」的基礎候選標的
         rawFirstBreak20MaStocks = list
           .map(item => normalizeStockItem(item))
           .filter(s => s.isFirstDayBreak20Ma && s.isUpDay);
@@ -513,13 +507,12 @@
         if (!isSilent && rawFirstBreak20MaStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `
             <tr><td colspan="6" class="py-10 text-center text-rose-400">
-              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟。
+              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟，或後端正在初始化 90 天歷史資料（請稍候 10 秒再點刷新）。
             </td></tr>`;
         }
       }
     }
 
-    // 依據使用者手動勾選的條件，即時動態過濾股票清單
     function applyFiltersAndRender() {
       const requireMa20Up = document.getElementById("chkMa20Up").checked;
       const requireSolidRedK = document.getElementById("chkSolidRedK").checked;
@@ -532,20 +525,15 @@
       const validVolThreshold = isNaN(volThreshold) ? 70 : volThreshold;
 
       allStocks = rawFirstBreak20MaStocks.filter(s => {
-        // 1. 勾選：強制 20MA 斜率向上
         if (requireMa20Up && !s.isMa20SlopeUp) return false;
-
-        // 2. 勾選：必須收實體紅K (昨收 > 昨開)
         if (requireSolidRedK && !s.isBullishRedK) return false;
 
-        // 3. 勾選：昨日漲幅區間
         if (useGainRange) {
           const lowBound = isNaN(minGain) ? -100 : minGain;
           const highBound = isNaN(maxGain) ? 100 : maxGain;
           if (s.yestGainPct < lowBound || s.yestGainPct > highBound) return false;
         }
 
-        // 4. 成交量條件
         if (volOp === "GTE" && s.volRatio < validVolThreshold) return false;
         if (volOp === "LTE" && s.volRatio > validVolThreshold) return false;
 
@@ -599,16 +587,18 @@
       })).filter(b => b.open > 0 && b.high > 0 && b.low > 0 && b.close > 0) : [];
 
       for (let i = 0; i < realBars.length; i++) {
-        if ((!realBars[i].ma20 || realBars[i].ma20 <= 0) && i >= 19) {
+        if (!realBars[i].ma20 || realBars[i].ma20 <= 0) {
+          const startIdx = Math.max(0, i - 19);
+          const count = i - startIdx + 1;
           let sum20 = 0;
-          for (let j = i - 19; j <= i; j++) sum20 += realBars[j].close;
-          realBars[i].ma20 = Number((sum20 / 20).toFixed(2));
+          for (let j = startIdx; j <= i; j++) sum20 += realBars[j].close;
+          realBars[i].ma20 = Number((sum20 / count).toFixed(2));
         }
-        if (i >= 4) {
-          let sumVol5 = 0;
-          for (let j = i - 4; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
-          realBars[i].ma5Vol = sumVol5 / 5;
-        }
+        const volStartIdx = Math.max(0, i - 4);
+        const volCount = i - volStartIdx + 1;
+        let sumVol5 = 0;
+        for (let j = volStartIdx; j <= i; j++) sumVol5 += (realBars[j].vol || 0);
+        realBars[i].ma5Vol = sumVol5 / volCount;
       }
 
       const rawYestVol = parseFloat(raw.yestVol || raw.vol) || 0;
@@ -652,15 +642,10 @@
       const baseRefPrice = prevClose > 0 ? prevClose : yestOpen;
       const yestGainPct = baseRefPrice > 0 ? ((yestClose - baseRefPrice) / baseRefPrice) * 100 : 0;
 
-      // 放寬後的核心與可選判斷旗標：
-      // 1. isUpDay：昨日實質上漲（昨日收盤 > 前一日收盤，相容跳空開高收十字線）
       const isUpDay = prevClose > 0 ? (yestClose > prevClose) : (yestClose >= yestOpen);
-      // 2. isBullishRedK：是否收實體紅K（昨日收盤 > 昨日開盤）
       const isBullishRedK = yestClose > yestOpen;
-      // 3. isMa20SlopeUp：20MA 斜率是否已走平或向上
       const isMa20SlopeUp = yestMa20 >= calculatedPrevMa20;
 
-      // 4. isFirstDayBreak20Ma：前一日收盤 <= 前一日 20MA，且昨日收盤 > 昨日 20MA
       const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0
         ? (prevClose <= calculatedPrevMa20)
         : (yestOpen <= yestMa20);
