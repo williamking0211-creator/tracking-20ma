@@ -332,8 +332,8 @@
             </div>
 
             <div class="flex items-center gap-3">
-              <input id="simPriceSlider" type="range" step="0.1" class="flex-1 h-2 bg-slate-800 rounded-lg cursor-pointer" />
-              <input id="simPriceInput" type="number" step="0.1"
+              <input id="simPriceSlider" type="range" step="0.01" class="flex-1 h-2 bg-slate-800 rounded-lg cursor-pointer" />
+              <input id="simPriceInput" type="number" step="0.01"
                 class="w-24 px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-right text-xs font-bold text-white" />
             </div>
 
@@ -431,27 +431,27 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
               <label class="block text-slate-400 text-[11px]">前日 20MA</label>
-              <input id="inpPrevMa20" type="number" step="0.01" required value="98.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpPrevMa20" type="number" step="0.01" required value="98.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日 20MA (需向上)</label>
-              <input id="inpYestMa20" type="number" step="0.01" required value="99.2" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpYestMa20" type="number" step="0.01" required value="99.20" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日開盤 (20MA下)</label>
-              <input id="inpYestOpen" type="number" step="0.01" required value="97.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpYestOpen" type="number" step="0.01" required value="97.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日收盤 (站上20MA)</label>
-              <input id="inpYestClose" type="number" step="0.01" required value="102.0" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpYestClose" type="number" step="0.01" required value="102.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日最高 (確認突破點)</label>
-              <input id="inpYestHigh" type="number" step="0.01" required value="103.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-rose-300 font-bold" />
+              <input id="inpYestHigh" type="number" step="0.01" required value="103.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-rose-300 font-bold" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日最低 (跌破防守點)</label>
-              <input id="inpYestLow" type="number" step="0.01" required value="97.0" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-emerald-300 font-bold" />
+              <input id="inpYestLow" type="number" step="0.01" required value="97.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-emerald-300 font-bold" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">昨日成交量 (張)</label>
@@ -469,19 +469,19 @@
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
               <label class="block text-slate-400 text-[11px]">今日開盤</label>
-              <input id="inpTodayOpen" type="number" step="0.01" required value="103.0" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpTodayOpen" type="number" step="0.01" required value="103.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">今日最高</label>
-              <input id="inpTodayHigh" type="number" step="0.01" required value="105.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpTodayHigh" type="number" step="0.01" required value="105.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">今日最低</label>
-              <input id="inpTodayLow" type="number" step="0.01" required value="102.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
+              <input id="inpTodayLow" type="number" step="0.01" required value="102.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
             </div>
             <div>
               <label class="block text-slate-400 text-[11px]">今日收盤 / 現價</label>
-              <input id="inpTodayClose" type="number" step="0.01" required value="104.5" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-amber-300 font-bold" />
+              <input id="inpTodayClose" type="number" step="0.01" required value="104.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-amber-300 font-bold" />
             </div>
           </div>
         </div>
@@ -504,45 +504,45 @@
     const DEFAULT_STOCKS = [
       {
         code: '2330', name: '台積電',
-        prevMa20: 1024.0, yestMa20: 1028.0,
-        yestOpen: 1018.0, yestHigh: 1045.0, yestLow: 1015.0, yestClose: 1040.0,
+        prevMa20: 1024.00, yestMa20: 1028.00,
+        yestOpen: 1018.00, yestHigh: 1045.00, yestLow: 1015.00, yestClose: 1040.00,
         yestVol: 52000, avgVol5: 24000,
-        todayOpen: 1042.0, todayHigh: 1060.0, todayLow: 1038.0, todayClose: 1055.0, todayVol: 46000
+        todayOpen: 1042.00, todayHigh: 1060.00, todayLow: 1038.00, todayClose: 1055.00, todayVol: 46000
       },
       {
         code: '2317', name: '鴻海',
-        prevMa20: 201.5, yestMa20: 202.8,
-        yestOpen: 199.0, yestHigh: 208.5, yestLow: 198.5, yestClose: 206.0,
+        prevMa20: 201.50, yestMa20: 202.80,
+        yestOpen: 199.00, yestHigh: 208.50, yestLow: 198.50, yestClose: 206.00,
         yestVol: 95000, avgVol5: 41000,
-        todayOpen: 207.0, todayHigh: 212.0, todayLow: 205.5, todayClose: 210.5, todayVol: 82000
+        todayOpen: 207.00, todayHigh: 212.00, todayLow: 205.50, todayClose: 210.50, todayVol: 82000
       },
       {
         code: '2454', name: '聯發科',
-        prevMa20: 1275.0, yestMa20: 1280.0,
-        yestOpen: 1265.0, yestHigh: 1315.0, yestLow: 1260.0, yestClose: 1300.0,
+        prevMa20: 1275.00, yestMa20: 1280.00,
+        yestOpen: 1265.00, yestHigh: 1315.00, yestLow: 1260.00, yestClose: 1300.00,
         yestVol: 11200, avgVol5: 5100,
-        todayOpen: 1305.0, todayHigh: 1320.0, todayLow: 1285.0, todayClose: 1295.0, todayVol: 8900
+        todayOpen: 1305.00, todayHigh: 1320.00, todayLow: 1285.00, todayClose: 1295.00, todayVol: 8900
       },
       {
         code: '3017', name: '奇鋐',
-        prevMa20: 618.0, yestMa20: 622.0,
-        yestOpen: 610.0, yestHigh: 648.0, yestLow: 608.0, yestClose: 642.0,
+        prevMa20: 618.00, yestMa20: 622.00,
+        yestOpen: 610.00, yestHigh: 648.00, yestLow: 608.00, yestClose: 642.00,
         yestVol: 18500, avgVol5: 7800,
-        todayOpen: 640.0, todayHigh: 646.0, todayLow: 625.0, todayClose: 632.0, todayVol: 12400
+        todayOpen: 640.00, todayHigh: 646.00, todayLow: 625.00, todayClose: 632.00, todayVol: 12400
       },
       {
         code: '2382', name: '廣達',
-        prevMa20: 294.0, yestMa20: 295.5,
-        yestOpen: 291.0, yestHigh: 305.0, yestLow: 290.0, yestClose: 301.0,
+        prevMa20: 294.00, yestMa20: 295.50,
+        yestOpen: 291.00, yestHigh: 305.00, yestLow: 290.00, yestClose: 301.00,
         yestVol: 43000, avgVol5: 19500,
-        todayOpen: 298.0, todayHigh: 300.0, todayLow: 285.0, todayClose: 287.5, todayVol: 39000
+        todayOpen: 298.00, todayHigh: 300.00, todayLow: 285.00, todayClose: 287.50, todayVol: 39000
       },
       {
         code: '2603', name: '長榮',
-        prevMa20: 208.0, yestMa20: 209.5,
-        yestOpen: 205.0, yestHigh: 217.0, yestLow: 204.0, yestClose: 215.0,
+        prevMa20: 208.00, yestMa20: 209.50,
+        yestOpen: 205.00, yestHigh: 217.00, yestLow: 204.00, yestClose: 215.00,
         yestVol: 68000, avgVol5: 29000,
-        todayOpen: 216.0, todayHigh: 221.0, todayLow: 214.0, todayClose: 219.5, todayVol: 59000
+        todayOpen: 216.00, todayHigh: 221.00, todayLow: 214.00, todayClose: 219.50, todayVol: 59000
       }
     ];
 
@@ -689,7 +689,7 @@
           tr.innerHTML = `
             <td class="py-2.5 px-2">
               <div class="font-bold text-white">${item.code} ${item.name}</div>
-              <div class="text-[10px] text-slate-400">昨20MA: ${item.yestMa20.toFixed(1)} ${item.ma20Up ? '↗' : '↘'}</div>
+              <div class="text-[10px] text-slate-400">昨20MA: ${item.yestMa20.toFixed(2)} ${item.ma20Up ? '↗' : '↘'}</div>
             </td>
             <td class="py-2.5 px-2">
               ${
@@ -702,15 +702,15 @@
               </div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
-              <div class="text-rose-400 font-semibold">${item.yestHigh.toFixed(1)}</div>
-              <div class="text-emerald-400 text-[11px]">${item.yestLow.toFixed(1)}</div>
+              <div class="text-rose-400 font-semibold">${item.yestHigh.toFixed(2)}</div>
+              <div class="text-emerald-400 text-[11px]">${item.yestLow.toFixed(2)}</div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
               <div class="font-bold ${item.volPass ? 'text-amber-300' : 'text-slate-400'}">${item.volRatioPct}%</div>
               <div class="text-[10px] text-slate-400">${item.yestVol.toLocaleString()}張</div>
             </td>
             <td class="py-2.5 px-2 text-right font-mono">
-              <div class="font-bold text-sm ${isUp ? getUpColorText() : getDownColorText()}">${item.todayClose.toFixed(1)}</div>
+              <div class="font-bold text-sm ${isUp ? getUpColorText() : getDownColorText()}">${item.todayClose.toFixed(2)}</div>
               <div class="text-[10px] ${isUp ? getUpColorText() : getDownColorText()}">${isUp ? '+' : ''}${changePct}%</div>
             </td>
             <td class="py-2.5 px-2 text-center">
@@ -742,7 +742,7 @@
       }
 
       document.getElementById('detailSubInfo').textContent =
-        `昨日收盤 ${current.yestClose.toFixed(1)} ｜ 昨量 ${current.yestVol.toLocaleString()} 張 (5日均量 ${current.avgVol5.toLocaleString()} 張, ${current.volRatioPct}%)`;
+        `昨日收盤 ${current.yestClose.toFixed(2)} ｜ 昨量 ${current.yestVol.toLocaleString()} 張 (5日均量 ${current.avgVol5.toLocaleString()} 張, ${current.volRatioPct}%)`;
 
       const decisionBox = document.getElementById('detailDecisionBox');
       decisionBox.textContent = current.confirmLabel;
@@ -754,24 +754,24 @@
         decisionBox.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border bg-emerald-500/20 border-emerald-500/50 text-emerald-300';
       }
 
-      document.getElementById('metricMa20').textContent = `${current.yestMa20.toFixed(1)} ↗`;
-      document.getElementById('metricYestHigh').textContent = current.yestHigh.toFixed(1);
-      document.getElementById('metricYestLow').textContent = current.yestLow.toFixed(1);
-      document.getElementById('metricTodayClose').textContent = current.todayClose.toFixed(1);
+      document.getElementById('metricMa20').textContent = `${current.yestMa20.toFixed(2)} ↗`;
+      document.getElementById('metricYestHigh').textContent = current.yestHigh.toFixed(2);
+      document.getElementById('metricYestLow').textContent = current.yestLow.toFixed(2);
+      document.getElementById('metricTodayClose').textContent = current.todayClose.toFixed(2);
 
       // 更新拉桿範圍與數值
       const slider = document.getElementById('simPriceSlider');
       const numInput = document.getElementById('simPriceInput');
-      const minSim = +(current.yestLow * 0.94).toFixed(1);
-      const maxSim = +(current.yestHigh * 1.06).toFixed(1);
+      const minSim = +(current.yestLow * 0.94).toFixed(2);
+      const maxSim = +(current.yestHigh * 1.06).toFixed(2);
       slider.min = minSim;
       slider.max = maxSim;
       slider.value = current.todayClose;
-      numInput.value = current.todayClose.toFixed(1);
+      numInput.value = current.todayClose.toFixed(2);
 
       const diffFromHigh = (((current.todayClose - current.yestHigh) / current.yestHigh) * 100).toFixed(2);
       document.getElementById('simDiffBadge').textContent =
-        `距離昨高 (${current.yestHigh.toFixed(1)})：${current.todayClose >= current.yestHigh ? '+' : ''}${diffFromHigh}%`;
+        `距離昨高 (${current.yestHigh.toFixed(2)})：${current.todayClose >= current.yestHigh ? '+' : ''}${diffFromHigh}%`;
 
       // 檢核清單
       const checklistEl = document.getElementById('detailChecklist');
@@ -779,7 +779,7 @@
         <div class="flex items-center justify-between">
           <span class="text-slate-300">1. 昨日股價由下往上突破 20MA 且 20MA 向上</span>
           <span class="font-bold ${current.crossUpMa20 && current.ma20Up ? 'text-emerald-400' : 'text-rose-400'}">
-            ${current.crossUpMa20 && current.ma20Up ? '✓ 通過' : '✕ 未通過'} (昨收 ${current.yestClose} &gt; 20MA ${current.yestMa20})
+            ${current.crossUpMa20 && current.ma20Up ? '✓ 通過' : '✕ 未通過'} (昨收 ${current.yestClose.toFixed(2)} &gt; 20MA ${current.yestMa20.toFixed(2)})
           </span>
         </div>
         <div class="flex items-center justify-between">
@@ -810,7 +810,7 @@
       const H = canvas.height;
       ctx.clearRect(0, 0, W, H);
 
-      // 構造 5 根歷史 + 昨日關鍵K + 今日確認K (共 7 根)
+      // 構造 5 根歷史 + 昨日關鍵K + 今日確認K (共 6 根)
       const base = s.prevMa20;
       const bars = [
         { label: 'D-5', open: base * 0.97, high: base * 0.985, low: base * 0.96, close: base * 0.975, ma20: base * 0.988 },
@@ -825,8 +825,8 @@
       const minP = Math.min(...allPrices) * 0.988;
       const maxP = Math.max(...allPrices) * 1.012;
 
-      const padLeft = 48;
-      const padRight = 95;
+      const padLeft = 52;
+      const padRight = 100;
       const padTop = 24;
       const padBottom = 32;
       const chartW = W - padLeft - padRight;
@@ -847,7 +847,7 @@
         const pVal = maxP - ((maxP - minP) / 4) * i;
         ctx.fillStyle = '#64748b';
         ctx.font = '10px monospace';
-        ctx.fillText(pVal.toFixed(1), 6, y + 3);
+        ctx.fillText(pVal.toFixed(2), 4, y + 3);
       }
 
       // 繪製「關鍵K 昨高」突破虛線
@@ -862,7 +862,7 @@
       ctx.stroke();
       ctx.fillStyle = '#fb7185';
       ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(`昨高 ${s.yestHigh.toFixed(1)}`, W - padRight + 6, yHigh + 4);
+      ctx.fillText(`昨高 ${s.yestHigh.toFixed(2)}`, W - padRight + 6, yHigh + 4);
       ctx.restore();
 
       // 繪製「關鍵K 昨低」防守虛線
@@ -877,7 +877,7 @@
       ctx.stroke();
       ctx.fillStyle = '#34d399';
       ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(`昨低 ${s.yestLow.toFixed(1)}`, W - padRight + 6, yLow + 4);
+      ctx.fillText(`昨低 ${s.yestLow.toFixed(2)}`, W - padRight + 6, yLow + 4);
       ctx.restore();
 
       // 繪製 20MA 曲線
@@ -962,7 +962,7 @@
       document.getElementById('btnSimulateTick').addEventListener('click', () => {
         stocksData = stocksData.map(s => {
           const deltaPct = (Math.random() - 0.46) * 0.022;
-          const newClose = +(s.todayClose * (1 + deltaPct)).toFixed(1);
+          const newClose = +(s.todayClose * (1 + deltaPct)).toFixed(2);
           return {
             ...s,
             todayClose: newClose,
@@ -1037,7 +1037,7 @@
 
       // 5. 右側尾盤收盤價模擬器拉桿與快捷鍵
       function updateSelectedClosePrice(newPrice) {
-        const p = +(Number(newPrice) || 0).toFixed(1);
+        const p = +(Number(newPrice) || 0).toFixed(2);
         stocksData = stocksData.map(s => {
           if (s.code !== selectedStockCode) return s;
           return {
@@ -1076,8 +1076,8 @@
         const headers = ['代號', '名稱', '昨日關鍵K', '昨20MA', '昨高', '昨低', '昨收', '昨量比(%)', '今日收盤', '確認K決策'];
         const rows = evaluated.map(s => [
           s.code, s.name, s.isKeyK ? '是' : '否',
-          s.yestMa20, s.yestHigh, s.yestLow, s.yestClose,
-          s.volRatioPct, s.todayClose, s.confirmLabel
+          s.yestMa20.toFixed(2), s.yestHigh.toFixed(2), s.yestLow.toFixed(2), s.yestClose.toFixed(2),
+          s.volRatioPct, s.todayClose.toFixed(2), s.confirmLabel
         ]);
         const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
