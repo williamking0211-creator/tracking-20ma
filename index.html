@@ -133,7 +133,7 @@
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
         <span class="text-xs font-bold text-sky-400">STEP 2・今日盤中與主力成本均價</span>
-        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">即時追蹤</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">每30秒自動同步</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
         <li>• <span class="text-pink-400 font-semibold">粉紅半透明泡泡</span>：中心點即為主力買進均價（連續買超末根顯示<span class="text-amber-300 font-semibold">金黃色波段均價</span>）</li>
@@ -365,14 +365,14 @@
         <button onclick="closeApiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
       <p class="text-xs text-slate-400 mb-3">
-        請確認後端資料來源網址（ngrok 網址加上 <code class="text-sky-400">/stocks</code>）：
+        請輸入後端資料來源網址（Cloudflare 網址或本機網址加上 <code class="text-sky-400">/stocks</code>）：
       </p>
-      <input type="text" id="apiUrlInput" placeholder="https://sixties-broker-revisit.ngrok-free.dev/stocks" 
+      <input type="text" id="apiUrlInput" placeholder="https://exercises-northern-passion-garage.trycloudflare.com/stocks" 
              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
         <input type="checkbox" id="autoSyncCheckbox" checked class="rounded bg-slate-800 border-slate-600 text-blue-500" />
-        啟用盤中即時自動同步 (每 5 秒背景更新報價)
+        啟用盤中即時自動同步 (每 30 秒背景更新報價)
       </label>
 
       <div class="flex justify-end gap-2">
@@ -387,11 +387,14 @@
   </div>
 
   <script>
-    const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
-    let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
-    if (!apiUrl.endsWith("/stocks")) {
-      apiUrl = DEFAULT_API_URL;
+    const DEFAULT_API_URL = "https://exercises-northern-passion-garage.trycloudflare.com/stocks";
+    let savedUrl = localStorage.getItem("custom_stock_api_url");
+    // 若先前存的是已超額的舊 ngrok 網址，自動切換成新的 Cloudflare 網址
+    if (!savedUrl || savedUrl.includes("ngrok-free.dev") || !savedUrl.endsWith("/stocks")) {
+      savedUrl = DEFAULT_API_URL;
+      localStorage.setItem("custom_stock_api_url", savedUrl);
     }
+    let apiUrl = savedUrl;
 
     let rawFirstBreak20MaStocks = [];
     let allStocks = [];
@@ -429,12 +432,13 @@
 
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
+      // 調整為每 30 秒 (30000 毫秒) 自動同步一次
       syncTimer = setInterval(() => {
         const cb = document.getElementById("autoSyncCheckbox");
         if (cb && cb.checked) {
           fetchStocksData(true);
         }
-      }, 5000);
+      }, 30000);
     }
 
     function quickSetVol(pct) {
@@ -498,9 +502,8 @@
       const statusText = document.getElementById("apiStatusText");
 
       try {
-        // 加上 ngrok 略過參數並移除自訂 headers，避免觸發瀏覽器 OPTIONS 預檢被 ngrok 警告頁攔截
         const separator = apiUrl.includes("?") ? "&" : "?";
-        const fetchUrl = `${apiUrl}${separator}ngrok-skip-browser-warning=true&_t=${Date.now()}`;
+        const fetchUrl = `${apiUrl}${separator}_t=${Date.now()}`;
 
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -512,7 +515,7 @@
           .filter(s => s.isFirstDayBreak20Ma && s.isUpDay);
 
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        statusText.textContent = `即時同步中 (${list.length}檔)`;
+        statusText.textContent = `即時同步中 (${list.length}檔候選)`;
 
         applyFiltersAndRender();
       } catch (err) {
