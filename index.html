@@ -54,7 +54,7 @@
     <div class="flex flex-wrap items-center gap-2">
       <button onclick="openApiModal()" id="apiStatusBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-2 hover:bg-emerald-500/25 transition">
         <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="apiStatusText">API 串接設定</span>
+        <span id="apiStatusText">連線初始化中...</span>
       </button>
 
       <button onclick="fetchStocksData()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium hover:bg-slate-700 transition">
@@ -69,10 +69,10 @@
       <div class="flex justify-between items-center mb-2">
         <span class="text-xs font-bold text-amber-400">STEP 1・昨日「關鍵K」篩選 (可勾選)</span>
         <div class="flex items-center gap-1">
-          <button onclick="applyPresetMode('RELAXED')" title="放寬條件：適合大型權值股與底部剛翻揚起漲" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition">
+          <button onclick="applyPresetMode('RELAXED')" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition">
             放寬模式
           </button>
-          <button onclick="applyPresetMode('STRICT')" title="嚴格條件：20MA向上＋實體大長紅(6%~10%)＋量增100%" class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition">
+          <button onclick="applyPresetMode('STRICT')" class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition">
             嚴格飆股
           </button>
         </div>
@@ -215,16 +215,16 @@
           <thead class="bg-slate-900/95 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
             <tr>
               <th class="py-2.5 px-3">股票代號/名稱</th>
-              <th onclick="toggleSort('yestGainPct')" title="點擊切換大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+              <th onclick="toggleSort('yestGainPct')" class="sortable-th py-2.5 px-2 text-right">
                 昨日漲幅 <span id="sort-icon-yestGainPct" class="text-slate-500 ml-0.5">⇅</span>
               </th>
-              <th onclick="toggleSort('yestHigh')" title="點擊切換昨高大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+              <th onclick="toggleSort('yestHigh')" class="sortable-th py-2.5 px-2 text-right">
                 昨高 / 昨低 <span id="sort-icon-yestHigh" class="text-slate-500 ml-0.5">⇅</span>
               </th>
-              <th onclick="toggleSort('volExtraPct')" title="點擊切換昨量比大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+              <th onclick="toggleSort('volExtraPct')" class="sortable-th py-2.5 px-2 text-right">
                 昨量 vs 5日均量 <span id="sort-icon-volExtraPct" class="text-slate-500 ml-0.5">⇅</span>
               </th>
-              <th onclick="toggleSort('todayPrice')" title="點擊切換今日現價大到小 / 小到大排序" class="sortable-th py-2.5 px-2 text-right">
+              <th onclick="toggleSort('todayPrice')" class="sortable-th py-2.5 px-2 text-right">
                 今日收盤/現價 <span id="sort-icon-todayPrice" class="text-slate-500 ml-0.5">⇅</span>
               </th>
               <th class="py-2.5 px-3 text-center">確認K 決策</th>
@@ -232,7 +232,7 @@
           </thead>
           <tbody id="stockTableBody" class="divide-y divide-slate-800/60 text-xs">
             <tr>
-              <td colspan="6" class="py-10 text-center text-slate-500">載入資料中，請確認 API 網址設定...</td>
+              <td colspan="6" class="py-10 text-center text-slate-500">正在向伺服器請求股票資料...</td>
             </tr>
           </tbody>
         </table>
@@ -292,13 +292,12 @@
         </div>
       </div>
 
-      <!-- K線圖控制工具列（新增：泡泡與扣抵獨立勾選開關） -->
+      <!-- K線圖控制工具列（泡泡與扣抵獨立勾選開關） -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex flex-wrap items-center gap-3">
           <span class="font-semibold text-slate-200">日K線圖</span>
           <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
 
-          <!-- 打勾顯示或取消的開關 -->
           <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
             <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
             <span>主力均價泡泡</span>
@@ -311,13 +310,13 @@
         </div>
 
         <div class="flex items-center gap-1.5">
-          <button onclick="zoomChart(-2)" title="放大 (減少顯示根數)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+          <button onclick="zoomChart(-2)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
             ＋ 放大
           </button>
-          <button onclick="zoomChart(2)" title="縮小 (增加顯示根數)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+          <button onclick="zoomChart(2)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
             － 縮小
           </button>
-          <button onclick="resetChartZoom()" title="恢復預設22根以完整顯示20MA扣抵位置" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+          <button onclick="resetChartZoom()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
             重置 22 根
           </button>
         </div>
@@ -325,13 +324,11 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[450px]">
-        <!-- 左上角即時 OHLC + 量 HUD 查價資訊列 + 圖例說明 -->
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col items-start gap-1.5">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力買賣均價與成交量</span>
           </div>
 
-          <!-- 20MA 線三色、扣抵與主力泡泡圖例說明 -->
           <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/85 border border-slate-800 px-2.5 py-1 rounded-md">
             <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
             <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
@@ -343,11 +340,10 @@
           </div>
         </div>
 
-        <!-- 缺少歷史明細提示遮罩 -->
         <div id="noHistoryWarning" class="hidden absolute inset-0 z-20 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center">
           <div class="text-amber-400 font-bold text-sm mb-2">⚠️ 後端 API 尚未提供此檔股票的歷史逐日 OHLC 陣列</div>
           <p class="text-xs text-slate-400 max-w-md leading-relaxed">
-            目前後端 <code class="text-sky-400">/stocks</code> 僅回傳單日欄位，缺少前幾日的逐日開高低收與成交量（<code class="text-sky-400">history</code> 陣列）。請確認後端 `index.js` 已重啟並完成抓取。
+            請確認電腦端 `index.js` 已啟動並完成資料載入。
           </p>
         </div>
 
@@ -355,7 +351,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 半透明泡泡中心點為主力大戶買賣平均價；若連續多日買/賣超，末根會另外用金黃/紫藍色標出波段累積均價</span>
+        <span>💡 半透明泡泡中心點為主力大戶買賣平均價；連續買/賣超末根另以金黃/紫藍色標出波段累積均價</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -369,9 +365,9 @@
         <button onclick="closeApiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
       <p class="text-xs text-slate-400 mb-3">
-        請輸入後端資料來源網址（例如 ngrok 網址並加上 <code class="text-sky-400">/stocks</code>）：
+        請確認後端資料來源網址（ngrok 網址加上 <code class="text-sky-400">/stocks</code>）：
       </p>
-      <input type="text" id="apiUrlInput" placeholder="https://xxxx.ngrok-free.dev/stocks" 
+      <input type="text" id="apiUrlInput" placeholder="https://sixties-broker-revisit.ngrok-free.dev/stocks" 
              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
@@ -393,6 +389,10 @@
   <script>
     const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
     let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
+    if (!apiUrl.endsWith("/stocks")) {
+      apiUrl = DEFAULT_API_URL;
+    }
+
     let rawFirstBreak20MaStocks = [];
     let allStocks = [];
     let filteredStocks = [];
@@ -430,7 +430,8 @@
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
       syncTimer = setInterval(() => {
-        if (document.getElementById("autoSyncCheckbox").checked) {
+        const cb = document.getElementById("autoSyncCheckbox");
+        if (cb && cb.checked) {
           fetchStocksData(true);
         }
       }, 5000);
@@ -498,6 +499,7 @@
 
       try {
         const response = await fetch(apiUrl, {
+          cache: "no-store",
           headers: { "ngrok-skip-browser-warning": "true" }
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -515,11 +517,11 @@
       } catch (err) {
         console.error("API 讀取失敗:", err);
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
-        statusText.textContent = "連線中斷 (點此設定)";
+        statusText.textContent = `連線失敗: ${err.message}`;
         if (!isSilent && rawFirstBreak20MaStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `
             <tr><td colspan="6" class="py-10 text-center text-rose-400">
-              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟，或後端正在初始化資料。
+              無法連線至 API (${apiUrl})，錯誤訊息：${err.message}
             </td></tr>`;
         }
       }
@@ -567,12 +569,9 @@
       }
     }
 
-    // 計算單根 K 棒的主力買賣力道與主力大戶平均成本價
     function calcBarForceAndAvgPrice(bar, prevClose, bigBuyVol = 0, bigSellVol = 0, bigBuyAvgPrice = 0, bigSellAvgPrice = 0) {
-      // 當日典型成交重心價（VWAP 近似值：(高 + 低 + 收 * 2) / 4）
       const typicalPrice = Number(((bar.high + bar.low + bar.close * 2) / 4).toFixed(2));
 
-      // 1. 若有盤中即時內外盤大單數據，優先採用真實大單買賣力道與大單均價
       if (bigBuyVol > 0 || bigSellVol > 0) {
         const totalBig = bigBuyVol + bigSellVol;
         if (totalBig > 0) {
@@ -587,7 +586,6 @@
         }
       }
 
-      // 2. 否則依據 K 棒高低位置、實體強弱與量能倍數推算主力買賣力道與主力成本重心價
       const range = bar.high - bar.low;
       if (range <= 0) {
         if (prevClose > 0 && bar.close > prevClose) return { forceScore: 1.2, avgPrice: bar.close };
@@ -601,7 +599,6 @@
       const volMult = bar.ma5Vol > 0 ? Math.min(1.6, Math.max(0.5, (bar.vol || 0) / bar.ma5Vol)) : 1.0;
       const forceScore = Number((priceForce * volMult).toFixed(2));
 
-      // 主力買超時成本重心偏向上半部 (開盤與收盤加權)；主力賣超時重心偏向出貨區
       let avgPrice = typicalPrice;
       if (forceScore >= 0.20) {
         avgPrice = Number(((bar.open + bar.close * 2 + bar.high) / 4).toFixed(2));
@@ -612,11 +609,10 @@
       return { forceScore, avgPrice };
     }
 
-    // 計算「連續同方向買超或賣超」的波段累積均價，並標記在連續區間的最後一根
     function enrichConsecutiveStreakAvg(bars) {
       for (let i = 0; i < bars.length; i++) {
         bars[i].streakAvgPrice = 0;
-        bars[i].streakDir = 0; // 1 = 連續買超, -1 = 連續賣超
+        bars[i].streakDir = 0;
         bars[i].streakDays = 0;
       }
 
@@ -645,7 +641,6 @@
         }
 
         const streakLen = j - i;
-        // 只要連續 >= 2 根同方向買超或賣超，就在連續區間的最後一根 (j - 1) 標記整段累積均價
         if (streakLen >= 2 && sumVol > 0) {
           const lastIdx = j - 1;
           bars[lastIdx].streakAvgPrice = Number((sumAmount / sumVol).toFixed(2));
@@ -1047,7 +1042,6 @@
         }
       }
 
-      // 計算連續多日買超或賣超的區間累積均價，標記於連續區間最後一根
       enrichConsecutiveStreakAvg(bars);
 
       let todayDeductPrice = 0;
@@ -1132,4 +1126,493 @@
         chartState.mouseX = x;
         chartState.mouseY = y;
 
-        if (chartState.
+        if (chartState.isDragging) {
+          const dx = e.clientX - chartState.dragStartX;
+          const plotW = rect.width - 80;
+          const pxPerBar = plotW / chartState.visibleCount;
+          const shiftBars = Math.round(dx / pxPerBar);
+          chartState.rightOffset = chartState.dragStartOffset + shiftBars;
+          clampRightOffset();
+        }
+
+        renderCanvasChart();
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        chartState.mouseX = -1;
+        chartState.mouseY = -1;
+        renderCanvasChart();
+      });
+    }
+
+    function renderCanvasChart() {
+      const canvas = document.getElementById("klineCanvas");
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      ctx.fillStyle = "#080c14";
+      ctx.fillRect(0, 0, width, height);
+
+      const stock = allStocks.find(s => s.code === selectedStockCode);
+      const bars = chartState.bars;
+      if (!stock || bars.length === 0) return;
+
+      const showBubbles = document.getElementById("chkShowBubbles").checked;
+      const showDeduct = document.getElementById("chkShowDeduct").checked;
+
+      clampRightOffset();
+      const endIdx = bars.length - chartState.rightOffset;
+      const startIdx = Math.max(0, endIdx - chartState.visibleCount);
+      const visibleBars = bars.slice(startIdx, endIdx);
+
+      document.getElementById("visibleCountBadge").textContent = `顯示 ${visibleBars.length} 根 (共 ${bars.length} 根)`;
+      if (visibleBars.length > 0) {
+        document.getElementById("dataRangeInfo").textContent = `區間：${visibleBars[0].date} ～ ${visibleBars[visibleBars.length - 1].date}`;
+      }
+
+      const padLeft = 14;
+      const padRight = 68;
+      const padTop = 76;
+      const padBottom = 22;
+      const gapBetweenCharts = 16;
+
+      const totalPlotH = height - padTop - padBottom - gapBetweenCharts;
+      const pricePlotH = Math.floor(totalPlotH * 0.72);
+      const volPlotTop = padTop + pricePlotH + gapBetweenCharts;
+      const volPlotH = totalPlotH - pricePlotH;
+      const plotW = width - padLeft - padRight;
+
+      const allPrices = [
+        ...visibleBars.flatMap(b => [b.open, b.high, b.low, b.close, b.ma20]),
+        stock.yestHigh,
+        stock.yestLow
+      ].filter(v => v !== null && !isNaN(v) && v > 0);
+
+      const rawMax = Math.max(...allPrices);
+      const rawMin = Math.min(...allPrices);
+      const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
+      const maxY = rawMax + span * 0.14;
+      const minY = rawMin - span * 0.14;
+
+      const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH;
+      const yToPrice = (y) => maxY - ((y - padTop) / pricePlotH) * (maxY - minY);
+
+      const allVols = visibleBars.flatMap(b => [b.vol || 0, b.ma5Vol || 0]).filter(v => v > 0);
+      const maxVol = allVols.length > 0 ? Math.max(...allVols) * 1.18 : 100;
+      const volToY = (v) => volPlotTop + volPlotH - (Math.max(0, v) / maxVol) * volPlotH;
+
+      ctx.font = "11px monospace";
+      ctx.textAlign = "left";
+      for (let i = 0; i <= 4; i++) {
+        const val = maxY - ((maxY - minY) * i) / 4;
+        const y = Math.round(priceToY(val)) + 0.5;
+
+        ctx.strokeStyle = "#162033";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
+        ctx.stroke();
+
+        ctx.fillStyle = "#64748b";
+        ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
+      }
+
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, volPlotTop - 6);
+      ctx.lineTo(width - padRight, volPlotTop - 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "10px monospace";
+      ctx.fillText("今日量", width - padRight + 6, volPlotTop + 10);
+      ctx.fillStyle = "#c084fc";
+      ctx.font = "bold 10px monospace";
+      ctx.fillText(formatShortVol(stock.todayVol), width - padRight + 6, volPlotTop + 23);
+
+      drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "昨高", padLeft, width - padRight);
+      drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "昨低", padLeft, width - padRight);
+
+      const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
+      const stepX = plotW / slotCount;
+      const candleW = Math.max(5, Math.min(34, stepX * 0.62));
+
+      let hoveredBar = null;
+      let hoveredPrevBar = null;
+      let hoveredCx = -1;
+
+      visibleBars.forEach((b, idx) => {
+        const cx = padLeft + stepX * idx + stepX / 2;
+        const leftEdge = padLeft + stepX * idx;
+        const rightEdge = leftEdge + stepX;
+
+        if (chartState.mouseX >= leftEdge && chartState.mouseX < rightEdge && chartState.mouseY >= padTop && chartState.mouseY <= height - padBottom) {
+          hoveredBar = b;
+          const globalIdx = startIdx + idx;
+          hoveredPrevBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+          hoveredCx = cx;
+        }
+      });
+
+      const ma20Points = [];
+      const ma5VolPoints = [];
+
+      visibleBars.forEach((b, idx) => {
+        const cx = padLeft + stepX * idx + stepX / 2;
+        const yOpen = priceToY(b.open);
+        const yClose = priceToY(b.close);
+        const yHigh = priceToY(b.high);
+        const yLow = priceToY(b.low);
+
+        const globalIdx = startIdx + idx;
+        const prevGlobalBar = globalIdx > 0 ? bars[globalIdx - 1] : null;
+
+        if (b.ma20 && b.ma20 > 0) {
+          ma20Points.push({
+            x: cx,
+            y: priceToY(b.ma20),
+            val: b.ma20,
+            prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20
+          });
+        }
+        if (b.ma5Vol && b.ma5Vol > 0) {
+          ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
+        }
+
+        const isUp = b.close >= b.open;
+        const color = isUp ? "#f43f5e" : "#10b981";
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(cx, yHigh);
+        ctx.lineTo(cx, yLow);
+        ctx.stroke();
+
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+        ctx.fillStyle = color;
+        ctx.fillRect(cx - candleW / 2, bodyTop, candleW, bodyH);
+
+        if (b.isKeyK) {
+          ctx.strokeStyle = "#fbbf24";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
+        }
+
+        if (showDeduct) {
+          if (b.isTodayDeduct) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(232, 121, 249, 0.7)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(cx, yClose);
+            ctx.lineTo(width - padRight, yClose);
+            ctx.stroke();
+            ctx.restore();
+
+            const markerY = Math.max(padTop + 14, yHigh - 6);
+            ctx.fillStyle = "#e879f9";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("▼今日扣抵", cx, markerY - 8);
+            ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 2);
+          }
+
+          if (b.isTomorrowDeduct) {
+            const markerY = Math.min(padTop + pricePlotH - 6, yLow + 14);
+            ctx.fillStyle = "#22d3ee";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("▲明日扣抵", cx, markerY);
+            ctx.fillText(`${b.close.toFixed(2)}`, cx, markerY + 10);
+          }
+        }
+
+        if (b.vol !== undefined && b.vol !== null && b.vol > 0) {
+          const yVolTop = volToY(b.vol);
+          const volBarH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
+          ctx.fillStyle = isUp ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
+          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, volBarH);
+
+          if (b.isToday) {
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = "bold 9px monospace";
+            ctx.textAlign = "center";
+            const shortV = b.vol >= 100000 ? Math.round(b.vol / 1000) : Math.round(b.vol);
+            ctx.fillText(`${shortV}張`, cx, Math.max(volPlotTop + 9, yVolTop - 3));
+          }
+        }
+
+        const shortDate = b.date.length >= 10 ? b.date.slice(5) : b.date;
+        const showLabel = visibleBars.length <= 14 || idx % 2 === 0 || b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct);
+        if (showLabel) {
+          ctx.fillStyle = (showDeduct && b.isTodayDeduct) ? "#e879f9" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8"));
+          ctx.font = (b.isKeyK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 10px sans-serif" : "10px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(shortDate, cx, height - 6);
+        }
+      });
+
+      if (ma20Points.length >= 2) {
+        ctx.lineWidth = 2.4;
+        for (let i = 1; i < ma20Points.length; i++) {
+          const p0 = ma20Points[i - 1];
+          const p1 = ma20Points[i];
+          const diff = Number((p1.val - p0.val).toFixed(2));
+
+          let slopeColor = "#e2e8f0";
+          if (diff > 0) slopeColor = "#f59e0b";
+          else if (diff < 0) slopeColor = "#38bdf8";
+
+          ctx.strokeStyle = slopeColor;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+      }
+
+      if (ma5VolPoints.length >= 2) {
+        ctx.strokeStyle = "#c084fc";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ma5VolPoints.forEach((pt, i) => {
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+      }
+
+      if (showBubbles) {
+        visibleBars.forEach((b, idx) => {
+          const force = b.forceScore || 0;
+          const absForce = Math.abs(force);
+          if (absForce < 0.20) return;
+
+          const cx = padLeft + stepX * idx + stepX / 2;
+          const avgPrice = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
+          const bubbleY = priceToY(avgPrice);
+
+          const maxBubbleR = Math.min(20, stepX * 0.52);
+          const minBubbleR = 6;
+          const normStrength = Math.min(1, (absForce - 0.20) / 1.1);
+          const radius = minBubbleR + normStrength * (maxBubbleR - minBubbleR);
+
+          ctx.save();
+          if (force > 0) {
+            const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
+            grad.addColorStop(0, "rgba(251, 207, 232, 0.45)");
+            grad.addColorStop(0.55, "rgba(244, 114, 182, 0.30)");
+            grad.addColorStop(1, "rgba(219, 39, 119, 0.12)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "rgba(244, 114, 182, 0.65)";
+            ctx.lineWidth = 1.1;
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(253, 242, 248, 0.85)";
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#f9a8d4";
+            ctx.font = "bold 9.5px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(avgPrice.toFixed(2), cx, bubbleY - radius - 3);
+
+            if (b.streakDir === 1 && b.streakAvgPrice > 0) {
+              ctx.fillStyle = "#fde047";
+              ctx.font = "bold 10px sans-serif";
+              ctx.fillText(`★連${b.streakDays}買均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY - radius - 14);
+            }
+          } else {
+            const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
+            grad.addColorStop(0, "rgba(167, 243, 208, 0.42)");
+            grad.addColorStop(0.55, "rgba(52, 211, 153, 0.28)");
+            grad.addColorStop(1, "rgba(5, 150, 105, 0.10)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "rgba(52, 211, 153, 0.65)";
+            ctx.lineWidth = 1.1;
+            ctx.stroke();
+
+            ctx.fillStyle = "rgba(236, 253, 245, 0.85)";
+            ctx.beginPath();
+            ctx.arc(cx, bubbleY, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#6ee7b7";
+            ctx.font = "bold 9.5px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(avgPrice.toFixed(2), cx, bubbleY + radius + 10);
+
+            if (b.streakDir === -1 && b.streakAvgPrice > 0) {
+              ctx.fillStyle = "#a5b4fc";
+              ctx.font = "bold 10px sans-serif";
+              ctx.fillText(`★連${b.streakDays}賣均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY + radius + 21);
+            }
+          }
+          ctx.restore();
+        });
+      }
+
+      if (hoveredBar && hoveredCx > 0) {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.55)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(hoveredCx, padTop);
+        ctx.lineTo(hoveredCx, height - padBottom);
+        ctx.stroke();
+
+        const clampedY = Math.max(padTop, Math.min(height - padBottom, chartState.mouseY));
+        ctx.beginPath();
+        ctx.moveTo(padLeft, clampedY);
+        ctx.lineTo(width - padRight, clampedY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (clampedY <= padTop + pricePlotH) {
+          const hoverPrice = yToPrice(clampedY);
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(width - padRight + 2, clampedY - 9, 60, 18);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(hoverPrice.toFixed(2), width - padRight + 6, clampedY + 4);
+        }
+
+        updateHudDisplay(hoveredBar, hoveredPrevBar);
+      }
+    }
+
+    function drawHorizontalRefLine(ctx, price, y, color, label, x1, x2) {
+      if (!price || price <= 0) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = color;
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${label} ${price.toFixed(2)}`, x2 + 6, y - 3);
+    }
+
+    function updateHudDisplay(bar, prevBar) {
+      const hud = document.getElementById("ohlcHud");
+      if (!bar) return;
+
+      const refClose = prevBar ? prevBar.close : bar.open;
+      const diff = bar.close - refClose;
+      const pct = refClose > 0 ? ((diff / refClose) * 100).toFixed(2) : "0.00";
+      const isUp = diff >= 0;
+      const colorClass = isUp ? "text-rose-400" : "text-emerald-400";
+      const sign = diff > 0 ? "+" : "";
+
+      let maHtml = "";
+      if (bar.ma20) {
+        const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
+        const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
+        const maColor = maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200");
+        const maDir = maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→");
+        maHtml = `<span class="${maColor} font-bold">20MA:${bar.ma20.toFixed(2)}${maDir}</span>`;
+      }
+
+      const force = bar.forceScore || 0;
+      const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
+      let forceHtml = `<span class="text-slate-400">主力:均勢</span>`;
+      if (force >= 0.20) {
+        const pctForce = Math.round(Math.min(100, (force / 1.3) * 100));
+        const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0)
+          ? ` <b class="text-amber-300">[★連${bar.streakDays}買均:${bar.streakAvgPrice.toFixed(2)}]</b>`
+          : "";
+        forceHtml = `<span class="text-pink-400 font-bold">●主力買均:${avgP}(+${pctForce}%)${streakTag}</span>`;
+      } else if (force <= -0.20) {
+        const pctForce = Math.round(Math.min(100, (Math.abs(force) / 1.3) * 100));
+        const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0)
+          ? ` <b class="text-indigo-300">[★連${bar.streakDays}賣均:${bar.streakAvgPrice.toFixed(2)}]</b>`
+          : "";
+        forceHtml = `<span class="text-emerald-300 font-bold">●主力賣均:${avgP}(-${pctForce}%)${streakTag}</span>`;
+      }
+
+      const volText = `<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>`;
+      const deductTag = bar.isTodayDeduct
+        ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[今日扣抵]</span>`
+        : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明日扣抵]</span>` : "");
+
+      hud.innerHTML = `
+        <span class="text-amber-300 font-bold">${bar.date}</span>
+        <span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span>
+        <span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span>
+        <span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>
+        <span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span>
+        <span class="${colorClass}">(${sign}${pct}%)</span>
+        ${volText}
+        ${maHtml}
+        ${forceHtml}
+        ${deductTag}
+      `;
+    }
+
+    function openApiModal() {
+      document.getElementById("apiModal").classList.remove("hidden");
+      document.getElementById("apiModal").classList.add("flex");
+    }
+
+    function closeApiModal() {
+      document.getElementById("apiModal").classList.add("hidden");
+      document.getElementById("apiModal").classList.remove("flex");
+    }
+
+    function saveAndSyncApi() {
+      const inputVal = document.getElementById("apiUrlInput").value.trim();
+      if (inputVal) {
+        apiUrl = inputVal;
+        localStorage.setItem("custom_stock_api_url", apiUrl);
+      }
+      closeApiModal();
+      fetchStocksData();
+    }
+
+    function exportCSV() {
+      if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
+      const headers = ["股票代號", "股票名稱", "昨日漲幅%", "昨日20MA", "20MA斜率", "K棒型態", "昨高", "昨低", "昨收", "前5日均量(張)", "昨日成交量(張)", "昨日比前5日均量增減%", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "今日成交量", "確認狀態"];
+      const rows = filteredStocks.map(s => [
+        s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status
+      ]);
+      const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `首日突破20MA關鍵K清單_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
