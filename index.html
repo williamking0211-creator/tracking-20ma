@@ -1,1159 +1,755 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
     body {
-      font-family: 'Inter', 'Noto Sans TC', sans-serif;
       background-color: #0b0f19;
       color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    /* 滑桿樣式 */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
     }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
     }
-    ::-webkit-scrollbar-thumb {
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
       background: #334155;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
-    .glass-card {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(51, 65, 85, 0.7);
-      backdrop-filter: blur(8px);
-    }
-    input[type="range"] {
-      accent-color: #3b82f6;
+      border-radius: 2px;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+<body class="min-h-screen p-3 md:p-5">
 
-  <!-- Top Header -->
-  <header class="border-b border-slate-800 bg-slate-950/90 sticky top-0 z-30 backdrop-blur-md">
-    <div class="max-w-7xl w-full mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
-          20
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base md:text-lg font-bold tracking-tight text-white">關鍵K・突破20MA實戰儀表板</h1>
-            <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> 即時報價自動同步中
-            </span>
-          </div>
-          <p class="text-xs text-slate-400 mt-0.5">昨日收盤站上20MA（20MA向上）＝ <strong class="text-amber-400">關鍵K</strong> ｜ 今日收盤/尾盤站上昨高 ＝ <strong class="text-rose-400">確認K買進</strong></p>
-        </div>
+  <!-- 頂部標題列 -->
+  <header class="max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-lg">
+        20
       </div>
-
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap items-center gap-2 text-xs">
-        <button id="btnToggleColorScheme" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition">
-          <span id="colorSchemeDot" class="w-2 h-2 rounded-full bg-rose-500"></span>
-          <span id="colorSchemeText">台股配色 (紅漲綠跌)</span>
-        </button>
-
-        <button id="btnOpenApiModal" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition">
-          <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span id="apiStatusText">API 即時同步中</span>
-        </button>
-
-        <button id="btnSimulateTick" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-medium flex items-center gap-1 transition">
-          <span>⚡</span> <span>模擬行情跳動</span>
-        </button>
-
-        <button id="btnOpenCustomModal" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1 shadow-lg shadow-emerald-600/20 transition">
-          <span>＋</span> <span>新增/實測個股推演</span>
-        </button>
+      <div>
+        <h1 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+          關鍵K・突破20MA實戰儀表板
+        </h1>
+        <p class="text-xs text-slate-400">
+          昨日收盤站上20MA (20MA向上) = <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 = <span class="text-rose-400 font-semibold">確認K買進</span>
+        </p>
       </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- 狀態按鈕 (點擊開啟 API 設定) -->
+      <button onclick="openApiModal()" id="apiStatusBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-2 hover:bg-emerald-500/25 transition">
+        <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="apiStatusText">API 串接設定</span>
+      </button>
+
+      <button onclick="fetchStocksData()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium hover:bg-slate-700 transition">
+        🔄 刷新報價
+      </button>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl w-full mx-auto px-4 py-4 flex-1 flex flex-col gap-4">
+  <!-- 策略說明三步驟卡片 -->
+  <section class="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-amber-400">STEP 1・昨日「關鍵K」篩選</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">盤前必備</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1">
+        <li>• 昨日收盤價由下往上穿越 20MA</li>
+        <li>• 昨日 20MA 斜率向上 (昨20MA > 前20MA)</li>
+        <li>• 昨日成交量 > 前5日均量 × 100%</li>
+      </ul>
+    </div>
 
-    <!-- Top Strategy Rules & Adjustable Filter Bar -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-      <!-- 3 Steps Cards (8 cols) -->
-      <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <!-- Step 1 -->
-        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-amber-400">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-amber-400">STEP 1・昨日「關鍵K」篩選</span>
-            <span class="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">必備前提</span>
-          </div>
-          <ul class="text-xs text-slate-300 space-y-1 leading-relaxed">
-            <li>• 昨日股價<strong class="text-white">由下往上穿越 20MA</strong></li>
-            <li>• 昨日 <strong class="text-white">20MA 斜率向上</strong> (昨20MA &gt; 前20MA)</li>
-            <li>• 昨日成交量 &gt; 前5日均量 × <strong id="ruleVolText" class="text-amber-300">100%</strong></li>
-          </ul>
-        </div>
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-sky-400">STEP 2・今日盤中與盤後</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">即時追蹤</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1">
+        <li>• 追蹤今日開盤後是否在昨高之上成交</li>
+        <li>• 標記盤中最高價與即時價格相對昨高距離</li>
+        <li>• 過濾假突破，等待尾盤收盤確認</li>
+      </ul>
+    </div>
 
-        <!-- Step 2 -->
-        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-blue-400">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-blue-400">STEP 2・今日開市與盤中</span>
-            <span class="text-[11px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">即時追蹤</span>
-          </div>
-          <ul class="text-xs text-slate-300 space-y-1 leading-relaxed">
-            <li>• 追蹤今日開市後是否在<strong class="text-white">昨高之上</strong>成交</li>
-            <li>• 標記盤中最高價與即時價相對昨高距離</li>
-            <li>• 過濾假突破，等待<strong class="text-white">尾盤收盤確認</strong></li>
-          </ul>
-        </div>
+    <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex justify-between items-center mb-1.5">
+        <span class="text-xs font-bold text-rose-400">STEP 3・收盤「確認K」決策</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">尾盤檢核</span>
+      </div>
+      <ul class="text-xs text-slate-300 space-y-1">
+        <li>• <span class="text-rose-400 font-semibold">收盤 > 昨高</span>：確認突破 → 尾盤/收盤買進</li>
+        <li>• <span class="text-amber-400 font-semibold">昨低 ≤ 收盤 ≤ 昨高</span>：區間內 → 繼續觀察</li>
+        <li>• <span class="text-emerald-400 font-semibold">收盤 < 昨低</span>：跌破昨低 → 不考慮(剔除)</li>
+      </ul>
+    </div>
+  </section>
 
-        <!-- Step 3 -->
-        <div class="glass-card rounded-xl p-3.5 border-l-4 border-l-rose-500">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-rose-400">STEP 3・收盤前「確認K」決策</span>
-            <span class="text-[11px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300">尾盤檢核</span>
-          </div>
-          <ul class="text-xs text-slate-300 space-y-1 leading-relaxed">
-            <li>• <span class="text-rose-400 font-semibold">收盤 &gt; 昨高</span>：確認突破 ➔ <strong>尾盤/收盤買進</strong></li>
-            <li>• <span class="text-amber-300 font-semibold">昨低 ≤ 收盤 ≤ 昨高</span>：區間內 ➔ <strong>繼續觀察</strong></li>
-            <li>• <span class="text-emerald-400 font-semibold">收盤 &lt; 昨低</span>：跌破昨低 ➔ <strong>不考慮(剔除)</strong></li>
-          </ul>
+  <!-- 統計篩選器卡片 -->
+  <section class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+    <button onclick="setFilter('ALL')" id="tab-ALL" class="filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition">
+      <div class="text-xs text-slate-400 mb-1">符合昨日「關鍵K」總數</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-ALL" class="text-2xl font-bold text-white">0</span>
+        <span class="text-xs text-slate-400">檔進入今日確認池</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('BREAKOUT')" id="tab-BREAKOUT" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-rose-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-rose-300 mb-1">🔥 確認K：高於昨高 (買進)</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-BREAKOUT" class="text-2xl font-bold text-rose-400">0</span>
+        <span class="text-xs text-slate-400">檔收盤/尾盤站上昨高</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('CONSOLIDATE')" id="tab-CONSOLIDATE" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-amber-300 mb-1">👀 區間內：昨高~昨低之間</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-CONSOLIDATE" class="text-2xl font-bold text-amber-400">0</span>
+        <span class="text-xs text-slate-400">檔等待突破方向確認</span>
+      </div>
+    </button>
+
+    <button onclick="setFilter('BREAKDOWN')" id="tab-BREAKDOWN" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-emerald-500/50 rounded-xl p-3 transition">
+      <div class="text-xs text-emerald-300 mb-1">❄️ 破底K：低於昨低 (不考慮)</div>
+      <div class="flex items-baseline gap-2">
+        <span id="count-BREAKDOWN" class="text-2xl font-bold text-emerald-400">0</span>
+        <span class="text-xs text-slate-400">檔跌破昨低剔除</span>
+      </div>
+    </button>
+  </section>
+
+  <!-- 主內容區：左側清單 + 右側K線圖與模擬器 -->
+  <main class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
+    
+    <!-- 左側股票清單 (佔 7 欄) -->
+    <div class="lg:col-span-7 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+      <!-- 搜尋與工具列 -->
+      <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <input type="text" id="searchInput" oninput="renderTable()" placeholder="搜尋代號或名稱 (例如 2330 或 台積電)..." 
+               class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full sm:w-64" />
+        <div class="flex items-center gap-2">
+          <button onclick="exportCSV()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
+            📥 匯出 CSV
+          </button>
         </div>
       </div>
 
-      <!-- Interactive Filter Parameters (4 cols) -->
-      <div class="lg:col-span-4 glass-card rounded-xl p-3.5 flex flex-col justify-between gap-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-200">⚙️ 關鍵K 篩選參數自訂</span>
-          <button id="btnResetFilters" type="button" class="text-[11px] text-blue-400 hover:underline">恢復預設 (100%)</button>
-        </div>
-
-        <!-- Volume Threshold Slider & Input -->
-        <div class="space-y-1">
-          <div class="flex items-center justify-between text-xs">
-            <label for="volThresholdSlider" class="text-slate-300">昨量 &gt; 前5日均量百分比：</label>
-            <div class="flex items-center gap-1">
-              <input id="volThresholdInput" type="number" min="50" max="500" step="10" value="100"
-                class="w-16 px-1.5 py-0.5 text-right rounded bg-slate-900 border border-slate-700 text-amber-300 font-bold text-xs" />
-              <span class="text-slate-400">%</span>
-            </div>
-          </div>
-          <input id="volThresholdSlider" type="range" min="50" max="300" step="10" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
-          <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
-            <label class="inline-flex items-center gap-1 cursor-pointer">
-              <input id="volModeAvg5" type="radio" name="volCalcMode" value="AVG5" checked class="text-blue-500" />
-              <span>昨量 ÷ 5日均量 ≥ <span id="lblVolRatio1">100% (1.0倍)</span></span>
-            </label>
-            <label class="inline-flex items-center gap-1 cursor-pointer">
-              <input id="volModeIncrease" type="radio" name="volCalcMode" value="INC" class="text-blue-500" />
-              <span>較5日均量多出 ≥ <span id="lblVolRatio2">+100% (2.0倍)</span></span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Toggles for Open > YestHigh filter & Non-Key-K visibility -->
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80 text-xs">
-          <label class="inline-flex items-center gap-1.5 cursor-pointer text-slate-300">
-            <input id="chkRequireIntradayAboveHigh" type="checkbox" class="rounded bg-slate-900 border-slate-700 text-blue-500" />
-            <span>僅顯示今日盤中曾「昨高之上」成交</span>
-          </label>
-          <label class="inline-flex items-center gap-1.5 cursor-pointer text-slate-300">
-            <input id="chkShowNonKeyK" type="checkbox" class="rounded bg-slate-900 border-slate-700 text-blue-500" />
-            <span>顯示未過關鍵K標的</span>
-          </label>
-        </div>
+      <!-- 表格 -->
+      <div class="overflow-x-auto max-h-[620px]">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-900/90 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">股票代號/名稱</th>
+              <th class="py-2.5 px-2">昨日關鍵K檢核</th>
+              <th class="py-2.5 px-2 text-right">昨高 / 昨低</th>
+              <th class="py-2.5 px-2 text-right">昨量比(5MA)</th>
+              <th class="py-2.5 px-2 text-right">今日收盤/現價</th>
+              <th class="py-2.5 px-3 text-center">確認K 狀態與決策</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody" class="divide-y divide-slate-800/60 text-xs">
+            <tr>
+              <td colspan="6" class="py-10 text-center text-slate-500">載入資料中，請確認 API 網址設定...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </section>
+    </div>
 
-    <!-- Summary KPI Cards -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="glass-card rounded-xl p-3 flex items-center justify-between">
-        <div>
-          <p class="text-xs text-slate-400">符合昨日「關鍵K」總數</p>
-          <div class="flex items-baseline gap-2 mt-1">
-            <span id="kpiTotalKeyK" class="text-2xl font-bold text-white">0</span>
-            <span class="text-xs text-slate-400">檔進入今日確認池</span>
-          </div>
-        </div>
-        <span class="text-xs px-2 py-1 rounded-lg bg-slate-800 text-slate-300 font-medium">全部關鍵K</span>
-      </div>
-
-      <div class="glass-card rounded-xl p-3 flex items-center justify-between border border-rose-500/30">
-        <div>
-          <p class="text-xs text-slate-300">確認K：高於昨高 (買進)</p>
-          <div class="flex items-baseline gap-2 mt-1">
-            <span id="kpiBuyCount" class="text-2xl font-bold text-rose-400">0</span>
-            <span class="text-xs text-slate-400">檔收盤/尾盤站上昨高</span>
-          </div>
-        </div>
-        <span class="text-xs px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 font-semibold">★ 買進訊號</span>
-      </div>
-
-      <div class="glass-card rounded-xl p-3 flex items-center justify-between border border-amber-500/30">
-        <div>
-          <p class="text-xs text-slate-300">區間內：昨高～昨低之間</p>
-          <div class="flex items-baseline gap-2 mt-1">
-            <span id="kpiWatchCount" class="text-2xl font-bold text-amber-300">0</span>
-            <span class="text-xs text-slate-400">檔待突破方向確認</span>
-          </div>
-        </div>
-        <span class="text-xs px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold">👀 繼續觀察</span>
-      </div>
-
-      <div class="glass-card rounded-xl p-3 flex items-center justify-between border border-emerald-500/30">
-        <div>
-          <p class="text-xs text-slate-300">確認K：低於昨低 (不考慮)</p>
-          <div class="flex items-baseline gap-2 mt-1">
-            <span id="kpiFailCount" class="text-2xl font-bold text-emerald-400">0</span>
-            <span class="text-xs text-slate-400">檔跌破昨低剔除</span>
-          </div>
-        </div>
-        <span class="text-xs px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-semibold">✕ 不考慮買</span>
-      </div>
-    </section>
-
-    <!-- Bottom Split View: Left Screener Table & Right Interactive Chart & Simulator -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
-
-      <!-- Left Column: Screener Table (7 cols) -->
-      <div class="lg:col-span-7 glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div>
-          <!-- Filter Tabs & Search -->
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
-            <div class="flex flex-wrap items-center gap-1.5" id="filterTabs">
-              <button type="button" data-tab="ALL_KEY" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition">
-                全部關鍵K
-              </button>
-              <button type="button" data-tab="BUY" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 transition">
-                🔥 站上昨高 (買進)
-              </button>
-              <button type="button" data-tab="WATCH" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 transition">
-                👀 昨高昨低間 (觀察)
-              </button>
-              <button type="button" data-tab="FAIL" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 transition">
-                ❄️ 跌破昨低 (不考慮)
-              </button>
-            </div>
-
+    <!-- 右側個股 K 棒走勢與推演模擬器 (佔 5 欄) -->
+    <div class="lg:col-span-5 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+      <div>
+        <!-- 個股標題 -->
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div>
             <div class="flex items-center gap-2">
-              <input id="searchInput" type="text" placeholder="搜尋代號或名稱..."
-                class="w-36 sm:w-44 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-blue-500" />
-              <button id="btnRefreshApiNow" type="button" title="手動立即同步"
-                class="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-medium transition">
-                🔄 刷新API
-              </button>
-              <button id="btnExportCsv" type="button"
-                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition">
-                匯出 CSV
-              </button>
+              <h2 id="detailTitle" class="text-xl font-bold text-white">--</h2>
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-medium">★ 昨日成立關鍵K</span>
             </div>
+            <p id="detailSubTitle" class="text-xs text-slate-400 mt-1">昨日收盤 -- ｜ 昨量 -- 張</p>
           </div>
-
-          <!-- Stock Table -->
-          <div class="overflow-x-auto mt-3">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-[11px] text-slate-400 uppercase">
-                  <th class="py-2 px-2">股票代號/名稱</th>
-                  <th class="py-2 px-2">昨日關鍵K檢核</th>
-                  <th class="py-2 px-2 text-right">昨高 / 昨低</th>
-                  <th class="py-2 px-2 text-right">昨量比(5MA)</th>
-                  <th class="py-2 px-2 text-right">今日收盤/現價</th>
-                  <th class="py-2 px-2 text-center">確認K 狀態與決策</th>
-                </tr>
-              </thead>
-              <tbody id="stockTableBody" class="divide-y divide-slate-800/60 text-xs">
-                <!-- Populated by JS -->
-              </tbody>
-            </table>
+          <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
+            等待選取
           </div>
         </div>
 
-        <!-- Bottom Legend / Info -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-          <span>💡 系統每 <strong class="text-emerald-400">5 秒</strong> 自動與本地即時行情同步，無需手動點擊刷新。</span>
-          <span id="lastUpdateTime">最後更新：連線中...</span>
+        <!-- 四大核心數據卡 -->
+        <div class="grid grid-cols-4 gap-2 mb-4">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-center">
+            <div class="text-[11px] text-slate-400">昨日 20MA</div>
+            <div id="cardMa20" class="text-sm font-bold text-sky-400 mt-0.5">--</div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-center">
+            <div class="text-[11px] text-slate-400">關鍵K 昨高</div>
+            <div id="cardYestHigh" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-center">
+            <div class="text-[11px] text-slate-400">關鍵K 昨低</div>
+            <div id="cardYestLow" class="text-sm font-bold text-emerald-400 mt-0.5">--</div>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5 text-center">
+            <div class="text-[11px] text-slate-400">今日收盤/現價</div>
+            <div id="cardTodayPrice" class="text-sm font-bold text-white mt-0.5">--</div>
+          </div>
+        </div>
+
+        <!-- 動態 K 線圖容器 (SVG 精準繪製，不破圖) -->
+        <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 mb-4">
+          <div class="flex justify-between items-center text-[11px] text-slate-400 mb-2">
+            <span>近 6 日 K 線與 20MA 突破結構 (已校正高低點比例)</span>
+            <span class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-0.5 bg-sky-400"></span> 20MA
+              <span class="inline-block w-2.5 h-0.5 bg-rose-400 border-b border-dashed"></span> 昨高
+              <span class="inline-block w-2.5 h-0.5 bg-emerald-400 border-b border-dashed"></span> 昨低
+            </span>
+          </div>
+          <div id="klineChartContainer" class="w-full h-[260px] flex items-center justify-center">
+            <!-- SVG K 線圖會動態渲染於此 -->
+          </div>
         </div>
       </div>
 
-      <!-- Right Column: Selected Stock K-Line Chart & Live Confirmation Simulator (5 cols) -->
-      <div class="lg:col-span-5 flex flex-col gap-4">
+      <!-- 尾盤收盤價即時推演模擬器 -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-slate-200">🎛️ 尾盤收盤價即時推演模擬器</span>
+          <span id="simDiffText" class="text-xs font-semibold text-slate-400">距離昨高: --</span>
+        </div>
 
-        <!-- Detail Header & Signal Banner -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col gap-3">
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 id="detailStockTitle" class="text-base font-bold text-white">--</h2>
-                <span id="detailKeyKBadge" class="text-[11px] px-2 py-0.5 rounded font-medium">--</span>
-              </div>
-              <p id="detailSubInfo" class="text-xs text-slate-400 mt-0.5">--</p>
-            </div>
-            <div id="detailDecisionBox" class="px-3 py-1.5 rounded-xl text-xs font-bold border text-right">
-              --
-            </div>
-          </div>
-
-          <!-- Key Price Levels Bar -->
-          <div class="grid grid-cols-4 gap-2 text-center bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
-            <div>
-              <div class="text-[10px] text-slate-400">昨日 20MA (向上)</div>
-              <div id="metricMa20" class="text-xs font-bold text-sky-400 mt-0.5">--</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400">關鍵K 昨高 (突破買點)</div>
-              <div id="metricYestHigh" class="text-xs font-bold text-rose-400 mt-0.5">--</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400">關鍵K 昨低 (防守底線)</div>
-              <div id="metricYestLow" class="text-xs font-bold text-emerald-400 mt-0.5">--</div>
-            </div>
-            <div>
-              <div class="text-[10px] text-slate-400">今日收盤 / 現價</div>
-              <div id="metricTodayClose" class="text-sm font-bold text-white mt-0.5">--</div>
-            </div>
-          </div>
-
-          <!-- K-Line + Volume Canvas Container -->
-          <div class="relative bg-slate-950 rounded-xl border border-slate-800 p-2">
-            <canvas id="klineCanvas" width="520" height="270" class="w-full h-[260px] block"></canvas>
-          </div>
-
-          <!-- Interactive Closing Price Simulator for Selected Stock -->
-          <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-200">🎛️ 尾盤收盤價即時推演模擬器</span>
-              <span id="simDiffBadge" class="text-[11px] font-medium text-slate-400">--</span>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <input id="simPriceSlider" type="range" step="0.01" class="flex-1 h-2 bg-slate-800 rounded-lg cursor-pointer" />
-              <input id="simPriceInput" type="number" step="0.01"
-                class="w-24 px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-right text-xs font-bold text-white" />
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-[11px]">
-              <span class="text-slate-400">快速測試點位：</span>
-              <div class="flex flex-wrap items-center gap-1.5">
-                <button id="btnSimBreakout" type="button" class="px-2 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-medium transition">
-                  站上昨高 (+1.5%)
-                </button>
-                <button id="btnSimInside" type="button" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-medium transition">
-                  介於昨高昨低間
-                </button>
-                <button id="btnSimBreakdown" type="button" class="px-2 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-medium transition">
-                  跌破昨低 (-1.5%)
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Detailed Checklist -->
-          <div id="detailChecklist" class="space-y-1.5 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
-            <!-- Populated by JS -->
+        <div class="flex items-center gap-3 mb-3">
+          <input type="range" id="simSlider" step="0.05" oninput="onSimulatorSlide(this.value)" class="flex-1" />
+          <div class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1 text-sm font-bold text-white min-w-[76px] text-center" id="simPriceDisplay">
+            --
           </div>
         </div>
 
+        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <span class="text-slate-400">快速測試點位：</span>
+          <div class="flex gap-1.5">
+            <button onclick="setSimPreset('BREAKOUT')" class="px-2.5 py-1 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition">
+              站上昨高 (+1.5%)
+            </button>
+            <button onclick="setSimPreset('MID')" class="px-2.5 py-1 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 transition">
+              介於昨高昨低間
+            </button>
+            <button onclick="setSimPreset('BREAKDOWN')" class="px-2.5 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 transition">
+              跌破昨低 (-1.5%)
+            </button>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
   </main>
 
-  <!-- ==================== MODAL 1: API 串接設定 ==================== -->
-  <div id="apiConfigModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-    <div class="glass-card w-full max-w-lg rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          🔄 API 串接設定 (預設自動連接 http://localhost:3000/stocks)
-        </h3>
-        <button id="btnCloseApiModal" type="button" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+  <!-- API 設定彈窗 -->
+  <div id="apiModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white">🔌 API 串接設定</h3>
+        <button onclick="closeApiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
+      <p class="text-xs text-slate-400 mb-3">
+        請輸入後端資料來源網址（例如 ngrok 網址並加上 <code class="text-sky-400">/stocks</code>）：
+      </p>
+      <input type="text" id="apiUrlInput" placeholder="https://xxxx.ngrok-free.dev/stocks" 
+             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
+      
+      <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
+        <input type="checkbox" id="autoSyncCheckbox" checked class="rounded bg-slate-800 border-slate-600 text-blue-500" />
+        啟用盤中即時自動同步 (每 5 秒背景更新報價)
+      </label>
 
-      <div class="space-y-3 text-xs">
-        <div>
-          <label for="apiUrlInput" class="block text-slate-300 font-medium mb-1">API 網址 (Web App URL / JSON Endpoint)</label>
-          <input id="apiUrlInput" type="url" placeholder="http://localhost:3000/stocks"
-            class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-blue-500" />
-        </div>
+      <div id="apiTestMessage" class="text-xs mb-3 hidden"></div>
 
-        <div class="flex items-center justify-between pt-1">
-          <label class="inline-flex items-center gap-2 cursor-pointer text-slate-300">
-            <input id="autoRefreshToggle" type="checkbox" checked class="rounded bg-slate-800 border-slate-600 text-blue-500" />
-            <span>啟用盤中即時自動同步 (每 5 秒無縫更新報價)</span>
-          </label>
-        </div>
-
-        <div id="apiTestMessage" class="hidden text-xs p-2.5 rounded-lg border"></div>
-      </div>
-
-      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-        <button id="btnTestApi" type="button" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition">
-          測試連線
+      <div class="flex justify-end gap-2">
+        <button onclick="closeApiModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">
+          取消
         </button>
-        <button id="btnSaveApiConfig" type="button" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition">
+        <button onclick="saveAndSyncApi()" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500">
           儲存並立即同步
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL 2: 新增/實測個股推演 ==================== -->
-  <div id="customStockModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-    <div class="glass-card w-full max-w-xl rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white">＋ 新增 / 實測個股「關鍵K ＆ 確認K」推演</h3>
-        <button id="btnCloseCustomModal" type="button" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
-      </div>
-
-      <form id="customStockForm" class="space-y-3 text-xs">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-slate-300 mb-1">股票代號</label>
-            <input id="inpCode" type="text" required placeholder="例如: 2330" class="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-white" />
-          </div>
-          <div>
-            <label class="block text-slate-300 mb-1">股票名稱</label>
-            <input id="inpName" type="text" required placeholder="例如: 台積電" class="w-full px-2.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-white" />
-          </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-          <div class="font-bold text-amber-400">STEP 1：昨日「關鍵K」數據 (突破 20MA 檢核)</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div>
-              <label class="block text-slate-400 text-[11px]">前日 20MA</label>
-              <input id="inpPrevMa20" type="number" step="0.01" required value="98.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日 20MA (需向上)</label>
-              <input id="inpYestMa20" type="number" step="0.01" required value="99.20" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日開盤 (20MA下)</label>
-              <input id="inpYestOpen" type="number" step="0.01" required value="97.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日收盤 (站上20MA)</label>
-              <input id="inpYestClose" type="number" step="0.01" required value="102.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日最高 (確認突破點)</label>
-              <input id="inpYestHigh" type="number" step="0.01" required value="103.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-rose-300 font-bold" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日最低 (跌破防守點)</label>
-              <input id="inpYestLow" type="number" step="0.01" required value="97.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-emerald-300 font-bold" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">昨日成交量 (張)</label>
-              <input id="inpYestVol" type="number" step="1" required value="8500" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">前 5 日均量 (張)</label>
-              <input id="inpAvgVol5" type="number" step="1" required value="3200" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-          <div class="font-bold text-blue-400">STEP 2 & 3：今日「確認K」盤中與收盤數據</div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div>
-              <label class="block text-slate-400 text-[11px]">今日開盤</label>
-              <input id="inpTodayOpen" type="number" step="0.01" required value="103.00" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">今日最高</label>
-              <input id="inpTodayHigh" type="number" step="0.01" required value="105.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">今日最低</label>
-              <input id="inpTodayLow" type="number" step="0.01" required value="102.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-white" />
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[11px]">今日收盤 / 現價</label>
-              <input id="inpTodayClose" type="number" step="0.01" required value="104.50" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-amber-300 font-bold" />
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button id="btnCancelCustomModal" type="button" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">
-            取消
-          </button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
-            加入列表並立即檢核
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== MAIN JAVASCRIPT ==================== -->
   <script>
-    const DEFAULT_API_ENDPOINT = 'http://localhost:3000/stocks';
+    // 預設 API 網址 (優先讀取 localStorage，沒有則使用預設值)
+    const DEFAULT_API_URL = "https://sixties-broker-revisit.ngrok-free.dev/stocks";
+    let apiUrl = localStorage.getItem("custom_stock_api_url") || DEFAULT_API_URL;
+    let allStocks = [];
+    let filteredStocks = [];
+    let currentFilter = "ALL";
+    let selectedStockCode = null;
+    let simulatedPrice = null;
+    let syncTimer = null;
 
-    const DEFAULT_STOCKS = [
-      {
-        code: '2330', name: '台積電',
-        prevMa20: 1024.00, yestMa20: 1028.00,
-        yestOpen: 1018.00, yestHigh: 1045.00, yestLow: 1015.00, yestClose: 1040.00,
-        yestVol: 52000, avgVol5: 24000,
-        todayOpen: 1042.00, todayHigh: 1060.00, todayLow: 1038.00, todayClose: 1055.00, todayVol: 46000
+    // 初始化
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("apiUrlInput").value = apiUrl;
+      fetchStocksData();
+      startAutoSync();
+    });
+
+    function startAutoSync() {
+      if (syncTimer) clearInterval(syncTimer);
+      syncTimer = setInterval(() => {
+        if (document.getElementById("autoSyncCheckbox").checked) {
+          fetchStocksData(true);
+        }
+      }, 5000);
+    }
+
+    // 抓取並正規化後端資料 (關鍵防呆：修正高低收盤邏輯不一致問題)
+    async function fetchStocksData(isSilent = false) {
+      const statusDot = document.getElementById("apiStatusDot");
+      const statusText = document.getElementById("apiStatusText");
+
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const rawData = await response.json();
+        const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
+
+        // 過濾並正規化每一檔股票的數值，確保 K 棒高低價與收盤價邏輯完全一致
+        allStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isKeyK);
+
+        statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        statusText.textContent = `即時同步中 (${list.length}檔)`;
+
+        updateDashboard();
+      } catch (err) {
+        console.error("API 讀取失敗:", err);
+        statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
+        statusText.textContent = "連線中斷 (點此設定)";
+        if (!isSilent && allStocks.length === 0) {
+          document.getElementById("stockTableBody").innerHTML = `
+            <tr><td colspan="6" class="py-10 text-center text-rose-400">
+              無法連線至 API (${apiUrl})，請確認電腦端與 ngrok 是否開啟。
+            </td></tr>`;
+        }
       }
-    ];
+    }
 
-    let stocksData = [...DEFAULT_STOCKS];
-    let selectedStockCode = stocksData[0].code;
-    let activeTab = 'ALL_KEY';
-    let isTwColorScheme = true;
-    let autoRefreshTimer = null;
-    let isManualSimulating = false;
+    // 核心資料校正函式：解決昨收高於昨高導致 K 棒破圖的問題
+    function normalizeStockItem(raw) {
+      const code = String(raw.code || "");
+      const name = String(raw.name || "");
 
-    let filterConfig = {
-      volThresholdPct: 100,
-      volCalcMode: 'AVG5',
-      requireIntradayAboveHigh: false,
-      showNonKeyK: false,
-      searchQuery: ''
-    };
+      const prevMa20 = parseFloat(raw.prevMa20) || 0;
+      const yestMa20 = parseFloat(raw.yestMa20) || 0;
 
-    function evaluateStock(s) {
-      const crossUpMa20 = (s.yestLow <= s.yestMa20) && (s.yestClose > s.yestMa20);
-      const ma20Up = s.yestMa20 > s.prevMa20;
-      const volRatioPct = s.avgVol5 > 0 ? Math.round((s.yestVol / s.avgVol5) * 100) : 0;
-      const requiredRatioPct = filterConfig.volCalcMode === 'AVG5'
-        ? filterConfig.volThresholdPct
-        : (100 + filterConfig.volThresholdPct);
-      const volPass = volRatioPct >= requiredRatioPct;
+      // 原始昨日價格
+      const rawYestOpen = parseFloat(raw.yestOpen) || 0;
+      const rawYestHigh = parseFloat(raw.yestHigh) || 0;
+      const rawYestLow = parseFloat(raw.yestLow) || 0;
+      const rawYestClose = parseFloat(raw.yestClose) || 0;
 
-      const isKeyK = crossUpMa20 && ma20Up && volPass;
-      const intradayAboveYestHigh = s.todayHigh > s.yestHigh;
-
-      let confirmStatus = 'WATCH';
-      let confirmLabel = '👀 繼續觀察 (介於昨高昨低)';
-      if (s.todayClose > s.yestHigh) {
-        confirmStatus = 'BUY';
-        confirmLabel = '🔥 確認買進 (收盤 > 昨高)';
-      } else if (s.todayClose < s.yestLow) {
-        confirmStatus = 'FAIL';
-        confirmLabel = '❄️ 不考慮 (收盤 < 昨低)';
+      // 【防呆校正】如果昨日收盤價異常大於昨日最高價（例如抓到漲停價或錯誤欄位），將昨收限制在昨高之內
+      // 同時確保 yestHigh >= max(開, 收) 且 yestLow <= min(開, 收)
+      let yestClose = rawYestClose;
+      if (rawYestHigh > 0 && yestClose > rawYestHigh) {
+        yestClose = rawYestHigh;
       }
+      if (rawYestLow > 0 && yestClose < rawYestLow) {
+        yestClose = rawYestLow;
+      }
+
+      const yestHigh = Math.max(rawYestHigh, rawYestOpen, yestClose);
+      const yestLow = Math.min(rawYestLow > 0 ? rawYestLow : rawYestOpen, rawYestOpen, yestClose);
+      const yestOpen = rawYestOpen || yestLow;
+
+      // 今日價格校正
+      const todayOpen = parseFloat(raw.todayOpen || raw.open) || yestClose;
+      const todayPrice = parseFloat(raw.price || raw.close || raw.todayClose) || yestClose;
+      const rawTodayHigh = parseFloat(raw.todayHigh || raw.high) || todayPrice;
+      const rawTodayLow = parseFloat(raw.todayLow || raw.low) || todayPrice;
+
+      const todayHigh = Math.max(rawTodayHigh, todayOpen, todayPrice);
+      const todayLow = Math.min(rawTodayLow > 0 ? rawTodayLow : todayOpen, todayOpen, todayPrice);
+
+      const yestVol = parseFloat(raw.yestVol || raw.vol) || 0;
+      const ma5Vol = parseFloat(raw.ma5Vol || raw.avgVol5) || 1;
+      const volRatio = raw.volRatio ? parseFloat(raw.volRatio) : Math.round((yestVol / ma5Vol) * 100);
+
+      // 關鍵K條件判定 (若後端已有篩好則直接採用，否則前端自動計算)
+      const isKeyK = raw.isKeyK !== undefined
+        ? Boolean(raw.isKeyK)
+        : (yestClose > yestMa20 && yestMa20 >= prevMa20 && yestHigh > 0);
+
+      // 確認K狀態分類
+      let status = "CONSOLIDATE";
+      if (todayPrice > yestHigh) status = "BREAKOUT";
+      else if (todayPrice < yestLow) status = "BREAKDOWN";
+
+      const changePct = yestClose > 0 ? (((todayPrice - yestClose) / yestClose) * 100).toFixed(2) : "0.00";
 
       return {
-        ...s,
-        crossUpMa20,
-        ma20Up,
-        volRatioPct,
-        volPass,
-        isKeyK,
-        intradayAboveYestHigh,
-        confirmStatus,
-        confirmLabel
+        code, name,
+        prevMa20, yestMa20,
+        yestOpen, yestHigh, yestLow, yestClose,
+        todayOpen, todayHigh, todayLow, todayPrice,
+        yestVol, volRatio,
+        changePct: parseFloat(changePct),
+        isKeyK, status,
+        history: raw.history || null
       };
     }
 
-    function getUpColorText() { return isTwColorScheme ? 'text-rose-400' : 'text-emerald-400'; }
-    function getDownColorText() { return isTwColorScheme ? 'text-emerald-400' : 'text-rose-400'; }
-    function getUpHex() { return isTwColorScheme ? '#f43f5e' : '#10b981'; }
-    function getDownHex() { return isTwColorScheme ? '#10b981' : '#f43f5e'; }
+    function updateDashboard() {
+      // 更新計數器
+      const breakoutCount = allStocks.filter(s => s.status === "BREAKOUT").length;
+      const consolidateCount = allStocks.filter(s => s.status === "CONSOLIDATE").length;
+      const breakdownCount = allStocks.filter(s => s.status === "BREAKDOWN").length;
 
-    function renderDashboard() {
-      const evaluated = stocksData.map(evaluateStock);
+      document.getElementById("count-ALL").textContent = allStocks.length;
+      document.getElementById("count-BREAKOUT").textContent = breakoutCount;
+      document.getElementById("count-CONSOLIDATE").textContent = consolidateCount;
+      document.getElementById("count-BREAKDOWN").textContent = breakdownCount;
 
-      const keyKList = evaluated.filter(item => item.isKeyK);
-      const buyCount = keyKList.filter(item => item.confirmStatus === 'BUY').length;
-      const watchCount = keyKList.filter(item => item.confirmStatus === 'WATCH').length;
-      const failCount = keyKList.filter(item => item.confirmStatus === 'FAIL').length;
+      renderTable();
 
-      document.getElementById('kpiTotalKeyK').textContent = keyKList.length;
-      document.getElementById('kpiBuyCount').textContent = buyCount;
-      document.getElementById('kpiWatchCount').textContent = watchCount;
-      document.getElementById('kpiFailCount').textContent = failCount;
+      // 預設選取第一檔
+      if (!selectedStockCode && filteredStocks.length > 0) {
+        selectStock(filteredStocks[0].code);
+      } else if (selectedStockCode) {
+        const current = allStocks.find(s => s.code === selectedStockCode);
+        if (current) renderDetailPanel(current, simulatedPrice);
+      }
+    }
 
-      const filtered = evaluated.filter(item => {
-        if (!filterConfig.showNonKeyK && !item.isKeyK) return false;
-        if (filterConfig.requireIntradayAboveHigh && !item.intradayAboveYestHigh) return false;
-        if (activeTab === 'BUY' && item.confirmStatus !== 'BUY') return false;
-        if (activeTab === 'WATCH' && item.confirmStatus !== 'WATCH') return false;
-        if (activeTab === 'FAIL' && item.confirmStatus !== 'FAIL') return false;
+    function setFilter(filterType) {
+      currentFilter = filterType;
+      document.querySelectorAll(".filter-card").forEach(btn => {
+        btn.classList.remove("border-2", "border-blue-500");
+        btn.classList.add("border", "border-slate-800");
+      });
+      const activeBtn = document.getElementById(`tab-${filterType}`);
+      if (activeBtn) {
+        activeBtn.classList.remove("border", "border-slate-800");
+        activeBtn.classList.add("border-2", "border-blue-500");
+      }
+      renderTable();
+    }
 
-        if (filterConfig.searchQuery) {
-          const q = filterConfig.searchQuery.toLowerCase();
-          if (!item.code.toLowerCase().includes(q) && !item.name.toLowerCase().includes(q)) {
-            return false;
-          }
-        }
-        return true;
+    function renderTable() {
+      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+      filteredStocks = allStocks.filter(s => {
+        const matchFilter = currentFilter === "ALL" || s.status === currentFilter;
+        const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
+        return matchFilter && matchKeyword;
       });
 
-      const tbody = document.getElementById('stockTableBody');
-      tbody.innerHTML = '';
+      const tbody = document.getElementById("stockTableBody");
+      if (filteredStocks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合此篩選條件的標的</td></tr>`;
+        return;
+      }
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="py-8 text-center text-slate-400 text-xs">
-              目前篩選條件下無符合標的，可調整上方「昨量百分比」或切換分類頁籤。
+      tbody.innerHTML = filteredStocks.map(s => {
+        const isSelected = s.code === selectedStockCode;
+        const rowBg = isSelected ? "bg-blue-900/25" : "hover:bg-slate-800/40";
+        const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
+        const pctSign = s.changePct > 0 ? "+" : "";
+
+        let badgeHtml = "";
+        if (s.status === "BREAKOUT") {
+          badgeHtml = `<span class="inline-block px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進 (收盤 > 昨高)</span>`;
+        } else if (s.status === "BREAKDOWN") {
+          badgeHtml = `<span class="inline-block px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低 (剔除)</span>`;
+        } else {
+          badgeHtml = `<span class="inline-block px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 繼續觀察 (介於昨高昨低)</span>`;
+        }
+
+        return `
+          <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
+            <td class="py-2.5 px-3">
+              <div class="font-bold text-white">${s.code} ${s.name}</div>
+              <div class="text-[11px] text-sky-400">昨20MA: ${s.yestMa20.toFixed(2)} ↗</div>
+            </td>
+            <td class="py-2.5 px-2">
+              <span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[11px]">✓ 符合關鍵K</span>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div>
+              <div class="text-emerald-400">${s.yestLow.toFixed(2)}</div>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-amber-300 font-semibold">${s.volRatio}%</div>
+              <div class="text-[11px] text-slate-400">${s.yestVol}張</div>
+            </td>
+            <td class="py-2.5 px-2 text-right font-mono">
+              <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
+              <div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div>
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              ${badgeHtml}
             </td>
           </tr>
         `;
-      } else {
-        filtered.forEach(item => {
-          const isSelected = item.code === selectedStockCode;
-          const changePct = item.yestClose > 0
-            ? (((item.todayClose - item.yestClose) / item.yestClose) * 100).toFixed(2)
-            : '0.00';
-          const isUp = item.todayClose >= item.yestClose;
-
-          let statusBadgeClass = '';
-          if (item.confirmStatus === 'BUY') {
-            statusBadgeClass = 'bg-rose-500/20 text-rose-300 border border-rose-500/40';
-          } else if (item.confirmStatus === 'WATCH') {
-            statusBadgeClass = 'bg-amber-500/20 text-amber-300 border border-amber-500/40';
-          } else {
-            statusBadgeClass = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-          }
-
-          const tr = document.createElement('tr');
-          tr.className = `cursor-pointer transition ${
-            isSelected ? 'bg-blue-600/20' : 'hover:bg-slate-800/50'
-          }`;
-          tr.addEventListener('click', () => {
-            isManualSimulating = false;
-            selectedStockCode = item.code;
-            renderDashboard();
-          });
-
-          tr.innerHTML = `
-            <td class="py-2.5 px-2">
-              <div class="font-bold text-white">${item.code} ${item.name}</div>
-              <div class="text-[10px] text-slate-400">昨20MA: ${item.yestMa20.toFixed(2)} ${item.ma20Up ? '↗' : '↘'}</div>
-            </td>
-            <td class="py-2.5 px-2">
-              ${
-                item.isKeyK
-                  ? '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-semibold">✓ 符合關鍵K</span>'
-                  : '<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[11px]">未符合關鍵K</span>'
-              }
-              <div class="text-[10px] text-slate-400 mt-0.5">
-                ${item.intradayAboveYestHigh ? '盤中曾過昨高' : '盤中未過昨高'}
-              </div>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="text-rose-400 font-semibold">${item.yestHigh.toFixed(2)}</div>
-              <div class="text-emerald-400 text-[11px]">${item.yestLow.toFixed(2)}</div>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="font-bold ${item.volPass ? 'text-amber-300' : 'text-slate-400'}">${item.volRatioPct}%</div>
-              <div class="text-[10px] text-slate-400">${item.yestVol.toLocaleString()}張</div>
-            </td>
-            <td class="py-2.5 px-2 text-right font-mono">
-              <div class="font-bold text-sm ${isUp ? getUpColorText() : getDownColorText()}">${item.todayClose.toFixed(2)}</div>
-              <div class="text-[11px] ${isUp ? getUpColorText() : getDownColorText()}">${isUp ? '+' : ''}${changePct}%</div>
-            </td>
-            <td class="py-2.5 px-2 text-center">
-              <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold ${statusBadgeClass}">
-                ${item.confirmLabel}
-              </span>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-
-      renderSelectedStockDetail(evaluated);
+      }).join("");
     }
 
-    function renderSelectedStockDetail(evaluatedList) {
-      let current = evaluatedList.find(s => s.code === selectedStockCode) || evaluatedList[0];
-      if (!current) return;
+    function selectStock(code) {
+      selectedStockCode = code;
+      simulatedPrice = null; // 切換股票時重設模擬器為真實報價
+      renderTable();
+      const stock = allStocks.find(s => s.code === code);
+      if (stock) {
+        // 設定模擬器滑桿範圍 (昨低 - 8% ~ 昨高 + 8%)
+        const slider = document.getElementById("simSlider");
+        const minRange = Math.max(0.1, (stock.yestLow * 0.92)).toFixed(2);
+        const maxRange = (stock.yestHigh * 1.08).toFixed(2);
+        slider.min = minRange;
+        slider.max = maxRange;
+        slider.value = stock.todayPrice;
 
-      document.getElementById('detailStockTitle').textContent = `${current.code} ${current.name}`;
-      const keyBadge = document.getElementById('detailKeyKBadge');
-      if (current.isKeyK) {
-        keyBadge.textContent = '★ 昨日成立關鍵K';
-        keyBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold';
-      } else {
-        keyBadge.textContent = '昨日未達關鍵K標準';
-        keyBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-medium';
+        renderDetailPanel(stock, stock.todayPrice);
       }
-
-      document.getElementById('detailSubInfo').textContent =
-        `昨日收盤 ${current.yestClose.toFixed(2)} ｜ 昨量 ${current.yestVol.toLocaleString()} 張 (5日均量 ${current.avgVol5.toLocaleString()} 張, ${current.volRatioPct}%)`;
-
-      const decisionBox = document.getElementById('detailDecisionBox');
-      decisionBox.textContent = current.confirmLabel;
-      if (current.confirmStatus === 'BUY') {
-        decisionBox.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border bg-rose-500/20 border-rose-500/50 text-rose-300';
-      } else if (current.confirmStatus === 'WATCH') {
-        decisionBox.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border bg-amber-500/20 border-amber-500/50 text-amber-300';
-      } else {
-        decisionBox.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border bg-emerald-500/20 border-emerald-500/50 text-emerald-300';
-      }
-
-      document.getElementById('metricMa20').textContent = `${current.yestMa20.toFixed(2)} ↗`;
-      document.getElementById('metricYestHigh').textContent = current.yestHigh.toFixed(2);
-      document.getElementById('metricYestLow').textContent = current.yestLow.toFixed(2);
-      document.getElementById('metricTodayClose').textContent = current.todayClose.toFixed(2);
-
-      const slider = document.getElementById('simPriceSlider');
-      const numInput = document.getElementById('simPriceInput');
-      const minSim = +(current.yestLow * 0.94).toFixed(2);
-      const maxSim = +(current.yestHigh * 1.06).toFixed(2);
-      slider.min = minSim;
-      slider.max = maxSim;
-      slider.value = current.todayClose;
-      numInput.value = current.todayClose.toFixed(2);
-
-      const diffFromHigh = (((current.todayClose - current.yestHigh) / current.yestHigh) * 100).toFixed(2);
-      document.getElementById('simDiffBadge').textContent =
-        `距離昨高 (${current.yestHigh.toFixed(2)})：${current.todayClose >= current.yestHigh ? '+' : ''}${diffFromHigh}%`;
-
-      const checklistEl = document.getElementById('detailChecklist');
-      checklistEl.innerHTML = `
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">1. 昨日股價由下往上突破 20MA 且 20MA 向上</span>
-          <span class="font-bold ${current.crossUpMa20 && current.ma20Up ? 'text-emerald-400' : 'text-rose-400'}">
-            ${current.crossUpMa20 && current.ma20Up ? '✓ 通過' : '✕ 未通過'} (昨收 ${current.yestClose.toFixed(2)} &gt; 20MA ${current.yestMa20.toFixed(2)})
-          </span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">2. 昨日成交量放大檢核 (門檻 ${filterConfig.volThresholdPct}%)</span>
-          <span class="font-bold ${current.volPass ? 'text-emerald-400' : 'text-rose-400'}">
-            ${current.volPass ? '✓ 通過' : '✕ 未通過'} (昨量比 ${current.volRatioPct}%)
-          </span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-slate-300">3. 今日確認K 尾盤收盤位置判定</span>
-          <span class="font-bold ${
-            current.confirmStatus === 'BUY' ? 'text-rose-400' : (current.confirmStatus === 'WATCH' ? 'text-amber-300' : 'text-emerald-400')
-          }">
-            ${current.confirmLabel}
-          </span>
-        </div>
-      `;
-
-      drawKlineChart(current);
     }
 
-    function drawKlineChart(s) {
-      const canvas = document.getElementById('klineCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width;
-      const H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
+    function onSimulatorSlide(val) {
+      simulatedPrice = parseFloat(val);
+      const stock = allStocks.find(s => s.code === selectedStockCode);
+      if (stock) renderDetailPanel(stock, simulatedPrice);
+    }
 
-      const base = s.prevMa20;
+    function setSimPreset(type) {
+      const stock = allStocks.find(s => s.code === selectedStockCode);
+      if (!stock) return;
+      let target = stock.todayPrice;
+      if (type === "BREAKOUT") target = +(stock.yestHigh * 1.015).toFixed(2);
+      else if (type === "MID") target = +((stock.yestHigh + stock.yestLow) / 2).toFixed(2);
+      else if (type === "BREAKDOWN") target = +(stock.yestLow * 0.985).toFixed(2);
+
+      simulatedPrice = target;
+      document.getElementById("simSlider").value = target;
+      renderDetailPanel(stock, target);
+    }
+
+    function renderDetailPanel(stock, activePrice) {
+      const price = activePrice !== null ? activePrice : stock.todayPrice;
+      document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
+      document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 昨量 ${stock.yestVol} 張 (${stock.volRatio}%)`;
+
+      document.getElementById("cardMa20").textContent = `${stock.yestMa20.toFixed(2)} ↗`;
+      document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
+      document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
+      document.getElementById("cardTodayPrice").textContent = price.toFixed(2);
+      document.getElementById("simPriceDisplay").textContent = price.toFixed(2);
+
+      // 計算距離昨高百分比
+      const diffPct = (((price - stock.yestHigh) / stock.yestHigh) * 100).toFixed(2);
+      const sign = diffPct > 0 ? "+" : "";
+      document.getElementById("simDiffText").textContent = `距離昨高 (${stock.yestHigh.toFixed(2)}) : ${sign}${diffPct}%`;
+
+      // 更新決策徽章
+      const badge = document.getElementById("detailDecisionBadge");
+      if (price > stock.yestHigh) {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300";
+        badge.textContent = "🔥 確認買進 (收盤 > 昨高)";
+      } else if (price < stock.yestLow) {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300";
+        badge.textContent = "❄️ 跌破昨低 (不考慮)";
+      } else {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300";
+        badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
+      }
+
+      drawKLineSVG(stock, price);
+    }
+
+    // 繪製完全精準對齊的 SVG K 線圖 (動態計算 Y 軸上下限，確保絕不破圖)
+    function drawKLineSVG(stock, simPrice) {
+      const container = document.getElementById("klineChartContainer");
+
+      // 建構 6 根 K 棒資料 (D-5 ~ 今日)
+      // 若後端無提供前4日明細，則依據 prevMa20 與 yestOpen 平滑推算前4日相對位置
+      const baseP = stock.prevMa20 || stock.yestOpen;
       const bars = [
-        { label: 'D-5', open: base * 0.97, high: base * 0.985, low: base * 0.96, close: base * 0.975, ma20: base * 0.988 },
-        { label: 'D-4', open: base * 0.975, high: base * 0.99, low: base * 0.968, close: base * 0.982, ma20: base * 0.991 },
-        { label: 'D-3', open: base * 0.982, high: base * 0.995, low: base * 0.972, close: base * 0.978, ma20: base * 0.994 },
-        { label: 'D-2', open: base * 0.978, high: base * 0.996, low: base * 0.975, close: base * 0.992, ma20: s.prevMa20 },
-        { label: '昨日(關鍵K)', open: s.yestOpen, high: s.yestHigh, low: s.yestLow, close: s.yestClose, ma20: s.yestMa20, isKey: true },
-        { label: '今日(確認K)', open: s.todayOpen, high: Math.max(s.todayHigh, s.todayClose), low: Math.min(s.todayLow, s.todayClose), close: s.todayClose, ma20: s.yestMa20 + (s.yestMa20 - s.prevMa20), isToday: true }
+        { label: "D-5", open: baseP * 0.985, high: baseP * 0.995, low: baseP * 0.978, close: baseP * 0.988, ma20: baseP * 0.996 },
+        { label: "D-4", open: baseP * 0.988, high: baseP * 1.002, low: baseP * 0.982, close: baseP * 0.993, ma20: baseP * 0.998 },
+        { label: "D-3", open: baseP * 0.993, high: baseP * 1.005, low: baseP * 0.986, close: baseP * 0.991, ma20: baseP * 0.999 },
+        { label: "D-2", open: baseP * 0.991, high: baseP * 1.004, low: baseP * 0.988, close: stock.yestOpen, ma20: stock.prevMa20 || baseP },
+        {
+          label: "昨日(關鍵K)",
+          open: stock.yestOpen,
+          high: stock.yestHigh,
+          low: stock.yestLow,
+          close: stock.yestClose,
+          ma20: stock.yestMa20,
+          highlight: true
+        },
+        {
+          label: "今日(確認K)",
+          open: stock.todayOpen,
+          high: Math.max(stock.todayHigh, simPrice),
+          low: Math.min(stock.todayLow, simPrice),
+          close: simPrice,
+          ma20: stock.yestMa20 + (stock.yestMa20 - (stock.prevMa20 || stock.yestMa20)) * 0.5,
+          isToday: true
+        }
       ];
 
-      const allPrices = bars.flatMap(b => [b.high, b.low, b.ma20]).concat([s.yestHigh, s.yestLow]);
-      const minP = Math.min(...allPrices) * 0.988;
-      const maxP = Math.max(...allPrices) * 1.012;
+      // 【關鍵修正】收集所有價格與參考線，動態計算 Y 軸上下界並保留 12% 緩衝空間
+      const allValues = [
+        ...bars.flatMap(b => [b.open, b.high, b.low, b.close, b.ma20]),
+        stock.yestHigh,
+        stock.yestLow
+      ].filter(v => v > 0);
 
-      const padLeft = 52;
-      const padRight = 100;
-      const padTop = 24;
-      const padBottom = 32;
-      const chartW = W - padLeft - padRight;
-      const chartH = H - padTop - padBottom;
+      const rawMax = Math.max(...allValues);
+      const rawMin = Math.min(...allValues);
+      const span = (rawMax - rawMin) || (rawMax * 0.05) || 1;
+      const maxY = rawMax + span * 0.14;
+      const minY = rawMin - span * 0.14;
 
-      const priceToY = (p) => padTop + ((maxP - p) / (maxP - minP)) * chartH;
+      const width = 460;
+      const height = 250;
+      const padLeft = 46;
+      const padRight = 56;
+      const padTop = 18;
+      const padBottom = 28;
+      const plotW = width - padLeft - padRight;
+      const plotH = height - padTop - padBottom;
 
-      ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
-      ctx.lineWidth = 1;
+      const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * plotH;
+
+      // Y 軸 5 個刻度線
+      let gridHtml = "";
       for (let i = 0; i <= 4; i++) {
-        const y = padTop + (chartH / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(padLeft, y);
-        ctx.lineTo(W - padRight, y);
-        ctx.stroke();
-
-        const pVal = maxP - ((maxP - minP) / 4) * i;
-        ctx.fillStyle = '#64748b';
-        ctx.font = '10px monospace';
-        ctx.fillText(pVal.toFixed(2), 4, y + 3);
+        const val = maxY - ((maxY - minY) * i) / 4;
+        const y = priceToY(val);
+        gridHtml += `
+          <line x1="${padLeft}" y1="${y}" x2="${width - padRight}" y2="${y}" stroke="#1e293b" stroke-width="1" />
+          <text x="${padLeft - 6}" y="${y + 3}" fill="#64748b" font-size="10" text-anchor="end" font-family="monospace">${val.toFixed(2)}</text>
+        `;
       }
 
-      const yHigh = priceToY(s.yestHigh);
-      ctx.save();
-      ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = '#fb7185';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(padLeft, yHigh);
-      ctx.lineTo(W - 8, yHigh);
-      ctx.stroke();
-      ctx.fillStyle = '#fb7185';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(`昨高 ${s.yestHigh.toFixed(2)}`, W - padRight + 6, yHigh + 4);
-      ctx.restore();
+      // 昨高與昨低水平參考線
+      const yHighLine = priceToY(stock.yestHigh);
+      const yLowLine = priceToY(stock.yestLow);
 
-      const yLow = priceToY(s.yestLow);
-      ctx.save();
-      ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = '#34d399';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(padLeft, yLow);
-      ctx.lineTo(W - 8, yLow);
-      ctx.stroke();
-      ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(`昨低 ${s.yestLow.toFixed(2)}`, W - padRight + 6, yLow + 4);
-      ctx.restore();
+      const refLinesHtml = `
+        <line x1="${padLeft}" y1="${yHighLine}" x2="${width - padRight}" y2="${yHighLine}" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,3" />
+        <text x="${width - padRight + 4}" y="${yHighLine + 3}" fill="#fb7185" font-size="10" font-weight="bold">昨高 ${stock.yestHigh.toFixed(2)}</text>
 
-      ctx.save();
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+        <line x1="${padLeft}" y1="${yLowLine}" x2="${width - padRight}" y2="${yLowLine}" stroke="#34d399" stroke-width="1.2" stroke-dasharray="4,3" />
+        <text x="${width - padRight + 4}" y="${yLowLine + 3}" fill="#34d399" font-size="10" font-weight="bold">昨低 ${stock.yestLow.toFixed(2)}</text>
+      `;
+
+      // 繪製 K 棒與 20MA 折線
+      const stepX = plotW / bars.length;
+      let candlesHtml = "";
+      let maPoints = [];
+
       bars.forEach((b, idx) => {
-        const x = padLeft + (chartW / bars.length) * (idx + 0.5);
-        const y = priceToY(b.ma20);
-        if (idx === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 10px sans-serif';
-      const lastMaY = priceToY(bars[bars.length - 1].ma20);
-      ctx.fillText('20MA ↗', W - padRight + 6, lastMaY + 3);
-      ctx.restore();
+        const cx = padLeft + stepX * idx + stepX / 2;
+        const yOpen = priceToY(b.open);
+        const yClose = priceToY(b.close);
+        const yHigh = priceToY(b.high);
+        const yLow = priceToY(b.low);
+        const yMa = priceToY(b.ma20);
 
-      const barWidth = Math.min(26, (chartW / bars.length) * 0.55);
-      bars.forEach((b, idx) => {
-        const cx = padLeft + (chartW / bars.length) * (idx + 0.5);
+        maPoints.push(`${cx},${yMa}`);
+
         const isUp = b.close >= b.open;
-        const color = isUp ? getUpHex() : getDownHex();
+        const color = isUp ? "#f43f5e" : "#10b981"; // 台股紅漲綠跌
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+        const candleW = b.highlight || b.isToday ? 22 : 14;
 
-        const highY = priceToY(b.high);
-        const lowY = priceToY(b.low);
-        const openY = priceToY(b.open);
-        const closeY = priceToY(b.close);
+        // 關鍵K外框高亮
+        const strokeAttr = b.highlight ? `stroke="#fbbf24" stroke-width="1.5"` : (b.isToday ? `stroke="#ffffff" stroke-width="1.2"` : "");
 
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(cx, highY);
-        ctx.lineTo(cx, lowY);
-        ctx.stroke();
-
-        const topY = Math.min(openY, closeY);
-        const bodyH = Math.max(3, Math.abs(closeY - openY));
-        ctx.fillStyle = color;
-        ctx.fillRect(cx - barWidth / 2, topY, barWidth, bodyH);
-
-        if (b.isKey || b.isToday) {
-          ctx.strokeStyle = b.isKey ? '#fbbf24' : '#ffffff';
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(cx - barWidth / 2 - 2, topY - 2, barWidth + 4, bodyH + 4);
-        }
-
-        ctx.fillStyle = b.isKey ? '#fbbf24' : (b.isToday ? '#ffffff' : '#94a3b8');
-        ctx.font = (b.isKey || b.isToday) ? 'bold 10px sans-serif' : '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(b.label, cx, H - 10);
+        candlesHtml += `
+          <!-- 上下影線 -->
+          <line x1="${cx}" y1="${yHigh}" x2="${cx}" y2="${yLow}" stroke="${color}" stroke-width="1.5" />
+          <!-- K棒實體 -->
+          <rect x="${cx - candleW / 2}" y="${bodyTop}" width="${candleW}" height="${bodyH}" fill="${color}" rx="1.5" ${strokeAttr} />
+          <!-- X軸日期標籤 -->
+          <text x="${cx}" y="${height - 8}" fill="${b.highlight ? '#fbbf24' : '#94a3b8'}" font-size="10" font-weight="${b.highlight || b.isToday ? 'bold' : 'normal'}" text-anchor="middle">${b.label}</text>
+        `;
       });
-      ctx.textAlign = 'left';
+
+      const maPolylineHtml = `
+        <polyline fill="none" stroke="#38bdf8" stroke-width="2" points="${maPoints.join(" ")}" />
+      `;
+
+      container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-full overflow-visible">
+          ${gridHtml}
+          ${refLinesHtml}
+          ${candlesHtml}
+          ${maPolylineHtml}
+        </svg>
+      `;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('btnToggleColorScheme').addEventListener('click', () => {
-        isTwColorScheme = !isTwColorScheme;
-        const dot = document.getElementById('colorSchemeDot');
-        const txt = document.getElementById('colorSchemeText');
-        if (isTwColorScheme) {
-          dot.className = 'w-2 h-2 rounded-full bg-rose-500';
-          txt.textContent = '台股配色 (紅漲綠跌)';
-        } else {
-          dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
-          txt.textContent = '國際配色 (綠漲紅跌)';
-        }
-        renderDashboard();
-      });
+    // API Modal 控制
+    function openApiModal() {
+      document.getElementById("apiModal").classList.remove("hidden");
+      document.getElementById("apiModal").classList.add("flex");
+    }
 
-      document.getElementById('btnSimulateTick').addEventListener('click', () => {
-        isManualSimulating = true;
-        stocksData = stocksData.map(s => {
-          const deltaPct = (Math.random() - 0.46) * 0.022;
-          const newClose = +(s.todayClose * (1 + deltaPct)).toFixed(2);
-          return {
-            ...s,
-            todayClose: newClose,
-            todayHigh: Math.max(s.todayHigh, newClose),
-            todayLow: Math.min(s.todayLow, newClose)
-          };
-        });
-        document.getElementById('lastUpdateTime').textContent = `最後更新：${new Date().toLocaleTimeString()} (手動模擬)`;
-        renderDashboard();
-      });
+    function closeApiModal() {
+      document.getElementById("apiModal").classList.add("hidden");
+      document.getElementById("apiModal").classList.remove("flex");
+    }
 
-      const volSlider = document.getElementById('volThresholdSlider');
-      const volInput = document.getElementById('volThresholdInput');
-      function updateVolThreshold(val) {
-        const v = Math.max(10, Number(val) || 100);
-        filterConfig.volThresholdPct = v;
-        volSlider.value = Math.min(300, v);
-        volInput.value = v;
-        document.getElementById('ruleVolText').textContent = `${v}%`;
-        document.getElementById('lblVolRatio1').textContent = `${v}% (${(v / 100).toFixed(1)}倍)`;
-        document.getElementById('lblVolRatio2').textContent = `+${v}% (${((100 + v) / 100).toFixed(1)}倍)`;
-        renderDashboard();
+    function saveAndSyncApi() {
+      const inputVal = document.getElementById("apiUrlInput").value.trim();
+      if (inputVal) {
+        apiUrl = inputVal;
+        localStorage.setItem("custom_stock_api_url", apiUrl);
       }
-      volSlider.addEventListener('input', (e) => updateVolThreshold(e.target.value));
-      volInput.addEventListener('change', (e) => updateVolThreshold(e.target.value));
+      closeApiModal();
+      fetchStocksData();
+    }
 
-      document.getElementById('volModeAvg5').addEventListener('change', () => { filterConfig.volCalcMode = 'AVG5'; renderDashboard(); });
-      document.getElementById('volModeIncrease').addEventListener('change', () => { filterConfig.volCalcMode = 'INC'; renderDashboard(); });
-      document.getElementById('chkRequireIntradayAboveHigh').addEventListener('change', (e) => { filterConfig.requireIntradayAboveHigh = e.target.checked; renderDashboard(); });
-      document.getElementById('chkShowNonKeyK').addEventListener('change', (e) => { filterConfig.showNonKeyK = e.target.checked; renderDashboard(); });
-
-      document.getElementById('btnResetFilters').addEventListener('click', () => {
-        document.getElementById('volModeAvg5').checked = true;
-        filterConfig.volCalcMode = 'AVG5';
-        document.getElementById('chkRequireIntradayAboveHigh').checked = false;
-        filterConfig.requireIntradayAboveHigh = false;
-        document.getElementById('chkShowNonKeyK').checked = false;
-        filterConfig.showNonKeyK = false;
-        updateVolThreshold(100);
-      });
-
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          activeTab = btn.getAttribute('data-tab');
-          document.querySelectorAll('.tab-btn').forEach(b => {
-            b.className = 'tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 transition';
-          });
-          btn.className = 'tab-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition';
-          renderDashboard();
-        });
-      });
-
-      document.getElementById('searchInput').addEventListener('input', (e) => {
-        filterConfig.searchQuery = e.target.value.trim();
-        renderDashboard();
-      });
-
-      function updateSelectedClosePrice(newPrice) {
-        isManualSimulating = true;
-        const p = +(Number(newPrice) || 0).toFixed(2);
-        stocksData = stocksData.map(s => {
-          if (s.code !== selectedStockCode) return s;
-          return {
-            ...s,
-            todayClose: p,
-            todayHigh: Math.max(s.todayHigh, p),
-            todayLow: Math.min(s.todayLow, p)
-          };
-        });
-        renderDashboard();
-      }
-
-      document.getElementById('simPriceSlider').addEventListener('input', (e) => updateSelectedClosePrice(e.target.value));
-      document.getElementById('simPriceInput').addEventListener('change', (e) => updateSelectedClosePrice(e.target.value));
-      document.getElementById('btnSimBreakout').addEventListener('click', () => {
-        const s = stocksData.find(item => item.code === selectedStockCode);
-        if (s) updateSelectedClosePrice(s.yestHigh * 1.015);
-      });
-      document.getElementById('btnSimInside').addEventListener('click', () => {
-        const s = stocksData.find(item => item.code === selectedStockCode);
-        if (s) updateSelectedClosePrice((s.yestHigh + s.yestLow) / 2);
-      });
-      document.getElementById('btnSimBreakdown').addEventListener('click', () => {
-        const s = stocksData.find(item => item.code === selectedStockCode);
-        if (s) updateSelectedClosePrice(s.yestLow * 0.985);
-      });
-
-      document.getElementById('btnExportCsv').addEventListener('click', () => {
-        const evaluated = stocksData.map(evaluateStock);
-        const headers = ['代號', '名稱', '昨日關鍵K', '昨20MA', '昨高', '昨低', '昨收', '昨量比(%)', '今日收盤', '確認K決策'];
-        const rows = evaluated.map(s => [
-          s.code, s.name, s.isKeyK ? '是' : '否',
-          s.yestMa20.toFixed(2), s.yestHigh.toFixed(2), s.yestLow.toFixed(2), s.yestClose.toFixed(2),
-          s.volRatioPct, s.todayClose.toFixed(2), s.confirmLabel
-        ]);
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `關鍵K突破20MA篩選_${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-      });
-
-      const customStockModal = document.getElementById('customStockModal');
-      document.getElementById('btnOpenCustomModal').addEventListener('click', () => {
-        customStockModal.classList.remove('hidden');
-        customStockModal.classList.add('flex');
-      });
-      function closeCustomModal() {
-        customStockModal.classList.add('hidden');
-        customStockModal.classList.remove('flex');
-      }
-      document.getElementById('btnCloseCustomModal').addEventListener('click', closeCustomModal);
-      document.getElementById('btnCancelCustomModal').addEventListener('click', closeCustomModal);
-
-      document.getElementById('customStockForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newStock = {
-          code: document.getElementById('inpCode').value.trim(),
-          name: document.getElementById('inpName').value.trim(),
-          prevMa20: parseFloat(document.getElementById('inpPrevMa20').value),
-          yestMa20: parseFloat(document.getElementById('inpYestMa20').value),
-          yestOpen: parseFloat(document.getElementById('inpYestOpen').value),
-          yestClose: parseFloat(document.getElementById('inpYestClose').value),
-          yestHigh: parseFloat(document.getElementById('inpYestHigh').value),
-          yestLow: parseFloat(document.getElementById('inpYestLow').value),
-          yestVol: parseInt(document.getElementById('inpYestVol').value, 10),
-          avgVol5: parseInt(document.getElementById('inpAvgVol5').value, 10),
-          todayOpen: parseFloat(document.getElementById('inpTodayOpen').value),
-          todayHigh: parseFloat(document.getElementById('inpTodayHigh').value),
-          todayLow: parseFloat(document.getElementById('inpTodayLow').value),
-          todayClose: parseFloat(document.getElementById('inpTodayClose').value),
-          todayVol: parseInt(document.getElementById('inpYestVol').value, 10)
-        };
-        const existingIdx = stocksData.findIndex(item => item.code === newStock.code);
-        if (existingIdx >= 0) stocksData[existingIdx] = newStock;
-        else stocksData.unshift(newStock);
-        selectedStockCode = newStock.code;
-        closeCustomModal();
-        renderDashboard();
-      });
-
-      // ==================== 自動無縫同步 API 邏輯 ====================
-      const apiConfigModal = document.getElementById('apiConfigModal');
-      const apiUrlInput = document.getElementById('apiUrlInput');
-      const apiTestMessage = document.getElementById('apiTestMessage');
-      const apiStatusDot = document.getElementById('apiStatusDot');
-      const apiStatusText = document.getElementById('apiStatusText');
-      const autoRefreshToggle = document.getElementById('autoRefreshToggle');
-
-      const savedApiUrl = localStorage.getItem('STOCK_API_URL') || DEFAULT_API_ENDPOINT;
-      apiUrlInput.value = savedApiUrl;
-
-      function openApiModal() { apiConfigModal.classList.remove('hidden'); apiConfigModal.classList.add('flex'); }
-      function closeApiModal() { apiConfigModal.classList.add('hidden'); apiConfigModal.classList.remove('flex'); }
-
-      document.getElementById('btnOpenApiModal').addEventListener('click', openApiModal);
-      document.getElementById('btnCloseApiModal').addEventListener('click', closeApiModal);
-      apiConfigModal.addEventListener('click', (e) => { if (e.target === apiConfigModal) closeApiModal(); });
-
-      function showApiMsg(msg, isOk) {
-        apiTestMessage.textContent = msg;
-        apiTestMessage.className = `text-xs p-2.5 rounded-lg border ${
-          isOk ? 'bg-emerald-950/70 border-emerald-600 text-emerald-300' : 'bg-rose-950/70 border-rose-600 text-rose-300'
-        }`;
-        apiTestMessage.classList.remove('hidden');
-      }
-
-      async function fetchFromApi(url, applyData = true, isSilent = false) {
-        if (!url) return;
-        try {
-          if (!isSilent) showApiMsg('⏳ 正在連線至 API 拉取資料...', true);
-          
-          const response = await fetch(url, {
-            headers: {
-              'ngrok-skip-browser-warning': 'true'
-            }
-          });
-          const json = await response.json();
-
-          if (!response.ok) {
-            throw new Error(json.error || `HTTP 錯誤碼 ${response.status}`);
-          }
-
-          const list = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
-          if (list.length === 0) throw new Error('回傳資料為空');
-
-          apiStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse';
-          apiStatusText.textContent = `即時同步中 (${list.length}檔)`;
-          if (!isSilent) showApiMsg(`✅ 串接成功！已同步 ${list.length} 檔即時報價。`, true);
-
-          if (applyData && !isManualSimulating) {
-            const prevSelected = selectedStockCode;
-            stocksData = list.map(item => ({
-              code: String(item.code || ''),
-              name: String(item.name || ''),
-              prevMa20: Number(item.prevMa20 || 0),
-              yestMa20: Number(item.yestMa20 || 0),
-              yestOpen: Number(item.yestOpen || 0),
-              yestHigh: Number(item.yestHigh || 0),
-              yestLow: Number(item.yestLow || 0),
-              yestClose: Number(item.yestClose || 0),
-              yestVol: Number(item.yestVol || 0),
-              avgVol5: Number(item.avgVol5 || 1),
-              todayOpen: Number(item.todayOpen || item.todayClose || 0),
-              todayHigh: Number(item.todayHigh || item.todayClose || 0),
-              todayLow: Number(item.todayLow || item.todayClose || 0),
-              todayClose: Number(item.todayClose || 0),
-              todayVol: Number(item.todayVol || 0)
-            }));
-
-            if (stocksData.some(s => s.code === prevSelected)) {
-              selectedStockCode = prevSelected;
-            } else if (stocksData.length > 0) {
-              selectedStockCode = stocksData[0].code;
-            }
-
-            document.getElementById('lastUpdateTime').textContent = `即時同步：${new Date().toLocaleTimeString()} (自動更新)`;
-            renderDashboard();
-          }
-        } catch (err) {
-          apiStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
-          apiStatusText.textContent = '等待後端準備...';
-          if (!isSilent) showApiMsg(`⏳ ${err.message}`, false);
-        }
-      }
-
-      document.getElementById('btnTestApi').addEventListener('click', () => {
-        fetchFromApi(apiUrlInput.value.trim(), false, false);
-      });
-
-      document.getElementById('btnSaveApiConfig').addEventListener('click', async () => {
-        isManualSimulating = false;
-        const url = apiUrlInput.value.trim() || DEFAULT_API_ENDPOINT;
-        localStorage.setItem('STOCK_API_URL', url);
-        await fetchFromApi(url, true, false);
-      });
-
-      document.getElementById('btnRefreshApiNow').addEventListener('click', () => {
-        isManualSimulating = false;
-        const url = localStorage.getItem('STOCK_API_URL') || apiUrlInput.value.trim() || DEFAULT_API_ENDPOINT;
-        fetchFromApi(url, true, true);
-      });
-
-      function startAutoSyncLoop() {
-        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-        autoRefreshTimer = setInterval(() => {
-          if (!autoRefreshToggle.checked) return;
-          const url = localStorage.getItem('STOCK_API_URL') || apiUrlInput.value.trim() || DEFAULT_API_ENDPOINT;
-          if (url) fetchFromApi(url, true, true);
-        }, 5000);
-      }
-
-      autoRefreshToggle.addEventListener('change', (e) => {
-        if (e.target.checked) startAutoSyncLoop();
-        else if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-      });
-
-      renderDashboard();
-      fetchFromApi(savedApiUrl, true, true);
-      startAutoSyncLoop();
-    });
+    // 匯出 CSV
+    function exportCSV() {
+      if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
+      const headers = ["股票代號", "股票名稱", "昨日20MA", "昨高", "昨低", "昨收", "今日現價", "漲跌幅%", "確認狀態"];
+      const rows = filteredStocks.map(s => [
+        s.code, s.name, s.yestMa20, s.yestHigh, s.yestLow, s.yestClose, s.todayPrice, `${s.changePct}%`, s.status
+      ]);
+      const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `關鍵K突破20MA清單_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+    }
   </script>
 </body>
 </html>
