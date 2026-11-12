@@ -1,4 +1,4 @@
-html_code = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
@@ -514,7 +514,7 @@ html_code = """<!DOCTYPE html>
     let activeTab = 'ALL_KEY';
     let isTwColorScheme = true;
     let autoRefreshTimer = null;
-    let isManualSimulating = false; // 若使用者正在拉動右側推演模擬器，暫停覆蓋選中股價
+    let isManualSimulating = false;
 
     let filterConfig = {
       volThresholdPct: 100,
@@ -986,7 +986,7 @@ html_code = """<!DOCTYPE html>
           s.yestMa20.toFixed(2), s.yestHigh.toFixed(2), s.yestLow.toFixed(2), s.yestClose.toFixed(2),
           s.volRatioPct, s.todayClose.toFixed(2), s.confirmLabel
         ]);
-        const csvContent = '\\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\\n');
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1042,7 +1042,6 @@ html_code = """<!DOCTYPE html>
       const apiStatusText = document.getElementById('apiStatusText');
       const autoRefreshToggle = document.getElementById('autoRefreshToggle');
 
-      // 預設自動帶入本地 API 網址，無需手動設定
       const savedApiUrl = localStorage.getItem('STOCK_API_URL') || DEFAULT_API_ENDPOINT;
       apiUrlInput.value = savedApiUrl;
 
@@ -1065,7 +1064,13 @@ html_code = """<!DOCTYPE html>
         if (!url) return;
         try {
           if (!isSilent) showApiMsg('⏳ 正在連線至 API 拉取資料...', true);
-          const response = await fetch(url);
+          
+          // 加入 ngrok-skip-browser-warning 標頭以繞過免費版 ngrok 的警告頁面攔截
+          const response = await fetch(url, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true'
+            }
+          });
           const json = await response.json();
 
           if (!response.ok) {
@@ -1099,7 +1104,6 @@ html_code = """<!DOCTYPE html>
               todayVol: Number(item.todayVol || 0)
             }));
 
-            // 保持使用者目前正在看的股票，不跳回第一檔
             if (stocksData.some(s => s.code === prevSelected)) {
               selectedStockCode = prevSelected;
             } else if (stocksData.length > 0) {
@@ -1139,7 +1143,7 @@ html_code = """<!DOCTYPE html>
           if (!autoRefreshToggle.checked) return;
           const url = localStorage.getItem('STOCK_API_URL') || apiUrlInput.value.trim() || DEFAULT_API_ENDPOINT;
           if (url) fetchFromApi(url, true, true);
-        }, 5000); // 每 5 秒自動與後端即時報價同步一次
+        }, 5000);
       }
 
       autoRefreshToggle.addEventListener('change', (e) => {
@@ -1147,7 +1151,6 @@ html_code = """<!DOCTYPE html>
         else if (autoRefreshTimer) clearInterval(autoRefreshTimer);
       });
 
-      // 開啟網頁時立刻自動連線並啟動 5 秒即時輪詢
       renderDashboard();
       fetchFromApi(savedApiUrl, true, true);
       startAutoSyncLoop();
@@ -1155,7 +1158,3 @@ html_code = """<!DOCTYPE html>
   </script>
 </body>
 </html>
-"""
-
-with open("dashboard.html", "w", encoding="utf-8") as f:
-    f.write(html_code)
