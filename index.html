@@ -19,8 +19,15 @@
     #klineCanvas:active { cursor: grabbing; }
     .sortable-th { cursor: pointer; user-select: none; transition: color 0.15s, background-color 0.15s; }
     .sortable-th:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.85); }
-    #floatingLegend { cursor: move; user-select: none; }
+    #floatingLegend { cursor: move; user-select: none; -webkit-user-select: none; touch-action: none; }
     input[type="range"] { accent-color: #f472b6; }
+    @keyframes rowPulseHighlight {
+      0%, 100% { background-color: rgba(30, 58, 138, 0.25); }
+      50% { background-color: rgba(245, 158, 11, 0.45); }
+    }
+    .row-flash {
+      animation: rowPulseHighlight 0.85s ease-in-out 2;
+    }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -36,7 +43,7 @@
           關鍵K・突破20MA實戰儀表板
         </h1>
         <p class="text-xs text-slate-400">
-          昨日首日由下往上穿越20MA ＝ <span class="text-amber-400 font-semibold">關鍵K</span> ｜ 今日收盤/尾盤站上昨高 ＝ <span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">主力泡泡</span>＝可拖動拉桿自由調整放寬或嚴格度
+          首日穿越20MA＝<span class="text-amber-400 font-semibold">關鍵K</span> ｜ 收盤站上昨高＝<span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">泡泡</span>＝比前一根放大倍數(顯示倍數/張數/均價)
         </p>
       </div>
     </div>
@@ -122,60 +129,73 @@
 
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
-        <span class="text-xs font-bold text-sky-400">STEP 2・主力均價泡泡與拉桿微調</span>
-        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">1~10級可調</span>
+        <span class="text-xs font-bold text-sky-400">STEP 2・前一根比較倍數泡泡與手機操作</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">倍數拉桿</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• <span class="text-pink-400 font-semibold">粉紅/青綠半透明泡泡</span>：中心點即為主力買/賣均價，旁附佔今日總交易量%</li>
-        <li>• <span class="text-amber-300 font-semibold">泡泡門檻拉桿（放寬 ↔ 嚴格）</span>：往左拉顯示更多波段主力，往右拉只留最頂級爆量主力</li>
-        <li>• K線支援切換 <span class="text-sky-300 font-semibold">日K / 5分K</span>、按住拖曳可<span class="text-amber-300 font-semibold">上下左右任意平移</span></li>
+        <li>• <span class="text-pink-400 font-semibold">泡泡倍數比較</span>：每一根與前一根比較，達拉桿設定倍數（如 ≥2.0倍）才顯示</li>
+        <li>• <span class="text-amber-300 font-semibold">泡泡資訊</span>：直接標示「倍數、張數、均價」；手機端<span class="text-sky-300 font-semibold">長按圖例面板</span>即可移動</li>
+        <li>• <span class="text-white font-semibold">漲跌停標示</span>：漲停以<span class="bg-rose-600 text-white px-1 rounded">紅底白字</span>、跌停以<span class="bg-emerald-600 text-white px-1 rounded">綠底白字</span>醒目呈現</li>
       </ul>
     </div>
 
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
-        <span class="text-xs font-bold text-rose-400">STEP 3・收盤「確認K」決策</span>
-        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">尾盤檢核</span>
+        <span class="text-xs font-bold text-rose-400">STEP 3・確認K買進與波段追蹤池</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">波段損益結算</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• <span class="text-rose-400 font-semibold">收盤 > 昨高</span>：確認突破 → 尾盤/收盤買進</li>
-        <li>• <span class="text-amber-400 font-semibold">昨低 ≤ 收盤 ≤ 昨高</span>：區間內 → 繼續觀察</li>
-        <li>• <span class="text-emerald-400 font-semibold">收盤 < 昨低</span>：跌破昨低 → 不考慮(剔除)</li>
+        <li>• <span class="text-rose-400 font-semibold">確認K買入</span>：收盤 > 關鍵K昨高（以確認K收盤價為買入價）</li>
+        <li>• <span class="text-cyan-300 font-semibold">第4欄・確認K追蹤池</span>：一路追蹤至「跌破20MA，且確認K收盤跌破該K棒低點」賣出</li>
+        <li>• 自動計算<span class="text-amber-300 font-semibold">獲利幾點</span>（收盤價計），確認跌破賣出後於股池再保留顯示 2 天</li>
       </ul>
     </div>
   </section>
 
-  <!-- 統計篩選器卡片 -->
-  <section class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+  <!-- 5 大股票池統計篩選器卡片（第 4 欄為確認K追蹤池，第 5 欄為破底K） -->
+  <section id="stockPoolsSection" class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-2.5 mb-4">
+    <!-- 第 1 欄 -->
     <button onclick="setFilter('ALL')" id="tab-ALL" class="filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition">
-      <div class="text-xs text-slate-400 mb-1">符合昨日「首日突破20MA關鍵K」</div>
-      <div class="flex items-baseline gap-2">
+      <div class="text-[11px] text-slate-400 mb-1">1. 符合昨日「突破20MA關鍵K」</div>
+      <div class="flex items-baseline gap-1.5">
         <span id="count-ALL" class="text-2xl font-bold text-white">0</span>
-        <span class="text-xs text-slate-400">檔進入今日確認池</span>
+        <span class="text-[11px] text-slate-400">檔進入確認池</span>
       </div>
     </button>
 
+    <!-- 第 2 欄 -->
     <button onclick="setFilter('BREAKOUT')" id="tab-BREAKOUT" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-rose-500/50 rounded-xl p-3 transition">
-      <div class="text-xs text-rose-300 mb-1">🔥 確認K：高於昨高 (買進)</div>
-      <div class="flex items-baseline gap-2">
+      <div class="text-[11px] text-rose-300 mb-1">2. 🔥 確認K：高於昨高 (買進)</div>
+      <div class="flex items-baseline gap-1.5">
         <span id="count-BREAKOUT" class="text-2xl font-bold text-rose-400">0</span>
-        <span class="text-xs text-slate-400">檔收盤/尾盤站上昨高</span>
+        <span class="text-[11px] text-slate-400">檔今日站上昨高</span>
       </div>
     </button>
 
+    <!-- 第 3 欄 -->
     <button onclick="setFilter('CONSOLIDATE')" id="tab-CONSOLIDATE" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 transition">
-      <div class="text-xs text-amber-300 mb-1">👀 區間內：昨高~昨低之間</div>
-      <div class="flex items-baseline gap-2">
+      <div class="text-[11px] text-amber-300 mb-1">3. 👀 區間內：昨高~昨低之間</div>
+      <div class="flex items-baseline gap-1.5">
         <span id="count-CONSOLIDATE" class="text-2xl font-bold text-amber-400">0</span>
-        <span class="text-xs text-slate-400">檔等待突破方向確認</span>
+        <span class="text-[11px] text-slate-400">檔等待方向確認</span>
       </div>
     </button>
 
-    <button onclick="setFilter('BREAKDOWN')" id="tab-BREAKDOWN" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-emerald-500/50 rounded-xl p-3 transition">
-      <div class="text-xs text-emerald-300 mb-1">❄️ 破底K：低於昨低 (不考慮)</div>
-      <div class="flex items-baseline gap-2">
+    <!-- 第 4 欄：新增「確認K波段追蹤池」 -->
+    <button onclick="setFilter('TRACKING')" id="tab-TRACKING" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-cyan-400/60 rounded-xl p-3 transition">
+      <div class="text-[11px] text-cyan-300 mb-1">4. 📈 確認K追蹤 (至破20MA低點)</div>
+      <div class="flex items-baseline gap-1.5">
+        <span id="count-TRACKING" class="text-2xl font-bold text-cyan-400">0</span>
+        <span class="text-[11px] text-slate-400">檔追蹤/破後留2天</span>
+      </div>
+    </button>
+
+    <!-- 第 5 欄：破底K -->
+    <button onclick="setFilter('BREAKDOWN')" id="tab-BREAKDOWN" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-emerald-500/50 rounded-xl p-3 transition col-span-2 md:col-span-1">
+      <div class="text-[11px] text-emerald-300 mb-1">5. ❄️ 破底K：低於昨低 (不考慮)</div>
+      <div class="flex items-baseline gap-1.5">
         <span id="count-BREAKDOWN" class="text-2xl font-bold text-emerald-400">0</span>
-        <span class="text-xs text-slate-400">檔跌破昨低剔除</span>
+        <span class="text-[11px] text-slate-400">檔跌破昨低剔除</span>
       </div>
     </button>
   </section>
@@ -184,7 +204,7 @@
   <main class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
     
     <!-- 左側股票清單 (佔 6 欄) -->
-    <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
+    <div id="stockPoolPanel" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
       <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
         <input type="text" id="searchInput" oninput="renderTable()" placeholder="搜尋代號或名稱 (例如 2454 或 聯發科)..." 
                class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full sm:w-64" />
@@ -200,25 +220,10 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto max-h-[670px]">
+      <div id="stockTableContainer" class="overflow-x-auto max-h-[670px]">
         <table class="w-full text-left border-collapse">
-          <thead class="bg-slate-900/95 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="py-2.5 px-3">股票代號/名稱</th>
-              <th onclick="toggleSort('yestGainPct')" class="sortable-th py-2.5 px-2 text-right">
-                昨日漲幅 <span id="sort-icon-yestGainPct" class="text-slate-500 ml-0.5">⇅</span>
-              </th>
-              <th onclick="toggleSort('yestHigh')" class="sortable-th py-2.5 px-2 text-right">
-                昨高 / 昨低 <span id="sort-icon-yestHigh" class="text-slate-500 ml-0.5">⇅</span>
-              </th>
-              <th onclick="toggleSort('volExtraPct')" class="sortable-th py-2.5 px-2 text-right">
-                昨量 vs 5日均量 <span id="sort-icon-volExtraPct" class="text-slate-500 ml-0.5">⇅</span>
-              </th>
-              <th onclick="toggleSort('todayPrice')" class="sortable-th py-2.5 px-2 text-right">
-                今日收盤/現價 <span id="sort-icon-todayPrice" class="text-slate-500 ml-0.5">⇅</span>
-              </th>
-              <th class="py-2.5 px-3 text-center">確認K 決策</th>
-            </tr>
+          <thead id="stockTableHead" class="bg-slate-900/95 sticky top-0 z-10 text-[11px] text-slate-400 border-b border-slate-800">
+            <!-- 由 renderTableHeader() 動態渲染（支援一般池與第 4 欄確認K追蹤池專屬欄位與排序） -->
           </thead>
           <tbody id="stockTableBody" class="divide-y divide-slate-800/60 text-xs">
             <tr>
@@ -230,10 +235,15 @@
     </div>
 
     <!-- 右側真實歷史 K 線與成交量面板 (佔 6 欄) -->
-    <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
+    <div id="detailPanelSection" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
       <div class="flex items-start justify-between gap-2 mb-3">
         <div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- 返還鍵：點擊立即回到剛剛查看的股票池該檔股票位置 -->
+            <button onclick="backToStockPool()" title="返回剛剛查看的股票池該檔股票位置"
+                    class="px-2.5 py-1 rounded-lg bg-blue-600/25 hover:bg-blue-600/40 border border-blue-400/50 text-blue-200 text-xs font-bold flex items-center gap-1 transition shadow-sm">
+              ⬅️ 返回股票池
+            </button>
             <h2 id="detailTitle" class="text-xl font-bold text-white">--</h2>
             <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 首日突破20MA關鍵K</span>
           </div>
@@ -243,6 +253,16 @@
         </div>
         <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
           等待選取
+        </div>
+      </div>
+
+      <!-- 確認K波段追蹤專屬損益橫幅（當個股有確認K買入紀錄時自動顯示） -->
+      <div id="trackingDetailBanner" class="hidden bg-cyan-950/40 border border-cyan-500/40 rounded-lg px-3 py-2 mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div id="trackingDetailLeft" class="flex flex-wrap items-center gap-2 text-slate-200">
+          --
+        </div>
+        <div id="trackingDetailRight" class="font-mono font-bold">
+          --
         </div>
       </div>
 
@@ -286,7 +306,7 @@
         </div>
       </div>
 
-      <!-- K線圖控制工具列（含泡泡嚴格度拉桿） -->
+      <!-- K線圖控制工具列（含前一根比較倍數拉桿 + 返還鍵） -->
       <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
           <!-- 日K / 5分K 切換 -->
@@ -301,19 +321,17 @@
 
           <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
 
-          <!-- 主力泡泡開關 + 放寬/嚴格拉桿 -->
+          <!-- 主力泡泡開關 + 比前一根大幾倍拉桿 -->
           <div class="inline-flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
             <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300">
               <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
-              <span>泡泡</span>
+              <span>泡泡 ≥前根</span>
             </label>
-            <span class="text-[10px] text-slate-400">寬</span>
-            <input type="range" id="bubbleStrictnessSlider" min="1" max="10" step="1" value="5" oninput="onBubbleStrictnessChange(this.value)"
-                   title="往左拉：放寬條件顯示更多主力泡泡｜往右拉：嚴格篩選只顯示最大主力泡泡"
-                   class="w-16 md:w-20 h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
-            <span class="text-[10px] text-slate-400">嚴</span>
-            <span id="bubbleLevelBadge" class="text-[10px] font-mono font-bold text-pink-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-pink-500/30">
-              5級(適中)
+            <input type="range" id="bubbleMultSlider" min="1.0" max="5.0" step="0.1" value="1.5" oninput="onBubbleMultChange(this.value)"
+                   title="設定泡泡要比前一根大幾倍才顯示（例如拉到 2.0 代表今日泡泡是前一根的 2 倍以上）"
+                   class="w-20 md:w-24 h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
+            <span id="bubbleMultBadge" class="text-[10px] font-mono font-bold text-pink-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-pink-500/30">
+              1.5倍 (+50%)
             </span>
           </div>
 
@@ -333,6 +351,9 @@
           <button onclick="resetChartZoom()" title="恢復預設根數並將上下左右位移歸零" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]">
             重置視角
           </button>
+          <button onclick="backToStockPool()" class="lg:hidden px-2 py-1 rounded bg-blue-600/30 text-blue-200 border border-blue-500/40 font-bold text-[11px]">
+            ⬅️ 返回清單
+          </button>
         </div>
       </div>
 
@@ -340,22 +361,20 @@
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col gap-1">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力買賣均價與佔今日量%</span>
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力倍數、張數與均價</span>
           </div>
           <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
-            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積（絕不模擬產生）
+            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
           </div>
         </div>
 
-        <div id="floatingLegend" style="top: 46px; left: 12px;" title="按住此圖例面板可隨意拖曳到喜歡的位置"
-             class="absolute z-20 flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/90 backdrop-blur-sm border border-slate-700/90 hover:border-blue-400/70 shadow-lg px-2.5 py-1 rounded-md transition-colors">
-          <span class="text-slate-500 font-bold pr-0.5">⋮⋮</span>
-          <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-amber-500 inline-block"></span>20MA↑</span>
-          <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-slate-200 inline-block"></span>20MA→</span>
-          <span class="flex items-center gap-1 font-medium"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span>20MA↓</span>
-          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>買方主力(均價/佔比%)</span>
+        <!-- 已移除 20MA↑/→/↓ 說明，並支援手機「長按」拖拉移動的懸浮圖例 -->
+        <div id="floatingLegend" style="top: 46px; left: 12px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
+             class="absolute z-20 flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/90 backdrop-blur-sm border border-slate-700/90 hover:border-blue-400/70 shadow-lg px-2.5 py-1 rounded-md transition-transform">
+          <span class="text-slate-400 font-bold pr-0.5">⋮⋮(長按移動)</span>
+          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>買方泡泡(倍數/張數/均價)</span>
           <span class="flex items-center gap-1 font-medium text-amber-300">★連續買均價</span>
-          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>賣方主力(均價/佔比%)</span>
+          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>賣方泡泡(倍數/張數/均價)</span>
           <span class="flex items-center gap-1 font-medium text-indigo-300">★連續賣均價</span>
         </div>
 
@@ -376,7 +395,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 拖動上方「寬 ↔ 嚴」拉桿可即時調整泡泡顯示門檻；數字為主力平均價格與佔今日總成交量%</span>
+        <span>💡 泡泡代表較前一根放大的倍數、張數與主力均價；手機長按圖例條可任意移動位置</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -392,7 +411,7 @@
       <p class="text-xs text-slate-400 mb-3">
         請輸入後端資料來源網址（Cloudflare 網址或本機網址加上 <code class="text-sky-400">/stocks</code>）：
       </p>
-      <input type="text" id="apiUrlInput" placeholder="https://exercises-northern-passion-garage.trycloudflare.com/stocks" 
+      <input type="text" id="apiUrlInput" placeholder="https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" 
              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
@@ -412,7 +431,7 @@
   </div>
 
   <script>
-    const DEFAULT_API_URL = "https://exercises-northern-passion-garage.trycloudflare.com/stocks";
+    const DEFAULT_API_URL = "https://dual-contacted-floyd-dosage.trycloudflare.com/stocks";
     let savedUrl = localStorage.getItem("custom_stock_api_url");
     if (!savedUrl || savedUrl.includes("ngrok-free.dev") || !savedUrl.endsWith("/stocks")) {
       savedUrl = DEFAULT_API_URL;
@@ -420,12 +439,15 @@
     }
     let apiUrl = savedUrl;
 
-    // 讀取先前儲存的泡泡嚴格度拉桿等級 (1~10，預設 5)
-    let bubbleStrictness = parseInt(localStorage.getItem("bubble_strictness_level") || "5", 10);
-    if (isNaN(bubbleStrictness) || bubbleStrictness < 1 || bubbleStrictness > 10) bubbleStrictness = 5;
+    // 泡泡與前一根比較的倍數門檻 (預設 1.5 倍，可拉動 1.0 ~ 5.0 倍)
+    let bubbleMultThreshold = parseFloat(localStorage.getItem("bubble_mult_threshold") || "1.5");
+    if (isNaN(bubbleMultThreshold) || bubbleMultThreshold < 1.0 || bubbleMultThreshold > 5.0) {
+      bubbleMultThreshold = 1.5;
+    }
 
-    let rawFirstBreak20MaStocks = [];
-    let allStocks = [];
+    let rawAllLoadedStocks = [];
+    let allStocks = [];       // 符合昨日首日突破 20MA 的今日觀察池
+    let trackingStocks = [];  // 第 4 欄：符合確認K買進並持續追蹤至跌破20MA確認低點賣出之股票池
     let filteredStocks = [];
     let currentFilter = "ALL";
     let selectedStockCode = null;
@@ -451,11 +473,12 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("apiUrlInput").value = apiUrl;
-      const slider = document.getElementById("bubbleStrictnessSlider");
+      const slider = document.getElementById("bubbleMultSlider");
       if (slider) {
-        slider.value = bubbleStrictness;
-        updateBubbleLevelLabel(bubbleStrictness);
+        slider.value = bubbleMultThreshold;
+        updateBubbleMultLabel(bubbleMultThreshold);
       }
+      renderTableHeader();
       initCanvasEvents();
       initDraggableLegend();
       fetchStocksData();
@@ -464,30 +487,55 @@
 
     window.addEventListener("resize", () => renderCanvasChart());
 
-    function updateBubbleLevelLabel(lvl) {
-      const badge = document.getElementById("bubbleLevelBadge");
-      if (!badge) return;
-      let tag = "適中";
-      if (lvl <= 2) tag = "極寬";
-      else if (lvl <= 4) tag = "放寬";
-      else if (lvl <= 6) tag = "適中";
-      else if (lvl <= 8) tag = "嚴格";
-      else tag = "極嚴";
-      badge.textContent = `${lvl}級(${tag})`;
+    // 台股跳動檔位與漲跌停判定（漲停紅底白字、跌停綠底白字）
+    function getTwTickSize(price) {
+      if (price < 10) return 0.01;
+      if (price < 50) return 0.05;
+      if (price < 100) return 0.1;
+      if (price < 500) return 0.5;
+      if (price < 1000) return 1;
+      return 5;
     }
 
-    // 拉動泡泡嚴格度拉桿時即時重新篩選並重繪圖表
-    function onBubbleStrictnessChange(val) {
-      bubbleStrictness = parseInt(val, 10) || 5;
-      localStorage.setItem("bubble_strictness_level", String(bubbleStrictness));
-      updateBubbleLevelLabel(bubbleStrictness);
+    function calcTwLimitPrices(refClose) {
+      if (!refClose || refClose <= 0) return { limitUp: 999999, limitDown: 0 };
+      const rawUp = refClose * 1.10;
+      const tickUp = getTwTickSize(rawUp);
+      const limitUp = Number((Math.floor((rawUp + 1e-7) / tickUp) * tickUp).toFixed(2));
+
+      const rawDown = refClose * 0.90;
+      const tickDown = getTwTickSize(rawDown);
+      const limitDown = Number((Math.ceil((rawDown - 1e-7) / tickDown) * tickDown).toFixed(2));
+      return { limitUp, limitDown };
+    }
+
+    function checkLimitUpDown(price, refClose) {
+      if (!price || !refClose || refClose <= 0) return null;
+      const { limitUp, limitDown } = calcTwLimitPrices(refClose);
+      const pct = ((price - refClose) / refClose) * 100;
+      if (price >= limitUp || pct >= 9.85) return 'LIMIT_UP';
+      if (price <= limitDown || pct <= -9.85) return 'LIMIT_DOWN';
+      return null;
+    }
+
+    function updateBubbleMultLabel(mult) {
+      const badge = document.getElementById("bubbleMultBadge");
+      if (!badge) return;
+      const extraPct = Math.round((mult - 1) * 100);
+      badge.textContent = `${Number(mult).toFixed(1)}倍 (+${extraPct}%)`;
+    }
+
+    function onBubbleMultChange(val) {
+      bubbleMultThreshold = parseFloat(val) || 1.5;
+      localStorage.setItem("bubble_mult_threshold", String(bubbleMultThreshold));
+      updateBubbleMultLabel(bubbleMultThreshold);
 
       if (chartState.dailyBars.length > 0) {
-        filterTopMajorPlayersOnly(chartState.dailyBars, '1d');
+        evaluatePrevBarBubbleComparison(chartState.dailyBars);
         enrichConsecutiveStreakAvg(chartState.dailyBars);
       }
       if (chartState.bars5m.length > 0) {
-        filterTopMajorPlayersOnly(chartState.bars5m, '5m');
+        evaluatePrevBarBubbleComparison(chartState.bars5m);
         enrichConsecutiveStreakAvg(chartState.bars5m);
       }
       if (chartState.bars.length > 0) {
@@ -496,28 +544,85 @@
       renderCanvasChart();
     }
 
+    // 支援電腦滑鼠拖拉 + 手機「長按 0.35 秒」抓住移動圖例說明欄位
     function initDraggableLegend() {
       const legend = document.getElementById("floatingLegend");
       const container = document.getElementById("chartContainer");
       if (!legend || !container) return;
 
-      let isLegendDragging = false, startMouseX = 0, startMouseY = 0, startLeft = 12, startTop = 46;
+      let isLegendDragging = false;
+      let longPressTimer = null;
+      let startX = 0, startY = 0, startLeft = 12, startTop = 46;
+
+      // 電腦滑鼠按住直接拖拉
       legend.addEventListener("mousedown", (e) => {
         e.stopPropagation();
         isLegendDragging = true;
-        startMouseX = e.clientX;
-        startMouseY = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
         startLeft = legend.offsetLeft;
         startTop = legend.offsetTop;
+        legend.classList.add("ring-2", "ring-blue-400");
       });
+
       window.addEventListener("mousemove", (e) => {
         if (!isLegendDragging) return;
         const maxLeft = Math.max(0, container.clientWidth - legend.offsetWidth);
         const maxTop = Math.max(0, container.clientHeight - legend.offsetHeight);
-        legend.style.left = `${Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startMouseX)))}px`;
-        legend.style.top = `${Math.max(0, Math.min(maxTop, startTop + (e.clientY - startMouseY)))}px`;
+        legend.style.left = `${Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startX)))}px`;
+        legend.style.top = `${Math.max(0, Math.min(maxTop, startTop + (e.clientY - startY)))}px`;
       });
-      window.addEventListener("mouseup", () => { isLegendDragging = false; });
+
+      window.addEventListener("mouseup", () => {
+        if (isLegendDragging) {
+          isLegendDragging = false;
+          legend.classList.remove("ring-2", "ring-blue-400");
+        }
+      });
+
+      // 手機端：長按 350ms 啟動抓取移動
+      legend.addEventListener("touchstart", (e) => {
+        e.stopPropagation();
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startLeft = legend.offsetLeft;
+        startTop = legend.offsetTop;
+
+        longPressTimer = setTimeout(() => {
+          isLegendDragging = true;
+          legend.classList.add("ring-2", "ring-blue-400", "scale-105");
+          if (navigator.vibrate) navigator.vibrate(35);
+        }, 350);
+      }, { passive: true });
+
+      legend.addEventListener("touchmove", (e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        if (!isLegendDragging) {
+          if (Math.abs(touch.clientX - startX) > 10 || Math.abs(touch.clientY - startY) > 10) {
+            clearTimeout(longPressTimer);
+          }
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        const maxLeft = Math.max(0, container.clientWidth - legend.offsetWidth);
+        const maxTop = Math.max(0, container.clientHeight - legend.offsetHeight);
+        legend.style.left = `${Math.max(0, Math.min(maxLeft, startLeft + (touch.clientX - startX)))}px`;
+        legend.style.top = `${Math.max(0, Math.min(maxTop, startTop + (touch.clientY - startY)))}px`;
+      }, { passive: false });
+
+      const endTouch = () => {
+        clearTimeout(longPressTimer);
+        if (isLegendDragging) {
+          isLegendDragging = false;
+          legend.classList.remove("ring-2", "ring-blue-400", "scale-105");
+        }
+      };
+      legend.addEventListener("touchend", endTouch);
+      legend.addEventListener("touchcancel", endTouch);
     }
 
     function startAutoSync() {
@@ -559,13 +664,59 @@
       if (sortState.field !== field) { sortState.field = field; sortState.dir = 'desc'; }
       else if (sortState.dir === 'desc') { sortState.dir = 'asc'; }
       else { sortState.field = null; sortState.dir = null; }
-      ['yestGainPct', 'yestHigh', 'volExtraPct', 'todayPrice'].forEach(f => {
-        const el = document.getElementById(`sort-icon-${f}`);
-        if (!el) return;
-        if (sortState.field === f) { el.textContent = sortState.dir === 'desc' ? '▼' : '▲'; el.className = 'text-amber-400 font-bold ml-0.5'; }
-        else { el.textContent = '⇅'; el.className = 'text-slate-500 ml-0.5'; }
-      });
+      renderTableHeader();
       renderTable();
+    }
+
+    function renderTableHeader() {
+      const thead = document.getElementById("stockTableHead");
+      if (!thead) return;
+      const getIcon = (f) => {
+        if (sortState.field !== f) return `<span class="text-slate-500 ml-0.5">⇅</span>`;
+        return `<span class="text-amber-400 font-bold ml-0.5">${sortState.dir === 'desc' ? '▼' : '▲'}</span>`;
+      };
+
+      if (currentFilter === 'TRACKING') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-2.5 px-3">股票代號/買入日</th>
+            <th onclick="toggleSort('trackBuyPrice')" class="sortable-th py-2.5 px-2 text-right">
+              確認K買入(收) ${getIcon('trackBuyPrice')}
+            </th>
+            <th onclick="toggleSort('trackExitOrNowPrice')" class="sortable-th py-2.5 px-2 text-right">
+              賣出/現價(收) ${getIcon('trackExitOrNowPrice')}
+            </th>
+            <th onclick="toggleSort('trackProfitPts')" class="sortable-th py-2.5 px-2 text-right">
+              獲利幾點 (%) ${getIcon('trackProfitPts')}
+            </th>
+            <th class="py-2.5 px-2 text-right">20MA / 破線低點</th>
+            <th onclick="toggleSort('statusRank')" class="sortable-th py-2.5 px-3 text-center">
+              確認K 決策/追蹤 ${getIcon('statusRank')}
+            </th>
+          </tr>
+        `;
+      } else {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-2.5 px-3">股票代號/名稱</th>
+            <th onclick="toggleSort('yestGainPct')" class="sortable-th py-2.5 px-2 text-right">
+              昨日漲幅 ${getIcon('yestGainPct')}
+            </th>
+            <th onclick="toggleSort('yestHigh')" class="sortable-th py-2.5 px-2 text-right">
+              昨高 / 昨低 ${getIcon('yestHigh')}
+            </th>
+            <th onclick="toggleSort('volExtraPct')" class="sortable-th py-2.5 px-2 text-right">
+              昨量 vs 5日均量 ${getIcon('volExtraPct')}
+            </th>
+            <th onclick="toggleSort('todayPrice')" class="sortable-th py-2.5 px-2 text-right">
+              今日收盤/現價 ${getIcon('todayPrice')}
+            </th>
+            <th onclick="toggleSort('statusRank')" class="sortable-th py-2.5 px-3 text-center">
+              確認K 決策 ${getIcon('statusRank')}
+            </th>
+          </tr>
+        `;
+      }
     }
 
     async function fetchStocksData(isSilent = false) {
@@ -578,14 +729,14 @@
         const rawData = await response.json();
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-        rawFirstBreak20MaStocks = list.map(item => normalizeStockItem(item)).filter(s => s.isFirstDayBreak20Ma && s.isUpDay);
+        rawAllLoadedStocks = list.map(item => normalizeStockItem(item));
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        statusText.textContent = `即時同步中 (${list.length}檔候選)`;
+        statusText.textContent = `即時同步中 (${rawAllLoadedStocks.length}檔)`;
         applyFiltersAndRender();
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
         statusText.textContent = `連線失敗: ${err.message}`;
-        if (!isSilent && rawFirstBreak20MaStocks.length === 0) {
+        if (!isSilent && rawAllLoadedStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `<tr><td colspan="6" class="py-10 text-center text-rose-400">無法連線至 API (${apiUrl})，錯誤：${err.message}</td></tr>`;
         }
       }
@@ -632,7 +783,7 @@
           noticeEl.classList.add("hidden");
         }
 
-        const stock = allStocks.find(s => s.code === code);
+        const stock = rawAllLoadedStocks.find(s => s.code === code);
         const todayTotalVol = stock ? (stock.todayVol || 0) : 0;
 
         const bars5m = rawBars.map(b => ({
@@ -664,7 +815,7 @@
           bars5m[i].volPctOfToday = fRes.volPctOfToday;
         }
 
-        filterTopMajorPlayersOnly(bars5m, '5m');
+        evaluatePrevBarBubbleComparison(bars5m);
         enrichConsecutiveStreakAvg(bars5m);
 
         if (bars5m.length >= 20) bars5m[bars5m.length - 20].isTodayDeduct = true;
@@ -695,7 +846,32 @@
       const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
       const validVolThreshold = isNaN(volThreshold) ? 70 : volThreshold;
 
-      allStocks = rawFirstBreak20MaStocks.filter(s => {
+      // 重新依據使用者當前 STEP 1 篩選條件評估每檔股票的「昨日關鍵K」與「歷史確認K追蹤池」
+      rawAllLoadedStocks.forEach(s => {
+        s.trackingInfo = evaluateStockTrackingLifecycle(s, {
+          requireMa20Up,
+          requireSolidRedK,
+          useGainRange,
+          minGain: isNaN(minGain) ? -100 : minGain,
+          maxGain: isNaN(maxGain) ? 100 : maxGain,
+          volOp,
+          validVolThreshold
+        });
+        if (s.trackingInfo) {
+          s.trackBuyPrice = s.trackingInfo.buyPrice;
+          s.trackExitOrNowPrice = s.trackingInfo.isClosed ? s.trackingInfo.sellPrice : s.todayPrice;
+          s.trackProfitPts = s.trackingInfo.profitPoints;
+          s.trackProfitPct = s.trackingInfo.profitPct;
+        } else {
+          s.trackBuyPrice = 0;
+          s.trackExitOrNowPrice = 0;
+          s.trackProfitPts = -999999;
+          s.trackProfitPct = -999999;
+        }
+      });
+
+      allStocks = rawAllLoadedStocks.filter(s => {
+        if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
         if (requireMa20Up && !s.isMa20SlopeUp) return false;
         if (requireSolidRedK && !s.isBullishRedK) return false;
         if (useGainRange) {
@@ -706,19 +882,160 @@
         return true;
       });
 
+      trackingStocks = rawAllLoadedStocks.filter(s => s.trackingInfo !== null);
+
       document.getElementById("count-ALL").textContent = allStocks.length;
       document.getElementById("count-BREAKOUT").textContent = allStocks.filter(s => s.status === "BREAKOUT").length;
       document.getElementById("count-CONSOLIDATE").textContent = allStocks.filter(s => s.status === "CONSOLIDATE").length;
+      document.getElementById("count-TRACKING").textContent = trackingStocks.length;
       document.getElementById("count-BREAKDOWN").textContent = allStocks.filter(s => s.status === "BREAKDOWN").length;
 
+      renderTableHeader();
       renderTable();
 
-      if ((!selectedStockCode || !allStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
-        selectStock(filteredStocks[0].code);
+      if ((!selectedStockCode || !rawAllLoadedStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
+        selectStock(filteredStocks[0].code, false);
       } else if (selectedStockCode) {
-        const current = allStocks.find(s => s.code === selectedStockCode);
+        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (current) updateDetailPanel(current, false);
       }
+    }
+
+    // 計算第 4 欄「確認K追蹤池」：從確認K收盤買進，追蹤至跌破20MA且確認K收盤跌破該K棒低點賣出（跌破後保留顯示 2 天）
+    function evaluateStockTrackingLifecycle(stock, filterOpts) {
+      const bars = stock.realBars ? stock.realBars.map(b => ({ ...b })) : [];
+      if (bars.length < 21) return null;
+
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+      const lastBar = bars[bars.length - 1];
+      if (lastBar.date !== todayStr && lastBar.date !== "今日" && stock.todayPrice > 0) {
+        const todayMa20 = computeDynamicTodayMa20(bars, stock.todayPrice, stock.yestMa20);
+        bars.push({
+          date: todayStr,
+          open: stock.todayOpen,
+          high: stock.todayHigh,
+          low: stock.todayLow,
+          close: stock.todayPrice,
+          ma20: todayMa20,
+          vol: stock.todayVol || 0
+        });
+      } else if (lastBar.date === todayStr || lastBar.date === "今日") {
+        lastBar.close = stock.todayPrice;
+        lastBar.high = Math.max(lastBar.high, stock.todayHigh, stock.todayPrice);
+        lastBar.low = Math.min(lastBar.low, stock.todayLow, stock.todayPrice);
+      }
+
+      let activePos = null;
+      let latestFinishedPos = null;
+
+      for (let i = 2; i < bars.length; i++) {
+        const prev2 = bars[i - 2];
+        const keyBar = bars[i - 1];
+        const curBar = bars[i];
+
+        if (!activePos) {
+          const isFirstBreak = prev2.ma20 > 0 && keyBar.ma20 > 0 &&
+                               prev2.close <= prev2.ma20 &&
+                               keyBar.close > keyBar.ma20 &&
+                               keyBar.close > prev2.close;
+          if (!isFirstBreak) continue;
+
+          if (filterOpts.requireMa20Up && keyBar.ma20 < prev2.ma20) continue;
+          if (filterOpts.requireSolidRedK && keyBar.close <= keyBar.open) continue;
+
+          const keyGainPct = prev2.close > 0 ? ((keyBar.close - prev2.close) / prev2.close) * 100 : 0;
+          if (filterOpts.useGainRange && (keyGainPct < filterOpts.minGain || keyGainPct > filterOpts.maxGain)) continue;
+
+          let avg5 = 1;
+          if (i - 1 >= 5) {
+            let s5 = 0;
+            for (let k = i - 6; k < i - 1; k++) s5 += (bars[k].vol || 0);
+            avg5 = s5 / 5;
+          }
+          const vRatio = avg5 > 0 ? (keyBar.vol / avg5) * 100 : 100;
+          if (filterOpts.volOp === "GTE" && vRatio < filterOpts.validVolThreshold) continue;
+          if (filterOpts.volOp === "LTE" && vRatio > filterOpts.validVolThreshold) continue;
+
+          // Day i 收盤突破關鍵K高點 -> 確認K買進（以確認K收盤價買入）
+          if (curBar.close > keyBar.high) {
+            activePos = {
+              keyKDate: keyBar.date,
+              keyKHigh: keyBar.high,
+              buyIdx: i,
+              buyDate: curBar.date,
+              buyPrice: curBar.close,
+              breakdownIdx: -1,
+              breakdownDate: null,
+              breakdownLow: 0,
+              isClosed: false,
+              sellIdx: -1,
+              sellDate: null,
+              sellPrice: 0,
+              daysSinceExit: 0
+            };
+          }
+        } else {
+          // 追蹤持倉至「跌破20MA，且確認K收盤跌破該K棒低點」
+          if (activePos.breakdownIdx === -1) {
+            if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
+              activePos.breakdownIdx = i;
+              activePos.breakdownDate = curBar.date;
+              activePos.breakdownLow = curBar.low;
+            }
+          } else {
+            if (curBar.close < activePos.breakdownLow) {
+              activePos.isClosed = true;
+              activePos.sellIdx = i;
+              activePos.sellDate = curBar.date;
+              activePos.sellPrice = curBar.close;
+              latestFinishedPos = { ...activePos };
+              activePos = null;
+            } else if (curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
+              activePos.breakdownIdx = -1;
+              activePos.breakdownDate = null;
+              activePos.breakdownLow = 0;
+            }
+          }
+        }
+      }
+
+      const lastIdx = bars.length - 1;
+      const latestClose = bars[lastIdx].close;
+      const latestMa20 = bars[lastIdx].ma20 || stock.yestMa20;
+
+      if (activePos && !activePos.isClosed) {
+        const profitPoints = Number((latestClose - activePos.buyPrice).toFixed(2));
+        const profitPct = activePos.buyPrice > 0 ? Number((((latestClose - activePos.buyPrice) / activePos.buyPrice) * 100).toFixed(2)) : 0;
+        return {
+          ...activePos,
+          currentPrice: latestClose,
+          currentMa20: latestMa20,
+          profitPoints,
+          profitPct,
+          holdingDays: lastIdx - activePos.buyIdx + 1,
+          trackStatus: activePos.breakdownIdx !== -1 ? 'WARNING_20MA' : 'HOLDING'
+        };
+      }
+
+      if (latestFinishedPos && latestFinishedPos.isClosed) {
+        const daysSinceExit = lastIdx - latestFinishedPos.sellIdx;
+        // 跌破確認賣出後，在此股池再保留顯示 2 天 (daysSinceExit: 0=當日, 1=第1天, 2=第2天)
+        if (daysSinceExit >= 0 && daysSinceExit <= 2) {
+          const profitPoints = Number((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice).toFixed(2));
+          const profitPct = latestFinishedPos.buyPrice > 0 ? Number((((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice) / latestFinishedPos.buyPrice) * 100).toFixed(2)) : 0;
+          return {
+            ...latestFinishedPos,
+            currentPrice: latestClose,
+            currentMa20: latestMa20,
+            profitPoints,
+            profitPct,
+            daysSinceExit,
+            trackStatus: 'EXITED_KEEP2D'
+          };
+        }
+      }
+
+      return null;
     }
 
     function calcBarForceAndAvgPrice(bar, prevClose, bigBuyVol = 0, bigSellVol = 0, bigBuyAvgPrice = 0, bigSellAvgPrice = 0, todayTotalVol = 0) {
@@ -733,7 +1050,7 @@
           const forceScore = Number((netRatio * volWeight).toFixed(2));
           let avgPrice = typicalPrice;
           let mainVol = bar.vol || 0;
-          if (forceScore > 0 && bigBuyAvgPrice > 0) {
+          if (forceScore >= 0 && bigBuyAvgPrice > 0) {
             avgPrice = bigBuyAvgPrice;
             mainVol = bigBuyVol;
           } else if (forceScore < 0 && bigSellAvgPrice > 0) {
@@ -750,66 +1067,56 @@
       const volPctOfToday = Number((((bar.vol || 0) / denom) * 100).toFixed(1));
 
       if (range <= 0) {
-        if (prevClose > 0 && bar.close > prevClose) return { forceScore: Number((1.2 * Math.min(2, volMult)).toFixed(2)), avgPrice: bar.close, volPctOfToday };
-        if (prevClose > 0 && bar.close < prevClose) return { forceScore: Number((-1.2 * Math.min(2, volMult)).toFixed(2)), avgPrice: bar.close, volPctOfToday };
-        return { forceScore: 0, avgPrice: bar.close, volPctOfToday };
+        const dir = bar.close >= prevClose ? 1 : -1;
+        return { forceScore: dir, avgPrice: bar.close, volPctOfToday };
       }
 
       const closePos = ((bar.close - bar.low) - (bar.high - bar.close)) / range;
       const bodyRatio = (bar.close - bar.open) / range;
-      const priceForce = closePos * 0.65 + bodyRatio * 0.35;
-      const forceScore = Number((priceForce * Math.min(2.5, volMult)).toFixed(2));
+      const priceForce = closePos * 0.55 + bodyRatio * 0.45;
+      const forceScore = Number(((priceForce !== 0 ? priceForce : (bar.close >= bar.open ? 0.3 : -0.3)) * Math.min(2.5, Math.max(0.6, volMult))).toFixed(2));
 
       let avgPrice = typicalPrice;
-      if (forceScore > 0) avgPrice = Number(((bar.open + bar.close * 2 + bar.high) / 4).toFixed(2));
-      else if (forceScore < 0) avgPrice = Number(((bar.open + bar.close * 2 + bar.low) / 4).toFixed(2));
+      if (bar.close >= bar.open) avgPrice = Number(((bar.open + bar.close * 2 + bar.high) / 4).toFixed(2));
+      else avgPrice = Number(((bar.open + bar.close * 2 + bar.low) / 4).toFixed(2));
 
       return { forceScore, avgPrice, volPctOfToday };
     }
 
-    // 依據使用者拉桿等級 (1=最放寬 ~ 10=最嚴格) 動態計算量能門檻、力道門檻與顯示比例
-    function filterTopMajorPlayersOnly(bars, tf = '1d') {
-      const lvl = bubbleStrictness; // 1 ~ 10
+    // 核心泡泡邏輯：每一根 K 棒都跟「前一根」比較，比前一根大且達到拉桿倍數門檻 (bubbleMultThreshold) 才顯示泡泡
+    function evaluatePrevBarBubbleComparison(bars) {
+      for (let i = 0; i < bars.length; i++) {
+        bars[i].showBubble = false;
+        bars[i].prevVol = i > 0 ? (bars[i - 1].vol || 0) : 0;
+        bars[i].bubbleMult = 0;
 
-      // 量能倍數門檻：1級=0.65倍, 5級=1.15倍, 10級=1.75倍
-      const minVolMult = 0.55 + (lvl - 1) * 0.13;
-      // 淨力道門檻：1級=0.22, 5級=0.45, 10級=0.80
-      const minAbsForce = 0.18 + (lvl - 1) * 0.068;
-      // 保留前幾%的主力：1級=前55%, 5級=前25%, 10級=前5%
-      const keepRatio = Math.max(0.05, 0.60 - (lvl - 1) * 0.06);
+        if (i === 0) continue;
+        const currVol = bars[i].vol || 0;
+        const prevVol = bars[i - 1].vol || 0;
 
-      const qualified = [];
-      bars.forEach((b, idx) => {
-        b.isTopWhale = false;
-        const volRatio = b.ma5Vol > 0 ? (b.vol || 0) / b.ma5Vol : 0;
-        const absF = Math.abs(b.forceScore || 0);
-        if (volRatio >= minVolMult && absF >= minAbsForce) {
-          qualified.push({ idx, score: absF * Math.sqrt(Math.max(0.1, volRatio)) });
+        if (currVol > 0 && prevVol > 0 && currVol > prevVol) {
+          const mult = Number((currVol / prevVol).toFixed(2));
+          bars[i].bubbleMult = mult;
+          if (mult >= bubbleMultThreshold) {
+            bars[i].showBubble = true;
+          }
         }
-      });
-
-      if (qualified.length === 0) return;
-
-      qualified.sort((a, b) => b.score - a.score);
-      const maxKeep = Math.max(1, Math.ceil(bars.length * keepRatio));
-      const topSet = new Set(qualified.slice(0, maxKeep).map(item => item.idx));
-
-      bars.forEach((b, idx) => {
-        if (topSet.has(idx)) {
-          b.isTopWhale = true;
-        }
-      });
+      }
     }
 
     function enrichConsecutiveStreakAvg(bars) {
-      for (let i = 0; i < bars.length; i++) { bars[i].streakAvgPrice = 0; bars[i].streakDir = 0; bars[i].streakDays = 0; }
+      for (let i = 0; i < bars.length; i++) {
+        bars[i].streakAvgPrice = 0;
+        bars[i].streakDir = 0;
+        bars[i].streakDays = 0;
+      }
       let i = 0;
       while (i < bars.length) {
-        if (!bars[i].isTopWhale) { i++; continue; }
-        const dir = (bars[i].forceScore || 0) > 0 ? 1 : -1;
+        if (!bars[i].showBubble) { i++; continue; }
+        const dir = bars[i].close >= bars[i].open ? 1 : -1;
         let j = i, sumAmount = 0, sumVol = 0;
-        while (j < bars.length && bars[j].isTopWhale) {
-          const jdir = (bars[j].forceScore || 0) > 0 ? 1 : -1;
+        while (j < bars.length && bars[j].showBubble) {
+          const jdir = bars[j].close >= bars[j].open ? 1 : -1;
           if (jdir !== dir) break;
           const wVol = bars[j].vol > 0 ? bars[j].vol : 1;
           const p = bars[j].forceAvgPrice > 0 ? bars[j].forceAvgPrice : bars[j].close;
@@ -824,6 +1131,18 @@
         }
         i = j;
       }
+    }
+
+    function getStatusRankValue(s) {
+      if (currentFilter === 'TRACKING' && s.trackingInfo) {
+        if (s.trackingInfo.trackStatus === 'HOLDING') return 30;
+        if (s.trackingInfo.trackStatus === 'WARNING_20MA') return 20;
+        return 10 - (s.trackingInfo.daysSinceExit || 0);
+      }
+      if (s.status === "BREAKOUT") return 4;
+      if (s.trackingInfo) return 3;
+      if (s.status === "CONSOLIDATE") return 2;
+      return 1;
     }
 
     function normalizeStockItem(raw) {
@@ -905,13 +1224,20 @@
       else if (todayPrice < yestLow) status = "BREAKDOWN";
       const changePct = yestClose > 0 ? (((todayPrice - yestClose) / yestClose) * 100).toFixed(2) : "0.00";
 
-      return {
-        code, name, prevMa20: calculatedPrevMa20, yestMa20, yestOpen, yestHigh, yestLow, yestClose,
+      const todayLimitType = checkLimitUpDown(todayPrice, yestClose);
+      const yestLimitType = checkLimitUpDown(yestClose, baseRefPrice);
+
+      const item = {
+        code, name, prevClose: baseRefPrice, prevMa20: calculatedPrevMa20, yestMa20, yestOpen, yestHigh, yestLow, yestClose,
         yestGainPct: parseFloat(yestGainPct.toFixed(2)), todayOpen, todayHigh, todayLow, todayPrice, todayVol,
         todayBigBuyVol, todayBigSellVol, todayBigBuyAvgPrice, todayBigSellAvgPrice,
         yestVol: rawYestVol, avgVol5: Math.round(rawAvgVol5), volRatio, volExtraPct, changePct: parseFloat(changePct),
-        isUpDay, isBullishRedK, isMa20SlopeUp, isFirstDayBreak20Ma, status, realBars
+        todayLimitType, yestLimitType,
+        isUpDay, isBullishRedK, isMa20SlopeUp, isFirstDayBreak20Ma, status, realBars,
+        trackingInfo: null
       };
+      item.statusRank = getStatusRankValue(item);
+      return item;
     }
 
     function setFilter(filterType) {
@@ -922,16 +1248,22 @@
       });
       const activeBtn = document.getElementById(`tab-${filterType}`);
       if (activeBtn) { activeBtn.classList.remove("border", "border-slate-800"); activeBtn.classList.add("border-2", "border-blue-500"); }
+      renderTableHeader();
       renderTable();
     }
 
     function renderTable() {
       const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-      let list = allStocks.filter(s => {
-        const matchFilter = currentFilter === "ALL" || s.status === currentFilter;
+      let sourcePool = currentFilter === "TRACKING" ? trackingStocks : allStocks;
+
+      let list = sourcePool.filter(s => {
+        const matchFilter = currentFilter === "ALL" || currentFilter === "TRACKING" || s.status === currentFilter;
         const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
         return matchFilter && matchKeyword;
       });
+
+      list.forEach(s => { s.statusRank = getStatusRankValue(s); });
+
       if (sortState.field && sortState.dir) {
         const f = sortState.field, factor = sortState.dir === 'desc' ? -1 : 1;
         list = [...list].sort((a, b) => ((Number(a[f]) || 0) - (Number(b[f]) || 0)) * factor);
@@ -940,10 +1272,68 @@
 
       const tbody = document.getElementById("stockTableBody");
       if (filteredStocks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前沒有符合目前勾選條件的標的（可嘗試取消上方勾選或點選「放寬模式」）</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-500">目前此股票池沒有符合條件的標的</td></tr>`;
         return;
       }
 
+      // 若目前切換至第 4 欄「確認K波段追蹤池」，顯示買入價、賣出/現價、獲利幾點與跌破狀態
+      if (currentFilter === "TRACKING") {
+        tbody.innerHTML = filteredStocks.map(s => {
+          const t = s.trackingInfo;
+          const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
+          const exitOrNowP = t.isClosed ? t.sellPrice : s.todayPrice;
+          const ptsSign = t.profitPoints > 0 ? "+" : "";
+          const ptsColor = t.profitPoints > 0 ? "text-rose-400" : (t.profitPoints < 0 ? "text-emerald-400" : "text-slate-300");
+
+          // 漲跌停紅底白字 / 綠底白字
+          let priceDisplayHtml = `<div class="text-white font-bold">${exitOrNowP.toFixed(2)}</div>`;
+          if (!t.isClosed && s.todayLimitType === 'LIMIT_UP') {
+            priceDisplayHtml = `<span class="inline-block bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded text-[11px]">▲漲停 ${exitOrNowP.toFixed(2)}</span>`;
+          } else if (!t.isClosed && s.todayLimitType === 'LIMIT_DOWN') {
+            priceDisplayHtml = `<span class="inline-block bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded text-[11px]">▼跌停 ${exitOrNowP.toFixed(2)}</span>`;
+          }
+
+          let statusBadge = "";
+          if (t.trackStatus === 'HOLDING') {
+            statusBadge = `<span class="inline-block px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-semibold text-[11px]">📈 續抱中 (${t.holdingDays}日)</span>`;
+          } else if (t.trackStatus === 'WARNING_20MA') {
+            statusBadge = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 font-semibold text-[11px]">⚠️ 破20MA・守低${t.breakdownLow.toFixed(2)}</span>`;
+          } else {
+            const remainDays = 2 - t.daysSinceExit;
+            statusBadge = `<span class="inline-block px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-semibold text-[11px]">🏁 跌破賣出 (留存剩${remainDays}天)</span>`;
+          }
+
+          const defLowText = t.breakdownLow > 0 ? `破線低:${t.breakdownLow.toFixed(2)}` : `守20MA之上`;
+
+          return `
+            <tr id="stock-row-${s.code}" onclick="selectStock('${s.code}', true)" class="${rowBg} cursor-pointer transition">
+              <td class="py-2.5 px-3">
+                <div class="font-bold text-white flex items-center">${s.code} ${s.name}</div>
+                <div class="text-[11px] text-cyan-400">買入日: ${t.buyDate.slice(5)} ${t.isClosed ? `→ 賣出日: ${t.sellDate.slice(5)}` : ''}</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="text-amber-300 font-bold">${t.buyPrice.toFixed(2)}</div>
+                <div class="text-[10px] text-slate-400">確認K收盤買</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                ${priceDisplayHtml}
+                <div class="text-[10px] text-slate-400">${t.isClosed ? '破20MA低點收盤賣' : '目前最新收盤'}</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="${ptsColor} font-bold text-xs">${ptsSign}${t.profitPoints.toFixed(2)} 點</div>
+                <div class="text-[10px] ${ptsColor}">(${ptsSign}${t.profitPct.toFixed(2)}%)</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="text-slate-200">${t.currentMa20.toFixed(2)}</div>
+                <div class="text-[10px] ${t.breakdownLow > 0 ? 'text-rose-400 font-bold' : 'text-slate-400'}">${defLowText}</div>
+              </td>
+              <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+            </tr>`;
+        }).join("");
+        return;
+      }
+
+      // 一般股票池（第 1、2、3、5 欄）表格渲染
       tbody.innerHTML = filteredStocks.map(s => {
         const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
         const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
@@ -954,20 +1344,43 @@
         const maTextColor = s.isMa20SlopeUp ? "text-amber-400" : "text-sky-400";
         const kTypeTag = s.isBullishRedK ? "" : `<span class="ml-1 text-[10px] px-1 rounded bg-slate-800 text-slate-300">跳空/十字</span>`;
 
+        // 昨日漲幅（若昨日漲停則用紅底白字）
+        let yestGainHtml = `<span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">+${s.yestGainPct.toFixed(2)}%</span>`;
+        if (s.yestLimitType === 'LIMIT_UP') {
+          yestGainHtml = `<span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-bold text-[11px] shadow">▲漲停 +${s.yestGainPct.toFixed(2)}%</span>`;
+        }
+
+        // 今日收盤/現價（漲停紅底白字、跌停綠底白字）
+        let todayPriceCellHtml = `
+          <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
+          <div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div>
+        `;
+        if (s.todayLimitType === 'LIMIT_UP') {
+          todayPriceCellHtml = `
+            <div class="inline-block bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded text-xs shadow">▲漲停 ${s.todayPrice.toFixed(2)}</div>
+            <div class="text-[11px] text-rose-300 font-bold">${pctSign}${s.changePct}%</div>
+          `;
+        } else if (s.todayLimitType === 'LIMIT_DOWN') {
+          todayPriceCellHtml = `
+            <div class="inline-block bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded text-xs shadow">▼跌停 ${s.todayPrice.toFixed(2)}</div>
+            <div class="text-[11px] text-emerald-300 font-bold">${pctSign}${s.changePct}%</div>
+          `;
+        }
+
         let badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 觀察中</span>`;
         if (s.status === "BREAKOUT") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進</span>`;
         else if (s.status === "BREAKDOWN") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低</span>`;
 
         return `
-          <tr onclick="selectStock('${s.code}')" class="${rowBg} cursor-pointer transition">
+          <tr id="stock-row-${s.code}" onclick="selectStock('${s.code}', true)" class="${rowBg} cursor-pointer transition">
             <td class="py-2.5 px-3">
               <div class="font-bold text-white flex items-center">${s.code} ${s.name}${kTypeTag}</div>
               <div class="text-[11px] ${maTextColor}">昨20MA: ${s.yestMa20.toFixed(2)} ${maDirArrow} (首日突破)</div>
             </td>
-            <td class="py-2.5 px-2 text-right font-mono"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[11px]">+${s.yestGainPct.toFixed(2)}%</span></td>
+            <td class="py-2.5 px-2 text-right font-mono">${yestGainHtml}</td>
             <td class="py-2.5 px-2 text-right font-mono"><div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div><div class="text-emerald-400">${s.yestLow.toFixed(2)}</div></td>
             <td class="py-2.5 px-2 text-right font-mono"><div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div><div class="text-[10px] text-slate-300">昨:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div></td>
-            <td class="py-2.5 px-2 text-right font-mono"><div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div><div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div></td>
+            <td class="py-2.5 px-2 text-right font-mono">${todayPriceCellHtml}</td>
             <td class="py-2.5 px-3 text-center">${badgeHtml}</td>
           </tr>`;
       }).join("");
@@ -984,11 +1397,37 @@
       return lots >= 10000 ? `${(lots / 10000).toFixed(1)}萬張` : `${Math.round(lots).toLocaleString()}張`;
     }
 
-    function selectStock(code) {
+    // 點擊股票列：更新右側 K 線圖，若為使用者點擊 (scrollToChart === true)，直接平滑捲動跳到 K 線圖區域
+    function selectStock(code, scrollToChart = false) {
       selectedStockCode = code;
       renderTable();
-      const stock = allStocks.find(s => s.code === code);
-      if (stock) updateDetailPanel(stock, true);
+      const stock = rawAllLoadedStocks.find(s => s.code === code);
+      if (stock) {
+        updateDetailPanel(stock, true);
+        if (scrollToChart) {
+          const chartSection = document.getElementById("detailPanelSection");
+          if (chartSection) {
+            chartSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+      }
+    }
+
+    // 返還鍵：從 K 線圖返回剛剛查看的股票池該檔股票位置並閃爍提示
+    function backToStockPool() {
+      if (!selectedStockCode) {
+        document.getElementById("stockPoolPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      const rowEl = document.getElementById(`stock-row-${selectedStockCode}`);
+      if (rowEl) {
+        rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        rowEl.classList.remove("row-flash");
+        void rowEl.offsetWidth; // 觸發動畫重繪
+        rowEl.classList.add("row-flash");
+      } else {
+        document.getElementById("stockPoolPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
     function computeDynamicTodayMa20(bars, todayPrice, fallbackYestMa20) {
@@ -999,10 +1438,30 @@
 
     function updateDetailPanel(stock, resetView = false) {
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
-      document.getElementById("detailKeyKTag").textContent = `★ 首日突破20MA關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
+      document.getElementById("detailKeyKTag").textContent = `★ 關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
 
       const extraSign = stock.volExtraPct >= 0 ? "+" : "";
       document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 今日總量 ${formatVolDisplay(stock.todayVol)}`;
+
+      // 更新確認K波段追蹤橫幅
+      const trackBanner = document.getElementById("trackingDetailBanner");
+      const trackLeft = document.getElementById("trackingDetailLeft");
+      const trackRight = document.getElementById("trackingDetailRight");
+      if (stock.trackingInfo) {
+        const t = stock.trackingInfo;
+        trackBanner.classList.remove("hidden");
+        const ptsSign = t.profitPoints > 0 ? "+" : "";
+        const ptsColor = t.profitPoints > 0 ? "text-rose-400" : (t.profitPoints < 0 ? "text-emerald-400" : "text-slate-200");
+        const exitDesc = t.isClosed
+          ? `｜ 🏁 跌破20MA低點確認賣出(${t.sellDate.slice(5)})：<b class="text-purple-300">${t.sellPrice.toFixed(2)}</b> (留存剩 ${2 - t.daysSinceExit} 天)`
+          : (t.breakdownLow > 0
+              ? `｜ ⚠️ 已跌破20MA，防守低點：<b class="text-rose-400">${t.breakdownLow.toFixed(2)}</b>`
+              : `｜ 📈 波段續抱中 (目前收盤：<b class="text-white">${sPriceText(stock)}</b>)`);
+        trackLeft.innerHTML = `<span>📌 確認K買入(${t.buyDate.slice(5)})：<b class="text-amber-300">${t.buyPrice.toFixed(2)}</b></span> ${exitDesc}`;
+        trackRight.innerHTML = `<span class="${ptsColor} text-sm">波段獲利：${ptsSign}${t.profitPoints.toFixed(2)} 點 (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
+      } else {
+        trackBanner.classList.add("hidden");
+      }
 
       document.getElementById("bannerAvgVol5").textContent = formatVolDisplay(stock.avgVol5);
       document.getElementById("bannerYestVol").textContent = formatVolDisplay(stock.yestVol);
@@ -1029,8 +1488,14 @@
 
       const isTodayRed = stock.todayPrice >= stock.todayOpen;
       const cardTodayEl = document.getElementById("cardTodayPrice");
-      cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
-      cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+      if (stock.todayLimitType === 'LIMIT_UP') {
+        cardTodayEl.innerHTML = `<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▲${stock.todayPrice.toFixed(2)}</span>`;
+      } else if (stock.todayLimitType === 'LIMIT_DOWN') {
+        cardTodayEl.innerHTML = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▼${stock.todayPrice.toFixed(2)}</span>`;
+      } else {
+        cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
+        cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+      }
 
       const badge = document.getElementById("detailDecisionBadge");
       if (stock.status === "BREAKOUT") { badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300"; badge.textContent = "🔥 確認買進 (收盤 > 昨高)"; }
@@ -1079,10 +1544,19 @@
           lastBar.forceAvgPrice = resT.avgPrice;
           lastBar.volPctOfToday = resT.volPctOfToday;
         }
-        if (bars.length >= 2) bars[bars.length - 2].isKeyK = true;
+        if (bars.length >= 2 && stock.isFirstDayBreak20Ma) bars[bars.length - 2].isKeyK = true;
       }
 
-      filterTopMajorPlayersOnly(bars, '1d');
+      // 標記確認K波段追蹤的買入K、跌破20MA K、確認賣出K
+      if (stock.trackingInfo) {
+        const t = stock.trackingInfo;
+        if (bars[t.buyIdx]) bars[t.buyIdx].isTrackBuyK = true;
+        if (t.breakdownIdx !== -1 && bars[t.breakdownIdx]) bars[t.breakdownIdx].isTrackBreakdown20MaK = true;
+        if (t.isClosed && t.sellIdx !== -1 && bars[t.sellIdx]) bars[t.sellIdx].isTrackSellK = true;
+      }
+
+      // 每一根與前一根比較倍數泡泡
+      evaluatePrevBarBubbleComparison(bars);
       enrichConsecutiveStreakAvg(bars);
 
       let todayDeductPrice = 0, tomorrowDeductPrice = 0;
@@ -1104,6 +1578,10 @@
         updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
         renderCanvasChart();
       }
+    }
+
+    function sPriceText(stock) {
+      return stock.todayPrice ? stock.todayPrice.toFixed(2) : "--";
     }
 
     function zoomChart(delta) {
@@ -1160,6 +1638,38 @@
         renderCanvasChart();
       });
 
+      // 手機單指觸控在 K 線畫布上平移
+      canvas.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        chartState.isDragging = true;
+        chartState.dragStartX = touch.clientX;
+        chartState.dragStartY = touch.clientY;
+        chartState.dragStartOffset = chartState.rightOffset;
+        chartState.dragStartVerticalPx = chartState.verticalOffsetPx;
+      }, { passive: true });
+
+      canvas.addEventListener("touchmove", (e) => {
+        if (!chartState.isDragging || e.touches.length !== 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        chartState.mouseX = touch.clientX - rect.left;
+        chartState.mouseY = touch.clientY - rect.top;
+
+        const dx = touch.clientX - chartState.dragStartX;
+        const plotW = rect.width - 80;
+        const pxPerBar = plotW / chartState.visibleCount;
+        chartState.rightOffset = chartState.dragStartOffset + Math.round(dx / pxPerBar);
+        clampRightOffset();
+
+        const dy = touch.clientY - chartState.dragStartY;
+        chartState.verticalOffsetPx = chartState.dragStartVerticalPx + dy;
+        renderCanvasChart();
+      }, { passive: false });
+
+      canvas.addEventListener("touchend", () => { chartState.isDragging = false; });
+
       canvas.addEventListener("mouseleave", () => {
         chartState.mouseX = -1;
         chartState.mouseY = -1;
@@ -1182,7 +1692,7 @@
       ctx.fillStyle = "#080c14";
       ctx.fillRect(0, 0, width, height);
 
-      const stock = allStocks.find(s => s.code === selectedStockCode);
+      const stock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
       const bars = chartState.bars;
       if (!stock || bars.length === 0) return;
 
@@ -1212,7 +1722,7 @@
 
       const rawMax = Math.max(...allPrices), rawMin = Math.min(...allPrices);
       const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
-      const maxY = rawMax + span * 0.14, minY = rawMin - span * 0.14;
+      const maxY = rawMax + span * 0.16, minY = rawMin - span * 0.16;
 
       const vShift = chartState.verticalOffsetPx || 0;
       const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH + vShift;
@@ -1295,6 +1805,28 @@
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
         }
 
+        // 標記確認K波段買進與跌破賣出點
+        if (chartState.timeframe === '1d') {
+          if (b.isTrackBuyK) {
+            ctx.fillStyle = "#38bdf8";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`▲確認買:${b.close.toFixed(2)}`, cx, yLow + 24);
+          }
+          if (b.isTrackBreakdown20MaK) {
+            ctx.fillStyle = "#fbbf24";
+            ctx.font = "bold 9.5px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`⚠️破20MA(低${b.low.toFixed(2)})`, cx, yHigh - 16);
+          }
+          if (b.isTrackSellK) {
+            ctx.fillStyle = "#c084fc";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`🏁跌破賣:${b.close.toFixed(2)}`, cx, yHigh - 28);
+          }
+        }
+
         if (showDeduct) {
           if (b.isTodayDeduct) {
             ctx.save();
@@ -1336,34 +1868,39 @@
         }
       }
 
+      // 繪製「比前一根大」的泡泡：直接顯示「倍數、張數、均價」
       if (showBubbles) {
         visibleBars.forEach((b, idx) => {
-          if (!b.isTopWhale) return;
+          if (!b.showBubble) return;
 
-          const force = b.forceScore || 0;
-          const absForce = Math.abs(force);
           const cx = padLeft + stepX * idx + stepX / 2;
           const avgPrice = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
           const bubbleY = priceToY(avgPrice);
-          const radius = 8 + Math.min(1, Math.max(0, (absForce - 0.25) / 1.6)) * (Math.min(22, stepX * 0.65) - 8);
-          const pctLabel = b.volPctOfToday > 0 ? ` (${b.volPctOfToday}%)` : "";
+          const mult = b.bubbleMult || 1;
+          const radius = 9 + Math.min(1, Math.max(0, (mult - 1.0) / 3.0)) * (Math.min(23, stepX * 0.68) - 9);
+          const isBuyBubble = b.close >= b.open;
+          const volLotsStr = `${Math.round(b.vol || 0)}張`;
 
           ctx.save();
-          if (force > 0) {
+          if (isBuyBubble) {
             const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
             grad.addColorStop(0, "rgba(251, 207, 232, 0.45)");
             grad.addColorStop(0.55, "rgba(244, 114, 182, 0.30)");
             grad.addColorStop(1, "rgba(219, 39, 119, 0.12)");
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "rgba(244, 114, 182, 0.8)"; ctx.lineWidth = 1.2; ctx.stroke();
+            ctx.strokeStyle = "rgba(244, 114, 182, 0.85)"; ctx.lineWidth = 1.2; ctx.stroke();
             ctx.fillStyle = "rgba(253, 242, 248, 0.9)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.2, 0, Math.PI * 2); ctx.fill();
 
-            ctx.fillStyle = "#f9a8d4"; ctx.font = "bold 9.5px monospace"; ctx.textAlign = "center";
-            ctx.fillText(`${avgPrice.toFixed(2)}${pctLabel}`, cx, bubbleY - radius - 4);
+            // 泡泡上直接顯示：第1行「倍數｜張數」、第2行「均價」
+            ctx.fillStyle = "#fbcfe8"; ctx.font = "bold 9.5px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}`, cx, bubbleY - radius - 14);
+            ctx.fillStyle = "#f472b6"; ctx.font = "bold 9.5px monospace";
+            ctx.fillText(`均:${avgPrice.toFixed(2)}`, cx, bubbleY - radius - 3);
+
             if (b.streakDir === 1 && b.streakAvgPrice > 0) {
               ctx.fillStyle = "#fde047"; ctx.font = "bold 10px sans-serif";
-              ctx.fillText(`★連${b.streakDays}大買均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY - radius - 16);
+              ctx.fillText(`★連${b.streakDays}買均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY - radius - 25);
             }
           } else {
             const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
@@ -1372,14 +1909,18 @@
             grad.addColorStop(1, "rgba(5, 150, 105, 0.10)");
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "rgba(52, 211, 153, 0.8)"; ctx.lineWidth = 1.2; ctx.stroke();
+            ctx.strokeStyle = "rgba(52, 211, 153, 0.85)"; ctx.lineWidth = 1.2; ctx.stroke();
             ctx.fillStyle = "rgba(236, 253, 245, 0.9)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.2, 0, Math.PI * 2); ctx.fill();
 
+            // 泡泡上直接顯示：第1行「均價」、第2行「倍數｜張數」
             ctx.fillStyle = "#6ee7b7"; ctx.font = "bold 9.5px monospace"; ctx.textAlign = "center";
-            ctx.fillText(`${avgPrice.toFixed(2)}${pctLabel}`, cx, bubbleY + radius + 11);
+            ctx.fillText(`均:${avgPrice.toFixed(2)}`, cx, bubbleY + radius + 11);
+            ctx.fillStyle = "#a7f3d0"; ctx.font = "bold 9.5px sans-serif";
+            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}`, cx, bubbleY + radius + 22);
+
             if (b.streakDir === -1 && b.streakAvgPrice > 0) {
               ctx.fillStyle = "#a5b4fc"; ctx.font = "bold 10px sans-serif";
-              ctx.fillText(`★連${b.streakDays}大賣均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY + radius + 22);
+              ctx.fillText(`★連${b.streakDays}賣均:${b.streakAvgPrice.toFixed(2)}`, cx, bubbleY + radius + 33);
             }
           }
           ctx.restore();
@@ -1458,6 +1999,14 @@
       const colorClass = diff >= 0 ? "text-rose-400" : "text-emerald-400";
       const sign = diff > 0 ? "+" : "";
 
+      const limitStatus = checkLimitUpDown(bar.close, refClose);
+      let closeHtml = `<span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span><span class="${colorClass}">(${sign}${pct}%)</span>`;
+      if (limitStatus === 'LIMIT_UP') {
+        closeHtml = `<span class="bg-rose-600 text-white font-bold px-1.5 py-0.2 rounded">收:${bar.close.toFixed(2)} ▲漲停(${sign}${pct}%)</span>`;
+      } else if (limitStatus === 'LIMIT_DOWN') {
+        closeHtml = `<span class="bg-emerald-600 text-white font-bold px-1.5 py-0.2 rounded">收:${bar.close.toFixed(2)} ▼跌停(${sign}${pct}%)</span>`;
+      }
+
       let maHtml = "";
       if (bar.ma20) {
         const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
@@ -1465,23 +2014,22 @@
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
       }
 
-      const force = bar.forceScore || 0;
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
-      const volPctStr = bar.volPctOfToday > 0 ? ` 佔今日量:${bar.volPctOfToday}%` : "";
-      let forceHtml = `<span class="text-slate-400">主力:一般(${volPctStr.trim()})</span>`;
+      const multStr = bar.bubbleMult > 0 ? `${bar.bubbleMult.toFixed(1)}倍` : "--";
+      let forceHtml = `<span class="text-slate-400">較前根:${multStr}｜均價:${avgP}</span>`;
 
-      if (bar.isTopWhale) {
-        if (force > 0) {
-          const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0) ? ` <b class="text-amber-300">[★連${bar.streakDays}大買均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-pink-400 font-bold">●買方主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
+      if (bar.showBubble) {
+        if (bar.close >= bar.open) {
+          const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0) ? ` <b class="text-amber-300">[★連${bar.streakDays}買均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
+          forceHtml = `<span class="text-pink-400 font-bold">●買方泡泡:${multStr}｜${Math.round(bar.vol)}張｜均:${avgP}${streakTag}</span>`;
         } else {
-          const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0) ? ` <b class="text-indigo-300">[★連${bar.streakDays}大賣均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-emerald-300 font-bold">●賣方主力均:${avgP}(${volPctStr.trim()})${streakTag}</span>`;
+          const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0) ? ` <b class="text-indigo-300">[★連${bar.streakDays}賣均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
+          forceHtml = `<span class="text-emerald-300 font-bold">●賣方泡泡:${multStr}｜${Math.round(bar.vol)}張｜均:${avgP}${streakTag}</span>`;
         }
       }
 
       const deductTag = bar.isTodayDeduct ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[扣抵]</span>` : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明扣抵]</span>` : "");
-      hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span><span>收:<b class="${colorClass}">${bar.close.toFixed(2)}</b></span><span class="${colorClass}">(${sign}${pct}%)</span><span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}`;
+      hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>${closeHtml}<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}`;
     }
 
     function openApiModal() { document.getElementById("apiModal").classList.remove("hidden"); document.getElementById("apiModal").classList.add("flex"); }
@@ -1495,6 +2043,20 @@
 
     function exportCSV() {
       if (filteredStocks.length === 0) return alert("目前沒有可匯出的資料");
+      if (currentFilter === 'TRACKING') {
+        const headers = ["股票代號", "股票名稱", "確認K買入日", "確認K買入收盤價", "賣出或目前收盤價", "獲利點數", "獲利%", "20MA", "跌破20MA防守低點", "追蹤狀態"];
+        const rows = filteredStocks.map(s => {
+          const t = s.trackingInfo;
+          return [s.code, s.name, t.buyDate, t.buyPrice, t.isClosed ? t.sellPrice : s.todayPrice, t.profitPoints, `${t.profitPct}%`, t.currentMa20, t.breakdownLow || "未跌破", t.trackStatus];
+        });
+        const blob = new Blob(["\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `確認K追蹤池清單_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        return;
+      }
+
       const headers = ["股票代號", "股票名稱", "昨日漲幅%", "昨日20MA", "20MA斜率", "K棒型態", "昨高", "昨低", "昨收", "前5日均量(張)", "昨日成交量(張)", "昨日比前5日均量增減%", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "今日成交量", "確認狀態"];
       const rows = filteredStocks.map(s => [s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status]);
       const blob = new Blob(["\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" });
