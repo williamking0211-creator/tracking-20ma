@@ -21,6 +21,32 @@
     .sortable-th:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.85); }
     #floatingLegend { cursor: move; user-select: none; -webkit-user-select: none; touch-action: none; }
     input[type="range"] { accent-color: #f472b6; }
+    /* 隱藏數字輸入框預設上下箭頭，避免與 ✕ 清空鍵擁擠 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+    .clear-input-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background-color: rgba(51, 65, 85, 0.85);
+      color: #cbd5e1;
+      font-size: 10px;
+      line-height: 1;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .clear-input-btn:hover {
+      background-color: #f43f5e;
+      color: #ffffff;
+    }
     @keyframes rowPulseHighlight {
       0%, 100% { background-color: rgba(30, 58, 138, 0.25); }
       50% { background-color: rgba(245, 158, 11, 0.45); }
@@ -92,24 +118,28 @@
           </label>
         </div>
 
+        <!-- 輸入欄位 1 & 2：關鍵K漲幅區間 (附帶 ✕ 清空鍵) -->
         <div class="flex flex-wrap items-center gap-1.5">
           <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
             <input type="checkbox" id="chkGainRange" checked onchange="applyFiltersAndRender()" class="rounded bg-slate-800 border-slate-600 text-rose-500 focus:ring-0" />
             <span class="text-[11px] text-slate-200">關鍵K漲幅：</span>
           </label>
-          <div class="inline-flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+          <div class="inline-flex items-center bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded px-1.5 py-0.5 gap-1">
             <input type="number" id="minGainInput" value="0" min="-10" max="10" step="0.5" oninput="applyFiltersAndRender()" 
-                   class="w-10 bg-transparent text-rose-300 font-bold text-right focus:outline-none text-xs" />
-            <span class="text-rose-300 text-[11px] ml-0.5">%</span>
+                   class="w-9 bg-transparent text-rose-300 font-bold text-right focus:outline-none text-xs" />
+            <span class="text-rose-300 text-[11px]">%</span>
+            <button type="button" onclick="clearInputField('minGainInput', true)" title="清空此欄位" class="clear-input-btn">✕</button>
           </div>
           <span class="text-slate-400">~</span>
-          <div class="inline-flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+          <div class="inline-flex items-center bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded px-1.5 py-0.5 gap-1">
             <input type="number" id="maxGainInput" value="10.1" min="0" max="15" step="0.5" oninput="applyFiltersAndRender()" 
-                   class="w-11 bg-transparent text-rose-300 font-bold text-right focus:outline-none text-xs" />
-            <span class="text-rose-300 text-[11px] ml-0.5">%</span>
+                   class="w-10 bg-transparent text-rose-300 font-bold text-right focus:outline-none text-xs" />
+            <span class="text-rose-300 text-[11px]">%</span>
+            <button type="button" onclick="clearInputField('maxGainInput', true)" title="清空此欄位" class="clear-input-btn">✕</button>
           </div>
         </div>
 
+        <!-- 輸入欄位 3：關鍵K成交量門檻 (附帶 ✕ 清空鍵) -->
         <div class="flex flex-wrap items-center gap-1.5">
           <span class="text-[11px]">• 關鍵K成交量</span>
           <select id="volOperatorSelect" onchange="applyFiltersAndRender()" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-bold text-[11px] focus:outline-none focus:border-blue-500">
@@ -118,10 +148,11 @@
             <option value="ALL">不限條件</option>
           </select>
           <span class="text-[11px]">前5日均量 ×</span>
-          <div class="inline-flex items-center bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5">
+          <div class="inline-flex items-center bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded px-1.5 py-0.5 gap-1">
             <input type="number" id="volThresholdInput" value="70" min="0" max="5000" step="10" oninput="applyFiltersAndRender()" 
                    class="w-11 bg-transparent text-amber-300 font-bold text-right focus:outline-none text-xs" />
-            <span class="text-amber-300 font-bold ml-0.5 text-[11px]">%</span>
+            <span class="text-amber-300 font-bold text-[11px]">%</span>
+            <button type="button" onclick="clearInputField('volThresholdInput', true)" title="清空此欄位" class="clear-input-btn">✕</button>
           </div>
         </div>
       </div>
@@ -133,9 +164,9 @@
         <span class="text-[11px] px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 font-semibold">方式三・動態內定</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• <span class="text-pink-400 font-semibold">自動計算本股內定值</span>：讀取該股歷史K棒，剔除PR50以下散戶零星時段，取活躍期均值作為「1.0倍大戶常態內定值」</li>
+        <li>• <span class="text-pink-400 font-semibold">自動計算本股內定值</span>：讀取該股歷史K棒，剔除PR50以下散戶零星時段，取活躍期均值作為該股「1.0倍大戶常態內定值」</li>
         <li>• <span class="text-amber-300 font-semibold">拉桿倍數觸發</span>：當單根敲進金額 ≥ `本股內定值 × 拉桿倍數` 時跳出泡泡，**倍數愈大泡泡愈大**</li>
-        <li>• <span class="text-white font-semibold">任意個股診斷</span>：可在K線區搜尋全市場任一股票，自動診斷該股目前處於哪個階段</li>
+        <li>• <span class="text-white font-semibold">任意股查詢診斷</span>：K線圖支援直接輸入任一股票代號/名稱，立即檢視目前所處階段</li>
       </ul>
     </div>
 
@@ -201,8 +232,13 @@
     <!-- 左側股票清單 (佔 6 欄) -->
     <div id="stockPoolPanel" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
       <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-        <input type="text" id="searchInput" oninput="renderTable()" placeholder="篩選目前股池內的股票 (例如 2892)..." 
-               class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 w-full sm:w-64" />
+        <!-- 輸入欄位 4：左側股票池搜尋框 (附帶 ✕ 清空鍵) -->
+        <div class="relative flex items-center bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded-lg px-2.5 py-1 w-full sm:w-64">
+          <input type="text" id="searchInput" oninput="renderTable()" placeholder="篩選本池股票 (如 2892 或 1225)..." 
+                 class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-2" />
+          <button type="button" onclick="clearInputField('searchInput', false, 'POOL_SEARCH')" title="清空搜尋欄" class="clear-input-btn">✕</button>
+        </div>
+
         <div class="flex items-center gap-2">
           <div class="hidden sm:flex items-center gap-1 text-[11px]">
             <button onclick="quickSetVol(70)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">≥70%</button>
@@ -303,24 +339,35 @@
     <!-- 右側真實歷史 K 線與成交量面板 (佔 6 欄) -->
     <div id="detailPanelSection" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
 
-      <!-- 新增：K線圖專屬「全市場任意股票查詢與階段診斷」搜尋列 -->
-      <div class="bg-slate-900/95 border border-blue-500/35 rounded-xl p-2.5 mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5 text-xs font-bold text-blue-300">
-          <span>🔍 K線個股查詢與階段診斷：</span>
+      <!-- 新增：K線圖頂部「任意股票查詢與階段診斷」搜尋列 (輸入欄位 5，附帶 ✕ 清空鍵) -->
+      <div class="bg-slate-900/95 border border-indigo-500/40 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
+            <span>🔍 K線任意股票階段查詢</span>
+            <span class="text-[10px] font-normal text-slate-400">(可輸入全市場任一代號或名稱，依目前設定條件診斷所處階段)</span>
+          </div>
+          <div class="flex items-center gap-1.5 w-full sm:w-auto">
+            <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-indigo-400 rounded-lg px-2.5 py-1 flex-1 sm:w-52">
+              <input type="text" id="klineLookupInput" onkeydown="if(event.key==='Enter') lookupAnyStockInKline()"
+                     placeholder="輸入代號或名稱 (如 2330)..."
+                     class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-1.5" />
+              <button type="button" onclick="clearInputField('klineLookupInput', false, 'KLINE_LOOKUP')" title="清空查詢欄" class="clear-input-btn">✕</button>
+            </div>
+            <button onclick="lookupAnyStockInKline()" id="klineLookupBtn"
+                    class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition whitespace-nowrap">
+              查詢階段
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
-          <input type="text" id="klineStockSearchInput"
-                 onkeydown="if(event.key==='Enter') searchAnyStockForKline()"
-                 placeholder="輸入任一代號或名稱 (如 2330、鴻海)..."
-                 class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-400 w-full sm:w-56" />
-          <button onclick="searchAnyStockForKline()" id="klineSearchBtn"
-                  class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold whitespace-nowrap transition shadow">
-            查詢階段
-          </button>
+
+        <!-- 任意股階段診斷結果顯示條 -->
+        <div id="stageDiagnosisBanner" class="bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
+          <span id="stageDiagnosisTitle" class="font-bold text-slate-300">目前診斷階段：請點選左側股票或於上方輸入任一股票代號查詢</span>
+          <span id="stageDiagnosisDetail" class="text-[11px] text-slate-400 font-mono"></span>
         </div>
       </div>
 
-      <div class="flex items-start justify-between gap-2 mb-2.5">
+      <div class="flex items-start justify-between gap-2 mb-3">
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="backToStockPool()" title="返回剛剛查看的股票池該檔股票位置"
@@ -336,17 +383,6 @@
         </div>
         <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
           等待選取
-        </div>
-      </div>
-
-      <!-- 新增：任意個股「目前處於什麼階段」完整條件診斷看板 -->
-      <div id="stageDiagnosisBanner" class="bg-slate-900/95 border border-indigo-500/40 rounded-lg px-3 py-2 mb-3 text-xs space-y-1">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span id="stageDiagnosisTitle" class="font-bold text-indigo-300">🩺 個股階段診斷：請選取或輸入股票代號</span>
-          <span id="stageDiagnosisPoolTag" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">--</span>
-        </div>
-        <div id="stageDiagnosisDesc" class="text-[11px] text-slate-300 leading-relaxed">
-          --
         </div>
       </div>
 
@@ -486,7 +522,7 @@
 
         <div id="loading5mOverlay" class="hidden absolute inset-0 z-20 bg-slate-950/75 flex items-center justify-center">
           <div class="px-4 py-2 rounded-lg bg-slate-900 border border-blue-500/40 text-blue-300 text-xs font-bold animate-pulse">
-            ⏳ 正在下載真實 5 分鐘 K 線資料...
+            ⏳ 正在下載 K 線資料...
           </div>
         </div>
 
@@ -501,7 +537,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 可在上方搜尋框輸入任意台股代號/名稱，系統會自動套用設定條件診斷目前所處階段</span>
+        <span>💡 系統自動依個股歷史活躍K棒算出「本股大戶內定值」，超越內定值達拉桿倍數即顯示泡泡（倍數愈大泡泡愈大）</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -517,8 +553,12 @@
       <p class="text-xs text-slate-400 mb-3">
         請輸入後端資料來源網址（Cloudflare 網址或本機網址加上 <code class="text-sky-400">/stocks</code>）：
       </p>
-      <input type="text" id="apiUrlInput" placeholder="https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" 
-             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mb-3 focus:outline-none focus:border-blue-500" />
+      <!-- 輸入欄位 6：API 網址輸入框 (附帶 ✕ 清空鍵) -->
+      <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-lg px-3 py-1.5 mb-3 gap-2">
+        <input type="text" id="apiUrlInput" placeholder="https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" 
+               class="w-full bg-transparent text-xs text-white focus:outline-none" />
+        <button type="button" onclick="clearInputField('apiUrlInput', false)" title="清空網址欄" class="clear-input-btn">✕</button>
+      </div>
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
         <input type="checkbox" id="autoSyncCheckbox" checked class="rounded bg-slate-800 border-slate-600 text-blue-500" />
@@ -551,7 +591,6 @@
     }
 
     let rawAllLoadedStocks = [];
-    let customQueriedStocksMap = new Map(); // 儲存使用者透過 K 線搜尋框額外查詢的任意股票
     let allStocks = [];
     let trackingStocks = [];
     let filteredStocks = [];
@@ -594,208 +633,17 @@
 
     window.addEventListener("resize", () => renderCanvasChart());
 
-    function findStockByCode(code) {
-      return rawAllLoadedStocks.find(s => s.code === code) || customQueriedStocksMap.get(code) || null;
-    }
-
-    function getCurrentFilterOptions() {
-      const requireMa20Up = document.getElementById("chkMa20Up").checked;
-      const requireSolidRedK = document.getElementById("chkSolidRedK").checked;
-      const useGainRange = document.getElementById("chkGainRange").checked;
-      const minGain = parseFloat(document.getElementById("minGainInput").value);
-      const maxGain = parseFloat(document.getElementById("maxGainInput").value);
-      const volOp = document.getElementById("volOperatorSelect").value;
-      const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
-      const validVolThreshold = isNaN(volThreshold) ? 70 : volThreshold;
-
-      return {
-        requireMa20Up,
-        requireSolidRedK,
-        useGainRange,
-        minGain: isNaN(minGain) ? -100 : minGain,
-        maxGain: isNaN(maxGain) ? 100 : maxGain,
-        volOp,
-        validVolThreshold
-      };
-    }
-
-    // 新增：K線面板隨意查詢全市場任一股票，並自動套用原設定條件進行階段診斷
-    async function searchAnyStockForKline() {
-      const inputEl = document.getElementById("klineStockSearchInput");
-      const btnEl = document.getElementById("klineSearchBtn");
-      const q = (inputEl.value || "").trim();
-      if (!q) return alert("請輸入要查詢的股票代號或名稱（例如 2330 或 鴻海）");
-
-      // 先檢查是否已經在目前已載入的股票陣列中
-      let localFound = rawAllLoadedStocks.find(s => s.code === q || s.name === q) ||
-                       rawAllLoadedStocks.find(s => s.code.includes(q) || s.name.includes(q));
-      if (localFound) {
-        selectStock(localFound.code, true);
-        return;
-      }
-
-      const origBtnText = btnEl.textContent;
-      btnEl.textContent = "查詢中...";
-      btnEl.disabled = true;
-
-      try {
-        const baseSingleUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/stock');
-        const res = await fetch(`${baseSingleUrl}?q=${encodeURIComponent(q)}&_t=${Date.now()}`);
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || `HTTP ${res.status}`);
-        }
-
-        const normStock = normalizeStockItem(data);
-        const filterOpts = getCurrentFilterOptions();
-        normStock.trackingInfo = evaluateStockTrackingLifecycle(normStock, filterOpts);
-        if (normStock.trackingInfo) {
-          normStock.trackBuyPrice = normStock.trackingInfo.buyPrice;
-          normStock.trackExitOrNowPrice = normStock.trackingInfo.isClosed ? normStock.trackingInfo.sellPrice : normStock.todayPrice;
-          normStock.trackProfitPts = normStock.trackingInfo.profitPoints;
-          normStock.trackProfitPct = normStock.trackingInfo.profitPct;
-          normStock.trackProfitMoney = Math.round(normStock.trackingInfo.profitPoints * 1000);
-          normStock.trackHoldingDays = normStock.trackingInfo.isClosed ? (-100 + normStock.trackingInfo.holdingDays) : normStock.trackingInfo.holdingDays;
-        }
-
-        customQueriedStocksMap.set(normStock.code, normStock);
-        selectedStockCode = normStock.code;
+    // 通用一鍵清空輸入欄功能 (按 ✕ 清空並自動聚焦)
+    function clearInputField(inputId, triggerFilterRender = false, specialMode = '') {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      el.value = "";
+      el.focus();
+      if (triggerFilterRender) {
+        applyFiltersAndRender();
+      } else if (specialMode === 'POOL_SEARCH') {
         renderTable();
-        updateDetailPanel(normStock, true);
-      } catch (err) {
-        alert(`查詢「${q}」失敗：${err.message}\n(請確認電腦端 index.js 已更新為支援 /stock 查詢的新版並重啟)`);
-      } finally {
-        btnEl.textContent = origBtnText;
-        btnEl.disabled = false;
       }
-    }
-
-    // 診斷任一檔股票在目前設定條件下處於什麼階段
-    function diagnoseStockStage(stock) {
-      const filterOpts = getCurrentFilterOptions();
-      const bars = stock.realBars ? stock.realBars.map(b => ({ ...b })) : [];
-      const latestClose = stock.todayPrice || stock.yestClose || 0;
-      const latestMa20 = bars.length > 0 ? (bars[bars.length - 1].ma20 || stock.yestMa20) : stock.yestMa20;
-
-      // 檢查 STEP 1 各項細部條件是否通過
-      const step1Reasons = [];
-      if (!stock.isFirstDayBreak20Ma) step1Reasons.push("昨日非首日由下往上穿越20MA");
-      if (!stock.isUpDay) step1Reasons.push("昨日未上漲");
-      if (filterOpts.requireMa20Up && !stock.isMa20SlopeUp) step1Reasons.push("昨日20MA斜率未向上");
-      if (filterOpts.requireSolidRedK && !stock.isBullishRedK) step1Reasons.push("昨日非實體紅K(收≤開)");
-      if (filterOpts.useGainRange && (stock.yestGainPct < filterOpts.minGain || stock.yestGainPct > filterOpts.maxGain)) {
-        step1Reasons.push(`昨日漲幅(${stock.yestGainPct.toFixed(2)}%)未在設定區間(${filterOpts.minGain}%~${filterOpts.maxGain}%)內`);
-      }
-      if (filterOpts.volOp === "GTE" && stock.volRatio < filterOpts.validVolThreshold) {
-        step1Reasons.push(`昨日量比(${stock.volRatio}%)低於設定門檻(${filterOpts.validVolThreshold}%)`);
-      }
-      if (filterOpts.volOp === "LTE" && stock.volRatio > filterOpts.validVolThreshold) {
-        step1Reasons.push(`昨日量比(${stock.volRatio}%)高於設定上限(${filterOpts.validVolThreshold}%)`);
-      }
-
-      // 階段 A：目前在股池四（確認K決策追蹤池）中
-      if (stock.trackingInfo) {
-        const t = stock.trackingInfo;
-        const bDate = formatShortDateSlash(t.buyDate);
-        const kDate = formatShortDateSlash(t.keyKDate);
-        if (!t.isClosed) {
-          const ctrlDesc = t.ma20ControlArmed
-            ? (t.breakdownIdx !== -1
-                ? `⚠️ 20MA控盤中，且於 ${formatShortDateSlash(t.breakdownDate)} 跌破20MA形成關鍵K（高:${t.breakdownHigh.toFixed(2)} / 低:${t.breakdownLow.toFixed(2)}），等待確認K跌破低點平倉或突破高點續抱`
-                : `🛡️ 20MA(${t.currentMa20.toFixed(2)}) 已高於買入價(${t.buyPrice.toFixed(2)})，固定停損已除，目前以 20MA 控盤續抱中`)
-            : `🛑 目前 20MA(${t.currentMa20.toFixed(2)}) 尚未高於買入價(${t.buyPrice.toFixed(2)})，以初始停損黃線 ${t.stopLossPrice.toFixed(2)} (-2%) 防守續抱中`;
-
-          return {
-            bannerClass: "bg-cyan-950/45 border border-cyan-500/50",
-            titleColor: "text-cyan-300",
-            title: `📈 階段診斷：【確認K波段持倉追蹤中（續抱第 ${t.holdingDays} 天）】`,
-            poolTag: "位於：第 4 欄・確認K決策追蹤池",
-            desc: `於 ${kDate} 出現符合條件之突破20MA關鍵K，隔日(${bDate})收盤 ${t.buyPrice.toFixed(2)} 突破關鍵K高點(${t.keyKHigh.toFixed(2)})確認買入。${ctrlDesc}。`
-          };
-        } else {
-          const sDate = formatShortDateSlash(t.sellDate);
-          return {
-            bannerClass: "bg-purple-950/45 border border-purple-500/50",
-            titleColor: "text-purple-300",
-            title: `🏁 階段診斷：【已觸發平倉結算（持倉 ${t.holdingDays} 天平倉，留存顯示剩 ${2 - t.daysSinceExit} 天）】`,
-            poolTag: "位於：第 4 欄・確認K決策追蹤池(平倉留存)",
-            desc: `持倉期間 ${bDate} ～ ${sDate}（買入價 ${t.buyPrice.toFixed(2)} → 平倉價 ${t.sellPrice.toFixed(2)}），因「${t.exitReason}」完成平倉。`
-          };
-        }
-      }
-
-      // 階段 B：昨日是首日突破 20MA 關鍵K
-      if (stock.isFirstDayBreak20Ma && stock.isUpDay) {
-        const isInPool1 = step1Reasons.length === 0;
-        const todayAct = stock.status === "BREAKOUT"
-          ? `🔥 今日收盤/現價(${latestClose.toFixed(2)}) 已高於昨高(${stock.yestHigh.toFixed(2)})，觸發「確認K買進」！`
-          : (stock.status === "BREAKDOWN"
-              ? `❄️ 今日收盤/現價(${latestClose.toFixed(2)}) 跌破昨低(${stock.yestLow.toFixed(2)})，屬於「破底K剔除」。`
-              : `👀 今日收盤/現價(${latestClose.toFixed(2)}) 介於昨高(${stock.yestHigh.toFixed(2)})與昨低(${stock.yestLow.toFixed(2)})之間，屬於「區間等待確認」。`);
-
-        if (isInPool1) {
-          const poolNum = stock.status === "BREAKOUT" ? "第 1、2 欄 (確認買進)" : (stock.status === "BREAKDOWN" ? "第 1、5 欄 (破底剔除)" : "第 1、3 欄 (區間觀察)");
-          return {
-            bannerClass: "bg-rose-950/40 border border-rose-500/50",
-            titleColor: "text-rose-300",
-            title: `★ 階段診斷：【昨日剛出現「突破20MA關鍵K」・今日進入確認池】`,
-            poolTag: `位於：${poolNum}`,
-            desc: `昨日完全符合 STEP 1 設定條件（漲幅 +${stock.yestGainPct.toFixed(2)}%、量比 ${stock.volRatio}%）。${todayAct}`
-          };
-        } else {
-          return {
-            bannerClass: "bg-amber-950/40 border border-amber-500/50",
-            titleColor: "text-amber-300",
-            title: `⚠️ 階段診斷：【昨日首日突破20MA，但未通過你設定的 STEP 1 篩選條件】`,
-            poolTag: "未入選左側股池 (條件過濾)",
-            desc: `未入選原因：${step1Reasons.join("、")}。若放寬 STEP 1 條件即可納入；其今日狀態為：${todayAct}`
-          };
-        }
-      }
-
-      // 回溯歷史 K 棒，尋找最近一次由下往上突破 20MA 的紀錄
-      let lastCrossIdx = -1;
-      for (let i = bars.length - 1; i >= 1; i--) {
-        if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) {
-          lastCrossIdx = i;
-          break;
-        }
-      }
-
-      // 階段 C：目前股價在 20MA 之上（多頭排列區間），但不是昨天才突破
-      if (latestClose >= latestMa20 && latestMa20 > 0) {
-        const distPct = (((latestClose - latestMa20) / latestMa20) * 100).toFixed(2);
-        let historyNote = "";
-        if (lastCrossIdx !== -1) {
-          const crossBar = bars[lastCrossIdx];
-          const nextBar = (lastCrossIdx + 1 < bars.length) ? bars[lastCrossIdx + 1] : null;
-          const cDate = formatShortDateSlash(crossBar.date);
-          if (nextBar) {
-            if (nextBar.close <= crossBar.high) {
-              historyNote = `最近一次於 ${cDate} 突破20MA（高點 ${crossBar.high.toFixed(2)}），但隔日(${formatShortDateSlash(nextBar.date)})收盤 ${nextBar.close.toFixed(2)} 未能站上關鍵K高點，故未觸發確認K買訊。`;
-            } else {
-              historyNote = `最近一次於 ${cDate} 突破20MA並於隔日過高，但當時關鍵K未達你設定的 STEP 1 漲幅/量比門檻（或該波段已於先前平倉超過 2 天）。`;
-            }
-          }
-        }
-        return {
-          bannerClass: "bg-sky-950/40 border border-sky-500/40",
-          titleColor: "text-sky-300",
-          title: `☀️ 階段診斷：【20MA 之上多頭排列（非首日突破・無新進場訊號）】`,
-          poolTag: "個股查詢診斷 (非今日關鍵K)",
-          desc: `目前股價 ${latestClose.toFixed(2)} 位於 20MA(${latestMa20.toFixed(2)}) 之上 +${distPct}%。${historyNote}`
-        };
-      }
-
-      // 階段 D：目前股價在 20MA 之下（空頭或整理階段）
-      const belowPct = latestMa20 > 0 ? (((latestClose - latestMa20) / latestMa20) * 100).toFixed(2) : "0.00";
-      return {
-        bannerClass: "bg-slate-900/95 border border-slate-700",
-        titleColor: "text-slate-300",
-        title: `❄️ 階段診斷：【20MA 之下整理／空頭階段（等待重新站上 20MA）】`,
-        poolTag: "個股查詢診斷 (20MA之下)",
-        desc: `目前收盤/現價 ${latestClose.toFixed(2)} 低於 20MA(${latestMa20.toFixed(2)}) 達 ${belowPct}%，尚未出現由下往上穿越 20MA 的首日關鍵K，暫不考慮進場。`
-      };
     }
 
     function formatShortDateSlash(dateStr) {
@@ -868,6 +716,7 @@
       renderCanvasChart();
     }
 
+    // 方式三：依個股歷史活躍K棒自動計算「本股大戶常態內定值」
     function computeActiveBaselineFromWindow(windowBars, minFloorWan, minFloorLots) {
       const valid = windowBars.filter(b => b.amountWan > 0 && b.vol > 0);
       if (valid.length === 0) {
@@ -962,6 +811,196 @@
 
       baseTextEl.innerHTML = `📌 本股<b class="text-white">${tfName}</b>大戶常態內定值(1.0倍)：<b class="text-pink-300">${baseLots.toLocaleString()}張 (${formatAmountWan(baseWan)})</b>`;
       trigTextEl.innerHTML = `🎯 泡泡觸發門檻(${bubbleMultThreshold.toFixed(1)}倍)：<b class="text-amber-300">≥ ${reqLots.toLocaleString()}張 (${formatAmountWan(reqWan)})</b>`;
+    }
+
+    function getCurrentFilterOptions() {
+      const requireMa20Up = document.getElementById("chkMa20Up").checked;
+      const requireSolidRedK = document.getElementById("chkSolidRedK").checked;
+      const useGainRange = document.getElementById("chkGainRange").checked;
+      const minGain = parseFloat(document.getElementById("minGainInput").value);
+      const maxGain = parseFloat(document.getElementById("maxGainInput").value);
+      const volOp = document.getElementById("volOperatorSelect").value;
+      const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
+      const validVolThreshold = isNaN(volThreshold) ? 70 : volThreshold;
+
+      return {
+        requireMa20Up,
+        requireSolidRedK,
+        useGainRange,
+        minGain: isNaN(minGain) ? -100 : minGain,
+        maxGain: isNaN(maxGain) ? 100 : maxGain,
+        volOp,
+        validVolThreshold
+      };
+    }
+
+    // K線圖任意股票查詢功能：先搜本地已載入股票，若不在候選池則向後端 `/stock?q=` 查詢全市場 1900+ 檔
+    async function lookupAnyStockInKline() {
+      const q = document.getElementById("klineLookupInput").value.trim();
+      if (!q) return alert("請先輸入欲查詢的股票代號或名稱（例如 2330 或 台積電）");
+
+      const qLower = q.toLowerCase();
+      let found = rawAllLoadedStocks.find(s => s.code.toLowerCase() === qLower || s.name.toLowerCase() === qLower)
+               || rawAllLoadedStocks.find(s => s.code.toLowerCase().includes(qLower) || s.name.toLowerCase().includes(qLower));
+
+      if (found) {
+        selectedStockCode = found.code;
+        renderTable();
+        updateDetailPanel(found, true);
+        return;
+      }
+
+      const btn = document.getElementById("klineLookupBtn");
+      const origText = btn.textContent;
+      btn.textContent = "查詢中...";
+      btn.disabled = true;
+
+      try {
+        const singleStockUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/stock');
+        const res = await fetch(`${singleStockUrl}?q=${encodeURIComponent(q)}&_t=${Date.now()}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status} (請確認電腦端 index.js 已更新重啟)`);
+        }
+        const rawItem = await res.json();
+        const normalized = normalizeStockItem(rawItem);
+        const filterOpts = getCurrentFilterOptions();
+        normalized.trackingInfo = evaluateStockTrackingLifecycle(normalized, filterOpts);
+        if (normalized.trackingInfo) {
+          normalized.trackBuyPrice = normalized.trackingInfo.buyPrice;
+          normalized.trackExitOrNowPrice = normalized.trackingInfo.isClosed ? normalized.trackingInfo.sellPrice : normalized.todayPrice;
+          normalized.trackProfitPts = normalized.trackingInfo.profitPoints;
+          normalized.trackProfitPct = normalized.trackingInfo.profitPct;
+          normalized.trackProfitMoney = Math.round(normalized.trackingInfo.profitPoints * 1000);
+          normalized.trackHoldingDays = normalized.trackingInfo.isClosed ? (-100 + normalized.trackingInfo.holdingDays) : normalized.trackingInfo.holdingDays;
+        }
+
+        if (!rawAllLoadedStocks.some(s => s.code === normalized.code)) {
+          rawAllLoadedStocks.push(normalized);
+        }
+        selectedStockCode = normalized.code;
+        renderTable();
+        updateDetailPanel(normalized, true);
+      } catch (err) {
+        alert(`查詢「${q}」失敗：${err.message}`);
+      } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+      }
+    }
+
+    // 依照使用者目前設定條件，診斷任一檔股票目前處於什麼實戰階段
+    function diagnoseStockStage(stock) {
+      const opts = getCurrentFilterOptions();
+      const t = stock.trackingInfo;
+      const bars = chartState.dailyBars.length > 0 ? chartState.dailyBars : (stock.realBars || []);
+      const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
+      const prevBar = bars.length >= 2 ? bars[bars.length - 2] : null;
+
+      // 1. 檢查昨日是否通過 STEP 1 各項細部條件
+      const failedReasons = [];
+      if (!stock.isFirstDayBreak20Ma) failedReasons.push("昨日非首日突破20MA");
+      if (!stock.isUpDay) failedReasons.push("昨日未上漲");
+      if (opts.requireMa20Up && !stock.isMa20SlopeUp) failedReasons.push("昨20MA未向上");
+      if (opts.requireSolidRedK && !stock.isBullishRedK) failedReasons.push("昨非實體紅K");
+      if (opts.useGainRange && (stock.yestGainPct < opts.minGain || stock.yestGainPct > opts.maxGain)) {
+        failedReasons.push(`昨漲幅(${stock.yestGainPct.toFixed(2)}%)未在設定區間`);
+      }
+      if (opts.volOp === "GTE" && stock.volRatio < opts.validVolThreshold) {
+        failedReasons.push(`昨量比(${stock.volRatio}%)低於${opts.validVolThreshold}%`);
+      }
+      if (opts.volOp === "LTE" && stock.volRatio > opts.validVolThreshold) {
+        failedReasons.push(`昨量比(${stock.volRatio}%)高於${opts.validVolThreshold}%`);
+      }
+      const passAllStep1 = failedReasons.length === 0;
+
+      // 階段 A：今日剛完成「確認K買進」
+      if (passAllStep1 && stock.status === "BREAKOUT") {
+        return {
+          bannerClass: "bg-rose-950/50 border border-rose-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-rose-300 font-bold">🔥 目前階段：【確認K買進階段】昨日符合突破20MA關鍵K，今日收盤(${stock.todayPrice.toFixed(2)})突破昨高(${stock.yestHigh.toFixed(2)})！</span>`,
+          detailHtml: `<span class="text-yellow-300">初始停損(-2%)：${stock.candidateStopLossPrice.toFixed(2)}</span>`
+        };
+      }
+
+      // 階段 B：昨日為關鍵K，今日介於昨高～昨低之間「等待確認中」
+      if (passAllStep1 && stock.status === "CONSOLIDATE") {
+        return {
+          bannerClass: "bg-amber-950/45 border border-amber-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-amber-300 font-bold">👀 目前階段：【關鍵K隔日觀察階段】昨日符合突破20MA關鍵K，今日現價(${stock.todayPrice.toFixed(2)})介於昨高(${stock.yestHigh.toFixed(2)})～昨低(${stock.yestLow.toFixed(2)})之間</span>`,
+          detailHtml: `<span class="text-slate-300">突破 ${stock.yestHigh.toFixed(2)} 轉確認買進 ｜ 跌破 ${stock.yestLow.toFixed(2)} 剔除</span>`
+        };
+      }
+
+      // 階段 C：昨日為關鍵K，但今日跌破昨低「破底剔除」
+      if (passAllStep1 && stock.status === "BREAKDOWN") {
+        return {
+          bannerClass: "bg-emerald-950/45 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-emerald-300 font-bold">❄️ 目前階段：【破底K剔除階段】昨日雖為突破20MA關鍵K，但今日收盤(${stock.todayPrice.toFixed(2)})已跌破昨低(${stock.yestLow.toFixed(2)})，不考慮買進</span>`,
+          detailHtml: `<span class="text-emerald-400">已跌破關鍵K低點</span>`
+        };
+      }
+
+      // 階段 D：處於「確認K決策追蹤池」（波段續抱中 或 剛平倉留存2天內）
+      if (t) {
+        const bDate = formatShortDateSlash(t.buyDate);
+        if (!t.isClosed) {
+          const ctrlStr = t.ma20ControlArmed
+            ? (t.breakdownIdx !== -1 ? `⚠️破20MA守關鍵K低點(${t.breakdownLow.toFixed(2)})` : `🛡️20MA控盤中(${t.currentMa20.toFixed(2)})`)
+            : `🛑守初始停損線(${t.stopLossPrice.toFixed(2)})`;
+          const pSign = t.profitPoints > 0 ? "+" : "";
+          return {
+            bannerClass: "bg-cyan-950/50 border border-cyan-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `<span class="text-cyan-300 font-bold">📈 目前階段：【確認K波段續抱第 ${t.holdingDays} 天】於 ${bDate} 確認K收盤(${t.buyPrice.toFixed(2)})買入</span>`,
+            detailHtml: `<span class="text-amber-300">${ctrlStr} ｜ 目前損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
+          };
+        } else {
+          const sDate = formatShortDateSlash(t.sellDate);
+          const pSign = t.profitPoints > 0 ? "+" : "";
+          return {
+            bannerClass: "bg-purple-950/50 border border-purple-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `<span class="text-purple-300 font-bold">🏁 目前階段：【確認K波段已平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
+            detailHtml: `<span class="text-purple-200">結算損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
+          };
+        }
+      }
+
+      // 階段 E：檢查「今日最後一根K棒」是否剛形成「首日突破20MA關鍵K」（明日準備觀察確認K）
+      if (lastBar && prevBar && prevBar.ma20 > 0 && lastBar.ma20 > 0) {
+        const isTodayFirstBreak = prevBar.close <= prevBar.ma20 && lastBar.close > lastBar.ma20 && lastBar.close > prevBar.close;
+        if (isTodayFirstBreak) {
+          return {
+            bannerClass: "bg-indigo-950/55 border border-indigo-400/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `<span class="text-indigo-300 font-bold">⚡ 目前階段：【今日剛形成「首日突破20MA關鍵K」】今日收盤(${lastBar.close.toFixed(2)})正式站上20MA(${lastBar.ma20.toFixed(2)})！</span>`,
+            detailHtml: `<span class="text-amber-300">明日若收盤突破今日高點(${lastBar.high.toFixed(2)})即觸發確認K買進！</span>`
+          };
+        }
+      }
+
+      // 階段 F：昨日雖首日突破 20MA，但未通過使用者勾選的 STEP 1 附加篩選條件
+      if (stock.isFirstDayBreak20Ma && failedReasons.length > 0) {
+        return {
+          bannerClass: "bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-amber-300 font-bold">⚠️ 目前階段：【昨日突破20MA，但未通過你設定的附加篩選條件】</span>`,
+          detailHtml: `<span class="text-rose-300">未達標原因：${failedReasons.join("、")}</span>`
+        };
+      }
+
+      // 階段 G：一般多頭運行（在 20MA 之上）或空頭整理（在 20MA 之下）
+      const curMa20 = lastBar && lastBar.ma20 ? lastBar.ma20 : stock.yestMa20;
+      if (stock.todayPrice >= curMa20) {
+        return {
+          bannerClass: "bg-slate-900/95 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-sky-300 font-bold">📊 目前階段：【20MA之上多頭運行（非近期確認K觸發標的）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之上</span>`,
+          detailHtml: `<span class="text-slate-400">早已站上20MA，目前無新進場訊號</span>`
+        };
+      } else {
+        return {
+          bannerClass: "bg-slate-900/95 border border-slate-800 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-slate-400 font-bold">📉 目前階段：【20MA之下弱勢整理（尚未突破20MA）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之下</span>`,
+          detailHtml: `<span class="text-slate-500">需等待股價首日帶量站上 ${curMa20.toFixed(2)} 才會成為關鍵K</span>`
+        };
+      }
     }
 
     function initDraggableLegend() {
@@ -1204,7 +1243,7 @@
           noticeEl.classList.add("hidden");
         }
 
-        const stock = findStockByCode(code);
+        const stock = rawAllLoadedStocks.find(s => s.code === code);
         const todayTotalVol = stock ? (stock.todayVol || 0) : 0;
 
         const bars5m = rawBars.map(b => ({
@@ -1280,11 +1319,6 @@
         }
       });
 
-      // 同步更新額外查詢過的個股追蹤狀態
-      customQueriedStocksMap.forEach(s => {
-        s.trackingInfo = evaluateStockTrackingLifecycle(s, filterOpts);
-      });
-
       allStocks = rawAllLoadedStocks.filter(s => {
         if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
         if (filterOpts.requireMa20Up && !s.isMa20SlopeUp) return false;
@@ -1308,11 +1342,11 @@
       renderTableHeader();
       renderTable();
 
-      const currentSelectedObj = findStockByCode(selectedStockCode);
-      if (!currentSelectedObj && filteredStocks.length > 0) {
+      if ((!selectedStockCode || !rawAllLoadedStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
         selectStock(filteredStocks[0].code, false);
-      } else if (currentSelectedObj) {
-        updateDetailPanel(currentSelectedObj, false);
+      } else if (selectedStockCode) {
+        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        if (current) updateDetailPanel(current, false);
       }
     }
 
@@ -1703,7 +1737,7 @@
       if (filteredStocks.length > 0 && !filteredStocks.some(s => s.code === selectedStockCode)) {
         selectStock(filteredStocks[0].code, false);
       } else if (selectedStockCode) {
-        const current = findStockByCode(selectedStockCode);
+        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (current) updateDetailPanel(current, false);
       }
     }
@@ -2043,7 +2077,7 @@
     function selectStock(code, scrollToChart = false) {
       selectedStockCode = code;
       renderTable();
-      const stock = findStockByCode(code);
+      const stock = rawAllLoadedStocks.find(s => s.code === code);
       if (stock) {
         updateDetailPanel(stock, true);
         if (scrollToChart) {
@@ -2079,20 +2113,6 @@
 
     function updateDetailPanel(stock, resetView = false) {
       const showTrackingMode = (currentFilter === "TRACKING" && stock.trackingInfo) || (!stock.isFirstDayBreak20Ma && stock.trackingInfo);
-
-      // 更新個股階段診斷看板
-      const diag = diagnoseStockStage(stock);
-      const diagBanner = document.getElementById("stageDiagnosisBanner");
-      const diagTitle = document.getElementById("stageDiagnosisTitle");
-      const diagPoolTag = document.getElementById("stageDiagnosisPoolTag");
-      const diagDesc = document.getElementById("stageDiagnosisDesc");
-      if (diagBanner && diag) {
-        diagBanner.className = `${diag.bannerClass} rounded-lg px-3 py-2 mb-3 text-xs space-y-1`;
-        diagTitle.className = `font-bold ${diag.titleColor}`;
-        diagTitle.textContent = diag.title;
-        diagPoolTag.textContent = diag.poolTag;
-        diagDesc.textContent = diag.desc;
-      }
 
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
       document.getElementById("detailKeyKTag").textContent = showTrackingMode
@@ -2181,8 +2201,8 @@
         stopPriceEl.textContent = stock.candidateStopLossPrice > 0 ? stock.candidateStopLossPrice.toFixed(2) : "--";
         if (legendStopItem) legendStopItem.classList.remove("hidden");
 
-        document.getElementById("cardKeyHighTitle").textContent = "昨日 高點";
-        document.getElementById("cardKeyLowTitle").textContent = "昨日 低點";
+        document.getElementById("cardKeyHighTitle").textContent = "昨日高點";
+        document.getElementById("cardKeyLowTitle").textContent = "昨日低點";
         document.getElementById("cardYestHigh").textContent = stock.yestHigh.toFixed(2);
         document.getElementById("cardYestLow").textContent = stock.yestLow.toFixed(2);
       }
@@ -2216,34 +2236,6 @@
       } else {
         cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
         cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
-      }
-
-      const badge = document.getElementById("detailDecisionBadge");
-      if (showTrackingMode) {
-        const t = stock.trackingInfo;
-        const bDate = formatShortDateSlash(t.buyDate);
-        if (!t.isClosed) {
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 border border-cyan-500/50 text-cyan-300";
-          badge.textContent = `📈 續抱第 ${t.holdingDays} 天 (${bDate}買:${t.buyPrice.toFixed(2)})`;
-        } else {
-          const sDate = formatShortDateSlash(t.sellDate);
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-500/25 border border-purple-400/50 text-purple-200";
-          badge.textContent = `🏁 持倉 ${t.holdingDays} 天平倉 (${bDate}～${sDate})`;
-        }
-      } else if (stock.isFirstDayBreak20Ma && stock.isUpDay) {
-        if (stock.status === "BREAKOUT") {
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300";
-          badge.textContent = "🔥 確認買進 (收盤 > 昨高)";
-        } else if (stock.status === "BREAKDOWN") {
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300";
-          badge.textContent = "❄️ 跌破昨低 (不考慮)";
-        } else {
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300";
-          badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
-        }
-      } else {
-        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-800 border border-slate-600 text-slate-300";
-        badge.textContent = "🔍 個股階段診斷模式";
       }
 
       let bars = stock.realBars.map(b => ({ ...b }));
@@ -2322,6 +2314,46 @@
       cardMaEl.className = `text-xs font-bold mt-0.5 ${todayMa20 > stock.yestMa20 ? 'text-amber-400' : (todayMa20 < stock.yestMa20 ? 'text-sky-400' : 'text-slate-200')}`;
 
       chartState.dailyBars = bars;
+
+      // 更新「目前所處階段診斷」橫幅與右上角徽章
+      const diag = diagnoseStockStage(stock);
+      const diagBanner = document.getElementById("stageDiagnosisBanner");
+      const diagTitle = document.getElementById("stageDiagnosisTitle");
+      const diagDetail = document.getElementById("stageDiagnosisDetail");
+      if (diagBanner && diagTitle && diagDetail) {
+        diagBanner.className = diag.bannerClass;
+        diagTitle.innerHTML = diag.titleHtml;
+        diagDetail.innerHTML = diag.detailHtml;
+      }
+
+      const badge = document.getElementById("detailDecisionBadge");
+      if (showTrackingMode) {
+        const t = stock.trackingInfo;
+        const bDate = formatShortDateSlash(t.buyDate);
+        if (!t.isClosed) {
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 border border-cyan-500/50 text-cyan-300";
+          badge.textContent = `📈 續抱第 ${t.holdingDays} 天 (${bDate}買:${t.buyPrice.toFixed(2)})`;
+        } else {
+          const sDate = formatShortDateSlash(t.sellDate);
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-500/25 border border-purple-400/50 text-purple-200";
+          badge.textContent = `🏁 持倉 ${t.holdingDays} 天平倉 (${bDate}～${sDate})`;
+        }
+      } else if (stock.isFirstDayBreak20Ma) {
+        if (stock.status === "BREAKOUT") {
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300";
+          badge.textContent = "🔥 確認買進 (收盤 > 昨高)";
+        } else if (stock.status === "BREAKDOWN") {
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-300";
+          badge.textContent = "❄️ 跌破昨低 (不考慮)";
+        } else {
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300";
+          badge.textContent = "👀 繼續觀察 (介於昨高昨低)";
+        }
+      } else {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 border border-indigo-500/40 text-indigo-300";
+        badge.textContent = stock.todayPrice >= todayMa20 ? "📊 20MA之上運行" : "📉 20MA之下整理";
+      }
+
       if (chartState.timeframe === '5m') {
         load5mKlineData(stock.code, resetView);
       } else {
@@ -2447,7 +2479,7 @@
       ctx.fillStyle = "#080c14";
       ctx.fillRect(0, 0, width, height);
 
-      const stock = findStockByCode(selectedStockCode);
+      const stock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
       const bars = chartState.bars;
       if (!stock || bars.length === 0) return;
 
