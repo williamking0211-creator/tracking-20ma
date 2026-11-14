@@ -43,7 +43,7 @@
           關鍵K・突破20MA實戰儀表板
         </h1>
         <p class="text-xs text-slate-400">
-          首日穿越20MA＝<span class="text-amber-400 font-semibold">關鍵K</span> ｜ 隔天收盤站上關鍵K高點＝<span class="text-rose-400 font-semibold">確認K收盤買進</span> ｜ 20MA高於買價即改以<span class="text-cyan-300 font-semibold">20MA控盤</span>(刪除固定停損線)
+          首日穿越20MA＝<span class="text-amber-400 font-semibold">關鍵K</span> ｜ 隔天站上關鍵K高＝<span class="text-rose-400 font-semibold">確認K買進</span> ｜ <span class="text-pink-400 font-semibold">大戶泡泡</span>＝依個股歷史自動計算「大戶常態內定值」× 拉桿倍數
         </p>
       </div>
     </div>
@@ -129,13 +129,13 @@
 
     <div class="bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex justify-between items-center mb-1.5">
-        <span class="text-xs font-bold text-sky-400">STEP 2・前一根比較倍數泡泡與手機操作</span>
-        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">倍數拉桿</span>
+        <span class="text-xs font-bold text-sky-400">STEP 2・個股專屬「大戶常態內定值」× 拉桿倍數</span>
+        <span class="text-[11px] px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 font-semibold">方式三・動態內定</span>
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
-        <li>• <span class="text-pink-400 font-semibold">泡泡倍數比較</span>：每一根與前一根比較，達拉桿設定倍數（如 ≥2.0倍）才顯示</li>
-        <li>• <span class="text-amber-300 font-semibold">泡泡資訊</span>：直接標示「倍數、張數、均價」；手機端<span class="text-sky-300 font-semibold">長按圖例面板</span>即可移動</li>
-        <li>• <span class="text-white font-semibold">漲跌停標示</span>：漲停以<span class="bg-rose-600 text-white px-1 rounded">紅底白字</span>、跌停以<span class="bg-emerald-600 text-white px-1 rounded">綠底白字</span>醒目呈現</li>
+        <li>• <span class="text-pink-400 font-semibold">自動計算本股內定值</span>：自動讀取該股歷史K棒，剔除PR50以下散戶零星時段，取活躍期均值作為該股「1.0倍大戶常態內定值」</li>
+        <li>• <span class="text-amber-300 font-semibold">拉桿倍數觸發</span>：當單根敲進金額 ≥ `本股內定值 × 拉桿倍數` 時跳出泡泡，**倍數愈大泡泡愈大**</li>
+        <li>• <span class="text-white font-semibold">泡泡明細</span>：直接顯示「倍數｜張數(金額)｜均價」；工具列同步顯示該股內定值</li>
       </ul>
     </div>
 
@@ -371,53 +371,65 @@
         </div>
       </div>
 
-      <!-- K線圖控制工具列 -->
-      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-700">
-            <button onclick="switchTimeframe('1d')" id="tfBtn-1d" class="px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition">
-              日K
-            </button>
-            <button onclick="switchTimeframe('5m')" id="tfBtn-5m" class="px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white font-bold text-[11px] transition">
-              5分K
-            </button>
-          </div>
+      <!-- K線圖控制工具列（含個股專屬大戶內定值顯示 + 倍數拉桿） -->
+      <div class="flex flex-col gap-1.5 bg-slate-900/80 border border-slate-800 rounded-t-xl px-3 py-2 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex rounded-lg bg-slate-950 p-0.5 border border-slate-700">
+              <button onclick="switchTimeframe('1d')" id="tfBtn-1d" class="px-2.5 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] transition">
+                日K
+              </button>
+              <button onclick="switchTimeframe('5m')" id="tfBtn-5m" class="px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white font-bold text-[11px] transition">
+                5分K
+              </button>
+            </div>
 
-          <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
+            <span id="visibleCountBadge" class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[11px] font-mono">顯示 22 根</span>
 
-          <!-- 主力泡泡開關 + 比前一根大幾倍拉桿 -->
-          <div class="inline-flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
-            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300">
-              <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
-              <span>泡泡 ≥前根</span>
+            <!-- 大戶泡泡開關 + 個股常態內定值倍數拉桿 -->
+            <div class="inline-flex items-center gap-1.5 bg-pink-500/10 border border-pink-500/30 px-2 py-0.5 rounded">
+              <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-pink-300">
+                <input type="checkbox" id="chkShowBubbles" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-pink-500 focus:ring-0" />
+                <span>大戶泡泡 ≥本股內定</span>
+              </label>
+              <input type="range" id="bubbleMultSlider" min="1.0" max="8.0" step="0.2" value="2.0" oninput="onBubbleMultChange(this.value)"
+                     title="設定大戶敲進金額需達本股常態內定值的幾倍才顯示泡泡（比值愈大，泡泡愈大）"
+                     class="w-20 md:w-24 h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
+              <span id="bubbleMultBadge" class="text-[10px] font-mono font-bold text-pink-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-pink-500/30">
+                2.0倍 (+100%)
+              </span>
+            </div>
+
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 px-2 py-0.5 rounded">
+              <input type="checkbox" id="chkShowDeduct" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-fuchsia-500 focus:ring-0" />
+              <span>扣抵</span>
             </label>
-            <input type="range" id="bubbleMultSlider" min="1.0" max="5.0" step="0.1" value="1.5" oninput="onBubbleMultChange(this.value)"
-                   title="設定泡泡要比前一根大幾倍才顯示（例如拉到 2.0 代表今日泡泡是前一根的 2 倍以上）"
-                   class="w-20 md:w-24 h-1.5 bg-slate-700 rounded-lg cursor-pointer" />
-            <span id="bubbleMultBadge" class="text-[10px] font-mono font-bold text-pink-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-pink-500/30">
-              1.5倍 (+50%)
-            </span>
           </div>
 
-          <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 px-2 py-0.5 rounded">
-            <input type="checkbox" id="chkShowDeduct" checked onchange="renderCanvasChart()" class="rounded bg-slate-800 border-slate-600 text-fuchsia-500 focus:ring-0" />
-            <span>扣抵</span>
-          </label>
+          <div class="flex items-center gap-1">
+            <button onclick="zoomChart(-2)" title="放大" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+              ＋
+            </button>
+            <button onclick="zoomChart(2)" title="縮小" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
+              －
+            </button>
+            <button onclick="resetChartZoom()" title="恢復預設根數並將上下左右位移歸零" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]">
+              重置視角
+            </button>
+            <button onclick="backToStockPool()" class="lg:hidden px-2 py-1 rounded bg-blue-600/30 text-blue-200 border border-blue-500/40 font-bold text-[11px]">
+              ⬅️ 返回清單
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-1">
-          <button onclick="zoomChart(-2)" title="放大" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
-            ＋
-          </button>
-          <button onclick="zoomChart(2)" title="縮小" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700">
-            －
-          </button>
-          <button onclick="resetChartZoom()" title="恢復預設根數並將上下左右位移歸零" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px]">
-            重置視角
-          </button>
-          <button onclick="backToStockPool()" class="lg:hidden px-2 py-1 rounded bg-blue-600/30 text-blue-200 border border-blue-500/40 font-bold text-[11px]">
-            ⬅️ 返回清單
-          </button>
+        <!-- 個股專屬大戶常態內定值 & 拉桿觸發門檻即時看板 -->
+        <div id="stockWhaleBaseBanner" class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 border border-pink-500/25 rounded-lg px-2.5 py-1 text-[11px] font-mono">
+          <span id="stockWhaleBaseText" class="text-pink-200">
+            📌 本股大戶常態內定值(1.0倍)：計算中...
+          </span>
+          <span id="stockWhaleTriggerText" class="text-amber-300 font-bold">
+            🎯 泡泡觸發門檻(2.0倍)：--
+          </span>
         </div>
       </div>
 
@@ -425,7 +437,7 @@
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col gap-1">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、主力倍數、張數與均價</span>
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
           </div>
           <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
             ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
@@ -436,10 +448,10 @@
         <div id="floatingLegend" style="top: 46px; left: 12px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
              class="absolute z-20 flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/90 backdrop-blur-sm border border-slate-700/90 hover:border-blue-400/70 shadow-lg px-2.5 py-1 rounded-md transition-transform">
           <span class="text-slate-400 font-bold pr-0.5">⋮⋮(長按移動)</span>
-          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>買方泡泡(倍數/張數/均價)</span>
-          <span class="flex items-center gap-1 font-medium text-amber-300">★連續買均價</span>
-          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>賣方泡泡(倍數/張數/均價)</span>
-          <span class="flex items-center gap-1 font-medium text-indigo-300">★連續賣均價</span>
+          <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>大戶買泡泡(內定倍數/張數/金額/均價)</span>
+          <span class="flex items-center gap-1 font-medium text-amber-300">★連續大戶買均價</span>
+          <span class="flex items-center gap-1 font-medium text-emerald-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400/40 border border-emerald-300/70 inline-block"></span>大戶賣泡泡</span>
+          <span class="flex items-center gap-1 font-medium text-indigo-300">★連續大戶賣均價</span>
           <span id="legendStopLossItem" class="flex items-center gap-1 font-medium text-yellow-300"><span class="w-3 border-b-2 border-dashed border-yellow-400 inline-block"></span>初始停損線(-2%)</span>
         </div>
 
@@ -460,7 +472,7 @@
       </div>
 
       <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
-        <span>💡 「🎯確認K買」標示於確認K棒上方；20MA高於買價後自動刪除黃色停損線，改標示破20MA關鍵K高低點</span>
+        <span>💡 系統自動依個股歷史活躍K棒算出「本股大戶內定值」，超越內定值達拉桿倍數即顯示泡泡（倍數愈大泡泡愈大）</span>
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
@@ -504,9 +516,10 @@
     }
     let apiUrl = savedUrl;
 
-    let bubbleMultThreshold = parseFloat(localStorage.getItem("bubble_mult_threshold") || "1.5");
-    if (isNaN(bubbleMultThreshold) || bubbleMultThreshold < 1.0 || bubbleMultThreshold > 5.0) {
-      bubbleMultThreshold = 1.5;
+    // 大戶敲進金額相較於「個股歷史大戶常態內定值」的倍數門檻 (預設 2.0 倍，可拉動 1.0 ~ 8.0 倍)
+    let bubbleMultThreshold = parseFloat(localStorage.getItem("whale_bubble_mult_threshold") || "2.0");
+    if (isNaN(bubbleMultThreshold) || bubbleMultThreshold < 1.0 || bubbleMultThreshold > 8.0) {
+      bubbleMultThreshold = 2.0;
     }
 
     let rawAllLoadedStocks = [];
@@ -558,6 +571,13 @@
       return (s.length >= 10 ? s.slice(5) : s).replace('-', '/');
     }
 
+    function formatAmountWan(amtWan) {
+      if (!amtWan || amtWan <= 0) return "0萬";
+      if (amtWan >= 10000) return `${(amtWan / 10000).toFixed(2)}億`;
+      if (amtWan >= 100) return `${Math.round(amtWan).toLocaleString()}萬`;
+      return `${amtWan.toFixed(0)}萬`;
+    }
+
     function getTwTickSize(price) {
       if (price < 10) return 0.01;
       if (price < 50) return 0.05;
@@ -596,22 +616,127 @@
     }
 
     function onBubbleMultChange(val) {
-      bubbleMultThreshold = parseFloat(val) || 1.5;
-      localStorage.setItem("bubble_mult_threshold", String(bubbleMultThreshold));
+      bubbleMultThreshold = parseFloat(val) || 2.0;
+      localStorage.setItem("whale_bubble_mult_threshold", String(bubbleMultThreshold));
       updateBubbleMultLabel(bubbleMultThreshold);
 
       if (chartState.dailyBars.length > 0) {
-        evaluatePrevBarBubbleComparison(chartState.dailyBars);
+        evaluateWhaleBubbleComparison(chartState.dailyBars, '1d');
         enrichConsecutiveStreakAvg(chartState.dailyBars);
       }
       if (chartState.bars5m.length > 0) {
-        evaluatePrevBarBubbleComparison(chartState.bars5m);
+        evaluateWhaleBubbleComparison(chartState.bars5m, '5m');
         enrichConsecutiveStreakAvg(chartState.bars5m);
       }
+      updateStockWhaleBaselineBanner();
       if (chartState.bars.length > 0) {
         updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
       }
       renderCanvasChart();
+    }
+
+    // 方式三核心演算法：
+    // 依據個股自身歷史資料（剃除 PR50 以下散戶零星時段，取 PR50~PR95 活躍期平均），自動計算該股專屬的「大戶常態內定值 (張數與金額)」
+    function computeActiveBaselineFromWindow(windowBars, minFloorWan, minFloorLots) {
+      const valid = windowBars.filter(b => b.amountWan > 0 && b.vol > 0);
+      if (valid.length === 0) {
+        return { baseWan: minFloorWan, baseLots: minFloorLots };
+      }
+
+      const sortedByAmt = [...valid].sort((a, b) => a.amountWan - b.amountWan);
+      // 剔除前半段 (PR50 以下) 的散戶冷清時段，並排除最頂端 5% 極端單一巨量，避免單次歷史天量把常態內定值拉得太高
+      const startIdx = Math.floor(sortedByAmt.length * 0.50);
+      const endIdx = Math.max(startIdx + 1, Math.ceil(sortedByAmt.length * 0.95));
+      const activeSlice = sortedByAmt.slice(startIdx, endIdx);
+
+      const sumWan = activeSlice.reduce((acc, b) => acc + b.amountWan, 0);
+      const sumLots = activeSlice.reduce((acc, b) => acc + b.vol, 0);
+
+      const rawBaseWan = sumWan / activeSlice.length;
+      const rawBaseLots = sumLots / activeSlice.length;
+
+      return {
+        baseWan: Number(Math.max(minFloorWan, rawBaseWan).toFixed(1)),
+        baseLots: Math.max(minFloorLots, Math.round(rawBaseLots))
+      };
+    }
+
+    function evaluateWhaleBubbleComparison(bars, timeframe = '1d') {
+      if (!Array.isArray(bars) || bars.length === 0) return;
+
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
+        const avgP = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
+        const lots = b.vol || 0;
+        // 1張 = 1000股，成交金額(萬元) = 張數 * 均價 / 10
+        b.amountWan = Number(((lots * avgP) / 10).toFixed(1));
+        b.showBubble = false;
+        b.baseAmountWan = 0;
+        b.baseLots = 0;
+        b.bubbleMult = 0;
+      }
+
+      // 設定最低防呆底線（避免完全無量的殭屍股因 1、2 張散戶單跳出泡泡）
+      const latestP = bars[bars.length - 1].close || 50;
+      const minFloorWan = timeframe === '5m' ? 50 : 300;
+      const minFloorLots = timeframe === '5m'
+        ? (latestP >= 500 ? 2 : (latestP >= 100 ? 5 : 10))
+        : (latestP >= 500 ? 10 : (latestP >= 100 ? 25 : 50));
+
+      const lookbackWindowSize = timeframe === '5m' ? 270 : 20;
+
+      for (let i = 0; i < bars.length; i++) {
+        const b = bars[i];
+        // 取當前 K 棒之前的歷史區間計算個股常態內定值（若為最前面幾根 K 棒則取前段樣本）
+        let windowBars = [];
+        if (i >= 5) {
+          const sIdx = Math.max(0, i - lookbackWindowSize);
+          windowBars = bars.slice(sIdx, i);
+        } else {
+          windowBars = bars.slice(0, Math.min(bars.length, Math.max(10, i + 1)));
+        }
+
+        const { baseWan, baseLots } = computeActiveBaselineFromWindow(windowBars, minFloorWan, minFloorLots);
+        b.baseAmountWan = baseWan;
+        b.baseLots = baseLots;
+
+        if (b.amountWan > 0 && baseWan > 0) {
+          const amtMult = b.amountWan / baseWan;
+          const volMult = baseLots > 0 ? (b.vol / baseLots) : amtMult;
+          // 以金額倍數為主（或張數倍數取較高者），只要達拉桿倍數且高於最低底線即觸發泡泡
+          const finalMult = Number(Math.max(amtMult, volMult).toFixed(2));
+          b.bubbleMult = finalMult;
+
+          if (b.amountWan >= minFloorWan && b.vol >= minFloorLots && finalMult >= bubbleMultThreshold) {
+            b.showBubble = true;
+          }
+        }
+      }
+    }
+
+    // 更新工具列上的「📌 本股大戶常態內定值 (1.0倍)」與「🎯 泡泡觸發門檻」看板
+    function updateStockWhaleBaselineBanner() {
+      const baseTextEl = document.getElementById("stockWhaleBaseText");
+      const trigTextEl = document.getElementById("stockWhaleTriggerText");
+      if (!baseTextEl || !trigTextEl) return;
+
+      const bars = chartState.bars;
+      if (!bars || bars.length === 0) {
+        baseTextEl.textContent = "📌 本股大戶常態內定值(1.0倍)：--";
+        trigTextEl.textContent = "🎯 泡泡觸發門檻：--";
+        return;
+      }
+
+      const lastBar = bars[bars.length - 1];
+      const baseLots = lastBar.baseLots || 0;
+      const baseWan = lastBar.baseAmountWan || 0;
+      const tfName = chartState.timeframe === '5m' ? '5分K' : '日K';
+
+      const reqLots = Math.round(baseLots * bubbleMultThreshold);
+      const reqWan = Number((baseWan * bubbleMultThreshold).toFixed(1));
+
+      baseTextEl.innerHTML = `📌 本股<b class="text-white">${tfName}</b>大戶常態內定值(1.0倍)：<b class="text-pink-300">${baseLots.toLocaleString()}張 (${formatAmountWan(baseWan)})</b>`;
+      trigTextEl.innerHTML = `🎯 泡泡觸發門檻(${bubbleMultThreshold.toFixed(1)}倍)：<b class="text-amber-300">≥ ${reqLots.toLocaleString()}張 (${formatAmountWan(reqWan)})</b>`;
     }
 
     function initDraggableLegend() {
@@ -825,6 +950,7 @@
         chartState.visibleCount = 22;
         chartState.rightOffset = 0;
         chartState.verticalOffsetPx = 0;
+        updateStockWhaleBaselineBanner();
         if (chartState.bars.length > 0) updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
         renderCanvasChart();
       } else {
@@ -885,7 +1011,8 @@
           bars5m[i].volPctOfToday = fRes.volPctOfToday;
         }
 
-        evaluatePrevBarBubbleComparison(bars5m);
+        // 套用方式三：依個股過去 5 日 5分K 活躍期自動計算本股內定值並比對拉桿倍數
+        evaluateWhaleBubbleComparison(bars5m, '5m');
         enrichConsecutiveStreakAvg(bars5m);
 
         if (bars5m.length >= 20) bars5m[bars5m.length - 20].isTodayDeduct = true;
@@ -896,6 +1023,7 @@
         if (chartState.timeframe === '5m') {
           chartState.bars = bars5m;
           if (resetView) { chartState.visibleCount = Math.min(48, Math.max(22, bars5m.length)); chartState.rightOffset = 0; chartState.verticalOffsetPx = 0; }
+          updateStockWhaleBaselineBanner();
           if (bars5m.length > 0) updateHudDisplay(bars5m[bars5m.length - 1], bars5m.length >= 2 ? bars5m[bars5m.length - 2] : null);
           renderCanvasChart();
         }
@@ -1205,26 +1333,6 @@
       else avgPrice = Number(((bar.open + bar.close * 2 + bar.low) / 4).toFixed(2));
 
       return { forceScore, avgPrice, volPctOfToday };
-    }
-
-    function evaluatePrevBarBubbleComparison(bars) {
-      for (let i = 0; i < bars.length; i++) {
-        bars[i].showBubble = false;
-        bars[i].prevVol = i > 0 ? (bars[i - 1].vol || 0) : 0;
-        bars[i].bubbleMult = 0;
-
-        if (i === 0) continue;
-        const currVol = bars[i].vol || 0;
-        const prevVol = bars[i - 1].vol || 0;
-
-        if (currVol > 0 && prevVol > 0 && currVol > prevVol) {
-          const mult = Number((currVol / prevVol).toFixed(2));
-          bars[i].bubbleMult = mult;
-          if (mult >= bubbleMultThreshold) {
-            bars[i].showBubble = true;
-          }
-        }
-      }
     }
 
     function enrichConsecutiveStreakAvg(bars) {
@@ -1969,7 +2077,8 @@
         }
       }
 
-      evaluatePrevBarBubbleComparison(bars);
+      // 套用方式三：依個股日K活躍期自動計算本股內定值並比對拉桿倍數
+      evaluateWhaleBubbleComparison(bars, '1d');
       enrichConsecutiveStreakAvg(bars);
 
       if (bars.length >= 20) bars[bars.length - 20].isTodayDeduct = true;
@@ -1986,6 +2095,7 @@
       } else {
         chartState.bars = bars;
         if (resetView) { chartState.visibleCount = 22; chartState.rightOffset = 0; chartState.verticalOffsetPx = 0; }
+        updateStockWhaleBaselineBanner();
         updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
         renderCanvasChart();
       }
@@ -2081,6 +2191,13 @@
         chartState.mouseY = -1;
         renderCanvasChart();
       });
+    }
+
+    function calcWhaleBubbleRadius(mult, stepX) {
+      const minR = 7.5;
+      const maxR = Math.min(28, Math.max(18, stepX * 0.88));
+      const norm = Math.min(1, Math.max(0, (mult - bubbleMultThreshold) / 4.5));
+      return minR + Math.pow(norm, 0.8) * (maxR - minR);
     }
 
     function renderCanvasChart() {
@@ -2267,9 +2384,8 @@
             if (showBubbles && b.showBubble && b.close >= b.open) {
               const avgP = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
               const bY = priceToY(avgP);
-              const mult = b.bubbleMult || 1;
-              const rad = 9 + Math.min(1, Math.max(0, (mult - 1.0) / 3.0)) * (Math.min(23, stepX * 0.68) - 9);
-              labelTopY = Math.min(labelTopY, bY - rad - (b.streakDir === 1 && b.streakAvgPrice > 0 ? 36 : 26));
+              const rad = calcWhaleBubbleRadius(b.bubbleMult || 1, stepX);
+              labelTopY = Math.min(labelTopY, bY - rad - (b.streakDir === 1 && b.streakAvgPrice > 0 ? 38 : 28));
             }
 
             ctx.fillStyle = "#38bdf8";
@@ -2380,23 +2496,36 @@
           const avgPrice = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
           const bubbleY = priceToY(avgPrice);
           const mult = b.bubbleMult || 1;
-          const radius = 9 + Math.min(1, Math.max(0, (mult - 1.0) / 3.0)) * (Math.min(23, stepX * 0.68) - 9);
+          const radius = calcWhaleBubbleRadius(mult, stepX);
           const isBuyBubble = b.close >= b.open;
           const volLotsStr = `${Math.round(b.vol || 0)}張`;
+          const amtStr = formatAmountWan(b.amountWan);
+          const isSuperWhale = mult >= Math.max(3.0, bubbleMultThreshold * 1.5);
 
           ctx.save();
           if (isBuyBubble) {
             const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
-            grad.addColorStop(0, "rgba(251, 207, 232, 0.45)");
-            grad.addColorStop(0.55, "rgba(244, 114, 182, 0.30)");
-            grad.addColorStop(1, "rgba(219, 39, 119, 0.12)");
+            grad.addColorStop(0, "rgba(251, 207, 232, 0.55)");
+            grad.addColorStop(0.55, "rgba(244, 114, 182, 0.35)");
+            grad.addColorStop(1, "rgba(219, 39, 119, 0.14)");
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "rgba(244, 114, 182, 0.85)"; ctx.lineWidth = 1.2; ctx.stroke();
-            ctx.fillStyle = "rgba(253, 242, 248, 0.9)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.2, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = isSuperWhale ? "#fde047" : "rgba(244, 114, 182, 0.9)";
+            ctx.lineWidth = isSuperWhale ? 2.0 : 1.3;
+            ctx.stroke();
 
-            ctx.fillStyle = "#fbcfe8"; ctx.font = "bold 9.5px sans-serif"; ctx.textAlign = "center";
-            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}`, cx, bubbleY - radius - 14);
+            if (isSuperWhale) {
+              ctx.strokeStyle = "rgba(244, 114, 182, 0.5)";
+              ctx.lineWidth = 1;
+              ctx.beginPath(); ctx.arc(cx, bubbleY, radius + 3, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            ctx.fillStyle = "rgba(253, 242, 248, 0.95)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.5, 0, Math.PI * 2); ctx.fill();
+
+            ctx.fillStyle = isSuperWhale ? "#fef08a" : "#fbcfe8";
+            ctx.font = "bold 9.5px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}(${amtStr})`, cx, bubbleY - radius - 14);
             ctx.fillStyle = "#f472b6"; ctx.font = "bold 9.5px monospace";
             ctx.fillText(`均:${avgPrice.toFixed(2)}`, cx, bubbleY - radius - 3);
 
@@ -2406,18 +2535,27 @@
             }
           } else {
             const grad = ctx.createRadialGradient(cx - radius * 0.25, bubbleY - radius * 0.25, radius * 0.1, cx, bubbleY, radius);
-            grad.addColorStop(0, "rgba(167, 243, 208, 0.42)");
-            grad.addColorStop(0.55, "rgba(52, 211, 153, 0.28)");
-            grad.addColorStop(1, "rgba(5, 150, 105, 0.10)");
+            grad.addColorStop(0, "rgba(167, 243, 208, 0.50)");
+            grad.addColorStop(0.55, "rgba(52, 211, 153, 0.32)");
+            grad.addColorStop(1, "rgba(5, 150, 105, 0.12)");
             ctx.fillStyle = grad;
             ctx.beginPath(); ctx.arc(cx, bubbleY, radius, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "rgba(52, 211, 153, 0.85)"; ctx.lineWidth = 1.2; ctx.stroke();
-            ctx.fillStyle = "rgba(236, 253, 245, 0.9)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.2, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = isSuperWhale ? "#a5b4fc" : "rgba(52, 211, 153, 0.9)";
+            ctx.lineWidth = isSuperWhale ? 2.0 : 1.3;
+            ctx.stroke();
+
+            if (isSuperWhale) {
+              ctx.strokeStyle = "rgba(52, 211, 153, 0.5)";
+              ctx.lineWidth = 1;
+              ctx.beginPath(); ctx.arc(cx, bubbleY, radius + 3, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            ctx.fillStyle = "rgba(236, 253, 245, 0.95)"; ctx.beginPath(); ctx.arc(cx, bubbleY, 2.5, 0, Math.PI * 2); ctx.fill();
 
             ctx.fillStyle = "#6ee7b7"; ctx.font = "bold 9.5px monospace"; ctx.textAlign = "center";
             ctx.fillText(`均:${avgPrice.toFixed(2)}`, cx, bubbleY + radius + 11);
             ctx.fillStyle = "#a7f3d0"; ctx.font = "bold 9.5px sans-serif";
-            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}`, cx, bubbleY + radius + 22);
+            ctx.fillText(`${mult.toFixed(1)}倍｜${volLotsStr}(${amtStr})`, cx, bubbleY + radius + 22);
 
             if (b.streakDir === -1 && b.streakAvgPrice > 0) {
               ctx.fillStyle = "#a5b4fc"; ctx.font = "bold 10px sans-serif";
@@ -2526,16 +2664,18 @@
       }
 
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
+      const amtStr = formatAmountWan(bar.amountWan);
+      const baseStr = `${bar.baseLots || 0}張(${formatAmountWan(bar.baseAmountWan)})`;
       const multStr = bar.bubbleMult > 0 ? `${bar.bubbleMult.toFixed(1)}倍` : "--";
-      let forceHtml = `<span class="text-slate-400">較前根:${multStr}｜均價:${avgP}</span>`;
+      let forceHtml = `<span class="text-slate-400">金額:${amtStr}(本股內定:${baseStr}｜${multStr})｜均價:${avgP}</span>`;
 
       if (bar.showBubble) {
         if (bar.close >= bar.open) {
           const streakTag = (bar.streakDir === 1 && bar.streakAvgPrice > 0) ? ` <b class="text-amber-300">[★連${bar.streakDays}買均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-pink-400 font-bold">●買方泡泡:${multStr}｜${Math.round(bar.vol)}張｜均:${avgP}${streakTag}</span>`;
+          forceHtml = `<span class="text-pink-400 font-bold">●大戶買泡泡:${multStr}(內定:${baseStr})｜${Math.round(bar.vol)}張(${amtStr})｜均:${avgP}${streakTag}</span>`;
         } else {
           const streakTag = (bar.streakDir === -1 && bar.streakAvgPrice > 0) ? ` <b class="text-indigo-300">[★連${bar.streakDays}賣均:${bar.streakAvgPrice.toFixed(2)}]</b>` : "";
-          forceHtml = `<span class="text-emerald-300 font-bold">●賣方泡泡:${multStr}｜${Math.round(bar.vol)}張｜均:${avgP}${streakTag}</span>`;
+          forceHtml = `<span class="text-emerald-300 font-bold">●大戶賣泡泡:${multStr}(內定:${baseStr})｜${Math.round(bar.vol)}張(${amtStr})｜均:${avgP}${streakTag}</span>`;
         }
       }
 
