@@ -215,55 +215,60 @@
         </div>
       </div>
 
-      <!-- 股池四（確認K決策追蹤）專屬：賺錢加總、賠錢加總、賺賠合計、今日平倉結算總覽看板 -->
+      <!-- 股池四（確認K決策追蹤）專屬：可點擊切換清單的 4 大統計看板 -->
       <div id="trackingPoolSummaryBanner" class="hidden bg-slate-900/90 border-b border-slate-800 p-3 space-y-2.5">
-        <!-- 上排：賺錢加總、賠錢加總、賺賠合計 (含持有天數與賺賠比率%) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-          <!-- 賺錢卡片 -->
-          <div class="bg-rose-950/35 border border-rose-500/40 rounded-lg p-2.5 flex flex-col justify-between">
+          <!-- 1. 目前賺錢卡片（點擊篩選賺錢股） -->
+          <div id="subTab-WIN" onclick="setTrackingSubFilter('WIN')" title="點擊只列出目前賺錢的股票（再點一次顯示全部）"
+               class="cursor-pointer select-none bg-rose-950/35 hover:bg-rose-950/55 border border-rose-500/40 rounded-lg p-2.5 flex flex-col justify-between transition">
             <div class="text-[11px] text-rose-300 font-semibold flex items-center justify-between gap-1">
-              <span>🔴 目前賺錢股票加總</span>
+              <span>🔴 目前賺錢股票 <span class="text-[10px] text-rose-400/80">(點擊篩選)</span></span>
               <span id="sumWinCount" class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono font-bold">共 0 檔 (0%)</span>
             </div>
             <div id="sumWinMoney" class="text-base font-bold text-rose-400 font-mono mt-1">+$0元</div>
             <div id="sumWinDays" class="text-[11px] text-rose-200/90 font-mono mt-1 pt-1 border-t border-rose-500/25">
-              平均持有：0.0 天 (總計 0 天)
+              賺錢平均持有：0.0 天
             </div>
           </div>
 
-          <!-- 賠錢卡片 -->
-          <div class="bg-emerald-950/35 border border-emerald-500/40 rounded-lg p-2.5 flex flex-col justify-between">
+          <!-- 2. 目前賠錢卡片（點擊篩選賠錢股） -->
+          <div id="subTab-LOSS" onclick="setTrackingSubFilter('LOSS')" title="點擊只列出目前賠錢的股票（再點一次顯示全部）"
+               class="cursor-pointer select-none bg-emerald-950/35 hover:bg-emerald-950/55 border border-emerald-500/40 rounded-lg p-2.5 flex flex-col justify-between transition">
             <div class="text-[11px] text-emerald-300 font-semibold flex items-center justify-between gap-1">
-              <span>🟢 目前賠錢股票加總</span>
+              <span>🟢 目前賠錢股票 <span class="text-[10px] text-emerald-400/80">(點擊篩選)</span></span>
               <span id="sumLossCount" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">共 0 檔 (0%)</span>
             </div>
             <div id="sumLossMoney" class="text-base font-bold text-emerald-400 font-mono mt-1">$0元</div>
             <div id="sumLossDays" class="text-[11px] text-emerald-200/90 font-mono mt-1 pt-1 border-t border-emerald-500/25">
-              平均持有：0.0 天 (總計 0 天)
+              賠錢平均持有：0.0 天
             </div>
           </div>
 
-          <!-- 賺賠合計卡片 -->
-          <div class="bg-cyan-950/40 border border-cyan-500/50 rounded-lg p-2.5 flex flex-col justify-between">
+          <!-- 3. 賺賠合計與資金效率卡片（點擊顯示全部股池四股票） -->
+          <div id="subTab-ALL" onclick="setTrackingSubFilter('ALL')" title="點擊顯示股池四全部股票"
+               class="cursor-pointer select-none bg-cyan-950/40 hover:bg-cyan-950/60 border border-cyan-500/50 rounded-lg p-2.5 flex flex-col justify-between transition">
             <div class="text-[11px] text-cyan-300 font-semibold flex items-center justify-between gap-1">
-              <span>⚖️ 賺賠合計總金額</span>
+              <span>⚖️ 賺賠合計 <span class="text-[10px] text-cyan-400/80">(點擊看全部)</span></span>
               <span id="sumTotalCount" class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200 font-mono font-bold">共 0 檔</span>
             </div>
             <div class="flex items-baseline justify-between gap-1 mt-1">
               <div id="sumNetMoney" class="text-base font-bold text-amber-300 font-mono">$0元</div>
-              <div id="sumWinLossRatio" class="text-[10px] font-mono text-amber-200 font-bold">賺0% / 賠0%</div>
+              <div id="sumProfitFactor" class="text-[11px] font-mono text-amber-200 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
+                賺÷賠：0.00倍
+              </div>
             </div>
-            <div id="sumDiffDays" class="text-[11px] text-cyan-200/90 font-mono mt-1 pt-1 border-t border-cyan-500/25">
-              合計持有(賺-賠)：均差 0.0 天 (總差 0 天)
+            <div id="sumCapitalEfficiency" class="text-[11px] text-cyan-200 font-mono mt-1 pt-1 border-t border-cyan-500/25" title="公式：(賺錢總額 - 賠錢總額) ÷ 總買入檔數。檔數越少、賺減賠越大，此值越高！">
+              單檔淨賺((賺-賠)÷檔數)：$0元/檔
             </div>
           </div>
         </div>
 
-        <!-- 下排：今日平倉股票結算資訊條 -->
-        <div class="bg-purple-950/35 border border-purple-500/40 rounded-lg px-3 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <!-- 4. 今日平倉股票結算資訊條（點擊只篩選今日平倉股票） -->
+        <div id="subTab-TODAY_EXIT" onclick="setTrackingSubFilter('TODAY_EXIT')" title="點擊只列出今天平倉的股票（再點一次顯示全部）"
+             class="cursor-pointer select-none bg-purple-950/35 hover:bg-purple-950/60 border border-purple-500/40 rounded-lg px-3 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span class="font-bold text-purple-300 flex items-center gap-1">
-              🏁 今日平倉股票：<b id="todayExitTotalCount" class="text-white font-mono">共 0 檔</b>
+              🏁 今日平倉股票 <span class="text-[10px] text-purple-400">(點擊篩選)</span>：<b id="todayExitTotalCount" class="text-white font-mono">共 0 檔</b>
             </span>
             <span class="text-slate-600">|</span>
             <span class="text-rose-300 font-mono">
@@ -277,7 +282,7 @@
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
             <span>小計賺賠：<b id="todayExitNetMoney" class="text-amber-300 font-bold">$0元</b></span>
             <span class="text-slate-600">|</span>
-            <span class="text-purple-200">持有天數：<b id="todayExitHoldDays">平均 0.0 天 (共 0 天)</b></span>
+            <span class="text-purple-200">持有天數：<b id="todayExitHoldDays">平均 0.0 天</b></span>
           </div>
         </div>
       </div>
@@ -509,6 +514,7 @@
     let trackingStocks = [];
     let filteredStocks = [];
     let currentFilter = "ALL";
+    let trackingSubFilter = "ALL"; // 'ALL' | 'WIN' | 'LOSS' | 'TODAY_EXIT'
     let selectedStockCode = null;
     let syncTimer = null;
     let sortState = { field: null, dir: null };
@@ -729,6 +735,7 @@
       renderTable();
     }
 
+    // 表格標題列：第 1、2、3、5 股池（尚未買進或僅當日確認）不顯示「賺多少錢(1張)」，僅第 4 欄追蹤池顯示
     function renderTableHeader() {
       const thead = document.getElementById("stockTableHead");
       if (!thead) return;
@@ -762,24 +769,21 @@
       } else {
         thead.innerHTML = `
           <tr>
-            <th class="py-2.5 px-2.5">股票代號/名稱</th>
-            <th onclick="toggleSort('yestGainPct')" class="sortable-th py-2.5 px-1.5 text-right">
-              昨日漲幅 ${getIcon('yestGainPct')}
+            <th class="py-2.5 px-3">股票代號/名稱</th>
+            <th onclick="toggleSort('yestGainPct')" class="sortable-th py-2.5 px-2 text-right">
+              昨日關鍵K漲幅 ${getIcon('yestGainPct')}
             </th>
-            <th onclick="toggleSort('yestHigh')" class="sortable-th py-2.5 px-1.5 text-right">
-              昨高 / 昨低 ${getIcon('yestHigh')}
+            <th onclick="toggleSort('yestHigh')" class="sortable-th py-2.5 px-2 text-right">
+              關鍵K 昨高 / 昨低 ${getIcon('yestHigh')}
             </th>
-            <th onclick="toggleSort('volExtraPct')" class="sortable-th py-2.5 px-1.5 text-right">
-              昨量 vs 5均 ${getIcon('volExtraPct')}
+            <th onclick="toggleSort('volExtraPct')" class="sortable-th py-2.5 px-2 text-right">
+              昨量 vs 5日均量 ${getIcon('volExtraPct')}
             </th>
-            <th onclick="toggleSort('todayPrice')" class="sortable-th py-2.5 px-1.5 text-right">
+            <th onclick="toggleSort('todayPrice')" class="sortable-th py-2.5 px-2 text-right">
               今日收盤/現價 ${getIcon('todayPrice')}
             </th>
-            <th onclick="toggleSort('poolProfitMoney')" class="sortable-th py-2.5 px-1.5 text-right text-amber-300">
-              賺多少錢(1張) ${getIcon('poolProfitMoney')}
-            </th>
-            <th onclick="toggleSort('statusRank')" class="sortable-th py-2.5 px-2.5 text-center">
-              確認K 決策 ${getIcon('statusRank')}
+            <th onclick="toggleSort('statusRank')" class="sortable-th py-2.5 px-3 text-center">
+              今日確認K 決策 ${getIcon('statusRank')}
             </th>
           </tr>
         `;
@@ -930,8 +934,6 @@
           s.trackProfitPct = s.trackingInfo.profitPct;
           s.trackProfitMoney = Math.round(s.trackingInfo.profitPoints * 1000);
           s.trackHoldingDays = s.trackingInfo.isClosed ? (-100 + s.trackingInfo.holdingDays) : s.trackingInfo.holdingDays;
-          s.poolProfitPts = s.trackingInfo.profitPoints;
-          s.poolProfitMoney = s.trackProfitMoney;
         } else {
           s.trackBuyPrice = 0;
           s.trackExitOrNowPrice = 0;
@@ -939,9 +941,6 @@
           s.trackProfitPct = -999999;
           s.trackProfitMoney = -999999;
           s.trackHoldingDays = -999999;
-          const dayDiffPts = Number((s.todayPrice - s.yestClose).toFixed(2));
-          s.poolProfitPts = dayDiffPts;
-          s.poolProfitMoney = Math.round(dayDiffPts * 1000);
         }
       });
 
@@ -1263,7 +1262,6 @@
         return s.trackHoldingDays;
       }
       if (s.status === "BREAKOUT") return 4;
-      if (s.trackingInfo) return 3;
       if (s.status === "CONSOLIDATE") return 2;
       return 1;
     }
@@ -1371,6 +1369,7 @@
 
     function setFilter(filterType) {
       currentFilter = filterType;
+      trackingSubFilter = "ALL";
       document.querySelectorAll(".filter-card").forEach(btn => {
         btn.classList.remove("border-2", "border-blue-500");
         btn.classList.add("border", "border-slate-800");
@@ -1381,13 +1380,40 @@
       renderTable();
     }
 
+    // 股池四內部點擊「目前賺錢」、「目前賠錢」、「今日平倉」、「賺賠合計」切換清單
+    function setTrackingSubFilter(subType) {
+      if (trackingSubFilter === subType && subType !== 'ALL') {
+        trackingSubFilter = 'ALL';
+      } else {
+        trackingSubFilter = subType;
+      }
+      updateSubFilterHighlight();
+      renderTable();
+    }
+
+    function updateSubFilterHighlight() {
+      const ids = ['WIN', 'LOSS', 'ALL', 'TODAY_EXIT'];
+      ids.forEach(k => {
+        const el = document.getElementById(`subTab-${k}`);
+        if (!el) return;
+        el.classList.remove("ring-2", "ring-rose-400", "ring-emerald-400", "ring-cyan-400", "ring-purple-400", " shadow-lg");
+      });
+      const activeEl = document.getElementById(`subTab-${trackingSubFilter}`);
+      if (activeEl) {
+        const ringColor = trackingSubFilter === 'WIN' ? 'ring-rose-400'
+                        : (trackingSubFilter === 'LOSS' ? 'ring-emerald-400'
+                        : (trackingSubFilter === 'TODAY_EXIT' ? 'ring-purple-400' : 'ring-cyan-400'));
+        activeEl.classList.add("ring-2", ringColor, "shadow-lg");
+      }
+    }
+
     function formatMoneyDisplay(money) {
       const sign = money > 0 ? "+" : (money < 0 ? "-" : "");
       return `${sign}$${Math.abs(Math.round(money)).toLocaleString()}元`;
     }
 
-    // 更新股池四的「賺錢加總/持有天數、賠錢加總/持有天數、賺賠比率%、賺賠持有天數差、今日平倉結算」
-    function updateTrackingPoolSummary(list) {
+    // 更新股池四的統計看板（刪除總計幾天與均差幾天，新增賺÷賠比值與單檔平均淨賺效率公式）
+    function updateTrackingPoolSummary(baseList) {
       const bannerEl = document.getElementById("trackingPoolSummaryBanner");
       if (!bannerEl) return;
 
@@ -1396,18 +1422,18 @@
         return;
       }
       bannerEl.classList.remove("hidden");
+      updateSubFilterHighlight();
 
       let winCount = 0, winSum = 0, winDaysSum = 0;
       let lossCount = 0, lossSum = 0, lossDaysSum = 0;
       let flatCount = 0;
 
-      // 今日平倉統計 (t.isClosed && t.daysSinceExit === 0)
       let todayExitCount = 0;
       let todayExitWinCount = 0, todayExitWinMoney = 0, todayExitWinDays = 0;
       let todayExitLossCount = 0, todayExitLossMoney = 0, todayExitLossDays = 0;
       let todayExitTotalDays = 0;
 
-      list.forEach(s => {
+      baseList.forEach(s => {
         const t = s.trackingInfo;
         if (!t) return;
         const m = Math.round(s.trackProfitMoney || 0);
@@ -1425,7 +1451,6 @@
           flatCount++;
         }
 
-        // 檢查是否為「今天平倉」的股票
         if (t.isClosed && t.daysSinceExit === 0) {
           todayExitCount++;
           todayExitTotalDays += days;
@@ -1442,27 +1467,33 @@
       });
 
       const netSum = winSum + lossSum;
-      const totalCount = list.length;
+      const totalCount = baseList.length;
 
       const winAvgDays = winCount > 0 ? (winDaysSum / winCount) : 0;
       const lossAvgDays = lossCount > 0 ? (lossDaysSum / lossCount) : 0;
-      // 合計持有天數 (賺錢的天數 - 賠錢的天數)
-      const diffAvgDays = winAvgDays - lossAvgDays;
-      const diffTotalDays = winDaysSum - lossDaysSum;
 
-      // 賺錢、賠錢比率 (%)
       const winPctAll = totalCount > 0 ? ((winCount / totalCount) * 100).toFixed(1) : "0.0";
       const lossPctAll = totalCount > 0 ? ((lossCount / totalCount) * 100).toFixed(1) : "0.0";
-      const wlDenom = (winCount + lossCount) > 0 ? (winCount + lossCount) : 1;
-      const pureWinRate = (winCount + lossCount) > 0 ? ((winCount / wlDenom) * 100).toFixed(1) : "0.0";
+
+      // 1. 賺的錢 ÷ 賠的錢 比值 (Profit Factor)
+      const absLossSum = Math.abs(lossSum);
+      let profitFactorStr = "∞ (0賠)";
+      if (absLossSum > 0) {
+        profitFactorStr = `${(winSum / absLossSum).toFixed(2)}倍`;
+      } else if (winSum === 0) {
+        profitFactorStr = "0.00倍";
+      }
+
+      // 2. 有限資金效率公式：單檔平均淨賺 = (賺錢總額 - 賠錢總額) ÷ 總買入檔數
+      const netPerStock = totalCount > 0 ? Math.round(netSum / totalCount) : 0;
 
       document.getElementById("sumWinCount").textContent = `共 ${winCount} 檔 (${winPctAll}%)`;
       document.getElementById("sumWinMoney").textContent = formatMoneyDisplay(winSum);
-      document.getElementById("sumWinDays").textContent = `賺錢平均持有：${winAvgDays.toFixed(1)} 天 (總計 ${winDaysSum} 天)`;
+      document.getElementById("sumWinDays").textContent = `賺錢平均持有：${winAvgDays.toFixed(1)} 天`;
 
       document.getElementById("sumLossCount").textContent = `共 ${lossCount} 檔 (${lossPctAll}%)`;
       document.getElementById("sumLossMoney").textContent = formatMoneyDisplay(lossSum);
-      document.getElementById("sumLossDays").textContent = `賠錢平均持有：${lossAvgDays.toFixed(1)} 天 (總計 ${lossDaysSum} 天)`;
+      document.getElementById("sumLossDays").textContent = `賠錢平均持有：${lossAvgDays.toFixed(1)} 天`;
 
       const flatNote = flatCount > 0 ? ` (含平盤${flatCount}檔)` : "";
       document.getElementById("sumTotalCount").textContent = `共 ${totalCount} 檔${flatNote}`;
@@ -1470,13 +1501,11 @@
       netEl.textContent = formatMoneyDisplay(netSum);
       netEl.className = `text-base font-bold font-mono ${netSum > 0 ? 'text-rose-400' : (netSum < 0 ? 'text-emerald-400' : 'text-slate-200')}`;
 
-      document.getElementById("sumWinLossRatio").textContent = `賺${winPctAll}% / 賠${lossPctAll}% (純勝率${pureWinRate}%)`;
+      document.getElementById("sumProfitFactor").textContent = `賺÷賠：${profitFactorStr}`;
+      const capEl = document.getElementById("sumCapitalEfficiency");
+      capEl.innerHTML = `單檔淨賺((賺-賠)÷總檔)：<b class="${netPerStock >= 0 ? 'text-amber-300' : 'text-emerald-400'}">${formatMoneyDisplay(netPerStock)}/檔</b>`;
 
-      const diffAvgSign = diffAvgDays > 0 ? "+" : "";
-      const diffTotSign = diffTotalDays > 0 ? "+" : "";
-      document.getElementById("sumDiffDays").textContent = `合計持有(賺-賠)：均差 ${diffAvgSign}${diffAvgDays.toFixed(1)} 天 (總差 ${diffTotSign}${diffTotalDays} 天)`;
-
-      // 更新今日平倉統計列
+      // 更新今日平倉統計列（已移除總計幾天）
       const todayNetExitMoney = todayExitWinMoney + todayExitLossMoney;
       const todayExitAvgDays = todayExitCount > 0 ? (todayExitTotalDays / todayExitCount).toFixed(1) : "0.0";
       const todayWinAvgD = todayExitWinCount > 0 ? (todayExitWinDays / todayExitWinCount).toFixed(1) : "0.0";
@@ -1490,18 +1519,33 @@
       todayNetEl.textContent = formatMoneyDisplay(todayNetExitMoney);
       todayNetEl.className = `font-bold ${todayNetExitMoney > 0 ? 'text-rose-400' : (todayNetExitMoney < 0 ? 'text-emerald-400' : 'text-amber-300')}`;
 
-      document.getElementById("todayExitHoldDays").textContent = `平均 ${todayExitAvgDays} 天 (共 ${todayExitTotalDays} 天｜賺均 ${todayWinAvgD} 天 / 賠均 ${todayLossAvgD} 天)`;
+      document.getElementById("todayExitHoldDays").textContent = `平均 ${todayExitAvgDays} 天 (賺均 ${todayWinAvgD} 天 / 賠均 ${todayLossAvgD} 天)`;
     }
 
     function renderTable() {
       const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
       let sourcePool = currentFilter === "TRACKING" ? trackingStocks : allStocks;
 
-      let list = sourcePool.filter(s => {
+      let baseList = sourcePool.filter(s => {
         const matchFilter = currentFilter === "ALL" || currentFilter === "TRACKING" || s.status === currentFilter;
         const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
         return matchFilter && matchKeyword;
       });
+
+      // 先以股池四完整清單更新上方 4 大區塊統計數字
+      updateTrackingPoolSummary(baseList);
+
+      // 若在股池四點選了子篩選器（賺錢 / 賠錢 / 今日平倉），再過濾下方表格顯示清單
+      let list = baseList;
+      if (currentFilter === "TRACKING") {
+        if (trackingSubFilter === "WIN") {
+          list = baseList.filter(s => (s.trackProfitMoney || 0) > 0);
+        } else if (trackingSubFilter === "LOSS") {
+          list = baseList.filter(s => (s.trackProfitMoney || 0) < 0);
+        } else if (trackingSubFilter === "TODAY_EXIT") {
+          list = baseList.filter(s => s.trackingInfo && s.trackingInfo.isClosed && s.trackingInfo.daysSinceExit === 0);
+        }
+      }
 
       list.forEach(s => { s.statusRank = getStatusRankValue(s); });
 
@@ -1511,11 +1555,10 @@
       }
       filteredStocks = list;
 
-      updateTrackingPoolSummary(filteredStocks);
-
       const tbody = document.getElementById("stockTableBody");
+      const colSpanCount = currentFilter === "TRACKING" ? 7 : 6;
       if (filteredStocks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-slate-500">目前此股票池沒有符合條件的標的</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="py-10 text-center text-slate-500">目前此篩選區塊沒有符合條件的標的</td></tr>`;
         return;
       }
 
@@ -1611,6 +1654,7 @@
         return;
       }
 
+      // 第 1、2、3、5 股池：純粹顯示昨日關鍵K與今日確認K狀態（不顯示賺多少錢，且副標題固定顯示昨日20MA與初始停損）
       tbody.innerHTML = filteredStocks.map(s => {
         const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
         const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
@@ -1642,32 +1686,21 @@
           `;
         }
 
-        const moneyColor = s.poolProfitMoney > 0 ? "text-rose-400" : (s.poolProfitMoney < 0 ? "text-emerald-400" : "text-slate-300");
-        const ptsSign = s.poolProfitPts > 0 ? "+" : "";
-
         let badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold text-[11px]">👀 觀察中</span>`;
         if (s.status === "BREAKOUT") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-semibold text-[11px]">🔥 確認買進</span>`;
         else if (s.status === "BREAKDOWN") badgeHtml = `<span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold text-[11px]">❄️ 跌破昨低</span>`;
 
-        const subStopInfo = (s.trackingInfo && s.trackingInfo.ma20ControlArmed)
-          ? `20MA控盤中`
-          : `初始停損:${s.candidateStopLossPrice.toFixed(2)}`;
-
         return `
           <tr id="stock-row-${s.code}" onclick="selectStock('${s.code}', true)" class="${rowBg} cursor-pointer transition">
-            <td class="py-2.5 px-2.5">
+            <td class="py-2.5 px-3">
               <div class="font-bold text-white flex items-center">${s.code} ${s.name}${kTypeTag}</div>
-              <div class="text-[11px] ${maTextColor}">昨20MA: ${s.yestMa20.toFixed(2)} ${maDirArrow} ｜ ${subStopInfo}</div>
+              <div class="text-[11px] ${maTextColor}">昨20MA: ${s.yestMa20.toFixed(2)} ${maDirArrow} ｜ 初始停損:${s.candidateStopLossPrice.toFixed(2)}</div>
             </td>
-            <td class="py-2.5 px-1.5 text-right font-mono">${yestGainHtml}</td>
-            <td class="py-2.5 px-1.5 text-right font-mono"><div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div><div class="text-emerald-400">${s.yestLow.toFixed(2)}</div></td>
-            <td class="py-2.5 px-1.5 text-right font-mono"><div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div><div class="text-[10px] text-slate-300">昨:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div></td>
-            <td class="py-2.5 px-1.5 text-right font-mono">${todayPriceCellHtml}</td>
-            <td class="py-2.5 px-1.5 text-right font-mono">
-              <div class="${moneyColor} font-bold text-xs">${formatMoneyDisplay(s.poolProfitMoney)}</div>
-              <div class="text-[10px] ${moneyColor}">(${ptsSign}${s.poolProfitPts.toFixed(2)}點)</div>
-            </td>
-            <td class="py-2.5 px-2.5 text-center">${badgeHtml}</td>
+            <td class="py-2.5 px-2 text-right font-mono">${yestGainHtml}</td>
+            <td class="py-2.5 px-2 text-right font-mono"><div class="text-rose-400 font-semibold">${s.yestHigh.toFixed(2)}</div><div class="text-emerald-400">${s.yestLow.toFixed(2)}</div></td>
+            <td class="py-2.5 px-2 text-right font-mono"><div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div><div class="text-[10px] text-slate-300">昨:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div></td>
+            <td class="py-2.5 px-2 text-right font-mono">${todayPriceCellHtml}</td>
+            <td class="py-2.5 px-3 text-center">${badgeHtml}</td>
           </tr>`;
       }).join("");
     }
@@ -1721,10 +1754,12 @@
     }
 
     function updateDetailPanel(stock, resetView = false) {
+      const showTrackingMode = (currentFilter === "TRACKING" && stock.trackingInfo) || (!stock.isFirstDayBreak20Ma && stock.trackingInfo);
+
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
-      document.getElementById("detailKeyKTag").textContent = stock.trackingInfo
+      document.getElementById("detailKeyKTag").textContent = showTrackingMode
         ? `★ 關鍵K(${formatShortDateSlash(stock.trackingInfo.keyKDate)}) → 確認K(${formatShortDateSlash(stock.trackingInfo.buyDate)})買入`
-        : `★ 關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
+        : `★ 昨日突破20MA關鍵K (+${stock.yestGainPct.toFixed(2)}%)`;
 
       const extraSign = stock.volExtraPct >= 0 ? "+" : "";
       document.getElementById("detailSubTitle").textContent = `昨日收盤 ${stock.yestClose.toFixed(2)} ｜ 今日總量 ${formatVolDisplay(stock.todayVol)}`;
@@ -1738,7 +1773,7 @@
       const stopPriceEl = document.getElementById("cardStopLossPrice");
       const legendStopItem = document.getElementById("legendStopLossItem");
 
-      if (stock.trackingInfo) {
+      if (showTrackingMode) {
         const t = stock.trackingInfo;
         trackBanner.classList.remove("hidden");
         const ptsSign = t.profitPoints > 0 ? "+" : "";
@@ -1846,7 +1881,7 @@
       }
 
       const badge = document.getElementById("detailDecisionBadge");
-      if (stock.trackingInfo) {
+      if (showTrackingMode) {
         const t = stock.trackingInfo;
         const bDate = formatShortDateSlash(t.buyDate);
         if (!t.isClosed) {
@@ -1910,12 +1945,12 @@
           lastBar.forceAvgPrice = resT.avgPrice;
           lastBar.volPctOfToday = resT.volPctOfToday;
         }
-        if (bars.length >= 2 && stock.isFirstDayBreak20Ma && !stock.trackingInfo) {
+        if (bars.length >= 2 && stock.isFirstDayBreak20Ma && !showTrackingMode) {
           bars[bars.length - 2].isKeyK = true;
         }
       }
 
-      if (stock.trackingInfo) {
+      if (showTrackingMode && stock.trackingInfo) {
         const t = stock.trackingInfo;
         if (bars[t.keyKIdx]) bars[t.keyKIdx].isKeyK = true;
         if (bars[t.buyIdx]) bars[t.buyIdx].isTrackBuyK = true;
@@ -2084,7 +2119,8 @@
       const volPlotH = totalPlotH - pricePlotH;
       const plotW = width - padLeft - padRight;
 
-      const tInfo = stock.trackingInfo;
+      const showTrackingMode = (currentFilter === "TRACKING" && stock.trackingInfo) || (!stock.isFirstDayBreak20Ma && stock.trackingInfo);
+      const tInfo = showTrackingMode ? stock.trackingInfo : null;
       const shouldShowYellowStop = tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (stock.candidateStopLossPrice > 0);
       const yellowStopVal = tInfo ? tInfo.stopLossPrice : stock.candidateStopLossPrice;
 
@@ -2536,8 +2572,8 @@
         return;
       }
 
-      const headers = ["股票代號", "股票名稱", "昨日漲幅%", "昨日20MA", "20MA斜率", "K棒型態", "昨高", "昨低", "昨收", "初始停損價(-2%)", "前5日均量(張)", "昨日成交量(張)", "昨日比前5日均量增減%", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "賺多少錢(1張)", "今日成交量", "確認狀態"];
-      const rows = filteredStocks.map(s => [s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.candidateStopLossPrice, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, s.poolProfitMoney, `${s.todayVol}張`, s.status]);
+      const headers = ["股票代號", "股票名稱", "昨日漲幅%", "昨日20MA", "20MA斜率", "K棒型態", "昨高", "昨低", "昨收", "初始停損價(-2%)", "前5日均量(張)", "昨日成交量(張)", "昨日比前5日均量增減%", "昨量比%", "今日開盤", "今日現價", "今日漲跌幅%", "今日成交量", "確認狀態"];
+      const rows = filteredStocks.map(s => [s.code, s.name, `+${s.yestGainPct}%`, s.yestMa20, s.isMa20SlopeUp ? "向上" : "下彎", s.isBullishRedK ? "實體紅K" : "跳空/十字", s.yestHigh, s.yestLow, s.yestClose, s.candidateStopLossPrice, s.avgVol5, s.yestVol, `${s.volExtraPct >= 0 ? '+' : ''}${s.volExtraPct}%`, `${s.volRatio}%`, s.todayOpen, s.todayPrice, `${s.changePct}%`, `${s.todayVol}張`, s.status]);
       const blob = new Blob(["\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n")], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
