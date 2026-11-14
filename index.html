@@ -215,31 +215,69 @@
         </div>
       </div>
 
-      <!-- 股池四（確認K決策追蹤）專屬：賺錢加總、賠錢加總、賺賠合計總覽看板 -->
-      <div id="trackingPoolSummaryBanner" class="hidden bg-slate-900/90 border-b border-slate-800 p-3">
+      <!-- 股池四（確認K決策追蹤）專屬：賺錢加總、賠錢加總、賺賠合計、今日平倉結算總覽看板 -->
+      <div id="trackingPoolSummaryBanner" class="hidden bg-slate-900/90 border-b border-slate-800 p-3 space-y-2.5">
+        <!-- 上排：賺錢加總、賠錢加總、賺賠合計 (含持有天數與賺賠比率%) -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <!-- 賺錢卡片 -->
           <div class="bg-rose-950/35 border border-rose-500/40 rounded-lg p-2.5 flex flex-col justify-between">
-            <div class="text-[11px] text-rose-300 font-semibold flex items-center justify-between">
+            <div class="text-[11px] text-rose-300 font-semibold flex items-center justify-between gap-1">
               <span>🔴 目前賺錢股票加總</span>
-              <span id="sumWinCount" class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono font-bold">共 0 檔</span>
+              <span id="sumWinCount" class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono font-bold">共 0 檔 (0%)</span>
             </div>
             <div id="sumWinMoney" class="text-base font-bold text-rose-400 font-mono mt-1">+$0元</div>
+            <div id="sumWinDays" class="text-[11px] text-rose-200/90 font-mono mt-1 pt-1 border-t border-rose-500/25">
+              平均持有：0.0 天 (總計 0 天)
+            </div>
           </div>
 
+          <!-- 賠錢卡片 -->
           <div class="bg-emerald-950/35 border border-emerald-500/40 rounded-lg p-2.5 flex flex-col justify-between">
-            <div class="text-[11px] text-emerald-300 font-semibold flex items-center justify-between">
+            <div class="text-[11px] text-emerald-300 font-semibold flex items-center justify-between gap-1">
               <span>🟢 目前賠錢股票加總</span>
-              <span id="sumLossCount" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">共 0 檔</span>
+              <span id="sumLossCount" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">共 0 檔 (0%)</span>
             </div>
             <div id="sumLossMoney" class="text-base font-bold text-emerald-400 font-mono mt-1">$0元</div>
+            <div id="sumLossDays" class="text-[11px] text-emerald-200/90 font-mono mt-1 pt-1 border-t border-emerald-500/25">
+              平均持有：0.0 天 (總計 0 天)
+            </div>
           </div>
 
+          <!-- 賺賠合計卡片 -->
           <div class="bg-cyan-950/40 border border-cyan-500/50 rounded-lg p-2.5 flex flex-col justify-between">
-            <div class="text-[11px] text-cyan-300 font-semibold flex items-center justify-between">
+            <div class="text-[11px] text-cyan-300 font-semibold flex items-center justify-between gap-1">
               <span>⚖️ 賺賠合計總金額</span>
               <span id="sumTotalCount" class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200 font-mono font-bold">共 0 檔</span>
             </div>
-            <div id="sumNetMoney" class="text-base font-bold text-amber-300 font-mono mt-1">$0元</div>
+            <div class="flex items-baseline justify-between gap-1 mt-1">
+              <div id="sumNetMoney" class="text-base font-bold text-amber-300 font-mono">$0元</div>
+              <div id="sumWinLossRatio" class="text-[10px] font-mono text-amber-200 font-bold">賺0% / 賠0%</div>
+            </div>
+            <div id="sumDiffDays" class="text-[11px] text-cyan-200/90 font-mono mt-1 pt-1 border-t border-cyan-500/25">
+              合計持有(賺-賠)：均差 0.0 天 (總差 0 天)
+            </div>
+          </div>
+        </div>
+
+        <!-- 下排：今日平倉股票結算資訊條 -->
+        <div class="bg-purple-950/35 border border-purple-500/40 rounded-lg px-3 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span class="font-bold text-purple-300 flex items-center gap-1">
+              🏁 今日平倉股票：<b id="todayExitTotalCount" class="text-white font-mono">共 0 檔</b>
+            </span>
+            <span class="text-slate-600">|</span>
+            <span class="text-rose-300 font-mono">
+              賺錢：<b id="todayExitWinInfo">0 檔 (+$0元)</b>
+            </span>
+            <span class="text-slate-600">|</span>
+            <span class="text-emerald-300 font-mono">
+              賠錢：<b id="todayExitLossInfo">0 檔 ($0元)</b>
+            </span>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
+            <span>小計賺賠：<b id="todayExitNetMoney" class="text-amber-300 font-bold">$0元</b></span>
+            <span class="text-slate-600">|</span>
+            <span class="text-purple-200">持有天數：<b id="todayExitHoldDays">平均 0.0 天 (共 0 天)</b></span>
           </div>
         </div>
       </div>
@@ -1348,7 +1386,7 @@
       return `${sign}$${Math.abs(Math.round(money)).toLocaleString()}元`;
     }
 
-    // 更新股池四的「賺錢加總、賠錢加總、賺賠合計」統計看板
+    // 更新股池四的「賺錢加總/持有天數、賠錢加總/持有天數、賺賠比率%、賺賠持有天數差、今日平倉結算」
     function updateTrackingPoolSummary(list) {
       const bannerEl = document.getElementById("trackingPoolSummaryBanner");
       if (!bannerEl) return;
@@ -1359,37 +1397,100 @@
       }
       bannerEl.classList.remove("hidden");
 
-      let winCount = 0, winSum = 0;
-      let lossCount = 0, lossSum = 0;
+      let winCount = 0, winSum = 0, winDaysSum = 0;
+      let lossCount = 0, lossSum = 0, lossDaysSum = 0;
       let flatCount = 0;
 
+      // 今日平倉統計 (t.isClosed && t.daysSinceExit === 0)
+      let todayExitCount = 0;
+      let todayExitWinCount = 0, todayExitWinMoney = 0, todayExitWinDays = 0;
+      let todayExitLossCount = 0, todayExitLossMoney = 0, todayExitLossDays = 0;
+      let todayExitTotalDays = 0;
+
       list.forEach(s => {
+        const t = s.trackingInfo;
+        if (!t) return;
         const m = Math.round(s.trackProfitMoney || 0);
+        const days = Number(t.holdingDays || 0);
+
         if (m > 0) {
           winCount++;
           winSum += m;
+          winDaysSum += days;
         } else if (m < 0) {
           lossCount++;
           lossSum += m;
+          lossDaysSum += days;
         } else {
           flatCount++;
+        }
+
+        // 檢查是否為「今天平倉」的股票
+        if (t.isClosed && t.daysSinceExit === 0) {
+          todayExitCount++;
+          todayExitTotalDays += days;
+          if (m > 0) {
+            todayExitWinCount++;
+            todayExitWinMoney += m;
+            todayExitWinDays += days;
+          } else if (m < 0) {
+            todayExitLossCount++;
+            todayExitLossMoney += m;
+            todayExitLossDays += days;
+          }
         }
       });
 
       const netSum = winSum + lossSum;
       const totalCount = list.length;
 
-      document.getElementById("sumWinCount").textContent = `共 ${winCount} 檔`;
-      document.getElementById("sumWinMoney").textContent = formatMoneyDisplay(winSum);
+      const winAvgDays = winCount > 0 ? (winDaysSum / winCount) : 0;
+      const lossAvgDays = lossCount > 0 ? (lossDaysSum / lossCount) : 0;
+      // 合計持有天數 (賺錢的天數 - 賠錢的天數)
+      const diffAvgDays = winAvgDays - lossAvgDays;
+      const diffTotalDays = winDaysSum - lossDaysSum;
 
-      document.getElementById("sumLossCount").textContent = `共 ${lossCount} 檔`;
+      // 賺錢、賠錢比率 (%)
+      const winPctAll = totalCount > 0 ? ((winCount / totalCount) * 100).toFixed(1) : "0.0";
+      const lossPctAll = totalCount > 0 ? ((lossCount / totalCount) * 100).toFixed(1) : "0.0";
+      const wlDenom = (winCount + lossCount) > 0 ? (winCount + lossCount) : 1;
+      const pureWinRate = (winCount + lossCount) > 0 ? ((winCount / wlDenom) * 100).toFixed(1) : "0.0";
+
+      document.getElementById("sumWinCount").textContent = `共 ${winCount} 檔 (${winPctAll}%)`;
+      document.getElementById("sumWinMoney").textContent = formatMoneyDisplay(winSum);
+      document.getElementById("sumWinDays").textContent = `賺錢平均持有：${winAvgDays.toFixed(1)} 天 (總計 ${winDaysSum} 天)`;
+
+      document.getElementById("sumLossCount").textContent = `共 ${lossCount} 檔 (${lossPctAll}%)`;
       document.getElementById("sumLossMoney").textContent = formatMoneyDisplay(lossSum);
+      document.getElementById("sumLossDays").textContent = `賠錢平均持有：${lossAvgDays.toFixed(1)} 天 (總計 ${lossDaysSum} 天)`;
 
       const flatNote = flatCount > 0 ? ` (含平盤${flatCount}檔)` : "";
       document.getElementById("sumTotalCount").textContent = `共 ${totalCount} 檔${flatNote}`;
       const netEl = document.getElementById("sumNetMoney");
       netEl.textContent = formatMoneyDisplay(netSum);
-      netEl.className = `text-base font-bold font-mono mt-1 ${netSum > 0 ? 'text-rose-400' : (netSum < 0 ? 'text-emerald-400' : 'text-slate-200')}`;
+      netEl.className = `text-base font-bold font-mono ${netSum > 0 ? 'text-rose-400' : (netSum < 0 ? 'text-emerald-400' : 'text-slate-200')}`;
+
+      document.getElementById("sumWinLossRatio").textContent = `賺${winPctAll}% / 賠${lossPctAll}% (純勝率${pureWinRate}%)`;
+
+      const diffAvgSign = diffAvgDays > 0 ? "+" : "";
+      const diffTotSign = diffTotalDays > 0 ? "+" : "";
+      document.getElementById("sumDiffDays").textContent = `合計持有(賺-賠)：均差 ${diffAvgSign}${diffAvgDays.toFixed(1)} 天 (總差 ${diffTotSign}${diffTotalDays} 天)`;
+
+      // 更新今日平倉統計列
+      const todayNetExitMoney = todayExitWinMoney + todayExitLossMoney;
+      const todayExitAvgDays = todayExitCount > 0 ? (todayExitTotalDays / todayExitCount).toFixed(1) : "0.0";
+      const todayWinAvgD = todayExitWinCount > 0 ? (todayExitWinDays / todayExitWinCount).toFixed(1) : "0.0";
+      const todayLossAvgD = todayExitLossCount > 0 ? (todayExitLossDays / todayExitLossCount).toFixed(1) : "0.0";
+
+      document.getElementById("todayExitTotalCount").textContent = `共 ${todayExitCount} 檔`;
+      document.getElementById("todayExitWinInfo").textContent = `${todayExitWinCount} 檔 (${formatMoneyDisplay(todayExitWinMoney)})`;
+      document.getElementById("todayExitLossInfo").textContent = `${todayExitLossCount} 檔 (${formatMoneyDisplay(todayExitLossMoney)})`;
+
+      const todayNetEl = document.getElementById("todayExitNetMoney");
+      todayNetEl.textContent = formatMoneyDisplay(todayNetExitMoney);
+      todayNetEl.className = `font-bold ${todayNetExitMoney > 0 ? 'text-rose-400' : (todayNetExitMoney < 0 ? 'text-emerald-400' : 'text-amber-300')}`;
+
+      document.getElementById("todayExitHoldDays").textContent = `平均 ${todayExitAvgDays} 天 (共 ${todayExitTotalDays} 天｜賺均 ${todayWinAvgD} 天 / 賠均 ${todayLossAvgD} 天)`;
     }
 
     function renderTable() {
@@ -1448,12 +1549,13 @@
             periodSubText = `<div class="text-[10px] text-amber-300">持倉: ${buyDateSlash} ～ 今(${sellDateSlash})</div>`;
           } else {
             const remainDays = 2 - t.daysSinceExit;
+            const todayExitTag = t.daysSinceExit === 0 ? "🔥今日平倉" : `留存剩${remainDays}天`;
             statusBadge = `
               <div class="inline-block px-2 py-0.5 rounded-full bg-purple-500/25 border border-purple-400/50 text-purple-200 font-bold text-[11px]">
                 🏁 持倉 ${t.holdingDays} 天平倉
               </div>
               <div class="text-[10px] text-purple-300 font-mono mt-0.5">
-                ${buyDateSlash} ～ ${sellDateSlash} (留存剩${remainDays}天)
+                ${buyDateSlash} ～ ${sellDateSlash} (${todayExitTag})
               </div>
             `;
             periodSubText = `<div class="text-[10px] text-purple-300 font-medium">持倉期間: ${buyDateSlash} ～ ${sellDateSlash} (共${t.holdingDays}天)</div>`;
@@ -2113,10 +2215,8 @@
         }
 
         if (chartState.timeframe === '1d') {
-          // 將「確認K買入」訊號放在 K 棒上面 (yHigh 上方)
           if (b.isTrackBuyK) {
             ctx.save();
-            // 收盤價位置保留藍色買點圓心
             ctx.fillStyle = "#38bdf8";
             ctx.beginPath();
             ctx.arc(cx, yClose, 4.5, 0, Math.PI * 2);
@@ -2125,7 +2225,6 @@
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            // 計算 K 棒上方的標示高度（若當根同時有買方泡泡，自動再往上移避免重疊）
             let labelTopY = yHigh - 10;
             if (showBubbles && b.showBubble && b.close >= b.open) {
               const avgP = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
