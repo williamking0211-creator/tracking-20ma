@@ -146,7 +146,7 @@
       </div>
       <ul class="text-xs text-slate-300 space-y-1.5">
         <li>• <span class="text-sky-300 font-semibold">進場初期</span>：買在確認K收盤價（訊號標示於K棒上方），未過買價前守<span class="text-yellow-300 font-semibold">黃色停損虛線(-2%)</span></li>
-        <li>• <span class="text-cyan-300 font-semibold">20MA高於買價後</span>：自動刪除黃色固定停損線，改以 **20MA 控盤**</li>
+        <li>• <span class="text-cyan-300 font-semibold">20MA高於買價後</span>：自動刪除黃色固定停損線，改以 <span class="text-white font-semibold">20MA 控盤</span></li>
         <li>• <span class="text-amber-300 font-semibold">跌破20MA第一根＝關鍵K</span>：標出最高/最低點虛線，確認K跌破最低點平倉、高於最高點續抱</li>
       </ul>
     </div>
@@ -258,7 +258,7 @@
               </div>
             </div>
             <div id="sumCapitalEfficiency" class="text-[11px] text-cyan-200 font-mono mt-1 pt-1 border-t border-cyan-500/25" title="公式：(賺錢總額 - 賠錢總額) ÷ 總買入檔數。檔數越少、賺減賠越大，此值越高！">
-              單檔淨賺((賺-賠)÷檔數)：$0元/檔
+              單檔淨賺((賺-賠)÷總檔)：$0元/檔
             </div>
           </div>
         </div>
@@ -735,7 +735,6 @@
       renderTable();
     }
 
-    // 表格標題列：第 1、2、3、5 股池（尚未買進或僅當日確認）不顯示「賺多少錢(1張)」，僅第 4 欄追蹤池顯示
     function renderTableHeader() {
       const thead = document.getElementById("stockTableHead");
       if (!thead) return;
@@ -967,7 +966,7 @@
       renderTableHeader();
       renderTable();
 
-      if ((!selectedStockCode || !rawAllLoadedStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
+      if ((!selectedStockCode || !filteredStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
         selectStock(filteredStocks[0].code, false);
       } else if (selectedStockCode) {
         const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
@@ -1378,9 +1377,15 @@
       if (activeBtn) { activeBtn.classList.remove("border", "border-slate-800"); activeBtn.classList.add("border-2", "border-blue-500"); }
       renderTableHeader();
       renderTable();
+
+      if (filteredStocks.length > 0 && !filteredStocks.some(s => s.code === selectedStockCode)) {
+        selectStock(filteredStocks[0].code, false);
+      } else if (selectedStockCode) {
+        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        if (current) updateDetailPanel(current, false);
+      }
     }
 
-    // 股池四內部點擊「目前賺錢」、「目前賠錢」、「今日平倉」、「賺賠合計」切換清單
     function setTrackingSubFilter(subType) {
       if (trackingSubFilter === subType && subType !== 'ALL') {
         trackingSubFilter = 'ALL';
@@ -1389,6 +1394,10 @@
       }
       updateSubFilterHighlight();
       renderTable();
+
+      if (filteredStocks.length > 0 && !filteredStocks.some(s => s.code === selectedStockCode)) {
+        selectStock(filteredStocks[0].code, false);
+      }
     }
 
     function updateSubFilterHighlight() {
@@ -1396,7 +1405,7 @@
       ids.forEach(k => {
         const el = document.getElementById(`subTab-${k}`);
         if (!el) return;
-        el.classList.remove("ring-2", "ring-rose-400", "ring-emerald-400", "ring-cyan-400", "ring-purple-400", " shadow-lg");
+        el.classList.remove("ring-2", "ring-rose-400", "ring-emerald-400", "ring-cyan-400", "ring-purple-400", "shadow-lg");
       });
       const activeEl = document.getElementById(`subTab-${trackingSubFilter}`);
       if (activeEl) {
@@ -1412,7 +1421,6 @@
       return `${sign}$${Math.abs(Math.round(money)).toLocaleString()}元`;
     }
 
-    // 更新股池四的統計看板（刪除總計幾天與均差幾天，新增賺÷賠比值與單檔平均淨賺效率公式）
     function updateTrackingPoolSummary(baseList) {
       const bannerEl = document.getElementById("trackingPoolSummaryBanner");
       if (!bannerEl) return;
@@ -1475,7 +1483,6 @@
       const winPctAll = totalCount > 0 ? ((winCount / totalCount) * 100).toFixed(1) : "0.0";
       const lossPctAll = totalCount > 0 ? ((lossCount / totalCount) * 100).toFixed(1) : "0.0";
 
-      // 1. 賺的錢 ÷ 賠的錢 比值 (Profit Factor)
       const absLossSum = Math.abs(lossSum);
       let profitFactorStr = "∞ (0賠)";
       if (absLossSum > 0) {
@@ -1484,7 +1491,6 @@
         profitFactorStr = "0.00倍";
       }
 
-      // 2. 有限資金效率公式：單檔平均淨賺 = (賺錢總額 - 賠錢總額) ÷ 總買入檔數
       const netPerStock = totalCount > 0 ? Math.round(netSum / totalCount) : 0;
 
       document.getElementById("sumWinCount").textContent = `共 ${winCount} 檔 (${winPctAll}%)`;
@@ -1505,7 +1511,6 @@
       const capEl = document.getElementById("sumCapitalEfficiency");
       capEl.innerHTML = `單檔淨賺((賺-賠)÷總檔)：<b class="${netPerStock >= 0 ? 'text-amber-300' : 'text-emerald-400'}">${formatMoneyDisplay(netPerStock)}/檔</b>`;
 
-      // 更新今日平倉統計列（已移除總計幾天）
       const todayNetExitMoney = todayExitWinMoney + todayExitLossMoney;
       const todayExitAvgDays = todayExitCount > 0 ? (todayExitTotalDays / todayExitCount).toFixed(1) : "0.0";
       const todayWinAvgD = todayExitWinCount > 0 ? (todayExitWinDays / todayExitWinCount).toFixed(1) : "0.0";
@@ -1532,10 +1537,8 @@
         return matchFilter && matchKeyword;
       });
 
-      // 先以股池四完整清單更新上方 4 大區塊統計數字
       updateTrackingPoolSummary(baseList);
 
-      // 若在股池四點選了子篩選器（賺錢 / 賠錢 / 今日平倉），再過濾下方表格顯示清單
       let list = baseList;
       if (currentFilter === "TRACKING") {
         if (trackingSubFilter === "WIN") {
@@ -1654,7 +1657,6 @@
         return;
       }
 
-      // 第 1、2、3、5 股池：純粹顯示昨日關鍵K與今日確認K狀態（不顯示賺多少錢，且副標題固定顯示昨日20MA與初始停損）
       tbody.innerHTML = filteredStocks.map(s => {
         const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
         const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
