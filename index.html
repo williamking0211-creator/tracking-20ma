@@ -325,9 +325,126 @@
         </div>
       </div>
 
-      <!-- 股池四（確認K決策追蹤）與 股池五（破底K／破線出場）共用：日期區間損益篩選 + 4 大損益統計看板 -->
+      <!-- 股池四（確認K決策追蹤）與 股池五（破底K／破線出場）共用：出場策略切換器 + 日期區間損益篩選 + 4 大損益統計看板 -->
       <div id="trackingPoolSummaryBanner" class="hidden bg-slate-900/90 border-b border-slate-800 p-3 space-y-2.5">
-        
+
+        <!-- 出場策略切換器與可調參數 -->
+        <div class="bg-slate-950/95 border border-indigo-500/40 rounded-lg p-2.5 space-y-2 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold text-indigo-300">🎯 出場策略切換器 (即時重算損益)：</span>
+              <label class="inline-flex items-center gap-1 cursor-pointer select-none bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-amber-300" title="買進超過設定天數且 20MA 仍未過買價、帳面虧損時提前停損">
+                <input type="checkbox" id="chkTimeStop" onchange="onExitStrategyChanged()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
+                <span>疊加時間停損</span>
+                <input type="number" id="timeStopDaysInput" value="15" min="3" max="45" step="1" onclick="event.stopPropagation()" oninput="onExitStrategyChanged()"
+                       class="w-8 bg-slate-950 border border-slate-700 rounded px-1 text-center text-amber-300 font-mono font-bold text-[11px]" />
+                <span>天</span>
+              </label>
+            </div>
+            <button type="button" onclick="toggleStrategyCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/35 transition">
+              📊 顯示/隱藏 4大策略總績效對比
+            </button>
+          </div>
+
+          <!-- 4 種出場策略按鈕 -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button type="button" onclick="setExitStrategy('DEFAULT_20MA')" id="exitBtn-DEFAULT_20MA"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/40 text-white transition">
+              <div class="font-bold text-[11px]">A. 原版 20MA 破線確認</div>
+              <div class="text-[10px] text-slate-400">破20MA關鍵K再破低出</div>
+            </button>
+            <button type="button" onclick="setExitStrategy('SHORT_MA_TRAIL')" id="exitBtn-SHORT_MA_TRAIL"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-sky-500/50 text-slate-300 transition">
+              <div class="font-bold text-[11px]">B. 獲利達標改守短均線</div>
+              <div class="text-[10px] text-slate-400">大賺後改守 5MA / 10MA</div>
+            </button>
+            <button type="button" onclick="setExitStrategy('PEAK_TRAILING')" id="exitBtn-PEAK_TRAILING"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-amber-500/50 text-slate-300 transition">
+              <div class="font-bold text-[11px]">C. 高點回落 ＋ 保本停利</div>
+              <div class="text-[10px] text-slate-400">鎖住波段最高點回檔</div>
+            </button>
+            <button type="button" onclick="setExitStrategy('WHALE_SELL_EXIT')" id="exitBtn-WHALE_SELL_EXIT"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-pink-500/50 text-slate-300 transition">
+              <div class="font-bold text-[11px]">D. 高檔大戶賣出訊號</div>
+              <div class="text-[10px] text-slate-400">獲利後爆量收黑K即出</div>
+            </button>
+          </div>
+
+          <!-- 各策略可調參數區 -->
+          <div id="exitParams-DEFAULT_20MA" class="exit-params-box text-[11px] text-slate-400 bg-slate-900/70 rounded px-2.5 py-1.5">
+            📌 目前使用「原版 20MA 控盤」：20MA 未過買價前守初始停損 (-2%)，過買價後以跌破 20MA 關鍵K低點平倉（可勾選上方「疊加時間停損」測試砍掉鈍化虧損股）。
+          </div>
+
+          <div id="exitParams-SHORT_MA_TRAIL" class="exit-params-box hidden bg-slate-900/80 border border-sky-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-sky-300 font-semibold">獲利觸發門檻 ≥</span>
+              <input type="number" id="shortMaTriggerPctInput" value="15" min="3" max="100" step="1" oninput="onExitStrategyChanged()"
+                     class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-sky-300 font-mono font-bold" />
+              <span>% 後切換</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-slate-300">短均線週期：</span>
+              <select id="shortMaPeriodSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-bold">
+                <option value="5">5MA (積極鎖利)</option>
+                <option value="10" selected>10MA (穩健波段)</option>
+              </select>
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-slate-300">出場條件：</span>
+              <select id="shortMaModeSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-rose-300 font-bold">
+                <option value="DIRECT" selected>收盤跌破短均線即平倉</option>
+                <option value="KEY_K">破短均線關鍵K再破低點</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="exitParams-PEAK_TRAILING" class="exit-params-box hidden bg-slate-900/80 border border-amber-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-emerald-300 font-semibold">曾賺 ≥</span>
+              <input type="number" id="breakevenTriggerPctInput" value="10" min="2" max="50" step="1" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-emerald-300 font-mono font-bold" />
+              <span>% 啟動保本(不賠)</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-amber-300 font-semibold">曾賺 ≥</span>
+              <input type="number" id="peakTrailTriggerPctInput" value="15" min="5" max="100" step="1" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-amber-300 font-mono font-bold" />
+              <span>% 啟動移動停利</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-rose-300 font-semibold">從最高點回落 ≥</span>
+              <input type="number" id="peakDrawdownPctInput" value="8" min="2" max="30" step="0.5" oninput="onExitStrategyChanged()"
+                     class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-rose-300 font-mono font-bold" />
+              <span>% 即平倉</span>
+            </label>
+          </div>
+
+          <div id="exitParams-WHALE_SELL_EXIT" class="exit-params-box hidden bg-slate-900/80 border border-pink-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-pink-300 font-semibold">獲利 ≥</span>
+              <input type="number" id="whaleTriggerPctInput" value="12" min="3" max="100" step="1" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-pink-300 font-mono font-bold" />
+              <span>% 後偵測出貨</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5">
+              <span class="text-amber-300 font-semibold">收黑K且量 ≥ 5均量 ×</span>
+              <input type="number" id="whaleSellMultInput" value="2.0" min="1.0" max="5.0" step="0.2" oninput="onExitStrategyChanged()"
+                     class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-amber-300 font-mono font-bold" />
+              <span>倍即平倉</span>
+            </label>
+          </div>
+
+          <!-- 4大策略全體總結算對比列 (續抱 + 已平倉) -->
+          <div id="strategyCompareBox" class="bg-slate-900/95 border border-slate-800 rounded-lg p-2 space-y-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400">
+              <span>📊 <b class="text-slate-200">四大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
+              <span id="strategyCompareNote" class="font-mono text-indigo-300"></span>
+            </div>
+            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] font-mono">
+            </div>
+          </div>
+        </div>
+
         <!-- 日期區間損益篩選器 -->
         <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2.5 flex flex-col gap-2 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -747,6 +864,7 @@
     let breakdownPoolStocks = [];
     let filteredStocks = [];
     let currentFilter = "ALL";
+    let currentExitStrategy = "DEFAULT_20MA";
     let trackingSubFilter = "ALL"; // 'ALL' | 'WIN' | 'LOSS' | 'TODAY_EXIT'
     let selectedStockCode = null;
     let syncTimer = null;
@@ -800,7 +918,18 @@
         currentFilter,
         pnlDateBasis: document.getElementById("pnlDateBasisSelect")?.value || "AUTO",
         pnlStartDate: document.getElementById("pnlStartDateInput")?.value || "",
-        pnlEndDate: document.getElementById("pnlEndDateInput")?.value || ""
+        pnlEndDate: document.getElementById("pnlEndDateInput")?.value || "",
+        exitStrategy: currentExitStrategy,
+        chkTimeStop: document.getElementById("chkTimeStop")?.checked || false,
+        timeStopDays: document.getElementById("timeStopDaysInput")?.value || "15",
+        shortMaTriggerPct: document.getElementById("shortMaTriggerPctInput")?.value || "15",
+        shortMaPeriod: document.getElementById("shortMaPeriodSelect")?.value || "10",
+        shortMaMode: document.getElementById("shortMaModeSelect")?.value || "DIRECT",
+        breakevenTriggerPct: document.getElementById("breakevenTriggerPctInput")?.value || "10",
+        peakTrailTriggerPct: document.getElementById("peakTrailTriggerPctInput")?.value || "15",
+        peakDrawdownPct: document.getElementById("peakDrawdownPctInput")?.value || "8",
+        whaleTriggerPct: document.getElementById("whaleTriggerPctInput")?.value || "12",
+        whaleSellMult: document.getElementById("whaleSellMultInput")?.value || "2.0"
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       safeSetStorage("whale_bubble_mult_threshold", String(bubbleMultThreshold));
@@ -843,6 +972,39 @@
         if (typeof s.pnlEndDate === "string" && document.getElementById("pnlEndDateInput")) {
           document.getElementById("pnlEndDateInput").value = s.pnlEndDate;
         }
+        if (typeof s.chkTimeStop === "boolean" && document.getElementById("chkTimeStop")) {
+          document.getElementById("chkTimeStop").checked = s.chkTimeStop;
+        }
+        if (s.timeStopDays !== undefined && document.getElementById("timeStopDaysInput")) {
+          document.getElementById("timeStopDaysInput").value = s.timeStopDays;
+        }
+        if (s.shortMaTriggerPct !== undefined && document.getElementById("shortMaTriggerPctInput")) {
+          document.getElementById("shortMaTriggerPctInput").value = s.shortMaTriggerPct;
+        }
+        if (s.shortMaPeriod && document.getElementById("shortMaPeriodSelect")) {
+          document.getElementById("shortMaPeriodSelect").value = s.shortMaPeriod;
+        }
+        if (s.shortMaMode && document.getElementById("shortMaModeSelect")) {
+          document.getElementById("shortMaModeSelect").value = s.shortMaMode;
+        }
+        if (s.breakevenTriggerPct !== undefined && document.getElementById("breakevenTriggerPctInput")) {
+          document.getElementById("breakevenTriggerPctInput").value = s.breakevenTriggerPct;
+        }
+        if (s.peakTrailTriggerPct !== undefined && document.getElementById("peakTrailTriggerPctInput")) {
+          document.getElementById("peakTrailTriggerPctInput").value = s.peakTrailTriggerPct;
+        }
+        if (s.peakDrawdownPct !== undefined && document.getElementById("peakDrawdownPctInput")) {
+          document.getElementById("peakDrawdownPctInput").value = s.peakDrawdownPct;
+        }
+        if (s.whaleTriggerPct !== undefined && document.getElementById("whaleTriggerPctInput")) {
+          document.getElementById("whaleTriggerPctInput").value = s.whaleTriggerPct;
+        }
+        if (s.whaleSellMult !== undefined && document.getElementById("whaleSellMultInput")) {
+          document.getElementById("whaleSellMultInput").value = s.whaleSellMult;
+        }
+        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT'].includes(s.exitStrategy)) {
+          currentExitStrategy = s.exitStrategy;
+        }
         if (s.currentFilter && ['ALL', 'BREAKOUT', 'CONSOLIDATE', 'TRACKING', 'BREAKDOWN'].includes(s.currentFilter)) {
           currentFilter = s.currentFilter;
           document.querySelectorAll(".filter-card").forEach(btn => {
@@ -878,6 +1040,7 @@
         updateBubbleMultLabel(bubbleMultThreshold);
       }
       syncStep1ControlsUI();
+      updateExitStrategyUI();
       renderTableHeader();
       initCanvasEvents();
       initDraggableLegend();
@@ -1291,6 +1454,141 @@
       trigTextEl.innerHTML = `🎯 泡泡觸發門檻(${bubbleMultThreshold.toFixed(1)}倍)：<b class="text-amber-300">≥ ${reqLots.toLocaleString()}張 (${formatAmountWan(reqWan)})</b>`;
     }
 
+    function getExitStrategyConfig(overrideStrategy = null) {
+      const strategy = overrideStrategy || currentExitStrategy || "DEFAULT_20MA";
+      const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
+      const timeStopDays = Math.max(3, parseInt(document.getElementById("timeStopDaysInput")?.value || "15", 10) || 15);
+      const shortMaTriggerPct = parseFloat(document.getElementById("shortMaTriggerPctInput")?.value || "15") || 15;
+      const shortMaPeriod = parseInt(document.getElementById("shortMaPeriodSelect")?.value || "10", 10) || 10;
+      const shortMaMode = document.getElementById("shortMaModeSelect")?.value || "DIRECT";
+      const breakevenTriggerPct = parseFloat(document.getElementById("breakevenTriggerPctInput")?.value || "10") || 10;
+      const peakTrailTriggerPct = parseFloat(document.getElementById("peakTrailTriggerPctInput")?.value || "15") || 15;
+      const peakDrawdownPct = parseFloat(document.getElementById("peakDrawdownPctInput")?.value || "8") || 8;
+      const whaleTriggerPct = parseFloat(document.getElementById("whaleTriggerPctInput")?.value || "12") || 12;
+      const whaleSellMult = parseFloat(document.getElementById("whaleSellMultInput")?.value || "2.0") || 2.0;
+
+      return {
+        strategy,
+        useTimeStop,
+        timeStopDays,
+        shortMaTriggerPct,
+        shortMaPeriod,
+        shortMaMode,
+        breakevenTriggerPct,
+        peakTrailTriggerPct,
+        peakDrawdownPct,
+        whaleTriggerPct,
+        whaleSellMult
+      };
+    }
+
+    function updateExitStrategyUI() {
+      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT'];
+      strategies.forEach(st => {
+        const btn = document.getElementById(`exitBtn-${st}`);
+        const box = document.getElementById(`exitParams-${st}`);
+        if (btn) {
+          if (st === currentExitStrategy) {
+            btn.className = "exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/50 text-white shadow transition";
+          } else {
+            btn.className = "exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-slate-500 text-slate-300 transition";
+          }
+        }
+        if (box) {
+          if (st === currentExitStrategy) box.classList.remove("hidden");
+          else box.classList.add("hidden");
+        }
+      });
+    }
+
+    function setExitStrategy(strategyName) {
+      currentExitStrategy = strategyName;
+      updateExitStrategyUI();
+      saveUserSettingsToStorage(false);
+      applyFiltersAndRender();
+    }
+
+    function onExitStrategyChanged() {
+      saveUserSettingsToStorage(false);
+      applyFiltersAndRender();
+    }
+
+    function toggleStrategyCompareBox() {
+      const el = document.getElementById("strategyCompareBox");
+      if (el) el.classList.toggle("hidden");
+    }
+
+    function renderStrategyComparisonSummary(filterOpts) {
+      const grid = document.getElementById("strategyCompareGrid");
+      const note = document.getElementById("strategyCompareNote");
+      if (!grid || !isPnlPoolActive() || rawAllLoadedStocks.length === 0) return;
+
+      const list = [
+        { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
+        { key: 'SHORT_MA_TRAIL', label: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA` },
+        { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
+        { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' }
+      ];
+
+      const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
+      if (note) {
+        note.textContent = useTimeStop
+          ? `已疊加 ${document.getElementById("timeStopDaysInput")?.value || 15} 天時間停損`
+          : "未疊加時間停損";
+      }
+
+      const results = list.map(item => {
+        const cfg = getExitStrategyConfig(item.key);
+        let totalTrades = 0;
+        let winSum = 0;
+        let lossSum = 0;
+        let winCnt = 0;
+        let closedCnt = 0;
+        let holdingCnt = 0;
+
+        rawAllLoadedStocks.forEach(s => {
+          const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
+          const rec = lc.activeOrTodayExit || lc.closedBreakdown;
+          if (!rec) return;
+          if (!checkStockMatchesPnlDateRange(s, rec)) return;
+
+          totalTrades++;
+          if (rec.isClosed) closedCnt++;
+          else holdingCnt++;
+
+          const money = Math.round(rec.profitPoints * 1000);
+          if (money > 0) { winSum += money; winCnt++; }
+          else if (money < 0) { lossSum += money; }
+        });
+
+        const net = winSum + lossSum;
+        const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
+        const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
+        return { ...item, totalTrades, closedCnt, holdingCnt, net, pf, winRate };
+      });
+
+      const bestNet = Math.max(...results.map(r => r.net));
+
+      grid.innerHTML = results.map(r => {
+        const isCur = r.key === currentExitStrategy;
+        const isBest = r.net === bestNet && r.totalTrades > 0;
+        const netColor = r.net > 0 ? "text-rose-400" : (r.net < 0 ? "text-emerald-400" : "text-slate-300");
+        const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
+        return `
+          <div onclick="setExitStrategy('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
+            <div class="flex items-center justify-between gap-1 text-[10px]">
+              <span class="font-bold text-slate-200 truncate">${r.label}</span>
+              ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
+            </div>
+            <div class="${netColor} font-bold text-xs mt-0.5">${formatMoneyDisplay(r.net)}</div>
+            <div class="text-[9.5px] text-slate-400 mt-0.5">
+              勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍 ｜ 抱${r.holdingCnt}/出${r.closedCnt}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
     function getCurrentFilterOptions() {
       const requireMa20Up = document.getElementById("chkMa20Up").checked;
       const requireSolidRedK = document.getElementById("chkSolidRedK").checked;
@@ -1461,6 +1759,22 @@
         lastBar.low = Math.min(lastBar.low, stock.todayLow, stock.todayPrice);
         if (stock.todayVol > 0) lastBar.vol = stock.todayVol;
         lastBar.ma20 = computeDynamicTodayMa20(bars.slice(0, -1), stock.todayPrice, stock.yestMa20);
+      }
+      for (let i = 0; i < bars.length; i++) {
+        let sum5 = 0;
+        const s5 = Math.max(0, i - 4);
+        for (let j = s5; j <= i; j++) sum5 += bars[j].close;
+        bars[i].ma5 = Number((sum5 / (i - s5 + 1)).toFixed(2));
+
+        let sum10 = 0;
+        const s10 = Math.max(0, i - 9);
+        for (let j = s10; j <= i; j++) sum10 += bars[j].close;
+        bars[i].ma10 = Number((sum10 / (i - s10 + 1)).toFixed(2));
+
+        let vSum5 = 0;
+        const vs5 = Math.max(0, i - 4);
+        for (let j = vs5; j <= i; j++) vSum5 += (bars[j].vol || 0);
+        bars[i].ma5Vol = vSum5 / (i - vs5 + 1);
       }
       return bars;
     }
@@ -2115,7 +2429,8 @@
     // 支援：
     // 1. 關鍵K後 1~10 日內未破低點之「跨日確認K買進」(如 4561 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
     // 2. 20MA 控盤跌破 20MA 首根為「破20MA關鍵K」，反彈若未站回 20MA 之上不得解除警報；後續收盤跌破該關鍵K低點即觸發「破K確認平倉」(如 1303 南亞 10/30 關鍵K -> 11/03 確認K平倉)
-    function evaluateStockTrackingLifecycle(stock, filterOpts) {
+    function evaluateStockTrackingLifecycle(stock, filterOpts, exitConfig = null) {
+      const cfg = exitConfig || getExitStrategyConfig();
       const bars = buildStockDailyBarsWithToday(stock);
       if (bars.length < 21) return { activeOrTodayExit: null, closedBreakdown: null };
 
@@ -2128,60 +2443,164 @@
         const prevBar = bars[i - 1];
         const curBar = bars[i];
 
-        // 1. 若已有持倉，先檢查初始停損或 20MA 控盤平倉/續抱狀態
+        // 1. 若已有持倉，先檢查停損 / 時間停損 / 出場策略 (A/B/C/D)
         if (activePos) {
+          activePos.maxCloseSinceEntry = Math.max(activePos.maxCloseSinceEntry, curBar.close);
+          activePos.maxHighSinceEntry = Math.max(activePos.maxHighSinceEntry, curBar.high);
+          const peakProfitPct = activePos.buyPrice > 0
+            ? ((activePos.maxCloseSinceEntry - activePos.buyPrice) / activePos.buyPrice) * 100
+            : 0;
+          const holdingDaysNow = i - activePos.buyIdx + 1;
+
           if (!activePos.ma20ControlArmed && curBar.ma20 > activePos.buyPrice) {
             activePos.ma20ControlArmed = true;
             activePos.ma20ArmedDate = curBar.date;
           }
 
-          if (!activePos.ma20ControlArmed) {
-            if (curBar.close < activePos.stopLossPrice) {
-              activePos.isClosed = true;
-              activePos.sellIdx = i;
-              activePos.sellDate = curBar.date;
-              activePos.sellPrice = curBar.close;
-              activePos.exitReason = "跌破初始停損(-2%)平倉";
-              latestFinishedPos = { ...activePos };
-              activePos = null;
-            }
-          } else {
-            if (activePos.breakdownIdx === -1) {
-              if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
-                activePos.breakdownIdx = i;
-                activePos.breakdownDate = curBar.date;
-                activePos.breakdownLow = curBar.low;
-                activePos.breakdownHigh = curBar.high;
-                activePos.lastBreakdownEvent = {
-                  keyIdx: i,
-                  keyDate: curBar.date,
-                  high: curBar.high,
-                  low: curBar.low,
-                  resolvedHoldIdx: -1,
-                  resolvedHoldDate: null,
-                  resolvedHoldClose: 0
-                };
-              }
-            } else {
-              if (curBar.close < activePos.breakdownLow) {
+          let closedThisBar = false;
+
+          // (1) 疊加時間停損：超過 N 天 20MA 仍未過買價且帳面虧損
+          if (cfg.useTimeStop && !activePos.ma20ControlArmed && holdingDaysNow >= cfg.timeStopDays && curBar.close < activePos.buyPrice) {
+            activePos.isClosed = true;
+            activePos.sellIdx = i;
+            activePos.sellDate = curBar.date;
+            activePos.sellPrice = curBar.close;
+            activePos.exitReason = `時間停損(${holdingDaysNow}天未過買價)`;
+            latestFinishedPos = { ...activePos };
+            activePos = null;
+            closedThisBar = true;
+          }
+
+          // (2) 策略 B：獲利達標切換短均線 (5MA / 10MA) 移動停利
+          if (!closedThisBar && cfg.strategy === 'SHORT_MA_TRAIL' && peakProfitPct >= cfg.shortMaTriggerPct) {
+            activePos.shortMaArmed = true;
+            const targetMa = cfg.shortMaPeriod === 5 ? curBar.ma5 : curBar.ma10;
+            if (cfg.shortMaMode === 'DIRECT') {
+              if (targetMa > 0 && curBar.close < targetMa) {
                 activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
-                activePos.exitReason = `破20MA關鍵K(${formatShortDateSlash(activePos.breakdownDate)})低點(${activePos.breakdownLow.toFixed(2)})確認平倉`;
+                activePos.exitReason = `獲利達${cfg.shortMaTriggerPct}%後跌破${cfg.shortMaPeriod}MA(${targetMa.toFixed(2)})停利`;
                 latestFinishedPos = { ...activePos };
                 activePos = null;
-              } else if (curBar.close > activePos.breakdownHigh && curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
-                // 必須收盤同時突破破線關鍵K高點「且重新站回 20MA 之上」才算真正解除破線危機（避免像 1303 南亞 11/02 仍在 20MA 之下卻誤解除 10/30 破線關鍵K）
-                if (activePos.lastBreakdownEvent) {
-                  activePos.lastBreakdownEvent.resolvedHoldIdx = i;
-                  activePos.lastBreakdownEvent.resolvedHoldDate = curBar.date;
-                  activePos.lastBreakdownEvent.resolvedHoldClose = curBar.close;
+                closedThisBar = true;
+              }
+            } else {
+              if (activePos.shortBdIdx === -1) {
+                if (targetMa > 0 && curBar.close < targetMa) {
+                  activePos.shortBdIdx = i;
+                  activePos.shortBdLow = curBar.low;
+                  activePos.shortBdHigh = curBar.high;
                 }
-                activePos.breakdownIdx = -1;
-                activePos.breakdownDate = null;
-                activePos.breakdownLow = 0;
-                activePos.breakdownHigh = 0;
+              } else {
+                if (curBar.close < activePos.shortBdLow) {
+                  activePos.isClosed = true;
+                  activePos.sellIdx = i;
+                  activePos.sellDate = curBar.date;
+                  activePos.sellPrice = curBar.close;
+                  activePos.exitReason = `跌破${cfg.shortMaPeriod}MA關鍵K低點(${activePos.shortBdLow.toFixed(2)})停利`;
+                  latestFinishedPos = { ...activePos };
+                  activePos = null;
+                  closedThisBar = true;
+                } else if (curBar.close > activePos.shortBdHigh && targetMa > 0 && curBar.close >= targetMa) {
+                  activePos.shortBdIdx = -1;
+                }
+              }
+            }
+          }
+
+          // (3) 策略 C：最高點回落移動停利 ＋ 保本防線
+          if (!closedThisBar && cfg.strategy === 'PEAK_TRAILING') {
+            if (peakProfitPct >= cfg.peakTrailTriggerPct && activePos.maxCloseSinceEntry > 0) {
+              const ddPct = ((activePos.maxCloseSinceEntry - curBar.close) / activePos.maxCloseSinceEntry) * 100;
+              if (ddPct >= cfg.peakDrawdownPct) {
+                activePos.isClosed = true;
+                activePos.sellIdx = i;
+                activePos.sellDate = curBar.date;
+                activePos.sellPrice = curBar.close;
+                activePos.exitReason = `高點(${activePos.maxCloseSinceEntry.toFixed(2)})回落${ddPct.toFixed(1)}%移動停利`;
+                latestFinishedPos = { ...activePos };
+                activePos = null;
+                closedThisBar = true;
+              }
+            }
+            if (!closedThisBar && peakProfitPct >= cfg.breakevenTriggerPct && curBar.close < activePos.buyPrice) {
+              activePos.isClosed = true;
+              activePos.sellIdx = i;
+              activePos.sellDate = curBar.date;
+              activePos.sellPrice = curBar.close;
+              activePos.exitReason = `曾賺${cfg.breakevenTriggerPct}%啟動保本停利`;
+              latestFinishedPos = { ...activePos };
+              activePos = null;
+              closedThisBar = true;
+            }
+          }
+
+          // (4) 策略 D：高檔獲利後出現爆量收黑K出貨訊號
+          if (!closedThisBar && cfg.strategy === 'WHALE_SELL_EXIT' && peakProfitPct >= cfg.whaleTriggerPct) {
+            const volMult = curBar.ma5Vol > 0 ? (curBar.vol / curBar.ma5Vol) : 1;
+            if (curBar.close < curBar.open && volMult >= cfg.whaleSellMult) {
+              activePos.isClosed = true;
+              activePos.sellIdx = i;
+              activePos.sellDate = curBar.date;
+              activePos.sellPrice = curBar.close;
+              activePos.exitReason = `高檔爆量(${volMult.toFixed(1)}倍5均)收黑K停利`;
+              latestFinishedPos = { ...activePos };
+              activePos = null;
+              closedThisBar = true;
+            }
+          }
+
+          // (5) 基礎防線：初始停損 (-2%) 或 20MA 破線確認平倉
+          if (!closedThisBar) {
+            if (!activePos.ma20ControlArmed) {
+              if (curBar.close < activePos.stopLossPrice) {
+                activePos.isClosed = true;
+                activePos.sellIdx = i;
+                activePos.sellDate = curBar.date;
+                activePos.sellPrice = curBar.close;
+                activePos.exitReason = "跌破初始停損(-2%)平倉";
+                latestFinishedPos = { ...activePos };
+                activePos = null;
+              }
+            } else {
+              if (activePos.breakdownIdx === -1) {
+                if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
+                  activePos.breakdownIdx = i;
+                  activePos.breakdownDate = curBar.date;
+                  activePos.breakdownLow = curBar.low;
+                  activePos.breakdownHigh = curBar.high;
+                  activePos.lastBreakdownEvent = {
+                    keyIdx: i,
+                    keyDate: curBar.date,
+                    high: curBar.high,
+                    low: curBar.low,
+                    resolvedHoldIdx: -1,
+                    resolvedHoldDate: null,
+                    resolvedHoldClose: 0
+                  };
+                }
+              } else {
+                if (curBar.close < activePos.breakdownLow) {
+                  activePos.isClosed = true;
+                  activePos.sellIdx = i;
+                  activePos.sellDate = curBar.date;
+                  activePos.sellPrice = curBar.close;
+                  activePos.exitReason = `破20MA關鍵K(${formatShortDateSlash(activePos.breakdownDate)})低點(${activePos.breakdownLow.toFixed(2)})確認平倉`;
+                  latestFinishedPos = { ...activePos };
+                  activePos = null;
+                } else if (curBar.close > activePos.breakdownHigh && curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
+                  if (activePos.lastBreakdownEvent) {
+                    activePos.lastBreakdownEvent.resolvedHoldIdx = i;
+                    activePos.lastBreakdownEvent.resolvedHoldDate = curBar.date;
+                    activePos.lastBreakdownEvent.resolvedHoldClose = curBar.close;
+                  }
+                  activePos.breakdownIdx = -1;
+                  activePos.breakdownDate = null;
+                  activePos.breakdownLow = 0;
+                  activePos.breakdownHigh = 0;
+                }
               }
             }
           }
@@ -2204,6 +2623,12 @@
                 buyIdx: i,
                 buyDate: curBar.date,
                 buyPrice: curBar.close,
+                maxCloseSinceEntry: curBar.close,
+                maxHighSinceEntry: curBar.high,
+                shortMaArmed: false,
+                shortBdIdx: -1,
+                shortBdLow: 0,
+                shortBdHigh: 0,
                 ma20ControlArmed: armedOnEntry,
                 ma20ArmedDate: armedOnEntry ? curBar.date : null,
                 breakdownIdx: -1,
@@ -2697,6 +3122,9 @@
       });
 
       updateTrackingPoolSummary(baseList);
+      if (isPnlPoolActive()) {
+        renderStrategyComparisonSummary(getCurrentFilterOptions());
+      }
 
       let list = baseList;
       if (isPnlPoolActive()) {
