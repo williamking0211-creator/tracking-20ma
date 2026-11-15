@@ -1638,7 +1638,14 @@
 
         rawAllLoadedStocks.forEach(s => {
           const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
-          const rec = lc.activeOrTodayExit || lc.closedBreakdown;
+          let rec = null;
+          if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
+            rec = lc.activeOrTodayExit;
+          } else if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
+            rec = lc.closedBreakdown;
+          } else if (allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
+            rec = s.directBreakdownInfo;
+          }
           if (!rec) return;
           if (!checkStockMatchesPnlDateRange(s, rec)) return;
 
