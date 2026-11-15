@@ -342,12 +342,12 @@
               </label>
             </div>
             <button type="button" onclick="toggleStrategyCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/35 transition">
-              📊 顯示/隱藏 4大策略總績效對比
+              📊 顯示/隱藏 5大策略總績效對比
             </button>
           </div>
 
-          <!-- 4 種出場策略按鈕 -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <!-- 5 種出場策略按鈕 -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
             <button type="button" onclick="setExitStrategy('DEFAULT_20MA')" id="exitBtn-DEFAULT_20MA"
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/40 text-white transition">
               <div class="font-bold text-[11px]">A. 原版 20MA 破線確認</div>
@@ -367,6 +367,11 @@
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-pink-500/50 text-slate-300 transition">
               <div class="font-bold text-[11px]">D. 高檔大戶賣出訊號</div>
               <div class="text-[10px] text-slate-400">獲利後爆量收黑K即出</div>
+            </button>
+            <button type="button" onclick="setExitStrategy('RR_LADDER')" id="exitBtn-RR_LADDER"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-emerald-500/50 text-slate-300 transition col-span-2 sm:col-span-1">
+              <div class="font-bold text-[11px]">E. 風險報酬比階梯控盤</div>
+              <div class="text-[10px] text-slate-400">1:1保本 → 1:3鎖2R奔跑</div>
             </button>
           </div>
 
@@ -434,13 +439,53 @@
             </label>
           </div>
 
+          <div id="exitParams-RR_LADDER" class="exit-params-box hidden bg-slate-900/80 border border-emerald-500/35 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
+            <label class="inline-flex items-center gap-1">
+              <span class="text-emerald-300 font-semibold">第一階 1:</span>
+              <input type="number" id="rrBreakevenRatioInput" value="1.0" min="0.5" max="5.0" step="0.5" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-300 font-mono font-bold" />
+              <span>保本，停損拉至進場價 +</span>
+              <input type="number" id="rrBreakevenBufferPctInput" value="0.5" min="0" max="5.0" step="0.1" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-200 font-mono font-bold" />
+              <span>%</span>
+            </label>
+            <label class="inline-flex items-center gap-1">
+              <span class="text-amber-300 font-semibold">第二階 1:</span>
+              <input type="number" id="rrTier2RatioInput" value="3.0" min="1.5" max="15.0" step="0.5" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
+              <span>後：</span>
+              <select id="rrTier2ActionSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-200 font-bold">
+                <option value="LOCK_R_AND_RUN" selected>鎖利停損並讓獲利奔跑</option>
+                <option value="FIXED_TP">直接達標停利平倉</option>
+              </select>
+            </label>
+            <label class="inline-flex items-center gap-1">
+              <span class="text-rose-300 font-semibold">停損拉至</span>
+              <input type="number" id="rrLockRatioInput" value="2.0" min="0.5" max="10.0" step="0.5" oninput="onExitStrategyChanged()"
+                     class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-rose-300 font-mono font-bold" />
+              <span>倍R</span>
+            </label>
+            <label class="inline-flex items-center gap-1">
+              <span class="text-sky-300 font-semibold">奔跑控盤：</span>
+              <select id="rrTrailMaSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-sky-300 font-bold">
+                <option value="20" selected>20MA</option>
+                <option value="10">10MA</option>
+                <option value="5">5MA</option>
+              </select>
+              <select id="rrMaConfirmModeSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-cyan-300 font-bold">
+                <option value="KEY_K" selected>＋ 確認K (破線關鍵K再破低)</option>
+                <option value="DIRECT">跌破均線即平倉</option>
+              </select>
+            </label>
+          </div>
+
           <!-- 4大策略全體總結算對比列 (續抱 + 已平倉) -->
           <div id="strategyCompareBox" class="bg-slate-900/95 border border-slate-800 rounded-lg p-2 space-y-1.5">
             <div class="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400">
-              <span>📊 <b class="text-slate-200">四大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
+              <span>📊 <b class="text-slate-200">五大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
               <span id="strategyCompareNote" class="font-mono text-indigo-300"></span>
             </div>
-            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] font-mono">
+            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[11px] font-mono">
             </div>
           </div>
         </div>
@@ -929,7 +974,14 @@
         peakTrailTriggerPct: document.getElementById("peakTrailTriggerPctInput")?.value || "15",
         peakDrawdownPct: document.getElementById("peakDrawdownPctInput")?.value || "8",
         whaleTriggerPct: document.getElementById("whaleTriggerPctInput")?.value || "12",
-        whaleSellMult: document.getElementById("whaleSellMultInput")?.value || "2.0"
+        whaleSellMult: document.getElementById("whaleSellMultInput")?.value || "2.0",
+        rrBreakevenRatio: document.getElementById("rrBreakevenRatioInput")?.value || "1.0",
+        rrBreakevenBufferPct: document.getElementById("rrBreakevenBufferPctInput")?.value || "0.5",
+        rrTier2Ratio: document.getElementById("rrTier2RatioInput")?.value || "3.0",
+        rrTier2Action: document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN",
+        rrLockRatio: document.getElementById("rrLockRatioInput")?.value || "2.0",
+        rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "20",
+        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K"
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       safeSetStorage("whale_bubble_mult_threshold", String(bubbleMultThreshold));
@@ -1002,7 +1054,28 @@
         if (s.whaleSellMult !== undefined && document.getElementById("whaleSellMultInput")) {
           document.getElementById("whaleSellMultInput").value = s.whaleSellMult;
         }
-        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT'].includes(s.exitStrategy)) {
+        if (s.rrBreakevenRatio !== undefined && document.getElementById("rrBreakevenRatioInput")) {
+          document.getElementById("rrBreakevenRatioInput").value = s.rrBreakevenRatio;
+        }
+        if (s.rrBreakevenBufferPct !== undefined && document.getElementById("rrBreakevenBufferPctInput")) {
+          document.getElementById("rrBreakevenBufferPctInput").value = s.rrBreakevenBufferPct;
+        }
+        if (s.rrTier2Ratio !== undefined && document.getElementById("rrTier2RatioInput")) {
+          document.getElementById("rrTier2RatioInput").value = s.rrTier2Ratio;
+        }
+        if (s.rrTier2Action && document.getElementById("rrTier2ActionSelect")) {
+          document.getElementById("rrTier2ActionSelect").value = s.rrTier2Action;
+        }
+        if (s.rrLockRatio !== undefined && document.getElementById("rrLockRatioInput")) {
+          document.getElementById("rrLockRatioInput").value = s.rrLockRatio;
+        }
+        if (s.rrTrailMa && document.getElementById("rrTrailMaSelect")) {
+          document.getElementById("rrTrailMaSelect").value = s.rrTrailMa;
+        }
+        if (s.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
+          document.getElementById("rrMaConfirmModeSelect").value = s.rrMaConfirmMode;
+        }
+        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER'].includes(s.exitStrategy)) {
           currentExitStrategy = s.exitStrategy;
         }
         if (s.currentFilter && ['ALL', 'BREAKOUT', 'CONSOLIDATE', 'TRACKING', 'BREAKDOWN'].includes(s.currentFilter)) {
@@ -1466,6 +1539,13 @@
       const peakDrawdownPct = parseFloat(document.getElementById("peakDrawdownPctInput")?.value || "8") || 8;
       const whaleTriggerPct = parseFloat(document.getElementById("whaleTriggerPctInput")?.value || "12") || 12;
       const whaleSellMult = parseFloat(document.getElementById("whaleSellMultInput")?.value || "2.0") || 2.0;
+      const rrBreakevenRatio = parseFloat(document.getElementById("rrBreakevenRatioInput")?.value || "1.0") || 1.0;
+      const rrBreakevenBufferPct = parseFloat(document.getElementById("rrBreakevenBufferPctInput")?.value || "0.5");
+      const rrTier2Ratio = parseFloat(document.getElementById("rrTier2RatioInput")?.value || "3.0") || 3.0;
+      const rrTier2Action = document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN";
+      const rrLockRatio = parseFloat(document.getElementById("rrLockRatioInput")?.value || "2.0") || 2.0;
+      const rrTrailMa = parseInt(document.getElementById("rrTrailMaSelect")?.value || "20", 10) || 20;
+      const rrMaConfirmMode = document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K";
 
       return {
         strategy,
@@ -1478,12 +1558,19 @@
         peakTrailTriggerPct,
         peakDrawdownPct,
         whaleTriggerPct,
-        whaleSellMult
+        whaleSellMult,
+        rrBreakevenRatio,
+        rrBreakevenBufferPct: isNaN(rrBreakevenBufferPct) ? 0.5 : rrBreakevenBufferPct,
+        rrTier2Ratio,
+        rrTier2Action,
+        rrLockRatio,
+        rrTrailMa,
+        rrMaConfirmMode
       };
     }
 
     function updateExitStrategyUI() {
-      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT'];
+      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER'];
       strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
         const box = document.getElementById(`exitParams-${st}`);
@@ -1527,7 +1614,8 @@
         { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
         { key: 'SHORT_MA_TRAIL', label: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA` },
         { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
-        { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' }
+        { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
+        { key: 'RR_LADDER', label: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}` }
       ];
 
       const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
@@ -2552,6 +2640,94 @@
             }
           }
 
+          // (4.5) 策略 E：風險報酬比階梯移動停利 (1:1保本 -> 1:3鎖定2R + 20/10/5MA+確認K奔跑)
+          if (!closedThisBar && cfg.strategy === 'RR_LADDER') {
+            const riskR = activePos.riskR > 0 ? activePos.riskR : Math.max(0.01, activePos.buyPrice * 0.03);
+            const curR = (curBar.close - activePos.buyPrice) / riskR;
+            const peakR = (activePos.maxCloseSinceEntry - activePos.buyPrice) / riskR;
+
+            // 第一階：超過 1:1 -> 停損上移至進場價上方一點點保本
+            if (peakR >= cfg.rrBreakevenRatio) {
+              const beFloor = Number((activePos.buyPrice * (1 + cfg.rrBreakevenBufferPct / 100)).toFixed(2));
+              if (beFloor > activePos.rrStopFloor) {
+                activePos.rrStopFloor = beFloor;
+                activePos.rrStage = Math.max(activePos.rrStage, 1);
+              }
+            }
+
+            // 第二階：超過 1:3 -> 直接停利 或 鎖住2倍R停利價並交給均線+確認K奔跑
+            if (peakR >= cfg.rrTier2Ratio) {
+              if (cfg.rrTier2Action === 'FIXED_TP') {
+                activePos.isClosed = true;
+                activePos.sellIdx = i;
+                activePos.sellDate = curBar.date;
+                activePos.sellPrice = curBar.close;
+                activePos.exitReason = `風報比達 1:${cfg.rrTier2Ratio} 直接停利出場`;
+                latestFinishedPos = { ...activePos };
+                activePos = null;
+                closedThisBar = true;
+              } else {
+                const lockFloor = Number((activePos.buyPrice + riskR * cfg.rrLockRatio).toFixed(2));
+                if (lockFloor > activePos.rrStopFloor) {
+                  activePos.rrStopFloor = lockFloor;
+                }
+                activePos.rrStage = 2;
+              }
+            }
+
+            // 檢查是否跌破階梯保本/鎖利停損底線
+            if (!closedThisBar && activePos.rrStage >= 1 && curBar.close < activePos.rrStopFloor) {
+              activePos.isClosed = true;
+              activePos.sellIdx = i;
+              activePos.sellDate = curBar.date;
+              activePos.sellPrice = curBar.close;
+              activePos.exitReason = activePos.rrStage === 2
+                ? `跌破${cfg.rrLockRatio}R鎖利停損(${activePos.rrStopFloor.toFixed(2)})`
+                : `跌破1:${cfg.rrBreakevenRatio}保本線(${activePos.rrStopFloor.toFixed(2)})`;
+              latestFinishedPos = { ...activePos };
+              activePos = null;
+              closedThisBar = true;
+            }
+
+            // 若處於第二階奔跑狀態，且使用者選擇以 5MA / 10MA (若選 20MA 則交由下方基礎 20MA 控盤) 控盤
+            if (!closedThisBar && activePos.rrStage === 2 && cfg.rrTrailMa !== 20) {
+              const trailMa = cfg.rrTrailMa === 5 ? curBar.ma5 : curBar.ma10;
+              if (cfg.rrMaConfirmMode === 'DIRECT') {
+                if (trailMa > 0 && curBar.close < trailMa) {
+                  activePos.isClosed = true;
+                  activePos.sellIdx = i;
+                  activePos.sellDate = curBar.date;
+                  activePos.sellPrice = curBar.close;
+                  activePos.exitReason = `1:${cfg.rrTier2Ratio}後跌破${cfg.rrTrailMa}MA(${trailMa.toFixed(2)})停利`;
+                  latestFinishedPos = { ...activePos };
+                  activePos = null;
+                  closedThisBar = true;
+                }
+              } else {
+                if (activePos.shortBdIdx === -1) {
+                  if (trailMa > 0 && curBar.close < trailMa) {
+                    activePos.shortBdIdx = i;
+                    activePos.shortBdLow = curBar.low;
+                    activePos.shortBdHigh = curBar.high;
+                  }
+                } else {
+                  if (curBar.close < activePos.shortBdLow) {
+                    activePos.isClosed = true;
+                    activePos.sellIdx = i;
+                    activePos.sellDate = curBar.date;
+                    activePos.sellPrice = curBar.close;
+                    activePos.exitReason = `1:${cfg.rrTier2Ratio}後破${cfg.rrTrailMa}MA確認K(${activePos.shortBdLow.toFixed(2)})停利`;
+                    latestFinishedPos = { ...activePos };
+                    activePos = null;
+                    closedThisBar = true;
+                  } else if (curBar.close > activePos.shortBdHigh && trailMa > 0 && curBar.close >= trailMa) {
+                    activePos.shortBdIdx = -1;
+                  }
+                }
+              }
+            }
+          }
+
           // (5) 基礎防線：初始停損 (-2%) 或 20MA 破線確認平倉
           if (!closedThisBar) {
             if (!activePos.ma20ControlArmed) {
@@ -2565,6 +2741,18 @@
                 activePos = null;
               }
             } else {
+              if (cfg.strategy === 'RR_LADDER' && activePos.rrStage === 2 && cfg.rrTrailMa === 20 && cfg.rrMaConfirmMode === 'DIRECT') {
+                if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
+                  activePos.isClosed = true;
+                  activePos.sellIdx = i;
+                  activePos.sellDate = curBar.date;
+                  activePos.sellPrice = curBar.close;
+                  activePos.exitReason = `1:${cfg.rrTier2Ratio}後跌破20MA(${curBar.ma20.toFixed(2)})停利`;
+                  latestFinishedPos = { ...activePos };
+                  activePos = null;
+                  continue;
+                }
+              }
               if (activePos.breakdownIdx === -1) {
                 if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
                   activePos.breakdownIdx = i;
@@ -2623,6 +2811,9 @@
                 buyIdx: i,
                 buyDate: curBar.date,
                 buyPrice: curBar.close,
+                riskR: Math.max(0.01, Number((curBar.close - pendingKeyK.stopLossPrice).toFixed(2))),
+                rrStopFloor: pendingKeyK.stopLossPrice,
+                rrStage: 0,
                 maxCloseSinceEntry: curBar.close,
                 maxHighSinceEntry: curBar.high,
                 shortMaArmed: false,
