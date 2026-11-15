@@ -1856,8 +1856,8 @@
 
     // 支援跨日確認K (如 4561 在 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
     // 尋找最近 10 個交易日內尚未破底、且在今日之前尚未被確認過的「有效突破20MA關鍵K」
-    function resolveCandidateKeyKForToday(stock, filterOpts = null) {
-      const bars = buildStockDailyBarsWithToday(stock);
+    function resolveCandidateKeyKForToday(stock, filterOpts = null, overrideBars = null) {
+      const bars = overrideBars ? overrideBars.map(b => ({ ...b })) : buildStockDailyBarsWithToday(stock);
       if (bars.length < 3) return null;
       const lastIdx = bars.length - 1;
       const startSearchIdx = Math.max(1, lastIdx - 10);
@@ -2554,9 +2554,56 @@
         evaluateWhaleBubbleComparison(bars5m, '5m');
         enrichConsecutiveStreakAvg(bars5m);
 
+        for (let i = 0; i < bars5m.length; i++) {
+          let s5 = 0; const st5 = Math.max(0, i - 4);
+          for (let j = st5; j <= i; j++) s5 += bars5m[j].close;
+          bars5m[i].ma5 = Number((s5 / (i - st5 + 1)).toFixed(2));
+          let s10 = 0; const st10 = Math.max(0, i - 9);
+          for (let j = st10; j <= i; j++) s10 += bars5m[j].close;
+          bars5m[i].ma10 = Number((s10 / (i - st10 + 1)).toFixed(2));
+        }
+
         if (bars5m.length >= 20) bars5m[bars5m.length - 20].isTodayDeduct = true;
         if (bars5m.length >= 19) bars5m[bars5m.length - 19].isTomorrowDeduct = true;
         if (bars5m.length >= 1) bars5m[bars5m.length - 1].isToday = true;
+
+        // 5分K 比照日K完全相同邏輯：執行關鍵K、確認K買進與動態出場生命週期標示
+        const filterOpts5m = getCurrentFilterOptions();
+        const lc5m = evaluateStockTrackingLifecycle({ code, name: code }, filterOpts5m, null, bars5m);
+        const cand5m = resolveCandidateKeyKForToday({ code, name: code }, null, bars5m);
+        const t5m = lc5m.activeOrTodayExit || lc5m.closedBreakdown || null;
+        chartState.track5m = t5m;
+        chartState.cand5m = cand5m;
+
+        if (t5m) {
+          if (Array.isArray(t5m.closedTradesHistory)) {
+            t5m.closedTradesHistory.forEach(ht => {
+              if (bars5m[ht.keyKIdx]) bars5m[ht.keyKIdx].isKeyK = true;
+              if (bars5m[ht.buyIdx]) bars5m[ht.buyIdx].isTrackBuyK = true;
+              if (ht.sellIdx !== -1 && bars5m[ht.sellIdx]) {
+                bars5m[ht.sellIdx].isTrackSellK = true;
+                bars5m[ht.sellIdx].closedHoldingDays = ht.holdingDays;
+              }
+            });
+          }
+          if (bars5m[t5m.keyKIdx]) bars5m[t5m.keyKIdx].isKeyK = true;
+          if (bars5m[t5m.buyIdx]) bars5m[t5m.buyIdx].isTrackBuyK = true;
+          if (t5m.lastBreakdownEvent) {
+            if (bars5m[t5m.lastBreakdownEvent.keyIdx]) bars5m[t5m.lastBreakdownEvent.keyIdx].isTrackBreakdown20MaK = true;
+            if (t5m.lastBreakdownEvent.resolvedHoldIdx !== -1 && bars5m[t5m.lastBreakdownEvent.resolvedHoldIdx]) {
+              bars5m[t5m.lastBreakdownEvent.resolvedHoldIdx].isTrackConfirmHoldK = true;
+            }
+          }
+          if (t5m.isClosed && t5m.sellIdx !== -1 && bars5m[t5m.sellIdx]) {
+            bars5m[t5m.sellIdx].isTrackSellK = true;
+            bars5m[t5m.sellIdx].closedHoldingDays = t5m.holdingDays;
+          }
+        } else if (cand5m && bars5m[cand5m.keyKIdx]) {
+          bars5m[cand5m.keyKIdx].isKeyK = true;
+          if (cand5m.status === "BREAKOUT" && bars5m.length > 0) {
+            bars5m[bars5m.length - 1].isTrackBuyK = true;
+          }
+        }
 
         chartState.bars5m = bars5m;
         if (chartState.timeframe === '5m') {
@@ -2643,14 +2690,15 @@
     // 支援：
     // 1. 關鍵K後 1~10 日內未破低點之「跨日確認K買進」(如 4561 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
     // 2. 20MA 控盤跌破 20MA 首根為「破20MA關鍵K」，反彈若未站回 20MA 之上不得解除警報；後續收盤跌破該關鍵K低點即觸發「破K確認平倉」(如 1303 南亞 10/30 關鍵K -> 11/03 確認K平倉)
-    function evaluateStockTrackingLifecycle(stock, filterOpts, exitConfig = null) {
+    function evaluateStockTrackingLifecycle(stock, filterOpts, exitConfig = null, overrideBars = null) {
       const cfg = exitConfig || getExitStrategyConfig();
-      const bars = buildStockDailyBarsWithToday(stock);
+      const bars = overrideBars ? overrideBars.map(b => ({ ...b })) : buildStockDailyBarsWithToday(stock);
       if (bars.length < 21) return { activeOrTodayExit: null, closedBreakdown: null };
 
       const lastIdx = bars.length - 1;
       let activePos = null;
       let latestFinishedPos = null;
+      const closedTradesHistory = [];
       let pendingKeyK = null;
 
       for (let i = 1; i < bars.length; i++) {
@@ -2680,7 +2728,11 @@
             activePos.sellDate = curBar.date;
             activePos.sellPrice = curBar.close;
             activePos.exitReason = `時間停損(${holdingDaysNow}天未過買價)`;
+            if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
             latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
             activePos = null;
             closedThisBar = true;
           }
@@ -2698,7 +2750,11 @@
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
                 activePos.exitReason = `獲利達${cfg.shortMaTriggerPct}%後跌破${cfg.shortMaPeriod}MA(${targetMa.toFixed(2)})停利`;
-                latestFinishedPos = { ...activePos };
+                if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
                 closedThisBar = true;
               }
@@ -2716,7 +2772,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `跌破${cfg.shortMaPeriod}MA關鍵K低點(${activePos.shortBdLow.toFixed(2)})停利`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   closedThisBar = true;
                 } else if (curBar.close > activePos.shortBdHigh && targetMa > 0 && curBar.close >= targetMa) {
@@ -2743,7 +2803,11 @@
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
                 activePos.exitReason = `高點(${activePos.maxCloseSinceEntry.toFixed(2)})回落${ddPct.toFixed(1)}%移動停利`;
-                latestFinishedPos = { ...activePos };
+                if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
                 closedThisBar = true;
               }
@@ -2754,7 +2818,11 @@
               activePos.sellDate = curBar.date;
               activePos.sellPrice = curBar.close;
               activePos.exitReason = `曾賺${cfg.breakevenTriggerPct}%啟動保本停利`;
-              latestFinishedPos = { ...activePos };
+              if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
               activePos = null;
               closedThisBar = true;
             }
@@ -2769,7 +2837,11 @@
               activePos.sellDate = curBar.date;
               activePos.sellPrice = curBar.close;
               activePos.exitReason = `高檔爆量(${volMult.toFixed(1)}倍5均)收黑K停利`;
-              latestFinishedPos = { ...activePos };
+              if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
               activePos = null;
               closedThisBar = true;
             }
@@ -2798,7 +2870,11 @@
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
                 activePos.exitReason = `風報比達 1:${cfg.rrTier2Ratio} 直接停利出場`;
-                latestFinishedPos = { ...activePos };
+                if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
                 closedThisBar = true;
               } else {
@@ -2827,7 +2903,11 @@
               activePos.exitReason = activePos.rrStage === 2
                 ? `跌破${cfg.rrLockRatio}R鎖利停損(${activePos.rrStopFloor.toFixed(2)})`
                 : `跌破1:${cfg.rrBreakevenRatio}保本線(${activePos.rrStopFloor.toFixed(2)})`;
-              latestFinishedPos = { ...activePos };
+              if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
               activePos = null;
               closedThisBar = true;
             }
@@ -2846,7 +2926,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `1:${cfg.rrTier2Ratio}後跌破${cfg.rrTrailMa}MA(${trailMa.toFixed(2)})停利`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   closedThisBar = true;
                 }
@@ -2864,7 +2948,11 @@
                     activePos.sellDate = curBar.date;
                     activePos.sellPrice = curBar.close;
                     activePos.exitReason = `1:${cfg.rrTier2Ratio}後破${cfg.rrTrailMa}MA確認K(${activePos.shortBdLow.toFixed(2)})停利`;
-                    latestFinishedPos = { ...activePos };
+                    if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                     activePos = null;
                     closedThisBar = true;
                   } else if (curBar.close > activePos.shortBdHigh && trailMa > 0 && curBar.close >= trailMa) {
@@ -2891,7 +2979,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `AI判定跌破即出：破${maName}(${maVal.toFixed(2)})停利`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   return true;
                 }
@@ -2903,7 +2995,11 @@
                     activePos.sellDate = curBar.date;
                     activePos.sellPrice = curBar.close;
                     activePos.exitReason = `AI判定需確認K：破${maName}關鍵K低(${activePos.shortBdLow.toFixed(2)})停利`;
-                    latestFinishedPos = { ...activePos };
+                    if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                     activePos = null;
                     return true;
                   } else if (curBar.close > activePos.shortBdHigh) {
@@ -2929,7 +3025,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `AI高波動股回落7%鎖利(${trailP.toFixed(2)})`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   closedThisBar = true;
                 }
@@ -2951,7 +3051,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `AI趨勢股破1:1保本線(${activePos.rrStopFloor.toFixed(2)})`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   closedThisBar = true;
                 }
@@ -2983,7 +3087,11 @@
                   activePos.exitReason = activePos.rrStage === 2
                     ? `AI穩健股破2R鎖利(${activePos.rrStopFloor.toFixed(2)})`
                     : `AI穩健股破1:1保本(${activePos.rrStopFloor.toFixed(2)})`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   closedThisBar = true;
                 }
@@ -2995,7 +3103,11 @@
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
                 activePos.exitReason = `AI判定跌破即出：破20MA(${curBar.ma20.toFixed(2)})停利`;
-                latestFinishedPos = { ...activePos };
+                if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
                 closedThisBar = true;
               }
@@ -3011,7 +3123,11 @@
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
                 activePos.exitReason = "跌破初始停損(-2%)平倉";
-                latestFinishedPos = { ...activePos };
+                if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
               }
             } else {
@@ -3023,7 +3139,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `1:${cfg.rrTier2Ratio}後跌破20MA(${curBar.ma20.toFixed(2)})停利`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                   continue;
                 }
@@ -3051,7 +3171,11 @@
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
                   activePos.exitReason = `破20MA關鍵K(${formatShortDateSlash(activePos.breakdownDate)})低點(${activePos.breakdownLow.toFixed(2)})確認平倉`;
-                  latestFinishedPos = { ...activePos };
+                  if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                   activePos = null;
                 } else if (curBar.close > activePos.breakdownHigh && curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
                   if (activePos.lastBreakdownEvent) {
@@ -3188,6 +3312,7 @@
         return {
           activeOrTodayExit: {
             ...activePos,
+            closedTradesHistory,
             currentPrice: latestClose,
             currentMa5: bars[lastIdx].ma5 || latestClose,
             currentMa10: bars[lastIdx].ma10 || latestClose,
@@ -3207,6 +3332,7 @@
         const profitPct = latestFinishedPos.buyPrice > 0 ? Number((((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice) / latestFinishedPos.buyPrice) * 100).toFixed(2)) : 0;
         const closedRecord = {
           ...latestFinishedPos,
+          closedTradesHistory,
           currentPrice: latestClose,
           currentMa5: bars[lastIdx].ma5 || latestClose,
           currentMa10: bars[lastIdx].ma10 || latestClose,
@@ -4181,6 +4307,16 @@
 
       if (showTrackingMode && activeOrClosedTrack) {
         const t = activeOrClosedTrack;
+        if (Array.isArray(t.closedTradesHistory)) {
+          t.closedTradesHistory.forEach(ht => {
+            if (bars[ht.keyKIdx]) bars[ht.keyKIdx].isKeyK = true;
+            if (!ht.isDirectKeyBreakdown && bars[ht.buyIdx]) bars[ht.buyIdx].isTrackBuyK = true;
+            if (ht.sellIdx !== -1 && bars[ht.sellIdx]) {
+              bars[ht.sellIdx].isTrackSellK = true;
+              bars[ht.sellIdx].closedHoldingDays = ht.holdingDays;
+            }
+          });
+        }
         if (bars[t.keyKIdx]) bars[t.keyKIdx].isKeyK = true;
         if (!t.isDirectKeyBreakdown && bars[t.buyIdx]) bars[t.buyIdx].isTrackBuyK = true;
         if (t.lastBreakdownEvent && !t.isDirectKeyBreakdown) {
@@ -4567,29 +4703,34 @@
       const hasNewerKeyK = stock.isFirstDayBreak20Ma && (!stock.closedBreakdownInfo || stock.keyKIdx > stock.closedBreakdownInfo.sellIdx);
       const activeOrClosedTrack = stock.trackingInfo || ((currentFilter === "BREAKDOWN" || !hasNewerKeyK) ? (stock.closedBreakdownInfo || stock.directBreakdownInfo) : null);
       const showTrackingMode = Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
-      const tInfo = showTrackingMode ? activeOrClosedTrack : null;
-      const shouldShowYellowStop = tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (stock.isFirstDayBreak20Ma && stock.candidateStopLossPrice > 0);
-      const yellowStopVal = tInfo ? tInfo.stopLossPrice : stock.candidateStopLossPrice;
+      const is5mTf = chartState.timeframe === '5m';
+      const tInfo = is5mTf ? (chartState.track5m || null) : (showTrackingMode ? activeOrClosedTrack : null);
+      const candInfo = is5mTf ? (chartState.cand5m || null) : null;
+      const hasCandKey = is5mTf ? !!candInfo : stock.isFirstDayBreak20Ma;
+      const candHighVal = is5mTf ? (candInfo ? candInfo.keyHigh : 0) : stock.yestHigh;
+      const candLowVal = is5mTf ? (candInfo ? candInfo.keyLow : 0) : stock.yestLow;
+      const candStopVal = is5mTf ? (candInfo ? candInfo.stopLossPrice : 0) : stock.candidateStopLossPrice;
+
+      const shouldShowYellowStop = tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (hasCandKey && candStopVal > 0);
+      const yellowStopVal = tInfo ? tInfo.stopLossPrice : candStopVal;
 
       const extraRefPrices = [];
-      if (chartState.timeframe === '1d') {
-        if (!tInfo && stock.isFirstDayBreak20Ma) {
-          extraRefPrices.push(stock.yestHigh, stock.yestLow);
-        } else if (tInfo) {
-          extraRefPrices.push(tInfo.buyPrice);
-          if (tInfo.lastBreakdownEvent) {
-            extraRefPrices.push(tInfo.lastBreakdownEvent.high, tInfo.lastBreakdownEvent.low);
-          }
-          if (tInfo.shortBdIdx !== -1 && tInfo.shortBdLow > 0 && tInfo.shortBdHigh > 0) {
-            extraRefPrices.push(tInfo.shortBdHigh, tInfo.shortBdLow);
-          }
-          if (tInfo.dynamicStopPrice > 0) {
-            extraRefPrices.push(tInfo.dynamicStopPrice);
-          }
+      if (!tInfo && hasCandKey) {
+        extraRefPrices.push(candHighVal, candLowVal);
+      } else if (tInfo) {
+        extraRefPrices.push(tInfo.buyPrice);
+        if (tInfo.lastBreakdownEvent) {
+          extraRefPrices.push(tInfo.lastBreakdownEvent.high, tInfo.lastBreakdownEvent.low);
         }
-        if (shouldShowYellowStop) {
-          extraRefPrices.push(yellowStopVal);
+        if (tInfo.shortBdIdx !== -1 && tInfo.shortBdLow > 0 && tInfo.shortBdHigh > 0) {
+          extraRefPrices.push(tInfo.shortBdHigh, tInfo.shortBdLow);
         }
+        if (tInfo.dynamicStopPrice > 0) {
+          extraRefPrices.push(tInfo.dynamicStopPrice);
+        }
+      }
+      if (shouldShowYellowStop) {
+        extraRefPrices.push(yellowStopVal);
       }
 
       const allPrices = [
@@ -4635,10 +4776,10 @@
         ctx.fillText(val.toFixed(2), width - padRight + 6, y + 4);
       }
 
-      if (chartState.timeframe === '1d') {
-        if (!tInfo && stock.isFirstDayBreak20Ma) {
-          drawHorizontalRefLine(ctx, stock.yestHigh, priceToY(stock.yestHigh), "#fb7185", "關鍵高", padLeft, width - padRight);
-          drawHorizontalRefLine(ctx, stock.yestLow, priceToY(stock.yestLow), "#34d399", "關鍵低", padLeft, width - padRight);
+      if (true) {
+        if (!tInfo && hasCandKey) {
+          drawHorizontalRefLine(ctx, candHighVal, priceToY(candHighVal), "#fb7185", "關鍵高", padLeft, width - padRight);
+          drawHorizontalRefLine(ctx, candLowVal, priceToY(candLowVal), "#34d399", "關鍵低", padLeft, width - padRight);
         } else if (tInfo) {
           if (tInfo.buyPrice > 0 && !tInfo.isDirectKeyBreakdown) {
             drawHorizontalRefLine(ctx, tInfo.buyPrice, priceToY(tInfo.buyPrice), "#38bdf8", "買價", padLeft, width - padRight, [2, 3], 1.2);
@@ -4711,15 +4852,13 @@
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
-          if (chartState.timeframe === '1d') {
-            ctx.fillStyle = "#fbbf24";
-            ctx.font = "bold 9.5px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("★突破關鍵K", cx, yLow + 13);
-          }
+          ctx.fillStyle = "#fbbf24";
+          ctx.font = "bold 9.5px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("★突破關鍵K", cx, yLow + 13);
         }
 
-        if (chartState.timeframe === '1d') {
+        if (true) {
           if (b.isTrackBuyK) {
             ctx.save();
             ctx.fillStyle = "#38bdf8";
@@ -4838,7 +4977,7 @@
         }
       }
 
-      if (chartState.timeframe === '1d' && shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
+      if (shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
         const shortMaColor = showShortMaPeriod === 5 ? "#e879f9" : "#22d3ee";
         ctx.save();
         ctx.strokeStyle = shortMaColor;
