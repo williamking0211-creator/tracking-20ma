@@ -1632,7 +1632,9 @@
         let lossSum = 0;
         let winCnt = 0;
         let closedCnt = 0;
+        let closedNet = 0;
         let holdingCnt = 0;
+        let holdingNet = 0;
 
         rawAllLoadedStocks.forEach(s => {
           const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
@@ -1640,11 +1642,16 @@
           if (!rec) return;
           if (!checkStockMatchesPnlDateRange(s, rec)) return;
 
-          totalTrades++;
-          if (rec.isClosed) closedCnt++;
-          else holdingCnt++;
-
           const money = Math.round(rec.profitPoints * 1000);
+          totalTrades++;
+          if (rec.isClosed) {
+            closedCnt++;
+            closedNet += money;
+          } else {
+            holdingCnt++;
+            holdingNet += money;
+          }
+
           if (money > 0) { winSum += money; winCnt++; }
           else if (money < 0) { lossSum += money; }
         });
@@ -1652,7 +1659,7 @@
         const net = winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
-        return { ...item, totalTrades, closedCnt, holdingCnt, net, pf, winRate };
+        return { ...item, totalTrades, closedCnt, closedNet, holdingCnt, holdingNet, net, pf, winRate };
       });
 
       const bestNet = Math.max(...results.map(r => r.net));
@@ -1661,6 +1668,8 @@
         const isCur = r.key === currentExitStrategy;
         const isBest = r.net === bestNet && r.totalTrades > 0;
         const netColor = r.net > 0 ? "text-rose-400" : (r.net < 0 ? "text-emerald-400" : "text-slate-300");
+        const holdColor = r.holdingNet > 0 ? "text-cyan-300" : (r.holdingNet < 0 ? "text-emerald-400" : "text-slate-300");
+        const closeColor = r.closedNet > 0 ? "text-rose-300" : (r.closedNet < 0 ? "text-emerald-400" : "text-slate-300");
         const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
         return `
           <div onclick="setExitStrategy('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
@@ -1668,9 +1677,13 @@
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
             </div>
-            <div class="${netColor} font-bold text-xs mt-0.5">${formatMoneyDisplay(r.net)}</div>
-            <div class="text-[9.5px] text-slate-400 mt-0.5">
-              勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍 ｜ 抱${r.holdingCnt}/出${r.closedCnt}
+            <div class="${netColor} font-bold text-xs mt-0.5">合計 ${formatMoneyDisplay(r.net)}</div>
+            <div class="text-[9.5px] mt-0.5 space-y-0.5 border-t border-slate-800/80 pt-0.5">
+              <div class="flex justify-between gap-1"><span class="text-slate-400">續抱(${r.holdingCnt}檔):</span><b class="${holdColor}">${formatMoneyDisplay(r.holdingNet)}</b></div>
+              <div class="flex justify-between gap-1"><span class="text-slate-400">平倉(${r.closedCnt}檔):</span><b class="${closeColor}">${formatMoneyDisplay(r.closedNet)}</b></div>
+            </div>
+            <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60">
+              勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
             </div>
           </div>
         `;
