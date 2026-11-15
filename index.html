@@ -4193,6 +4193,30 @@
         if (t.isClosed && t.sellIdx !== -1 && bars[t.sellIdx]) {
           bars[t.sellIdx].isTrackSellK = true;
           bars[t.sellIdx].closedHoldingDays = t.holdingDays;
+
+          // 若該股早已於更早期平倉 (如 7799 於 09/24 平倉)，仍掃描平倉日之後是否有新的 20MA 突破關鍵K與確認K (如 11/11 -> 11/12)
+          const postScanFrom = Math.max(1, t.sellIdx + 1);
+          let postKey = -1, postConfirm = -1;
+          for (let k = postScanFrom; k < bars.length; k++) {
+            const pB = bars[k - 1], kB = bars[k];
+            if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
+              let brokenBeforeConfirm = false;
+              let cIdx = -1;
+              for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
+                if (bars[c].close < kB.low) { brokenBeforeConfirm = true; break; }
+                if (bars[c].close > kB.high) { cIdx = c; break; }
+              }
+              if (!brokenBeforeConfirm) {
+                postKey = k;
+                postConfirm = cIdx;
+                break;
+              }
+            }
+          }
+          if (postKey !== -1) {
+            bars[postKey].isKeyK = true;
+            if (postConfirm !== -1) bars[postConfirm].isTrackBuyK = true;
+          }
         }
       }
 
@@ -4656,7 +4680,7 @@
       });
 
       let showShortMaPeriod = 0;
-      if (tInfo && (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10)) {
+      if (tInfo && !tInfo.isClosed && (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10)) {
         showShortMaPeriod = tInfo.activeControlMa;
       }
 
@@ -5005,7 +5029,7 @@
       let maHtml = "";
       const hudStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
       const hudTrack = hudStock ? (hudStock.trackingInfo || hudStock.closedBreakdownInfo) : null;
-      const hudShortMa = (hudTrack && (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10)) ? hudTrack.activeControlMa : 0;
+      const hudShortMa = (hudTrack && !hudTrack.isClosed && (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10)) ? hudTrack.activeControlMa : 0;
       if (hudShortMa === 5 && bar.ma5 > 0) {
         maHtml = `<span class="text-fuchsia-300 font-bold">5MA:${bar.ma5.toFixed(2)}</span>`;
       } else if (hudShortMa === 10 && bar.ma10 > 0) {
