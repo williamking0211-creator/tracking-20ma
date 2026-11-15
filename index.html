@@ -333,16 +333,21 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class="font-bold text-indigo-300">🎯 出場策略切換器 (即時重算損益)：</span>
-              <label class="inline-flex items-center gap-1 cursor-pointer select-none bg-slate-900 border border-fuchsia-500/40 px-2 py-0.5 rounded text-[11px] text-fuchsia-200" title="勾選後，各出場策略先形成出場關鍵K，後續收盤跌破該K低點才確認出場">
-                <input type="checkbox" id="chkExitConfirmK" onchange="onExitStrategyChanged()" class="rounded bg-slate-800 border-slate-600 text-fuchsia-500 focus:ring-0" />
-                <span>所有出場需確認K</span>
-              </label>
               <label class="inline-flex items-center gap-1 cursor-pointer select-none bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-amber-300" title="買進超過設定天數且 20MA 仍未過買價、帳面虧損時提前停損">
                 <input type="checkbox" id="chkTimeStop" onchange="onExitStrategyChanged()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
                 <span>疊加時間停損</span>
                 <input type="number" id="timeStopDaysInput" value="15" min="3" max="45" step="1" onclick="event.stopPropagation()" oninput="onExitStrategyChanged()"
                        class="w-8 bg-slate-950 border border-slate-700 rounded px-1 text-center text-amber-300 font-mono font-bold text-[11px]" />
                 <span>天</span>
+              </label>
+              <label class="inline-flex items-center gap-1 select-none bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-cyan-300">
+                <span>出場確認K：</span>
+                <select id="globalExitConfirmMode" onchange="onExitStrategyChanged()"
+                        class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-cyan-300 font-semibold text-[11px] focus:outline-none">
+                  <option value="AUTO" selected>依各策略/AI自動</option>
+                  <option value="FORCE_KEY_K">一律+確認K (破關鍵低才出)</option>
+                  <option value="FORCE_DIRECT">一律跌破即出 (不需確認K)</option>
+                </select>
               </label>
             </div>
             <button type="button" onclick="toggleStrategyCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/35 transition">
@@ -1044,6 +1049,7 @@
         pnlEndDate: document.getElementById("pnlEndDateInput")?.value || "",
         exitStrategy: currentExitStrategy,
         chkTimeStop: document.getElementById("chkTimeStop")?.checked || false,
+        globalExitConfirmMode: document.getElementById("globalExitConfirmMode")?.value || "AUTO",
         timeStopDays: document.getElementById("timeStopDaysInput")?.value || "15",
         shortMaTriggerPct: document.getElementById("shortMaTriggerPctInput")?.value || "15",
         shortMaPeriod: document.getElementById("shortMaPeriodSelect")?.value || "10",
@@ -1059,8 +1065,7 @@
         rrTier2Action: document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN",
         rrLockRatio: document.getElementById("rrLockRatioInput")?.value || "2.0",
         rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "20",
-        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K",
-        exitConfirmK: document.getElementById("chkExitConfirmK")?.checked || false
+        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K"
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       safeSetStorage("whale_bubble_mult_threshold", String(bubbleMultThreshold));
@@ -1105,6 +1110,9 @@
         }
         if (typeof s.chkTimeStop === "boolean" && document.getElementById("chkTimeStop")) {
           document.getElementById("chkTimeStop").checked = s.chkTimeStop;
+        }
+        if (s.globalExitConfirmMode && document.getElementById("globalExitConfirmMode")) {
+          document.getElementById("globalExitConfirmMode").value = s.globalExitConfirmMode;
         }
         if (s.timeStopDays !== undefined && document.getElementById("timeStopDaysInput")) {
           document.getElementById("timeStopDaysInput").value = s.timeStopDays;
@@ -1151,7 +1159,6 @@
         if (s.rrTrailMa && document.getElementById("rrTrailMaSelect")) {
           document.getElementById("rrTrailMaSelect").value = s.rrTrailMa;
         }
-        if (document.getElementById("chkExitConfirmK")) document.getElementById("chkExitConfirmK").checked = !!s.exitConfirmK;
         if (s.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
           document.getElementById("rrMaConfirmModeSelect").value = s.rrMaConfirmMode;
         }
@@ -1626,10 +1633,11 @@
       const rrLockRatio = parseFloat(document.getElementById("rrLockRatioInput")?.value || "2.0") || 2.0;
       const rrTrailMa = parseInt(document.getElementById("rrTrailMaSelect")?.value || "20", 10) || 20;
       const rrMaConfirmMode = document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K";
-      const requireExitConfirmK = document.getElementById("chkExitConfirmK")?.checked || false;
 
+      const globalConfirmMode = document.getElementById("globalExitConfirmMode")?.value || "AUTO";
       return {
         strategy,
+        globalConfirmMode,
         useTimeStop,
         timeStopDays,
         shortMaTriggerPct,
@@ -1646,8 +1654,7 @@
         rrTier2Action,
         rrLockRatio,
         rrTrailMa,
-        rrMaConfirmMode,
-        requireExitConfirmK
+        rrMaConfirmMode
       };
     }
 
@@ -1857,6 +1864,7 @@
 
       let matchedKeyIdx = -1;
       for (let k = startSearchIdx; k <= lastIdx; k++) {
+        if (matchedKeyIdx !== -1) break;
         const prevB = bars[k - 1];
         const keyB = bars[k];
         const isFirstBreak = prevB.ma20 > 0 && keyB.ma20 > 0 &&
@@ -1868,7 +1876,7 @@
 
         if (k === lastIdx) {
           matchedKeyIdx = k;
-          continue;
+          break;
         }
 
         let brokenOrConfirmedBeforeToday = false;
@@ -1878,8 +1886,9 @@
             break;
           }
         }
-        if (!brokenOrConfirmedBeforeToday && matchedKeyIdx === -1) {
+        if (!brokenOrConfirmedBeforeToday) {
           matchedKeyIdx = k;
+          break;
         }
       }
 
@@ -2651,30 +2660,6 @@
 
         // 1. 若已有持倉，先檢查停損 / 時間停損 / 出場策略 (A/B/C/D)
         if (activePos) {
-          // 若啟用確認K：前一根出場訊號K的低點被後續收盤跌破才正式出場；
-          // 收盤重新站上出場訊號K高點則取消該次訊號。
-          if (cfg.requireExitConfirmK && activePos.pendingExitKey) {
-            const pendingExit = activePos.pendingExitKey;
-            if (curBar.close < pendingExit.low) {
-              if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
-              activePos.sellIdx = i;
-              activePos.sellDate = curBar.date;
-              activePos.sellPrice = curBar.close;
-              activePos.exitReason = `確認K出場：收盤跌破出場關鍵K(${pendingExit.date})低點(${pendingExit.low.toFixed(2)})`;
-              latestFinishedPos = { ...activePos };
-              activePos = null;
-              continue;
-            }
-            if (curBar.close > pendingExit.high) {
-              activePos.pendingExitKey = null;
-            } else {
-              continue;
-            }
-          }
           activePos.maxCloseSinceEntry = Math.max(activePos.maxCloseSinceEntry, curBar.close);
           activePos.maxHighSinceEntry = Math.max(activePos.maxHighSinceEntry, curBar.high);
           const peakProfitPct = activePos.buyPrice > 0
@@ -2691,10 +2676,6 @@
 
           // (1) 疊加時間停損：超過 N 天 20MA 仍未過買價且帳面虧損
           if (cfg.useTimeStop && !activePos.ma20ControlArmed && holdingDaysNow >= cfg.timeStopDays && curBar.close < activePos.buyPrice) {
-            if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
             activePos.isClosed = true;
             activePos.sellIdx = i;
             activePos.sellDate = curBar.date;
@@ -2710,13 +2691,10 @@
             activePos.shortMaArmed = true;
             activePos.activeControlMa = cfg.shortMaPeriod;
             const targetMa = cfg.shortMaPeriod === 5 ? curBar.ma5 : curBar.ma10;
-            if (cfg.shortMaMode === 'DIRECT') {
+            const bUseDirect = cfg.globalConfirmMode === 'FORCE_DIRECT' ? true : (cfg.globalConfirmMode === 'FORCE_KEY_K' ? false : (cfg.shortMaMode === 'DIRECT'));
+            if (bUseDirect) {
               if (targetMa > 0 && curBar.close < targetMa) {
-                if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
@@ -2734,11 +2712,7 @@
                 }
               } else {
                 if (curBar.close < activePos.shortBdLow) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -2765,11 +2739,7 @@
             if (peakProfitPct >= cfg.peakTrailTriggerPct && activePos.maxCloseSinceEntry > 0) {
               const ddPct = ((activePos.maxCloseSinceEntry - curBar.close) / activePos.maxCloseSinceEntry) * 100;
               if (ddPct >= cfg.peakDrawdownPct) {
-                if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
@@ -2780,11 +2750,7 @@
               }
             }
             if (!closedThisBar && peakProfitPct >= cfg.breakevenTriggerPct && curBar.close < activePos.buyPrice) {
-              if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+              activePos.isClosed = true;
               activePos.sellIdx = i;
               activePos.sellDate = curBar.date;
               activePos.sellPrice = curBar.close;
@@ -2799,11 +2765,7 @@
           if (!closedThisBar && cfg.strategy === 'WHALE_SELL_EXIT' && peakProfitPct >= cfg.whaleTriggerPct) {
             const volMult = curBar.ma5Vol > 0 ? (curBar.vol / curBar.ma5Vol) : 1;
             if (curBar.close < curBar.open && volMult >= cfg.whaleSellMult) {
-              if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+              activePos.isClosed = true;
               activePos.sellIdx = i;
               activePos.sellDate = curBar.date;
               activePos.sellPrice = curBar.close;
@@ -2832,11 +2794,7 @@
             // 第二階：超過 1:3 -> 直接停利 或 鎖住2倍R停利價並交給均線+確認K奔跑
             if (peakR >= cfg.rrTier2Ratio) {
               if (cfg.rrTier2Action === 'FIXED_TP') {
-                if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
@@ -2863,11 +2821,7 @@
 
             // 檢查是否跌破階梯保本/鎖利停損底線
             if (!closedThisBar && activePos.rrStage >= 1 && curBar.close < activePos.rrStopFloor) {
-              if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+              activePos.isClosed = true;
               activePos.sellIdx = i;
               activePos.sellDate = curBar.date;
               activePos.sellPrice = curBar.close;
@@ -2885,13 +2839,10 @@
             // 若處於第二階奔跑狀態，且使用者選擇以 5MA / 10MA (若選 20MA 則交由下方基礎 20MA 控盤) 控盤
             if (!closedThisBar && activePos.rrStage === 2 && cfg.rrTrailMa !== 20) {
               const trailMa = cfg.rrTrailMa === 5 ? curBar.ma5 : curBar.ma10;
-              if (cfg.rrMaConfirmMode === 'DIRECT') {
+              const eUseDirect = cfg.globalConfirmMode === 'FORCE_DIRECT' ? true : (cfg.globalConfirmMode === 'FORCE_KEY_K' ? false : (cfg.rrMaConfirmMode === 'DIRECT'));
+              if (eUseDirect) {
                 if (trailMa > 0 && curBar.close < trailMa) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -2909,11 +2860,7 @@
                   }
                 } else {
                   if (curBar.close < activePos.shortBdLow) {
-                    if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                    activePos.isClosed = true;
                     activePos.sellIdx = i;
                     activePos.sellDate = curBar.date;
                     activePos.sellPrice = curBar.close;
@@ -2932,7 +2879,7 @@
           // (4.6) 策略 F：AI 個股自適應最佳出場（依 ATR 波動度選擇均線，並依洗盤次數自動判定「需確認K」或「跌破即出」）
           if (!closedThisBar && cfg.strategy === 'AI_ADAPTIVE') {
             const atr = activePos.aiAtrPct || 3.0;
-            const needConfirm = !!activePos.aiNeedConfirmK;
+            const needConfirm = cfg.globalConfirmMode === 'FORCE_KEY_K' ? true : (cfg.globalConfirmMode === 'FORCE_DIRECT' ? false : !!activePos.aiNeedConfirmK);
             const riskR = activePos.riskR > 0 ? activePos.riskR : Math.max(0.01, activePos.buyPrice * 0.03);
             const peakR = (activePos.maxCloseSinceEntry - activePos.buyPrice) / riskR;
 
@@ -2940,11 +2887,7 @@
               if (!(maVal > 0)) return false;
               if (!needConfirm) {
                 if (curBar.close < maVal) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              return true;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -2956,11 +2899,7 @@
               } else {
                 if (activePos.shortBdIdx !== -1) {
                   if (curBar.close < activePos.shortBdLow) {
-                    if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              return true;
-            }
-            activePos.isClosed = true;
+                    activePos.isClosed = true;
                     activePos.sellIdx = i;
                     activePos.sellDate = curBar.date;
                     activePos.sellPrice = curBar.close;
@@ -2986,11 +2925,7 @@
                 activePos.dynamicStopPrice = trailP;
                 activePos.dynamicStopLabel = "AI回落7%停利";
                 if (curBar.close < trailP) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              return true;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -3012,11 +2947,7 @@
                 activePos.dynamicStopPrice = activePos.rrStopFloor;
                 activePos.dynamicStopLabel = "AI保本防線";
                 if (curBar.close < activePos.rrStopFloor) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -3046,11 +2977,7 @@
                 activePos.dynamicStopPrice = activePos.rrStopFloor;
                 activePos.dynamicStopLabel = activePos.rrStage === 2 ? "AI鎖利2R" : "AI保本1:1";
                 if (curBar.close < activePos.rrStopFloor) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -3064,11 +2991,7 @@
               }
               // 低波動股若 AI 判定不需確認K，跌破 20MA 且已啟動 20MA 控盤時可直接出場
               if (!closedThisBar && !needConfirm && activePos && activePos.ma20ControlArmed && curBar.ma20 > 0 && curBar.close < curBar.ma20) {
-                if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
@@ -3084,11 +3007,7 @@
           if (!closedThisBar) {
             if (!activePos.ma20ControlArmed) {
               if (curBar.close < activePos.stopLossPrice) {
-                if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
@@ -3097,13 +3016,10 @@
                 activePos = null;
               }
             } else {
-              if (cfg.strategy === 'RR_LADDER' && activePos.rrStage === 2 && cfg.rrTrailMa === 20 && cfg.rrMaConfirmMode === 'DIRECT') {
+              const force20Direct = cfg.globalConfirmMode === 'FORCE_DIRECT' || (cfg.globalConfirmMode === 'AUTO' && cfg.strategy === 'RR_LADDER' && activePos.rrStage === 2 && cfg.rrTrailMa === 20 && cfg.rrMaConfirmMode === 'DIRECT');
+              if (force20Direct) {
                 if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -3131,11 +3047,7 @@
                 }
               } else {
                 if (curBar.close < activePos.breakdownLow) {
-                  if (cfg.requireExitConfirmK) {
-              activePos.pendingExitKey = { idx: i, date: curBar.date, high: curBar.high, low: curBar.low };
-              continue;
-            }
-            activePos.isClosed = true;
+                  activePos.isClosed = true;
                   activePos.sellIdx = i;
                   activePos.sellDate = curBar.date;
                   activePos.sellPrice = curBar.close;
@@ -3211,8 +3123,8 @@
             }
           }
 
-          // 若當根 K 棒 (且非今日最後一根) 符合突破20MA關鍵K條件，設定/更新為最新待確認之關鍵K
-          if (i < lastIdx && checkBarPassesStep1Filter(bars, i, filterOpts)) {
+          // 若目前尚無待確認之關鍵K，且當根 K 棒 (非今日最後一根) 符合突破20MA條件，設定為待確認之關鍵K
+          if (!pendingKeyK && i < lastIdx && checkBarPassesStep1Filter(bars, i, filterOpts)) {
             const usePrevLow = prevBar.low < curBar.low;
             const baseStopLow = usePrevLow ? prevBar.low : curBar.low;
             const stopLossPrice = Number((baseStopLow * 0.98).toFixed(2));
@@ -3264,9 +3176,16 @@
       const latestClose = bars[lastIdx].close;
       const latestMa20 = bars[lastIdx].ma20 || stock.yestMa20;
 
+      if (latestFinishedPos && latestFinishedPos.sellPrice > latestFinishedPos.buyPrice && latestFinishedPos.exitReason) {
+        latestFinishedPos.exitReason = latestFinishedPos.exitReason.replace(/停損/g, "停利");
+      }
+
       if (activePos && !activePos.isClosed) {
         const profitPoints = Number((latestClose - activePos.buyPrice).toFixed(2));
         const profitPct = activePos.buyPrice > 0 ? Number((((latestClose - activePos.buyPrice) / activePos.buyPrice) * 100).toFixed(2)) : 0;
+        if (activePos.dynamicStopPrice > activePos.buyPrice && activePos.dynamicStopLabel) {
+          activePos.dynamicStopLabel = activePos.dynamicStopLabel.replace(/停損/g, "停利");
+        }
         return {
           activeOrTodayExit: {
             ...activePos,
@@ -3702,6 +3621,8 @@
     function getControlConfirmSuffix(t) {
       if (!t) return "";
       const cfg = getExitStrategyConfig();
+      if (cfg.globalConfirmMode === 'FORCE_KEY_K') return "+確認K";
+      if (cfg.globalConfirmMode === 'FORCE_DIRECT') return "(跌破即出)";
       const ma = t.activeControlMa || 20;
       if (cfg.strategy === 'AI_ADAPTIVE') {
         return t.aiNeedConfirmK ? "+確認K" : "(跌破即出)";
@@ -4112,7 +4033,7 @@
           ${stopBannerSegment}
           ${bdBannerSegment}
         `;
-        trackRight.innerHTML = `<span class="${ptsColor} text-sm">${t.isClosed ? (t.sellPrice > t.buyPrice ? '停利結算' : (t.sellPrice < t.buyPrice ? '停損結算' : '平手結算')) : (s.todayPrice > t.buyPrice ? '停利' : (s.todayPrice < t.buyPrice ? '停損' : '持平'))}：${ptsSign}${t.profitPoints.toFixed(2)}點 ｜ ${formatMoneyDisplay(profitMoney)} (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
+        trackRight.innerHTML = `<span class="${ptsColor} text-sm">${t.isClosed ? '結算' : '獲利'}：${ptsSign}${t.profitPoints.toFixed(2)}點 ｜ ${formatMoneyDisplay(profitMoney)} (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
       } else {
         trackBanner.classList.add("hidden");
         stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
@@ -4218,11 +4139,29 @@
           lastBar.forceAvgPrice = resT.avgPrice;
           lastBar.volPctOfToday = resT.volPctOfToday;
         }
-        if (bars.length >= 2 && stock.isFirstDayBreak20Ma && !showTrackingMode) {
-          const targetKeyIdx = (typeof stock.keyKIdx === 'number' && bars[stock.keyKIdx]) ? stock.keyKIdx : (bars.length - 2);
-          bars[targetKeyIdx].isKeyK = true;
-          if (stock.status === "BREAKOUT") {
-            bars[bars.length - 1].isTrackBuyK = true;
+        if (bars.length >= 2 && !showTrackingMode) {
+          if (stock.isFirstDayBreak20Ma) {
+            const targetKeyIdx = (typeof stock.keyKIdx === 'number' && bars[stock.keyKIdx]) ? stock.keyKIdx : (bars.length - 2);
+            bars[targetKeyIdx].isKeyK = true;
+            if (stock.status === "BREAKOUT") {
+              bars[bars.length - 1].isTrackBuyK = true;
+            }
+          } else {
+            const scanFrom = Math.max(1, bars.length - 15);
+            for (let k = scanFrom; k < bars.length; k++) {
+              const pB = bars[k - 1], kB = bars[k];
+              if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
+                bars[k].isKeyK = true;
+                for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
+                  if (bars[c].close < kB.low) break;
+                  if (bars[c].close > kB.high) {
+                    bars[c].isTrackBuyK = true;
+                    break;
+                  }
+                }
+                break;
+              }
+            }
           }
         }
       }
@@ -4601,14 +4540,11 @@
           extraRefPrices.push(stock.yestHigh, stock.yestLow);
         } else if (tInfo) {
           extraRefPrices.push(tInfo.buyPrice);
-          if (tInfo.keyKHigh > 0 && tInfo.keyKLow > 0) {
-            extraRefPrices.push(tInfo.keyKHigh, tInfo.keyKLow);
-          }
           if (tInfo.lastBreakdownEvent) {
             extraRefPrices.push(tInfo.lastBreakdownEvent.high, tInfo.lastBreakdownEvent.low);
           }
-          if (tInfo.pendingExitKey) {
-            extraRefPrices.push(tInfo.pendingExitKey.high, tInfo.pendingExitKey.low);
+          if (tInfo.shortBdIdx !== -1 && tInfo.shortBdLow > 0 && tInfo.shortBdHigh > 0) {
+            extraRefPrices.push(tInfo.shortBdHigh, tInfo.shortBdLow);
           }
           if (tInfo.dynamicStopPrice > 0) {
             extraRefPrices.push(tInfo.dynamicStopPrice);
@@ -4670,14 +4606,6 @@
           if (tInfo.buyPrice > 0 && !tInfo.isDirectKeyBreakdown) {
             drawHorizontalRefLine(ctx, tInfo.buyPrice, priceToY(tInfo.buyPrice), "#38bdf8", "買價", padLeft, width - padRight, [2, 3], 1.2);
           }
-          if (tInfo.keyKHigh > 0 && tInfo.keyKLow > 0) {
-            drawHorizontalRefLine(ctx, tInfo.keyKHigh, priceToY(tInfo.keyKHigh), "#fb7185", "進場關鍵高", padLeft, width - padRight, [5, 3], 1.3);
-            drawHorizontalRefLine(ctx, tInfo.keyKLow, priceToY(tInfo.keyKLow), "#34d399", "進場關鍵低", padLeft, width - padRight, [5, 3], 1.3);
-          }
-          if (tInfo.pendingExitKey) {
-            drawHorizontalRefLine(ctx, tInfo.pendingExitKey.high, priceToY(tInfo.pendingExitKey.high), "#f472b6", "出場關鍵高", padLeft, width - padRight, [5, 3], 1.4);
-            drawHorizontalRefLine(ctx, tInfo.pendingExitKey.low, priceToY(tInfo.pendingExitKey.low), "#c084fc", "出場關鍵低", padLeft, width - padRight, [5, 3], 1.4);
-          }
           if (tInfo.lastBreakdownEvent) {
             const bd = tInfo.lastBreakdownEvent;
             const highLbl = tInfo.isDirectKeyBreakdown ? "關鍵高" : "破線高";
@@ -4692,6 +4620,10 @@
         }
         if (tInfo && tInfo.dynamicStopPrice > 0) {
           drawHorizontalRefLine(ctx, tInfo.dynamicStopPrice, priceToY(tInfo.dynamicStopPrice), "#4ade80", tInfo.dynamicStopLabel || "移動停利", padLeft, width - padRight, [5, 3], 1.6);
+        }
+        if (tInfo && tInfo.shortBdIdx !== -1 && tInfo.shortBdLow > 0 && tInfo.shortBdHigh > 0) {
+          drawHorizontalRefLine(ctx, tInfo.shortBdHigh, priceToY(tInfo.shortBdHigh), "#fb7185", "關鍵高", padLeft, width - padRight, [4, 4], 1.3);
+          drawHorizontalRefLine(ctx, tInfo.shortBdLow, priceToY(tInfo.shortBdLow), "#34d399", "關鍵低", padLeft, width - padRight, [4, 4], 1.5);
         }
       }
 
