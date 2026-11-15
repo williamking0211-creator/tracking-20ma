@@ -3246,8 +3246,8 @@
             }
           }
 
-          // 若目前尚無待確認之關鍵K，且當根 K 棒 (非今日最後一根) 符合突破20MA條件，設定為待確認之關鍵K
-          if (!pendingKeyK && i < lastIdx && checkBarPassesStep1Filter(bars, i, filterOpts)) {
+          // 若當根 K 棒 (非今日最後一根) 符合突破20MA條件，設定/更新為最新待確認之關鍵K（例如 4770 在 10/01 出場後，10/20 重新突破 20MA）
+          if (i < lastIdx && checkBarPassesStep1Filter(bars, i, filterOpts)) {
             const usePrevLow = prevBar.low < curBar.low;
             const baseStopLow = usePrevLow ? prevBar.low : curBar.low;
             const stopLossPrice = Number((baseStopLow * 0.98).toFixed(2));
@@ -4305,6 +4305,7 @@
         }
       }
 
+      chartState.postExitActiveRef = null;
       if (showTrackingMode && activeOrClosedTrack) {
         const t = activeOrClosedTrack;
         if (Array.isArray(t.closedTradesHistory)) {
@@ -4349,9 +4350,30 @@
               }
             }
           }
+          chartState.postExitActiveRef = null;
           if (postKey !== -1) {
             bars[postKey].isKeyK = true;
-            if (postConfirm !== -1) bars[postConfirm].isTrackBuyK = true;
+            const pkBar = bars[postKey];
+            const pkPrev = bars[postKey - 1] || pkBar;
+            const pkStop = Number((Math.min(pkPrev.low, pkBar.low) * 0.98).toFixed(2));
+            if (postConfirm !== -1) {
+              bars[postConfirm].isTrackBuyK = true;
+              chartState.postExitActiveRef = {
+                buyPrice: bars[postConfirm].close,
+                stopLossPrice: pkStop,
+                keyHigh: pkBar.high,
+                keyLow: pkBar.low,
+                ma20Armed: (bars[bars.length - 1]?.ma20 || 0) > bars[postConfirm].close
+              };
+            } else {
+              chartState.postExitActiveRef = {
+                buyPrice: 0,
+                stopLossPrice: pkStop,
+                keyHigh: pkBar.high,
+                keyLow: pkBar.low,
+                ma20Armed: false
+              };
+            }
           }
         }
       }
@@ -4711,8 +4733,11 @@
       const candLowVal = is5mTf ? (candInfo ? candInfo.keyLow : 0) : stock.yestLow;
       const candStopVal = is5mTf ? (candInfo ? candInfo.stopLossPrice : 0) : stock.candidateStopLossPrice;
 
-      const shouldShowYellowStop = tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (hasCandKey && candStopVal > 0);
-      const yellowStopVal = tInfo ? tInfo.stopLossPrice : candStopVal;
+      const postRef = (!is5mTf && tInfo && tInfo.isClosed && chartState.postExitActiveRef) ? chartState.postExitActiveRef : null;
+      const effBuyPrice = postRef ? postRef.buyPrice : (tInfo ? tInfo.buyPrice : 0);
+      const effMa20Armed = postRef ? postRef.ma20Armed : (tInfo ? tInfo.ma20ControlArmed : false);
+      const shouldShowYellowStop = postRef ? (!postRef.ma20Armed && postRef.stopLossPrice > 0) : (tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (hasCandKey && candStopVal > 0));
+      const yellowStopVal = postRef ? postRef.stopLossPrice : (tInfo ? tInfo.stopLossPrice : candStopVal);
 
       const extraRefPrices = [];
       if (!tInfo && hasCandKey) {
@@ -4781,8 +4806,8 @@
           drawHorizontalRefLine(ctx, candHighVal, priceToY(candHighVal), "#fb7185", "關鍵高", padLeft, width - padRight);
           drawHorizontalRefLine(ctx, candLowVal, priceToY(candLowVal), "#34d399", "關鍵低", padLeft, width - padRight);
         } else if (tInfo) {
-          if (tInfo.buyPrice > 0 && !tInfo.isDirectKeyBreakdown) {
-            drawHorizontalRefLine(ctx, tInfo.buyPrice, priceToY(tInfo.buyPrice), "#38bdf8", "買價", padLeft, width - padRight, [2, 3], 1.2);
+          if (effBuyPrice > 0 && !(tInfo && tInfo.isDirectKeyBreakdown)) {
+            drawHorizontalRefLine(ctx, effBuyPrice, priceToY(effBuyPrice), "#38bdf8", "買價", padLeft, width - padRight, [2, 3], 1.2);
           }
           if (tInfo.lastBreakdownEvent) {
             const bd = tInfo.lastBreakdownEvent;
