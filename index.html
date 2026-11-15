@@ -2578,8 +2578,7 @@
 
       rawAllLoadedStocks.forEach(s => {
         // 1. 動態解析該股在目前篩選條件下是否有跨日或隔日待確認/今日確認之關鍵K (如 4561 11/11關鍵K -> 11/13確認K)
-        const candWithFilter = resolveCandidateKeyKForToday(s, filterOpts);
-        const candUnfiltered = candWithFilter || resolveCandidateKeyKForToday(s, null);
+        const candUnfiltered = resolveCandidateKeyKForToday(s, null);
         if (candUnfiltered) {
           applyCandidateKeyKToStock(s, candUnfiltered);
         }
@@ -4148,19 +4147,33 @@
             }
           } else {
             const scanFrom = Math.max(1, bars.length - 15);
+            let foundChartKey = -1;
+            let foundChartConfirm = -1;
             for (let k = scanFrom; k < bars.length; k++) {
               const pB = bars[k - 1], kB = bars[k];
               if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
-                bars[k].isKeyK = true;
+                let brokenBeforeConfirm = false;
+                let confirmIdx = -1;
                 for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
-                  if (bars[c].close < kB.low) break;
+                  if (bars[c].close < kB.low) {
+                    brokenBeforeConfirm = true;
+                    break;
+                  }
                   if (bars[c].close > kB.high) {
-                    bars[c].isTrackBuyK = true;
+                    confirmIdx = c;
                     break;
                   }
                 }
-                break;
+                if (!brokenBeforeConfirm) {
+                  foundChartKey = k;
+                  foundChartConfirm = confirmIdx;
+                  break;
+                }
               }
+            }
+            if (foundChartKey !== -1) {
+              bars[foundChartKey].isKeyK = true;
+              if (foundChartConfirm !== -1) bars[foundChartConfirm].isTrackBuyK = true;
             }
           }
         }
