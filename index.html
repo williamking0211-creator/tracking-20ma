@@ -2608,30 +2608,8 @@
             bars5m[t5m.sellIdx].closedHoldingDays = t5m.holdingDays;
             bars5m[t5m.sellIdx].closedExitLabel = isConfirmKExitTrade(t5m) ? "破線確認K平倉" : "破直接平倉";
 
-            const postScan5m = Math.max(1, t5m.sellIdx + 1);
             const volOpts5m = { ...filterOpts5m, requireMa20Up: false, requireSolidRedK: false, useGainRange: false };
-            for (const useVolCheck of [true, false]) {
-              let found5mPost = false;
-              for (let k = postScan5m; k < bars5m.length; k++) {
-                const pB = bars5m[k - 1], kB = bars5m[k];
-                if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
-                  if (useVolCheck && !checkBarPassesStep1Filter(bars5m, k, volOpts5m)) continue;
-                let brokenBeforeConfirm = false;
-                let cIdx = -1;
-                for (let c = k + 1; c <= Math.min(bars5m.length - 1, k + 10); c++) {
-                  if (bars5m[c].close < kB.low) { brokenBeforeConfirm = true; break; }
-                  if (bars5m[c].close > kB.high) { cIdx = c; break; }
-                }
-                if (!brokenBeforeConfirm) {
-                  bars5m[k].isKeyK = true;
-                  if (cIdx !== -1) bars5m[cIdx].isTrackBuyK = true;
-                  found5mPost = true;
-                  break;
-                }
-              }
-              }
-              if (found5mPost) break;
-            }
+            simulateChartFallbackLifecycleFrom(bars5m, t5m.sellIdx + 1, volOpts5m);
           }
         } else if (cand5m && bars5m[cand5m.keyKIdx]) {
           bars5m[cand5m.keyKIdx].isKeyK = true;
@@ -3778,6 +3756,102 @@
       document.getElementById("todayExitHoldDays").textContent = `平均 ${todayExitAvgDays} 天 (賺均 ${todayWinAvgD} 天 / 賠均 ${todayLossAvgD} 天)`;
     }
 
+    // 共用圖表備援生命週期模擬：統一處理日K備援、日K平倉後接續、以及5分K平倉後接續（含關鍵K、確認K買進、-2%停損、時間停損、20MA控盤與平倉標記）
+    function simulateChartFallbackLifecycleFrom(bars, startScanIdx, volFilterOpts = null) {
+      const cfgPost = getExitStrategyConfig();
+      const useVolPasses = volFilterOpts ? [true, false] : [false];
+      let firstKey = -1;
+      for (const useVolCheck of useVolPasses) {
+        for (let k = Math.max(1, startScanIdx); k < bars.length; k++) {
+          const pB = bars[k - 1], kB = bars[k];
+          if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
+            if (useVolCheck && !checkBarPassesStep1Filter(bars, k, volFilterOpts)) continue;
+            let broken = false;
+            for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
+              if (bars[c].close < kB.low) { broken = true; break; }
+              if (bars[c].close > kB.high) { break; }
+            }
+            if (!broken) { firstKey = k; break; }
+          }
+        }
+        if (firstKey !== -1) break;
+      }
+
+      if (firstKey === -1) return null;
+
+      let lastActiveRef = null;
+      let scanIdx = firstKey;
+      while (scanIdx !== -1 && scanIdx < bars.length) {
+        const pkBar = bars[scanIdx];
+        const pkPrev = bars[scanIdx - 1] || pkBar;
+        const pkStop = Number((Math.min(pkPrev.low, pkBar.low) * 0.98).toFixed(2));
+        let cIdx = -1;
+        let brokeKey = false;
+        for (let c = scanIdx + 1; c <= Math.min(bars.length - 1, scanIdx + 10); c++) {
+          if (bars[c].close < pkBar.low) { brokeKey = true; break; }
+          if (bars[c].close > pkBar.high) { cIdx = c; break; }
+        }
+        bars[scanIdx].isKeyK = true;
+        if (cIdx === -1) {
+          if (!brokeKey) {
+            lastActiveRef = { buyPrice: 0, stopLossPrice: pkStop, keyHigh: pkBar.high, keyLow: pkBar.low, ma20Armed: false };
+          }
+          break;
+        }
+
+        bars[cIdx].isTrackBuyK = true;
+        const buyP = bars[cIdx].close;
+        let ma20Armed = bars[cIdx].ma20 > buyP;
+        let bdIdx = -1, bdLow = 0, bdHigh = 0;
+        let exitedAt = -1;
+        let exitLbl = "破直接平倉";
+
+        for (let s = cIdx + 1; s < bars.length; s++) {
+          const sb = bars[s];
+          if (!ma20Armed && sb.ma20 > buyP) ma20Armed = true;
+          const holdDays = s - cIdx + 1;
+
+          if (cfgPost.useTimeStop && !ma20Armed && holdDays >= cfgPost.timeStopDays && sb.close < buyP) {
+            exitedAt = s; exitLbl = "破直接平倉"; break;
+          }
+          if (!ma20Armed) {
+            if (sb.close < pkStop) { exitedAt = s; exitLbl = "破直接平倉"; break; }
+          } else {
+            if (cfgPost.globalConfirmMode === 'FORCE_DIRECT') {
+              if (sb.ma20 > 0 && sb.close < sb.ma20) { exitedAt = s; exitLbl = "破直接平倉"; break; }
+            } else {
+              if (bdIdx === -1) {
+                if (sb.ma20 > 0 && sb.close < sb.ma20) { bdIdx = s; bdLow = sb.low; bdHigh = sb.high; }
+              } else {
+                if (sb.close < bdLow) { exitedAt = s; exitLbl = "破線確認K平倉"; break; }
+                else if (sb.close > bdHigh && sb.ma20 > 0 && sb.close >= sb.ma20) { bdIdx = -1; }
+              }
+            }
+          }
+        }
+
+        if (exitedAt !== -1) {
+          bars[exitedAt].isTrackSellK = true;
+          bars[exitedAt].closedHoldingDays = exitedAt - cIdx + 1;
+          bars[exitedAt].closedExitLabel = exitLbl;
+          lastActiveRef = { buyPrice: buyP, stopLossPrice: pkStop, keyHigh: pkBar.high, keyLow: pkBar.low, ma20Armed };
+          let nextKey = -1;
+          for (let nk = exitedAt + 1; nk < bars.length; nk++) {
+            const npB = bars[nk - 1], nkB = bars[nk];
+            if (npB.ma20 > 0 && nkB.ma20 > 0 && npB.close <= npB.ma20 && nkB.close > nkB.ma20 && nkB.close > npB.close) {
+              nextKey = nk;
+              break;
+            }
+          }
+          scanIdx = nextKey;
+        } else {
+          lastActiveRef = { buyPrice: buyP, stopLossPrice: pkStop, keyHigh: pkBar.high, keyLow: pkBar.low, ma20Armed };
+          break;
+        }
+      }
+      return lastActiveRef;
+    }
+
     function isConfirmKExitTrade(t) {
       if (!t) return false;
       if (t.exitModeType === 'CONFIRM_K') return true;
@@ -4316,34 +4390,7 @@
             }
           } else {
             const scanFrom = Math.max(1, bars.length - 15);
-            let foundChartKey = -1;
-            let foundChartConfirm = -1;
-            for (let k = scanFrom; k < bars.length; k++) {
-              const pB = bars[k - 1], kB = bars[k];
-              if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
-                let brokenBeforeConfirm = false;
-                let confirmIdx = -1;
-                for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
-                  if (bars[c].close < kB.low) {
-                    brokenBeforeConfirm = true;
-                    break;
-                  }
-                  if (bars[c].close > kB.high) {
-                    confirmIdx = c;
-                    break;
-                  }
-                }
-                if (!brokenBeforeConfirm) {
-                  foundChartKey = k;
-                  foundChartConfirm = confirmIdx;
-                  break;
-                }
-              }
-            }
-            if (foundChartKey !== -1) {
-              bars[foundChartKey].isKeyK = true;
-              if (foundChartConfirm !== -1) bars[foundChartConfirm].isTrackBuyK = true;
-            }
+            simulateChartFallbackLifecycleFrom(bars, scanFrom, null);
           }
         }
       }
@@ -4376,50 +4423,7 @@
           bars[t.sellIdx].closedHoldingDays = t.holdingDays;
           bars[t.sellIdx].closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
 
-          // 若該股早已於更早期平倉 (如 7799 於 09/24 平倉)，仍掃描平倉日之後是否有新的 20MA 突破關鍵K與確認K (如 11/11 -> 11/12)
-          const postScanFrom = Math.max(1, t.sellIdx + 1);
-          let postKey = -1, postConfirm = -1;
-          for (let k = postScanFrom; k < bars.length; k++) {
-            const pB = bars[k - 1], kB = bars[k];
-            if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
-              let brokenBeforeConfirm = false;
-              let cIdx = -1;
-              for (let c = k + 1; c <= Math.min(bars.length - 1, k + 10); c++) {
-                if (bars[c].close < kB.low) { brokenBeforeConfirm = true; break; }
-                if (bars[c].close > kB.high) { cIdx = c; break; }
-              }
-              if (!brokenBeforeConfirm) {
-                postKey = k;
-                postConfirm = cIdx;
-                break;
-              }
-            }
-          }
-          chartState.postExitActiveRef = null;
-          if (postKey !== -1) {
-            bars[postKey].isKeyK = true;
-            const pkBar = bars[postKey];
-            const pkPrev = bars[postKey - 1] || pkBar;
-            const pkStop = Number((Math.min(pkPrev.low, pkBar.low) * 0.98).toFixed(2));
-            if (postConfirm !== -1) {
-              bars[postConfirm].isTrackBuyK = true;
-              chartState.postExitActiveRef = {
-                buyPrice: bars[postConfirm].close,
-                stopLossPrice: pkStop,
-                keyHigh: pkBar.high,
-                keyLow: pkBar.low,
-                ma20Armed: (bars[bars.length - 1]?.ma20 || 0) > bars[postConfirm].close
-              };
-            } else {
-              chartState.postExitActiveRef = {
-                buyPrice: 0,
-                stopLossPrice: pkStop,
-                keyHigh: pkBar.high,
-                keyLow: pkBar.low,
-                ma20Armed: false
-              };
-            }
-          }
+          chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, t.sellIdx + 1, null);
         }
       }
 
