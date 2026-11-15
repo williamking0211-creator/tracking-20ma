@@ -99,8 +99,18 @@
     </div>
   </header>
 
-  <!-- 策略說明三步驟卡片 (STEP 1 加寬至 6 欄，讓漲幅與成交量拉桿更長更好拉) -->
-  <section class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
+  <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
+  <div class="max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2">
+    <div class="flex items-center gap-2 text-xs">
+      <span class="font-bold text-amber-400">⚙️ STEP 1～3・關鍵K篩選 / 大戶內定值 / 進出場規則</span>
+      <span id="step123CollapsedHint" class="hidden text-[10px] text-slate-400">(已收合，參數仍持續生效)</span>
+    </div>
+    <button type="button" onclick="toggleStep123Panel()" id="btnToggleStep123"
+            class="text-[11px] px-2.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition">
+      🔼 收合面板
+    </button>
+  </div>
+  <section id="step123Section" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
     <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
         <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)</span>
@@ -627,12 +637,22 @@
               <span id="simStatusNote" class="font-mono text-slate-300"></span>
             </div>
 
-            <!-- 試算結果 4 大卡片 -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[11px] font-mono">
+            <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px] font-mono">
               <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
-                <div class="text-[10px] text-slate-400">總淨獲利 (已實現＋未實現)</div>
+                <div class="text-[10px] text-slate-400">總淨獲利 (合計)</div>
                 <div id="simTotalProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
                 <div id="simRoiSubEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-900/95 border border-emerald-500/40 rounded-lg p-2">
+                <div class="text-[10px] text-emerald-300">✅ 已實現損益 (已平倉)</div>
+                <div id="simRealizedProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+                <div id="simRealizedSubEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-900/95 border border-sky-500/40 rounded-lg p-2">
+                <div class="text-[10px] text-sky-300">📈 未實現損益 (續抱中)</div>
+                <div id="simUnrealizedProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+                <div id="simUnrealizedSubEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
               </div>
               <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
                 <div class="text-[10px] text-slate-400">剩餘可再投入現金</div>
@@ -651,24 +671,65 @@
               </div>
             </div>
 
-            <!-- 可展開的買進明細表 -->
-            <div class="flex items-center justify-between pt-0.5">
-              <button type="button" onclick="toggleSimTradesTable()" id="btnToggleSimTable"
-                      class="text-[11px] text-sky-300 hover:text-sky-200 font-semibold underline underline-offset-2">
-                📋 查看可買進股票明細與每筆損益 (0 筆)
-              </button>
-              <span class="text-[10px] text-slate-500">點擊明細列可直接跳轉查看該股 K 線圖</span>
+            <!-- 可展開的買進明細表 / 我的實際庫存管理 -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="toggleSimTradesTable()" id="btnToggleSimTable"
+                        class="text-[11px] text-sky-300 hover:text-sky-200 font-semibold underline underline-offset-2">
+                  📋 查看可買進股票明細與每筆損益 (0 筆)
+                </button>
+                <div class="inline-flex rounded bg-slate-900 border border-slate-700 p-0.5 text-[10px]">
+                  <button type="button" onclick="setSimTableMode('SIM')" id="btnSimModeSim"
+                          class="px-2 py-0.5 rounded bg-sky-600 text-white font-bold">策略模擬名單</button>
+                  <button type="button" onclick="setSimTableMode('PORTFOLIO')" id="btnSimModePortfolio"
+                          class="px-2 py-0.5 rounded text-slate-300 hover:text-white">💼 我的實際庫存 (可編輯)</button>
+                </div>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 text-[10px]">
+                <button type="button" onclick="importSimToPortfolio()"
+                        class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 transition">
+                  📥 匯入模擬名單為我的庫存
+                </button>
+                <button type="button" onclick="openAddPortfolioRow()"
+                        class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/35 transition">
+                  ➕ 新增庫存股票
+                </button>
+              </div>
             </div>
-            <div id="simTradesTableWrap" class="hidden max-h-56 overflow-y-auto border border-slate-800 rounded-lg bg-slate-900/70">
+
+            <!-- 新增實際庫存小表單 -->
+            <div id="addPortfolioBox" class="hidden bg-slate-900/95 border border-emerald-500/40 rounded-lg p-2 flex flex-wrap items-end gap-2 text-[11px]">
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400">股票代號</span>
+                <input type="text" id="addPortCodeInput" placeholder="如 2330" class="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono" />
+              </label>
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400">買入日</span>
+                <input type="date" id="addPortDateInput" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono" />
+              </label>
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400">張數</span>
+                <input type="number" id="addPortLotsInput" value="1" min="1" step="1" class="w-14 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono text-right" />
+              </label>
+              <label class="flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400">買進價格 (留空帶現價)</span>
+                <input type="number" id="addPortPriceInput" step="0.05" placeholder="自動" class="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono text-right" />
+              </label>
+              <button type="button" onclick="confirmAddPortfolioStock()" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">加入庫存</button>
+              <button type="button" onclick="document.getElementById('addPortfolioBox').classList.add('hidden')" class="px-2 py-1 rounded bg-slate-800 text-slate-300">取消</button>
+            </div>
+
+            <div id="simTradesTableWrap" class="hidden max-h-72 overflow-y-auto border border-slate-800 rounded-lg bg-slate-900/70">
               <table class="w-full text-[11px] text-left border-collapse">
-                <thead class="sticky top-0 bg-slate-900 text-slate-400 text-[10px] border-b border-slate-800">
+                <thead class="sticky top-0 bg-slate-900 text-slate-400 text-[10px] border-b border-slate-800 z-10">
                   <tr>
-                    <th class="py-1.5 px-2">股票 / 買入日</th>
-                    <th class="py-1.5 px-2 text-right">張數 / 買價</th>
-                    <th class="py-1.5 px-2 text-right">投入本金</th>
-                    <th class="py-1.5 px-2 text-right">現價 / 平倉價</th>
-                    <th class="py-1.5 px-2 text-right">淨損益</th>
-                    <th class="py-1.5 px-2 text-center">狀態</th>
+                    <th onclick="toggleSimTableSort('buyDate')" class="sortable-th py-1.5 px-2">股票 / 買入日 <span id="simSort-buyDate">▼</span></th>
+                    <th onclick="toggleSimTableSort('buyPrice')" class="sortable-th py-1.5 px-2 text-right">張數 / 買價 <span id="simSort-buyPrice">↕</span></th>
+                    <th onclick="toggleSimTableSort('totalCost')" class="sortable-th py-1.5 px-2 text-right">投入本金 <span id="simSort-totalCost">↕</span></th>
+                    <th onclick="toggleSimTableSort('exitOrNowPrice')" class="sortable-th py-1.5 px-2 text-right">現價 / 平倉價 <span id="simSort-exitOrNowPrice">↕</span></th>
+                    <th class="py-1.5 px-2">停損 / 停利價與執行條件</th>
+                    <th onclick="toggleSimTableSort('netProfit')" class="sortable-th py-1.5 px-2 text-right">淨損益 <span id="simSort-netProfit">↕</span></th>
+                    <th onclick="toggleSimTableSort('isClosed')" class="sortable-th py-1.5 px-2 text-center">狀態 / 手動平倉 <span id="simSort-isClosed">↕</span></th>
                   </tr>
                 </thead>
                 <tbody id="simTradesTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
@@ -1320,6 +1381,7 @@
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("apiUrlInput").value = apiUrl;
       loadUserSettingsFromStorage();
+      loadUserPortfolioFromStorage();
       const slider = document.getElementById("bubbleMultSlider");
       if (slider) {
         slider.value = bubbleMultThreshold;
@@ -2822,6 +2884,305 @@
       }
     }
 
+    const STEP123_COLLAPSE_KEY = "tw_keyk_step123_collapsed_v1";
+    const USER_PORTFOLIO_KEY = "tw_keyk_user_portfolio_v1";
+    let simTableMode = "SIM"; // "SIM" | "PORTFOLIO"
+    let userPortfolioTrades = [];
+    let lastSimTradesSnapshot = [];
+    let lastListOrigin = "POOL"; // "POOL" | "SIM"
+    let lastSimRowId = "";
+    let simSortState = { field: "buyDate", dir: "desc" };
+    const SIM_MANUAL_CLOSE_KEY = "tw_keyk_sim_manual_close_v1";
+    let simManualCloseMap = {};
+    try {
+      const rawMc = localStorage.getItem(SIM_MANUAL_CLOSE_KEY);
+      if (rawMc) simManualCloseMap = JSON.parse(rawMc) || {};
+    } catch (e) {}
+
+    function saveSimManualCloseMap() {
+      try { localStorage.setItem(SIM_MANUAL_CLOSE_KEY, JSON.stringify(simManualCloseMap)); } catch (e) {}
+    }
+
+    function toggleSimTableSort(field) {
+      if (simSortState.field === field) {
+        simSortState.dir = simSortState.dir === "desc" ? "asc" : "desc";
+      } else {
+        simSortState.field = field;
+        simSortState.dir = "desc";
+      }
+      ["buyDate", "buyPrice", "totalCost", "exitOrNowPrice", "netProfit", "isClosed"].forEach(f => {
+        const el = document.getElementById(`simSort-${f}`);
+        if (!el) return;
+        if (f === simSortState.field) el.textContent = simSortState.dir === "desc" ? "▼" : "▲";
+        else el.textContent = "↕";
+      });
+      runPortfolioCapitalSimulation();
+    }
+
+    function sortSimRows(rows) {
+      const f = simSortState.field;
+      const factor = simSortState.dir === "desc" ? -1 : 1;
+      return [...rows].sort((a, b) => {
+        if (f === "buyDate") return (a.buyDate || "").localeCompare(b.buyDate || "") * factor;
+        if (f === "isClosed") return ((a.isClosed ? 1 : 0) - (b.isClosed ? 1 : 0)) * factor;
+        const va = Number(a[f] ?? (f === "exitOrNowPrice" ? a.curP : 0)) || 0;
+        const vb = Number(b[f] ?? (f === "exitOrNowPrice" ? b.curP : 0)) || 0;
+        return (va - vb) * factor;
+      });
+    }
+
+    let pendingManualCloseCtx = null;
+
+    function openManualCloseModal(mode, keyId, code, defaultPrice) {
+      pendingManualCloseCtx = { mode, keyId, code };
+      document.getElementById("mcModalTitle").textContent = `🔒 手動平倉 ${code}`;
+      document.getElementById("mcSellPriceInput").value = defaultPrice || "";
+      document.getElementById("mcSellDateInput").value = new Date().toISOString().slice(0, 10);
+      document.getElementById("manualCloseModal").classList.remove("hidden");
+    }
+
+    function closeManualCloseModal() {
+      pendingManualCloseCtx = null;
+      document.getElementById("manualCloseModal").classList.add("hidden");
+    }
+
+    function confirmManualCloseModal() {
+      if (!pendingManualCloseCtx) return;
+      const sellPrice = parseFloat(document.getElementById("mcSellPriceInput").value);
+      const sellDate = document.getElementById("mcSellDateInput").value || new Date().toISOString().slice(0, 10);
+      if (!sellPrice || sellPrice <= 0) { showToast("請輸入有效平倉價格", "error"); return; }
+      const { mode, keyId, code } = pendingManualCloseCtx;
+      closeManualCloseModal();
+
+      if (mode === "SIM") {
+        simManualCloseMap[keyId] = { sellPrice, sellDate };
+        saveSimManualCloseMap();
+      } else {
+        const item = userPortfolioTrades.find(x => x.id === keyId);
+        if (item) {
+          item.isClosed = true;
+          item.sellDate = sellDate;
+          item.exitOrNowPrice = sellPrice;
+          saveUserPortfolioToStorage();
+        }
+      }
+      runPortfolioCapitalSimulation();
+      showToast(`已將 ${code} 手動平倉於 ${sellPrice.toFixed(2)}，損益已自動計入「已實現」`, "success");
+    }
+
+    function manualCloseSimTrade(uid, code, defaultPrice, e) {
+      if (e) e.stopPropagation();
+      openManualCloseModal("SIM", uid, code, defaultPrice);
+    }
+
+    function undoManualCloseSimTrade(uid, e) {
+      if (e) e.stopPropagation();
+      delete simManualCloseMap[uid];
+      saveSimManualCloseMap();
+      runPortfolioCapitalSimulation();
+      showToast("已還原為系統自動追蹤", "info");
+    }
+
+    function manualClosePortfolioTrade(id, code, defaultPrice, e) {
+      if (e) e.stopPropagation();
+      openManualCloseModal("PORTFOLIO", id, code, defaultPrice);
+    }
+
+    function toggleStep123Panel(forceState = null) {
+      const sec = document.getElementById("step123Section");
+      const btn = document.getElementById("btnToggleStep123");
+      const hint = document.getElementById("step123CollapsedHint");
+      if (!sec) return;
+      const shouldCollapse = forceState !== null ? forceState : !sec.classList.contains("hidden");
+      sec.classList.toggle("hidden", shouldCollapse);
+      if (hint) hint.classList.toggle("hidden", !shouldCollapse);
+      if (btn) btn.textContent = shouldCollapse ? "🔽 展開面板" : "🔼 收合面板";
+      try { localStorage.setItem(STEP123_COLLAPSE_KEY, shouldCollapse ? "1" : "0"); } catch (e) {}
+    }
+
+    function loadUserPortfolioFromStorage() {
+      try {
+        const raw = localStorage.getItem(USER_PORTFOLIO_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) userPortfolioTrades = parsed;
+        }
+        const col = localStorage.getItem(STEP123_COLLAPSE_KEY);
+        if (col === "1") toggleStep123Panel(true);
+      } catch (e) {}
+    }
+
+    function saveUserPortfolioToStorage() {
+      try { localStorage.setItem(USER_PORTFOLIO_KEY, JSON.stringify(userPortfolioTrades)); } catch (e) {}
+    }
+
+    function setSimTableMode(mode) {
+      simTableMode = mode;
+      const bSim = document.getElementById("btnSimModeSim");
+      const bPort = document.getElementById("btnSimModePortfolio");
+      if (bSim) bSim.className = mode === "SIM" ? "px-2 py-0.5 rounded bg-sky-600 text-white font-bold" : "px-2 py-0.5 rounded text-slate-300 hover:text-white";
+      if (bPort) bPort.className = mode === "PORTFOLIO" ? "px-2 py-0.5 rounded bg-emerald-600 text-white font-bold" : "px-2 py-0.5 rounded text-slate-300 hover:text-white";
+      runPortfolioCapitalSimulation();
+    }
+
+    function importSimToPortfolio() {
+      if (!lastSimTradesSnapshot || lastSimTradesSnapshot.length === 0) {
+        showToast("目前沒有模擬買進名單可匯入", "info");
+        return;
+      }
+      userPortfolioTrades = lastSimTradesSnapshot.map((bt, idx) => {
+        const ruleInfo = resolveTradeStopAndRuleInfo(bt.code, bt);
+        return {
+          id: `port_${Date.now()}_${idx}`,
+          code: bt.code,
+          name: bt.name,
+          buyDate: bt.buyDate,
+          lots: bt.lots,
+          buyPrice: bt.buyPrice,
+          isClosed: !!bt.isClosed,
+          sellDate: bt.sellDate || "",
+          exitOrNowPrice: bt.exitOrNowPrice,
+          customStopPrice: ruleInfo.stopPrice || "",
+          customTakeProfitPrice: ruleInfo.takeProfitPrice || "",
+          customRuleText: ruleInfo.ruleText || ""
+        };
+      });
+      saveUserPortfolioToStorage();
+      setSimTableMode("PORTFOLIO");
+      const wrap = document.getElementById("simTradesTableWrap");
+      if (wrap) wrap.classList.remove("hidden");
+      showToast(`已將 ${userPortfolioTrades.length} 筆模擬名單匯入為可編輯實際庫存`, "success");
+    }
+
+    function openAddPortfolioRow() {
+      const box = document.getElementById("addPortfolioBox");
+      if (!box) return;
+      box.classList.remove("hidden");
+      const dEl = document.getElementById("addPortDateInput");
+      if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0, 10);
+    }
+
+    async function confirmAddPortfolioStock() {
+      const code = (document.getElementById("addPortCodeInput")?.value || "").trim().toUpperCase();
+      const buyDate = document.getElementById("addPortDateInput")?.value || new Date().toISOString().slice(0, 10);
+      const lots = Math.max(1, parseInt(document.getElementById("addPortLotsInput")?.value || "1", 10) || 1);
+      let buyPrice = parseFloat(document.getElementById("addPortPriceInput")?.value || "0") || 0;
+      if (!code) { showToast("請輸入股票代號", "error"); return; }
+
+      let found = rawAllLoadedStocks.find(s => s.code === code);
+      let name = found ? found.name : code;
+      let nowP = found ? found.todayPrice : buyPrice;
+      if (!found) {
+        try {
+          const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
+          const resp = await fetch(`${singleStockUrl}?q=${encodeURIComponent(code)}&_t=${Date.now()}`, { headers: { "ngrok-skip-browser-warning": "true" } });
+          if (resp.ok) {
+            const d = await resp.json();
+            if (d && d.code) {
+              name = d.name || code;
+              nowP = parseFloat(d.price || d.todayClose || d.close) || nowP;
+            }
+          }
+        } catch (e) {}
+      }
+      if (buyPrice <= 0) buyPrice = nowP > 0 ? nowP : 100;
+      if (nowP <= 0) nowP = buyPrice;
+
+      const ruleInfo = resolveTradeStopAndRuleInfo(code, { buyPrice, exitOrNowPrice: nowP, isClosed: false });
+      userPortfolioTrades.push({
+        id: `port_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+        code,
+        name,
+        buyDate,
+        lots,
+        buyPrice,
+        isClosed: false,
+        sellDate: "",
+        exitOrNowPrice: nowP,
+        customStopPrice: ruleInfo.stopPrice || Number((buyPrice * 0.95).toFixed(2)),
+        customTakeProfitPrice: ruleInfo.takeProfitPrice || "",
+        customRuleText: ruleInfo.ruleText || "手動新增庫存"
+      });
+      saveUserPortfolioToStorage();
+      document.getElementById("addPortfolioBox").classList.add("hidden");
+      document.getElementById("addPortCodeInput").value = "";
+      document.getElementById("addPortPriceInput").value = "";
+      setSimTableMode("PORTFOLIO");
+      const wrap = document.getElementById("simTradesTableWrap");
+      if (wrap) wrap.classList.remove("hidden");
+      showToast(`已新增 ${code} ${name} 至我的實際庫存`, "success");
+    }
+
+    function updatePortfolioField(id, field, val) {
+      const item = userPortfolioTrades.find(x => x.id === id);
+      if (!item) return;
+      if (field === "lots") item.lots = Math.max(1, parseInt(val, 10) || 1);
+      else if (field === "buyPrice" || field === "exitOrNowPrice" || field === "customStopPrice" || field === "customTakeProfitPrice") {
+        item[field] = val === "" ? "" : (parseFloat(val) || 0);
+      } else if (field === "isClosed") {
+        item.isClosed = val === "1";
+        if (item.isClosed && !item.sellDate) item.sellDate = new Date().toISOString().slice(0, 10);
+      } else {
+        item[field] = val;
+      }
+      saveUserPortfolioToStorage();
+      runPortfolioCapitalSimulation();
+    }
+
+    function deletePortfolioTrade(id) {
+      userPortfolioTrades = userPortfolioTrades.filter(x => x.id !== id);
+      saveUserPortfolioToStorage();
+      runPortfolioCapitalSimulation();
+    }
+
+    function resolveTradeStopAndRuleInfo(code, tr) {
+      const s = rawAllLoadedStocks.find(x => x.code === code);
+      const t = s ? (s.trackingInfo || s.closedBreakdownInfo) : null;
+      let stopPrice = 0, takeProfitPrice = 0, ruleText = "";
+      if (t) {
+        if (t.isClosed) {
+          stopPrice = t.stopLossPrice || 0;
+          takeProfitPrice = t.sellPrice > t.buyPrice ? t.sellPrice : 0;
+          ruleText = t.exitReason || (isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉");
+        } else if (!t.ma20ControlArmed) {
+          stopPrice = t.stopLossPrice || 0;
+          ruleText = `初始停損(-2%) (20MA未過買價)`;
+        } else {
+          const ma = t.activeControlMa || 20;
+          const maVal = ma === 5 ? (t.currentMa5 || t.currentMa20) : (ma === 10 ? (t.currentMa10 || t.currentMa20) : t.currentMa20);
+          if (t.dynamicStopPrice > 0) {
+            if (t.dynamicStopPrice >= t.buyPrice) takeProfitPrice = t.dynamicStopPrice;
+            else stopPrice = t.dynamicStopPrice;
+            ruleText = `${t.dynamicStopLabel || '移動停利'} + ${ma}MA${getControlConfirmSuffix(t)}`;
+          } else {
+            if (maVal >= t.buyPrice) takeProfitPrice = maVal;
+            else stopPrice = maVal;
+            ruleText = `${ma}MA控盤${getControlConfirmSuffix(t)}`;
+          }
+          if (t.lastBreakdownEvent) {
+            stopPrice = t.lastBreakdownEvent.low;
+            ruleText = `破線等待確認K (守關鍵低 ${t.lastBreakdownEvent.low.toFixed(2)})`;
+          }
+        }
+      } else {
+        stopPrice = tr.buyPrice > 0 ? Number((tr.buyPrice * 0.95).toFixed(2)) : 0;
+        ruleText = "依目前策略自動追蹤";
+      }
+      return { stopPrice, takeProfitPrice, ruleText };
+    }
+
+    function openStockFromSimList(code, rowId) {
+      const found = rawAllLoadedStocks.find(s => s.code === code);
+      if (found) {
+        selectStock(code, true, "SIM", rowId);
+      } else {
+        lastListOrigin = "SIM";
+        lastSimRowId = rowId;
+        const inp = document.getElementById("klineLookupInput");
+        if (inp) { inp.value = code; lookupAnyStockInKline(); }
+      }
+    }
+
     function toggleCapitalSimPanel() {
       const el = document.getElementById("capitalSimBody");
       if (el) el.classList.toggle("hidden");
@@ -2885,14 +3246,20 @@
           const uid = `${s.code}_${tr.buyDate}_${tr.buyPrice}`;
           if (seenKey.has(uid)) return;
           seenKey.add(uid);
+          const mc = simManualCloseMap[uid];
+          const isClosedEff = mc ? true : !!tr.isClosed;
+          const sellDateEff = mc ? mc.sellDate : (tr.isClosed ? tr.sellDate : null);
+          const exitPriceEff = mc ? mc.sellPrice : (tr.isClosed ? tr.sellPrice : (s.todayPrice || tr.currentPrice || tr.buyPrice));
           events.push({
+            uid,
             code: s.code,
             name: s.name,
             buyDate: tr.buyDate,
             buyPrice: tr.buyPrice,
-            isClosed: !!tr.isClosed,
-            sellDate: tr.isClosed ? tr.sellDate : null,
-            exitOrNowPrice: tr.isClosed ? tr.sellPrice : (s.todayPrice || tr.currentPrice || tr.buyPrice),
+            isClosed: isClosedEff,
+            isManualClosed: !!mc,
+            sellDate: sellDateEff,
+            exitOrNowPrice: exitPriceEff,
             volRatio: s.volRatio || 100,
             yestGainPct: s.yestGainPct || 0
           });
@@ -3011,7 +3378,23 @@
         pEl.className = `text-sm font-bold mt-0.5 ${totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
       }
       const roiSub = document.getElementById("simRoiSubEl");
-      if (roiSub) roiSub.textContent = `已實現 ${fmtMoney(realizedProfit)} ｜ 未實現 ${fmtMoney(unrealizedProfit)}`;
+      if (roiSub) roiSub.textContent = `合計 ${boughtTrades.length} 筆交易`;
+
+      const rEl = document.getElementById("simRealizedProfitEl");
+      if (rEl) {
+        rEl.textContent = fmtMoney(realizedProfit);
+        rEl.className = `text-sm font-bold mt-0.5 ${realizedProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+      }
+      const rSub = document.getElementById("simRealizedSubEl");
+      if (rSub) rSub.textContent = `已平倉 ${closedCnt} 檔落袋結算`;
+
+      const uEl = document.getElementById("simUnrealizedProfitEl");
+      if (uEl) {
+        uEl.textContent = fmtMoney(unrealizedProfit);
+        uEl.className = `text-sm font-bold mt-0.5 ${unrealizedProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+      }
+      const uSub = document.getElementById("simUnrealizedSubEl");
+      if (uSub) uSub.textContent = `續抱中 ${holdingCnt} 檔帳面損益`;
 
       const cashEl = document.getElementById("simAvailCashEl");
       if (cashEl) cashEl.textContent = fmtCash(availableCash);
@@ -3038,18 +3421,139 @@
       const noteEl = document.getElementById("simStatusNote");
       if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
+      lastSimTradesSnapshot = boughtTrades;
+
+      // 若切換為「我的實際庫存」，改以使用者可編輯庫存重算4大卡片與表格
+      if (simTableMode === "PORTFOLIO") {
+        let pRealized = 0, pUnrealized = 0, pHoldCost = 0, pHoldVal = 0, pClosedCnt = 0, pHoldCnt = 0;
+        let pSpentCash = 0, pReturnedCash = 0;
+        const portComputed = userPortfolioTrades.map((pt, idx) => {
+          const s = rawAllLoadedStocks.find(x => x.code === pt.code);
+          const curP = pt.isClosed ? (parseFloat(pt.exitOrNowPrice) || pt.buyPrice) : ((s && s.todayPrice > 0) ? s.todayPrice : (parseFloat(pt.exitOrNowPrice) || pt.buyPrice));
+          const grossBuy = pt.buyPrice * 1000 * pt.lots;
+          const totalCost = grossBuy + Math.round(grossBuy * feeRate);
+          const grossSell = curP * 1000 * pt.lots;
+          const sellFee = Math.round(grossSell * feeRate) + Math.round(grossSell * taxRate);
+          const netProceeds = grossSell - sellFee;
+          const netProfit = netProceeds - totalCost;
+          const netPct = totalCost > 0 ? (netProfit / totalCost) * 100 : 0;
+          pSpentCash += totalCost;
+          if (pt.isClosed) {
+            pRealized += netProfit;
+            pReturnedCash += netProceeds;
+            pClosedCnt++;
+          } else {
+            pUnrealized += netProfit;
+            pHoldCost += totalCost;
+            pHoldVal += grossSell;
+            pHoldCnt++;
+          }
+          const autoRule = resolveTradeStopAndRuleInfo(pt.code, { buyPrice: pt.buyPrice, exitOrNowPrice: curP, isClosed: pt.isClosed });
+          return { ...pt, curP, totalCost, netProfit, netPct, autoRule, rowId: `sim-row-${pt.id || idx}` };
+        });
+
+        const portNet = pRealized + pUnrealized;
+        const portRoi = initCapital > 0 ? (portNet / initCapital) * 100 : 0;
+        const portCash = initCapital - pSpentCash + pReturnedCash;
+        if (pEl) {
+          pEl.textContent = `${fmtMoney(portNet)} (${portRoi >= 0 ? "+" : ""}${portRoi.toFixed(1)}%)`;
+          pEl.className = `text-sm font-bold mt-0.5 ${portNet >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+        }
+        if (roiSub) roiSub.textContent = `合計 ${portComputed.length} 筆庫存`;
+        if (rEl) {
+          rEl.textContent = fmtMoney(pRealized);
+          rEl.className = `text-sm font-bold mt-0.5 ${pRealized >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+        }
+        if (rSub) rSub.textContent = `已平倉 ${pClosedCnt} 檔落袋結算`;
+        if (uEl) {
+          uEl.textContent = fmtMoney(pUnrealized);
+          uEl.className = `text-sm font-bold mt-0.5 ${pUnrealized >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+        }
+        if (uSub) uSub.textContent = `續抱中 ${pHoldCnt} 檔帳面損益`;
+        if (cashEl) cashEl.textContent = fmtCash(portCash);
+        if (hcEl) hcEl.textContent = `持股成本 ${fmtCash(pHoldCost)} (市值 ${fmtCash(pHoldVal)})`;
+        if (bCntEl) bCntEl.textContent = `${portComputed.length} 檔 (${pClosedCnt}平倉・${pHoldCnt}續抱)`;
+        if (sCntEl) sCntEl.textContent = "目前為「我的實際庫存」編輯模式";
+        if (btnTbl) btnTbl.textContent = `💼 我的實際庫存明細與停損/停利條件 (${portComputed.length} 筆)`;
+
+        const tbody = document.getElementById("simTradesTableBody");
+        if (tbody) {
+          if (portComputed.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-5 text-center text-slate-400">尚未加入庫存股票，可點上方「📥 匯入模擬名單為我的庫存」或「➕ 新增庫存股票」</td></tr>`;
+          } else {
+            tbody.innerHTML = sortSimRows(portComputed.map(pt => ({ ...pt, exitOrNowPrice: pt.curP }))).map(pt => {
+              const pCls = pt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+              const stopVal = pt.customStopPrice !== "" && pt.customStopPrice !== undefined ? pt.customStopPrice : (pt.autoRule.stopPrice || "");
+              const tpVal = pt.customTakeProfitPrice !== "" && pt.customTakeProfitPrice !== undefined ? pt.customTakeProfitPrice : (pt.autoRule.takeProfitPrice || "");
+              const ruleTxt = pt.customRuleText || pt.autoRule.ruleText;
+              return `
+                <tr id="${pt.rowId}" class="hover:bg-slate-800/40 transition">
+                  <td class="py-1.5 px-2">
+                    <div onclick="openStockFromSimList('${pt.code}', '${pt.rowId}')" class="font-bold text-sky-300 hover:underline cursor-pointer">${pt.code} ${pt.name} 📈</div>
+                    <input type="date" value="${pt.buyDate}" onchange="updatePortfolioField('${pt.id}', 'buyDate', this.value)"
+                           class="mt-0.5 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300" />
+                  </td>
+                  <td class="py-1.5 px-2 text-right space-y-0.5">
+                    <div class="flex items-center justify-end gap-1">
+                      <input type="number" value="${pt.lots}" min="1" step="1" onchange="updatePortfolioField('${pt.id}', 'lots', this.value)"
+                             class="w-10 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 text-[10px]" />
+                      <span class="text-[10px] text-slate-400">張</span>
+                    </div>
+                    <input type="number" value="${pt.buyPrice}" step="0.05" onchange="updatePortfolioField('${pt.id}', 'buyPrice', this.value)"
+                           class="w-16 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-sky-300 text-[10px]" title="買入價" />
+                  </td>
+                  <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(pt.totalCost)}</td>
+                  <td class="py-1.5 px-2 text-right">
+                    <input type="number" value="${pt.curP}" step="0.05" onchange="updatePortfolioField('${pt.id}', 'exitOrNowPrice', this.value)"
+                           class="w-16 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-white text-[10px]" title="現價或平倉價" />
+                  </td>
+                  <td class="py-1.5 px-2 space-y-0.5">
+                    <div class="flex items-center gap-1 text-[10px]">
+                      <span class="text-yellow-300">損</span>
+                      <input type="number" value="${stopVal}" step="0.05" placeholder="無" onchange="updatePortfolioField('${pt.id}', 'customStopPrice', this.value)"
+                             class="w-14 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-yellow-300 text-right" />
+                      <span class="text-rose-300">利</span>
+                      <input type="number" value="${tpVal}" step="0.05" placeholder="無" onchange="updatePortfolioField('${pt.id}', 'customTakeProfitPrice', this.value)"
+                             class="w-14 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-rose-300 text-right" />
+                    </div>
+                    <input type="text" value="${ruleTxt}" onchange="updatePortfolioField('${pt.id}', 'customRuleText', this.value)"
+                           class="w-full bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-[10px] text-cyan-300" />
+                  </td>
+                  <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(pt.netProfit)}<div class="text-[10px]">(${pt.netPct >= 0 ? "+" : ""}${pt.netPct.toFixed(1)}%)</div></td>
+                  <td class="py-1.5 px-2 text-center space-y-1">
+                    <select onchange="updatePortfolioField('${pt.id}', 'isClosed', this.value)" class="bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white">
+                      <option value="0" ${!pt.isClosed ? 'selected' : ''}>續抱中</option>
+                      <option value="1" ${pt.isClosed ? 'selected' : ''}>已平倉</option>
+                    </select>
+                    ${!pt.isClosed ? `<button type="button" onclick="manualClosePortfolioTrade('${pt.id}', '${pt.code}', ${pt.curP}, event)" class="block mx-auto px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : ''}
+                    <button type="button" onclick="deletePortfolioTrade('${pt.id}')" class="block mx-auto text-[10px] text-rose-400 hover:text-rose-300">🗑️ 刪除</button>
+                  </td>
+                </tr>
+              `;
+            }).join("");
+          }
+        }
+        return;
+      }
+
       const tbody = document.getElementById("simTradesTableBody");
       if (tbody) {
         if (boughtTrades.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
         } else {
-          tbody.innerHTML = [...boughtTrades].reverse().map(bt => {
+          tbody.innerHTML = sortSimRows(boughtTrades).map((bt, idx) => {
+            const rowId = `sim-row-${bt.code}-${idx}`;
             const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
             const stBadge = bt.isClosed
               ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉</span>`
               : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中</span>`;
+            const ruleInfo = resolveTradeStopAndRuleInfo(bt.code, bt);
+            const priceLine = [
+              ruleInfo.stopPrice > 0 ? `<span class="text-yellow-300">停損:${ruleInfo.stopPrice.toFixed(2)}</span>` : "",
+              ruleInfo.takeProfitPrice > 0 ? `<span class="text-rose-300">停利:${ruleInfo.takeProfitPrice.toFixed(2)}</span>` : ""
+            ].filter(Boolean).join(" / ") || `<span class="text-slate-400">動態追蹤</span>`;
             return `
-              <tr onclick="selectStock('${bt.code}', true)" class="hover:bg-slate-800/60 cursor-pointer transition">
+              <tr id="${rowId}" onclick="openStockFromSimList('${bt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
                 <td class="py-1.5 px-2">
                   <div class="font-bold text-white">${bt.code} ${bt.name}</div>
                   <div class="text-[10px] text-slate-400">${formatShortDateSlash(bt.buyDate)} 買</div>
@@ -3057,8 +3561,17 @@
                 <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
                 <td class="py-1.5 px-2 text-right text-white">${bt.exitOrNowPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2">
+                  <div class="text-[10px] font-semibold">${priceLine}</div>
+                  <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
+                </td>
                 <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${bt.netPct >= 0 ? "+" : ""}${bt.netPct.toFixed(1)}%)</td>
-                <td class="py-1.5 px-2 text-center">${stBadge}</td>
+                <td class="py-1.5 px-2 text-center space-y-1">
+                  <div>${stBadge}</div>
+                  ${!bt.isClosed
+                    ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>`
+                    : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 還原</button>` : '')}
+                </td>
               </tr>
             `;
           }).join("");
@@ -4565,8 +5078,16 @@
       return lots >= 10000 ? `${(lots / 10000).toFixed(1)}萬張` : `${Math.round(lots).toLocaleString()}張`;
     }
 
-    function selectStock(code, scrollToChart = false) {
+    function selectStock(code, scrollToChart = false, origin = "POOL", simRowId = "") {
       selectedStockCode = code;
+      if (scrollToChart) {
+        lastListOrigin = origin;
+        lastSimRowId = simRowId;
+        const backBtn = document.querySelector("button[onclick='backToStockPool()']");
+        if (backBtn) {
+          backBtn.textContent = origin === "SIM" ? "⬅ 返回明細清單" : "⬅ 返回股票池";
+        }
+      }
       renderTable();
       const stock = rawAllLoadedStocks.find(s => s.code === code);
       if (stock) {
@@ -4581,6 +5102,20 @@
     }
 
     function backToStockPool() {
+      if (lastListOrigin === "SIM") {
+        const bodyEl = document.getElementById("capitalSimBody");
+        const wrapEl = document.getElementById("simTradesTableWrap");
+        if (bodyEl) bodyEl.classList.remove("hidden");
+        if (wrapEl) wrapEl.classList.remove("hidden");
+        const targetEl = (lastSimRowId && document.getElementById(lastSimRowId)) || wrapEl;
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          targetEl.classList.remove("row-flash");
+          void targetEl.offsetWidth;
+          targetEl.classList.add("row-flash");
+          return;
+        }
+      }
       if (!selectedStockCode) {
         document.getElementById("stockPoolPanel").scrollIntoView({ behavior: "smooth", block: "start" });
         return;
@@ -5937,5 +6472,28 @@
       link.click();
     }
   </script>
+  <!-- 手動平倉彈窗 (取代瀏覽器原生 prompt，支援手機與 Canvas 預覽) -->
+  <div id="manualCloseModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+    <div class="bg-[#111827] border border-amber-500/50 rounded-xl p-4 w-full max-w-xs space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="mcModalTitle" class="text-sm font-bold text-amber-300">🔒 手動平倉</h3>
+        <button type="button" onclick="closeManualCloseModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] text-slate-400">平倉賣出價格</span>
+          <input type="number" id="mcSellPriceInput" step="0.05" class="bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono font-bold focus:outline-none focus:border-amber-500" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] text-slate-400">平倉日期</span>
+          <input type="date" id="mcSellDateInput" class="bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-sky-300 font-mono focus:outline-none focus:border-sky-500" />
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeManualCloseModal()" class="px-3 py-1 rounded bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">取消</button>
+        <button type="button" onclick="confirmManualCloseModal()" class="px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold">確認平倉並計入損益</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
