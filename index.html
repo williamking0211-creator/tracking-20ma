@@ -2567,9 +2567,17 @@
         if (bars5m.length >= 19) bars5m[bars5m.length - 19].isTomorrowDeduct = true;
         if (bars5m.length >= 1) bars5m[bars5m.length - 1].isToday = true;
 
-        // 5分K 比照日K完全相同邏輯：執行關鍵K、確認K買進與動態出場生命週期標示
+        // 5分K 比照日K完全相同邏輯：優先保留「有量符合條件 + 突破20MA」；若單根漲幅/斜率未達日K門檻，仍優先以保留量能門檻的條件重算
         const filterOpts5m = getCurrentFilterOptions();
-        const lc5m = evaluateStockTrackingLifecycle({ code, name: code }, filterOpts5m, null, bars5m);
+        let lc5m = evaluateStockTrackingLifecycle({ code, name: code }, filterOpts5m, null, bars5m);
+        if (!lc5m.activeOrTodayExit && !lc5m.closedBreakdown) {
+          const volOnly5mOpts = { ...filterOpts5m, requireMa20Up: false, requireSolidRedK: false, useGainRange: false };
+          lc5m = evaluateStockTrackingLifecycle({ code, name: code }, volOnly5mOpts, null, bars5m);
+        }
+        if (!lc5m.activeOrTodayExit && !lc5m.closedBreakdown) {
+          const pure5mOpts = { ...filterOpts5m, requireMa20Up: false, requireSolidRedK: false, useGainRange: false, volOp: "ALL" };
+          lc5m = evaluateStockTrackingLifecycle({ code, name: code }, pure5mOpts, null, bars5m);
+        }
         const cand5m = resolveCandidateKeyKForToday({ code, name: code }, null, bars5m);
         const t5m = lc5m.activeOrTodayExit || lc5m.closedBreakdown || null;
         chartState.track5m = t5m;
@@ -2597,6 +2605,31 @@
           if (t5m.isClosed && t5m.sellIdx !== -1 && bars5m[t5m.sellIdx]) {
             bars5m[t5m.sellIdx].isTrackSellK = true;
             bars5m[t5m.sellIdx].closedHoldingDays = t5m.holdingDays;
+
+            const postScan5m = Math.max(1, t5m.sellIdx + 1);
+            const volOpts5m = { ...filterOpts5m, requireMa20Up: false, requireSolidRedK: false, useGainRange: false };
+            for (const useVolCheck of [true, false]) {
+              let found5mPost = false;
+              for (let k = postScan5m; k < bars5m.length; k++) {
+                const pB = bars5m[k - 1], kB = bars5m[k];
+                if (pB.ma20 > 0 && kB.ma20 > 0 && pB.close <= pB.ma20 && kB.close > kB.ma20 && kB.close > pB.close) {
+                  if (useVolCheck && !checkBarPassesStep1Filter(bars5m, k, volOpts5m)) continue;
+                let brokenBeforeConfirm = false;
+                let cIdx = -1;
+                for (let c = k + 1; c <= Math.min(bars5m.length - 1, k + 10); c++) {
+                  if (bars5m[c].close < kB.low) { brokenBeforeConfirm = true; break; }
+                  if (bars5m[c].close > kB.high) { cIdx = c; break; }
+                }
+                if (!brokenBeforeConfirm) {
+                  bars5m[k].isKeyK = true;
+                  if (cIdx !== -1) bars5m[cIdx].isTrackBuyK = true;
+                  found5mPost = true;
+                  break;
+                }
+              }
+              }
+              if (found5mPost) break;
+            }
           }
         } else if (cand5m && bars5m[cand5m.keyKIdx]) {
           bars5m[cand5m.keyKIdx].isKeyK = true;
