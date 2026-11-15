@@ -912,8 +912,8 @@
       <div class="mb-4 flex items-center justify-between gap-2 text-xs">
         <span class="text-slate-300">使用模型：</span>
         <select id="geminiModelSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-violet-300 font-semibold focus:outline-none">
-          <option value="gemini-2.5-flash" selected>gemini-2.5-flash (速度快・推薦)</option>
-          <option value="gemini-2.5-pro">gemini-2.5-pro (深度推理)</option>
+          <option value="gemini-3.8-flash" selected>gemini-3.8-flash (最新快速・推薦)</option>
+          <option value="gemini-3.8-pro">gemini-3.8-pro (深度推理)</option>
         </select>
       </div>
       <div class="flex justify-end gap-2">
@@ -4848,7 +4848,8 @@
 
     function openGeminiKeyModal() {
       const k = safeGetStorage("gemini_api_key", "");
-      const m = safeGetStorage("gemini_model_name", "gemini-2.5-flash");
+      let m = safeGetStorage("gemini_model_name", "gemini-3.8-flash");
+      if (m === "gemini-2.5-flash" || m === "gemini-2.5-pro") { m = "gemini-3.8-flash"; safeSetStorage("gemini_model_name", m); }
       const inEl = document.getElementById("geminiApiKeyInput");
       const mEl = document.getElementById("geminiModelSelect");
       if (inEl) inEl.value = k;
@@ -4864,7 +4865,7 @@
 
     function saveGeminiKeySettings() {
       const k = (document.getElementById("geminiApiKeyInput")?.value || "").trim();
-      const m = document.getElementById("geminiModelSelect")?.value || "gemini-2.5-flash";
+      const m = document.getElementById("geminiModelSelect")?.value || "gemini-3.8-flash";
       safeSetStorage("gemini_api_key", k);
       safeSetStorage("gemini_model_name", m);
       closeGeminiKeyModal();
@@ -4903,7 +4904,11 @@
         return;
       }
 
-      const model = safeGetStorage("gemini_model_name", "gemini-2.5-flash");
+      let model = safeGetStorage("gemini_model_name", "gemini-3.8-flash");
+      if (model === "gemini-2.5-flash" || model === "gemini-2.5-pro") {
+        model = "gemini-3.8-flash";
+        safeSetStorage("gemini_model_name", model);
+      }
       const origBtnText = btn ? btn.textContent : "✨ Gemini AI 深度診斷";
       if (btn) {
         btn.disabled = true;
