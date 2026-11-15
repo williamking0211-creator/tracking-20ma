@@ -685,14 +685,32 @@
         </div>
       </div>
 
-      <!-- 🤖 AI 個股最佳出場點位建議面板 -->
-      <div id="aiExitAdviceBanner" class="bg-gradient-to-r from-violet-950/60 via-slate-900/95 to-indigo-950/60 border border-violet-500/45 rounded-lg px-3 py-2 mb-3 text-xs space-y-1">
+      <!-- 🤖 AI 個股最佳出場點位建議面板（做法一：量化秒算 ＋ 做法二：Gemini AI 深度顧問點評） -->
+      <div id="aiExitAdviceBanner" class="bg-gradient-to-r from-violet-950/60 via-slate-900/95 to-indigo-950/60 border border-violet-500/45 rounded-lg px-3 py-2 mb-3 text-xs space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span id="aiAdviceHeader" class="font-bold text-violet-300">🤖 AI 個股最佳出場點位建議：分析中...</span>
-          <span id="aiAdviceVolTag" class="text-[11px] font-mono px-2 py-0.5 rounded bg-violet-500/20 border border-violet-400/30 text-violet-200">--</span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span id="aiAdviceVolTag" class="text-[11px] font-mono px-2 py-0.5 rounded bg-violet-500/20 border border-violet-400/30 text-violet-200">--</span>
+            <button type="button" onclick="runGeminiStockAnalysis(true)" id="geminiAnalyzeBtn"
+                    class="px-2.5 py-0.5 rounded bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-bold text-[11px] shadow transition">
+              ✨ Gemini AI 深度診斷
+            </button>
+            <button type="button" onclick="openGeminiKeyModal()" title="設定 Gemini API Key"
+                    class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[11px] transition">
+              🔑 AI Key
+            </button>
+          </div>
         </div>
         <div id="aiAdviceBody" class="text-[11px] text-slate-200 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
           --
+        </div>
+        <!-- 做法二：Gemini LLM 文字分析結果區 -->
+        <div id="geminiAiResultBox" class="hidden mt-1.5 pt-2 border-t border-violet-500/30 text-[11.5px] leading-relaxed text-slate-100 space-y-1">
+          <div class="flex items-center justify-between gap-2">
+            <span id="geminiAiResultTitle" class="font-bold text-fuchsia-300">✨ Gemini AI 操盤室深度診斷</span>
+            <button type="button" onclick="document.getElementById('geminiAiResultBox').classList.add('hidden')" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">✕ 收合</button>
+          </div>
+          <div id="geminiAiResultContent" class="whitespace-pre-wrap text-slate-200 bg-slate-950/75 border border-slate-800 rounded-md p-2.5"></div>
         </div>
       </div>
 
@@ -871,6 +889,39 @@
         </button>
         <button onclick="saveAndSyncApi()" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500">
           儲存並立即同步
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gemini API Key 設定彈窗 -->
+  <div id="geminiKeyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#111827] border border-violet-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white">🔑 Gemini AI 深度診斷設定</h3>
+        <button onclick="closeGeminiKeyModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+        請輸入你的 Google Gemini API Key（僅儲存在你本機瀏覽器的 <code class="text-violet-300">localStorage</code> 中，不會上傳至其他伺服器），即可針對單檔股票即時進行 K 線型態與出場點位深度診斷。
+      </p>
+      <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-violet-500 rounded-lg px-3 py-1.5 mb-3 gap-2">
+        <input type="password" id="geminiApiKeyInput" placeholder="貼上 AIzaSy... 開頭的 Gemini API Key"
+               class="w-full bg-transparent text-xs text-white focus:outline-none" />
+        <button type="button" onclick="clearInputField('geminiApiKeyInput', false)" title="清空 Key" class="clear-input-btn">✕</button>
+      </div>
+      <div class="mb-4 flex items-center justify-between gap-2 text-xs">
+        <span class="text-slate-300">使用模型：</span>
+        <select id="geminiModelSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-violet-300 font-semibold focus:outline-none">
+          <option value="gemini-2.5-flash" selected>gemini-2.5-flash (速度快・推薦)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (深度推理)</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeGeminiKeyModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">
+          取消
+        </button>
+        <button onclick="saveGeminiKeySettings()" class="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-500">
+          儲存設定
         </button>
       </div>
     </div>
@@ -4071,6 +4122,19 @@
     }
 
     function updateAiExitAdviceBanner(stock, bars, tInfo) {
+      const gBox = document.getElementById("geminiAiResultBox");
+      const gContent = document.getElementById("geminiAiResultContent");
+      const gTitle = document.getElementById("geminiAiResultTitle");
+      if (gBox && gContent && bars && bars.length > 0) {
+        const cKey = `${stock.code}_${bars[bars.length - 1].date}_${currentExitStrategy}`;
+        if (geminiAnalysisCache.has(cKey)) {
+          gTitle.textContent = `✨ Gemini AI 操盤室深度診斷 — ${stock.code} ${stock.name}`;
+          gContent.textContent = geminiAnalysisCache.get(cKey);
+          gBox.classList.remove("hidden");
+        } else {
+          gBox.classList.add("hidden");
+        }
+      }
       const headerEl = document.getElementById("aiAdviceHeader");
       const tagEl = document.getElementById("aiAdviceVolTag");
       const bodyEl = document.getElementById("aiAdviceBody");
@@ -4778,6 +4842,134 @@
 
       const deductTag = bar.isTodayDeduct ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[扣抵]</span>` : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明扣抵]</span>` : "");
       hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>${closeHtml}<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}`;
+    }
+
+    const geminiAnalysisCache = new Map();
+
+    function openGeminiKeyModal() {
+      const k = safeGetStorage("gemini_api_key", "");
+      const m = safeGetStorage("gemini_model_name", "gemini-2.5-flash");
+      const inEl = document.getElementById("geminiApiKeyInput");
+      const mEl = document.getElementById("geminiModelSelect");
+      if (inEl) inEl.value = k;
+      if (mEl) mEl.value = m;
+      const modal = document.getElementById("geminiKeyModal");
+      if (modal) { modal.classList.remove("hidden"); modal.classList.add("flex"); }
+    }
+
+    function closeGeminiKeyModal() {
+      const modal = document.getElementById("geminiKeyModal");
+      if (modal) { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+    }
+
+    function saveGeminiKeySettings() {
+      const k = (document.getElementById("geminiApiKeyInput")?.value || "").trim();
+      const m = document.getElementById("geminiModelSelect")?.value || "gemini-2.5-flash";
+      safeSetStorage("gemini_api_key", k);
+      safeSetStorage("gemini_model_name", m);
+      closeGeminiKeyModal();
+      if (k) {
+        showToast("已儲存 Gemini API Key！可點擊「✨ Gemini AI 深度診斷」分析個股。", "info");
+      } else {
+        showToast("已清除 Gemini API Key。", "warn");
+      }
+    }
+
+    async function runGeminiStockAnalysis(forceRefresh = false) {
+      const apiKey = safeGetStorage("gemini_api_key", "").trim();
+      if (!apiKey) {
+        showToast("請先設定你的 Google Gemini API Key 即可啟用深度診斷！", "warn");
+        openGeminiKeyModal();
+        return;
+      }
+
+      const stock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+      const bars = chartState.dailyBars || [];
+      if (!stock || bars.length === 0) {
+        showToast("請先選取一檔有 K 線資料的股票", "warn");
+        return;
+      }
+
+      const lastDate = bars[bars.length - 1].date;
+      const cacheKey = `${stock.code}_${lastDate}_${currentExitStrategy}`;
+      const resultBox = document.getElementById("geminiAiResultBox");
+      const contentEl = document.getElementById("geminiAiResultContent");
+      const titleEl = document.getElementById("geminiAiResultTitle");
+      const btn = document.getElementById("geminiAnalyzeBtn");
+
+      if (!forceRefresh && geminiAnalysisCache.has(cacheKey)) {
+        resultBox.classList.remove("hidden");
+        contentEl.textContent = geminiAnalysisCache.get(cacheKey);
+        return;
+      }
+
+      const model = safeGetStorage("gemini_model_name", "gemini-2.5-flash");
+      const origBtnText = btn ? btn.textContent : "✨ Gemini AI 深度診斷";
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "⏳ AI 分析中...";
+      }
+      resultBox.classList.remove("hidden");
+      titleEl.textContent = `✨ Gemini AI 操盤室深度診斷 — ${stock.code} ${stock.name} (${model})`;
+      contentEl.textContent = "正在彙整近 25 日 K 線量價、均線與大戶泡泡資料並請 Gemini 分析中...";
+
+      try {
+        const recent25 = bars.slice(-25).map(b => ({
+          d: b.date,
+          o: b.open,
+          h: b.high,
+          l: b.low,
+          c: b.close,
+          v: b.vol,
+          ma5: b.ma5,
+          ma10: b.ma10,
+          ma20: b.ma20,
+          whaleMult: b.bubbleMult || 0
+        }));
+
+        const tInfo = stock.trackingInfo || stock.closedBreakdownInfo || null;
+        const posContext = tInfo
+          ? `持倉狀態：${tInfo.isClosed ? '已平倉' : '續抱第' + tInfo.holdingDays + '天'}，買入日 ${tInfo.buyDate} 買價 ${tInfo.buyPrice}，目前/平倉損益 ${tInfo.profitPoints >= 0 ? '+' : ''}${tInfo.profitPoints}點 (${tInfo.profitPct}%)，初始停損 ${tInfo.stopLossPrice}，目前控盤均線 ${tInfo.activeControlMa || 20}MA`
+          : `目前尚未進場追蹤，最新現價 ${stock.todayPrice}，昨日/關鍵K收盤 ${stock.yestClose}，關鍵K高 ${stock.yestHigh} / 低 ${stock.yestLow}`;
+
+        const promptText = `你是一位專精台股波段順勢交易與量價結構的實戰操盤手。請根據以下「${stock.code} ${stock.name}」的真實數據，用繁體中文給出簡潔、具體、可直接執行的出場點位建議（總字數控制在 250 字以內，不要廢話）：
+1. ${posContext}
+2. 最近 25 個交易日 K 線數據 (d=日期, o=開, h=高, l=低, c=收, v=張數, ma5/10/20=均線, whaleMult=大戶量能倍數)：
+${JSON.stringify(recent25)}
+
+請直接分四點回答：
+【1. 型態與主力結構】：(判讀目前趨勢、均線乖離與大戶泡泡進出)
+【2. 建議分批停利 / 減碼區間】：(給出具體價位與原因)
+【3. 最後移動停損防守價】：(給出明確的收盤跌破價位或均線)
+【4. 風險提醒】：(指出潛在回檔或量價背離風險)`;
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const resp = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 700 }
+          })
+        });
+
+        if (!resp.ok) {
+          const errJson = await resp.json().catch(() => ({}));
+          throw new Error(errJson?.error?.message || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Gemini 未回傳有效分析內容，請稍後再試。";
+        geminiAnalysisCache.set(cacheKey, text);
+        contentEl.textContent = text;
+      } catch (err) {
+        contentEl.textContent = `❌ Gemini 分析失敗：${err.message}
+（請確認右上角 🔑 AI Key 是否正確且有額度）`;
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origBtnText;
+        }
+      }
     }
 
     function openApiModal() { document.getElementById("apiModal").classList.remove("hidden"); document.getElementById("apiModal").classList.add("flex"); }
