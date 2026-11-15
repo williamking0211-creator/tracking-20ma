@@ -2581,25 +2581,87 @@
       }
     }
 
+    const STOCKS_CACHE_KEY = "tw_keyk_stocks_cache_v1";
+
+    async function fetchWithTimeoutRetry(url, timeoutMs = 18000, maxRetries = 2, onRetry = null) {
+      let lastErr = null;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+        try {
+          const resp = await fetch(url, {
+            signal: ctrl.signal,
+            headers: { "ngrok-skip-browser-warning": "true" }
+          });
+          clearTimeout(timer);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return await resp.json();
+        } catch (err) {
+          clearTimeout(timer);
+          lastErr = err.name === "AbortError" ? new Error("連線逾時(手機網路較慢)") : err;
+          if (attempt < maxRetries) {
+            if (onRetry) onRetry(attempt + 1, maxRetries);
+            await new Promise(r => setTimeout(r, 1100));
+          }
+        }
+      }
+      throw lastErr;
+    }
+
     async function fetchStocksData(isSilent = false) {
       const statusDot = document.getElementById("apiStatusDot");
       const statusText = document.getElementById("apiStatusText");
+
+      // 1. 手機秒開：若目前尚未載入且本地有上次快取，先秒渲染畫面再背景抓最新報價
+      if (rawAllLoadedStocks.length === 0) {
+        try {
+          const cachedRaw = localStorage.getItem(STOCKS_CACHE_KEY);
+          if (cachedRaw) {
+            const cachedObj = JSON.parse(cachedRaw);
+            if (Array.isArray(cachedObj.data) && cachedObj.data.length > 0) {
+              rawAllLoadedStocks = cachedObj.data.map(item => normalizeStockItem(item));
+              statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+              statusText.textContent = `已載入快取 (${rawAllLoadedStocks.length}檔)，背景同步最新中...`;
+              applyFiltersAndRender();
+            }
+          }
+        } catch (e) {}
+      }
+
       try {
         const sep = apiUrl.includes("?") ? "&" : "?";
-        const response = await fetch(`${apiUrl}${sep}_t=${Date.now()}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const rawData = await response.json();
+        const rawData = await fetchWithTimeoutRetry(
+          `${apiUrl}${sep}_t=${Date.now()}`,
+          18000,
+          2,
+          (curAttempt, maxAtt) => {
+            if (statusText) statusText.textContent = `手機連線重試中 (${curAttempt}/${maxAtt})...`;
+          }
+        );
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
         rawAllLoadedStocks = list.map(item => normalizeStockItem(item));
+        try {
+          // 僅存必要欄位與最近 45 根K棒避免超過手機 localStorage 5MB 上限
+          const compact = list.map(it => ({
+            ...it,
+            history: Array.isArray(it.history) ? it.history.slice(-45) : undefined,
+            klines: Array.isArray(it.klines) ? it.klines.slice(-45) : undefined,
+            bars: Array.isArray(it.bars) ? it.bars.slice(-45) : undefined
+          }));
+          localStorage.setItem(STOCKS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: compact }));
+        } catch (e) {}
+
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         statusText.textContent = `即時同步中 (${rawAllLoadedStocks.length}檔)`;
         applyFiltersAndRender();
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
-        statusText.textContent = `連線失敗: ${err.message}`;
+        statusText.textContent = rawAllLoadedStocks.length > 0
+          ? `同步逾時(目前顯示快取)：${err.message}`
+          : `連線失敗: ${err.message}`;
         if (!isSilent && rawAllLoadedStocks.length === 0) {
-          document.getElementById("stockTableBody").innerHTML = `<tr><td colspan="7" class="py-10 text-center text-rose-400">無法連線至 API (${apiUrl})，錯誤：${err.message}</td></tr>`;
+          document.getElementById("stockTableBody").innerHTML = `<tr><td colspan="7" class="py-10 text-center text-rose-400">無法連線至 API (${apiUrl})，錯誤：${err.message}（請確認後端與 ngrok 正常運行後點擊右上角「刷新報價」）</td></tr>`;
         }
       }
     }
@@ -4271,7 +4333,9 @@
 
       updateTrackingPoolSummary(baseList);
       if (isPnlPoolActive()) {
-        renderStrategyComparisonSummary(getCurrentFilterOptions());
+        const cmpOpts = getCurrentFilterOptions();
+        clearTimeout(window.__strategyCmpTimer);
+        window.__strategyCmpTimer = setTimeout(() => renderStrategyComparisonSummary(cmpOpts), 40);
       }
 
       let list = baseList;
