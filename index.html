@@ -234,7 +234,7 @@
       <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
         <li>• <span class="text-amber-300 font-semibold">跨日確認K支援</span>：關鍵K突破20MA後 1~10 日內只要收盤未跌破關鍵K低點，首日收盤突破關鍵K高點即觸發<span class="text-rose-400 font-semibold">確認K買進</span></li>
         <li>• <span class="text-sky-300 font-semibold">進場初期</span>：買在確認K收盤價，20MA未過買價前守<span class="text-yellow-300 font-semibold">黃色停損虛線(-2%)</span></li>
-        <li>• <span class="text-cyan-300 font-semibold">20MA高於買價後</span>：自動改以 <span class="text-white font-semibold">20MA 控盤</span>，跌破20MA首根設高低點防守</li>
+        <li>• <span class="text-cyan-300 font-semibold">20MA高於買價後</span>：改以 <span class="text-white font-semibold">20MA 控盤</span>，跌破20MA首根為關鍵K，後續收盤跌破該關鍵K低點即確認平倉並移入<span class="text-emerald-400 font-semibold">破K股池</span></li>
       </ul>
     </div>
   </section>
@@ -269,15 +269,15 @@
       <div class="text-[11px] text-cyan-300 mb-1">4. 📈 確認K決策追蹤 (停損/20MA控盤)</div>
       <div class="flex items-baseline gap-1.5">
         <span id="count-TRACKING" class="text-2xl font-bold text-cyan-400">0</span>
-        <span class="text-[11px] text-slate-400">檔續抱/平倉留2天</span>
+        <span class="text-[11px] text-slate-400">檔波段續抱/今日平倉</span>
       </div>
     </button>
 
     <button onclick="setFilter('BREAKDOWN')" id="tab-BREAKDOWN" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-emerald-500/50 rounded-xl p-3 transition col-span-2 md:col-span-1">
-      <div class="text-[11px] text-emerald-300 mb-1">5. ❄️ 破底K：低於關鍵K低 (不考慮)</div>
+      <div class="text-[11px] text-emerald-300 mb-1">5. ❄️ 破底K：跌破關鍵K低 / 20MA破線確認</div>
       <div class="flex items-baseline gap-1.5">
         <span id="count-BREAKDOWN" class="text-2xl font-bold text-emerald-400">0</span>
-        <span class="text-[11px] text-slate-400">檔跌破低點剔除</span>
+        <span class="text-[11px] text-slate-400">檔破K剔除/破線出場</span>
       </div>
     </button>
   </section>
@@ -290,7 +290,7 @@
       <div class="p-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
         <!-- 輸入欄位 4：左側股票池搜尋框 (附帶 ✕ 清空鍵) -->
         <div class="relative flex items-center bg-slate-900 border border-slate-700 focus-within:border-blue-500 rounded-lg px-2.5 py-1 w-full sm:w-64">
-          <input type="text" id="searchInput" oninput="renderTable()" placeholder="篩選本池股票 (如 4561 或 2892)..." 
+          <input type="text" id="searchInput" oninput="renderTable()" placeholder="篩選本池股票 (如 1303 或 4561)..." 
                  class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-2" />
           <button type="button" onclick="clearInputField('searchInput', false, 'POOL_SEARCH')" title="清空搜尋欄" class="clear-input-btn">✕</button>
         </div>
@@ -406,7 +406,7 @@
           <div class="flex items-center gap-1.5 w-full sm:w-auto">
             <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-indigo-400 rounded-lg px-2.5 py-1 flex-1 sm:w-52">
               <input type="text" id="klineLookupInput" onkeydown="if(event.key==='Enter') lookupAnyStockInKline()"
-                     placeholder="輸入代號或名稱 (如 4561)..."
+                     placeholder="輸入代號或名稱 (如 1303)..."
                      class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-1.5" />
               <button type="button" onclick="clearInputField('klineLookupInput', false, 'KLINE_LOOKUP')" title="清空查詢欄" class="clear-input-btn">✕</button>
             </div>
@@ -684,6 +684,7 @@
     let rawAllLoadedStocks = [];
     let allStocks = [];
     let trackingStocks = [];
+    let breakdownPoolStocks = [];
     let filteredStocks = [];
     let currentFilter = "ALL";
     let trackingSubFilter = "ALL"; // 'ALL' | 'WIN' | 'LOSS' | 'TODAY_EXIT'
@@ -1221,7 +1222,7 @@
     async function lookupAnyStockInKline() {
       const q = document.getElementById("klineLookupInput").value.trim();
       if (!q) {
-        showToast("請先輸入欲查詢的股票代號或名稱（例如 4561 或 2330）", "warn");
+        showToast("請先輸入欲查詢的股票代號或名稱（例如 1303 或 4561）", "warn");
         return;
       }
 
@@ -1250,17 +1251,6 @@
         }
         const rawItem = await res.json();
         const normalized = normalizeStockItem(rawItem);
-        const filterOpts = getCurrentFilterOptions();
-        normalized.trackingInfo = evaluateStockTrackingLifecycle(normalized, filterOpts);
-        if (normalized.trackingInfo) {
-          normalized.trackBuyPrice = normalized.trackingInfo.buyPrice;
-          normalized.trackExitOrNowPrice = normalized.trackingInfo.isClosed ? normalized.trackingInfo.sellPrice : normalized.todayPrice;
-          normalized.trackProfitPts = normalized.trackingInfo.profitPoints;
-          normalized.trackProfitPct = normalized.trackingInfo.profitPct;
-          normalized.trackProfitMoney = Math.round(normalized.trackingInfo.profitPoints * 1000);
-          normalized.trackHoldingDays = normalized.trackingInfo.isClosed ? (-100 + normalized.trackingInfo.holdingDays) : normalized.trackingInfo.holdingDays;
-        }
-
         if (!rawAllLoadedStocks.some(s => s.code === normalized.code)) {
           rawAllLoadedStocks.push(normalized);
         }
@@ -1279,6 +1269,7 @@
     function diagnoseStockStage(stock) {
       const opts = getCurrentFilterOptions();
       const t = stock.trackingInfo;
+      const cb = stock.closedBreakdownInfo;
       const bars = chartState.dailyBars.length > 0 ? chartState.dailyBars : (stock.realBars || []);
       const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
       const prevBar = bars.length >= 2 ? bars[bars.length - 2] : null;
@@ -1300,6 +1291,19 @@
       }
       const passAllStep1 = failedReasons.length === 0;
       const keyDateTag = stock.keyKDate ? formatShortDateSlash(stock.keyKDate) : "昨日";
+
+      // 優先檢查：若該股先前在 20MA 控盤或停損追蹤中，已跌破關鍵K並出現確認K平倉出場 (如 1303 南亞 10/30破20MA關鍵K -> 11/03確認K平倉)，且尚未重新觸發新確認K買進
+      if (cb && !(passAllStep1 && stock.status === "BREAKOUT")) {
+        const bDate = formatShortDateSlash(cb.buyDate);
+        const sDate = formatShortDateSlash(cb.sellDate);
+        const bdDate = cb.breakdownDate ? formatShortDateSlash(cb.breakdownDate) : sDate;
+        const pSign = cb.profitPoints > 0 ? "+" : "";
+        return {
+          bannerClass: "bg-emerald-950/55 border border-emerald-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-emerald-300 font-bold">❄️ 目前階段：【20MA控盤破線確認K出場（已歸入破底K股池）】${bDate}買入後，於 ${bdDate} 跌破20MA出現關鍵K，${sDate} 出現確認K跌破低點平倉！</span>`,
+          detailHtml: `<span class="text-emerald-200">${cb.exitReason} ｜ 波段結算：${pSign}${cb.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(cb.profitPoints * 1000))})</span>`
+        };
+      }
 
       // 階段 A：今日剛完成「確認K買進」（含跨日確認K，例如 4561 11/11關鍵K -> 11/13確認K）
       if (passAllStep1 && stock.status === "BREAKOUT") {
@@ -1329,7 +1333,7 @@
         };
       }
 
-      // 階段 D：處於「確認K決策追蹤池」（波段續抱中 或 剛平倉留存2天內）
+      // 階段 D：處於「確認K決策追蹤池」（波段續抱中 或 今日剛平倉）
       if (t) {
         const kDate = formatShortDateSlash(t.keyKDate);
         const bDate = formatShortDateSlash(t.buyDate);
@@ -1348,7 +1352,7 @@
           const pSign = t.profitPoints > 0 ? "+" : "";
           return {
             bannerClass: "bg-purple-950/50 border border-purple-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-            titleHtml: `<span class="text-purple-300 font-bold">🏁 目前階段：【確認K波段已平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
+            titleHtml: `<span class="text-purple-300 font-bold">🏁 目前階段：【今日確認K波段平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
             detailHtml: `<span class="text-purple-200">結算損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
           };
         }
@@ -1700,8 +1704,11 @@
           applyCandidateKeyKToStock(s, candUnfiltered);
         }
 
-        // 2. 動態計算波段追蹤池生命週期 (支援關鍵K後 1~10 日內未破低點之跨日確認K買進)
-        s.trackingInfo = evaluateStockTrackingLifecycle(s, filterOpts);
+        // 2. 動態計算波段追蹤池生命週期 (支援關鍵K後 1~10 日跨日確認K，以及 20MA控盤跌破關鍵K -> 確認K平倉轉入破K池)
+        const lifecycle = evaluateStockTrackingLifecycle(s, filterOpts);
+        s.trackingInfo = lifecycle.activeOrTodayExit;
+        s.closedBreakdownInfo = lifecycle.closedBreakdown;
+
         if (s.trackingInfo) {
           s.trackBuyPrice = s.trackingInfo.buyPrice;
           s.trackExitOrNowPrice = s.trackingInfo.isClosed ? s.trackingInfo.sellPrice : s.todayPrice;
@@ -1721,6 +1728,8 @@
 
       allStocks = rawAllLoadedStocks.filter(s => {
         if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
+        // 若該股為先前 20MA 控盤已破線確認平倉 (如 1303 南亞 10/30破線關鍵K -> 11/03確認K平倉)，且今日並未重新確認突破買進，歸入破K池而非待確認池
+        if (s.closedBreakdownInfo && s.status !== "BREAKOUT") return false;
         if (filterOpts.requireMa20Up && !s.isMa20SlopeUp) return false;
         if (filterOpts.requireSolidRedK && !s.isBullishRedK) return false;
         if (filterOpts.useGainRange) {
@@ -1733,11 +1742,27 @@
 
       trackingStocks = rawAllLoadedStocks.filter(s => s.trackingInfo !== null);
 
+      // 股池五（破底K / 破K股池）：包含 (A) 突破20MA關鍵K後跌破低點之股票，以及 (B) 20MA控盤跌破關鍵K後出現確認K平倉出場之股票 (如 1303 南亞)
+      const breakdownSet = new Set();
+      breakdownPoolStocks = [];
+      allStocks.forEach(s => {
+        if (s.status === "BREAKDOWN") {
+          breakdownSet.add(s.code);
+          breakdownPoolStocks.push(s);
+        }
+      });
+      rawAllLoadedStocks.forEach(s => {
+        if (s.closedBreakdownInfo && !breakdownSet.has(s.code) && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
+          breakdownSet.add(s.code);
+          breakdownPoolStocks.push(s);
+        }
+      });
+
       document.getElementById("count-ALL").textContent = allStocks.length;
       document.getElementById("count-BREAKOUT").textContent = allStocks.filter(s => s.status === "BREAKOUT").length;
       document.getElementById("count-CONSOLIDATE").textContent = allStocks.filter(s => s.status === "CONSOLIDATE").length;
       document.getElementById("count-TRACKING").textContent = trackingStocks.length;
-      document.getElementById("count-BREAKDOWN").textContent = allStocks.filter(s => s.status === "BREAKDOWN").length;
+      document.getElementById("count-BREAKDOWN").textContent = breakdownPoolStocks.length;
 
       renderTableHeader();
       renderTable();
@@ -1750,10 +1775,12 @@
       }
     }
 
-    // 支援關鍵K後 1~10 日內未破低點之「跨日確認K買進」(如 4561 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
+    // 支援：
+    // 1. 關鍵K後 1~10 日內未破低點之「跨日確認K買進」(如 4561 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
+    // 2. 20MA 控盤跌破 20MA 首根為「破20MA關鍵K」，反彈若未站回 20MA 之上不得解除警報；後續收盤跌破該關鍵K低點即觸發「破K確認平倉」(如 1303 南亞 10/30 關鍵K -> 11/03 確認K平倉)
     function evaluateStockTrackingLifecycle(stock, filterOpts) {
       const bars = buildStockDailyBarsWithToday(stock);
-      if (bars.length < 21) return null;
+      if (bars.length < 21) return { activeOrTodayExit: null, closedBreakdown: null };
 
       const lastIdx = bars.length - 1;
       let activePos = null;
@@ -1783,9 +1810,7 @@
             }
           } else {
             if (activePos.breakdownIdx === -1) {
-              if (curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
-                activePos.readyForNext20MaBreak = true;
-              } else if (activePos.readyForNext20MaBreak && curBar.ma20 > 0 && curBar.close < curBar.ma20) {
+              if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
                 activePos.breakdownIdx = i;
                 activePos.breakdownDate = curBar.date;
                 activePos.breakdownLow = curBar.low;
@@ -1806,10 +1831,11 @@
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
-                activePos.exitReason = `破20MA關鍵K低點(${activePos.breakdownLow.toFixed(2)})平倉`;
+                activePos.exitReason = `破20MA關鍵K(${formatShortDateSlash(activePos.breakdownDate)})低點(${activePos.breakdownLow.toFixed(2)})確認平倉`;
                 latestFinishedPos = { ...activePos };
                 activePos = null;
-              } else if (curBar.close > activePos.breakdownHigh) {
+              } else if (curBar.close > activePos.breakdownHigh && curBar.ma20 > 0 && curBar.close >= curBar.ma20) {
+                // 必須收盤同時突破破線關鍵K高點「且重新站回 20MA 之上」才算真正解除破線危機（避免像 1303 南亞 11/02 仍在 20MA 之下卻誤解除 10/30 破線關鍵K）
                 if (activePos.lastBreakdownEvent) {
                   activePos.lastBreakdownEvent.resolvedHoldIdx = i;
                   activePos.lastBreakdownEvent.resolvedHoldDate = curBar.date;
@@ -1819,7 +1845,6 @@
                 activePos.breakdownDate = null;
                 activePos.breakdownLow = 0;
                 activePos.breakdownHigh = 0;
-                activePos.readyForNext20MaBreak = (curBar.close >= curBar.ma20);
               }
             }
           }
@@ -1849,7 +1874,6 @@
                 breakdownLow: 0,
                 breakdownHigh: 0,
                 lastBreakdownEvent: null,
-                readyForNext20MaBreak: true,
                 isClosed: false,
                 sellIdx: -1,
                 sellDate: null,
@@ -1889,35 +1913,42 @@
         const profitPoints = Number((latestClose - activePos.buyPrice).toFixed(2));
         const profitPct = activePos.buyPrice > 0 ? Number((((latestClose - activePos.buyPrice) / activePos.buyPrice) * 100).toFixed(2)) : 0;
         return {
-          ...activePos,
-          currentPrice: latestClose,
-          currentMa20: latestMa20,
-          profitPoints,
-          profitPct,
-          holdingDays: lastIdx - activePos.buyIdx + 1,
-          trackStatus: activePos.breakdownIdx !== -1 ? 'WARNING_20MA' : 'HOLDING'
+          activeOrTodayExit: {
+            ...activePos,
+            currentPrice: latestClose,
+            currentMa20: latestMa20,
+            profitPoints,
+            profitPct,
+            holdingDays: lastIdx - activePos.buyIdx + 1,
+            trackStatus: activePos.breakdownIdx !== -1 ? 'WARNING_20MA' : 'HOLDING'
+          },
+          closedBreakdown: null
         };
       }
 
       if (latestFinishedPos && latestFinishedPos.isClosed) {
         const daysSinceExit = lastIdx - latestFinishedPos.sellIdx;
-        if (daysSinceExit >= 0 && daysSinceExit <= 2) {
-          const profitPoints = Number((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice).toFixed(2));
-          const profitPct = latestFinishedPos.buyPrice > 0 ? Number((((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice) / latestFinishedPos.buyPrice) * 100).toFixed(2)) : 0;
-          return {
-            ...latestFinishedPos,
-            currentPrice: latestClose,
-            currentMa20: latestMa20,
-            profitPoints,
-            profitPct,
-            holdingDays: latestFinishedPos.sellIdx - latestFinishedPos.buyIdx + 1,
-            daysSinceExit,
-            trackStatus: 'EXITED_KEEP2D'
-          };
-        }
+        const profitPoints = Number((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice).toFixed(2));
+        const profitPct = latestFinishedPos.buyPrice > 0 ? Number((((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice) / latestFinishedPos.buyPrice) * 100).toFixed(2)) : 0;
+        const closedRecord = {
+          ...latestFinishedPos,
+          currentPrice: latestClose,
+          currentMa20: latestMa20,
+          profitPoints,
+          profitPct,
+          holdingDays: latestFinishedPos.sellIdx - latestFinishedPos.buyIdx + 1,
+          daysSinceExit,
+          trackStatus: 'EXITED_BREAKDOWN'
+        };
+
+        // 今日剛平倉 (daysSinceExit === 0) 保留於股池四供「今日平倉股票」統計檢視，同時也列入股池五；若已非今日平倉 (如 1303 南亞於 11/03 確認平倉) 則移出股池四並歸入股池五 (破底K/破K池)
+        return {
+          activeOrTodayExit: daysSinceExit === 0 ? closedRecord : null,
+          closedBreakdown: closedRecord
+        };
       }
 
-      return null;
+      return { activeOrTodayExit: null, closedBreakdown: null };
     }
 
     function calcBarForceAndAvgPrice(bar, prevClose, bigBuyVol = 0, bigSellVol = 0, bigBuyAvgPrice = 0, bigSellAvgPrice = 0, todayTotalVol = 0) {
@@ -2107,7 +2138,8 @@
         yestVol: rawYestVol, avgVol5: Math.round(rawAvgVol5), volRatio, volExtraPct, changePct: parseFloat(changePct),
         todayLimitType, yestLimitType, candidateStopLossPrice,
         isUpDay, isBullishRedK, isMa20SlopeUp, isFirstDayBreak20Ma, status, realBars,
-        trackingInfo: null
+        trackingInfo: null,
+        closedBreakdownInfo: null
       };
 
       // 自動檢測近 10 日內跨日確認K (如 4561 在 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
@@ -2283,10 +2315,12 @@
 
     function renderTable() {
       const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-      let sourcePool = currentFilter === "TRACKING" ? trackingStocks : allStocks;
+      let sourcePool = allStocks;
+      if (currentFilter === "TRACKING") sourcePool = trackingStocks;
+      else if (currentFilter === "BREAKDOWN") sourcePool = breakdownPoolStocks;
 
       let baseList = sourcePool.filter(s => {
-        const matchFilter = currentFilter === "ALL" || currentFilter === "TRACKING" || s.status === currentFilter;
+        const matchFilter = currentFilter === "ALL" || currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || s.status === currentFilter;
         const matchKeyword = !keyword || s.code.toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword);
         return matchFilter && matchKeyword;
       });
@@ -2349,14 +2383,12 @@
             statusBadge = `<span class="inline-block px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold text-[11px]">⚠️ 續抱第 ${t.holdingDays} 天(守低${t.breakdownLow.toFixed(2)})</span>`;
             periodSubText = `<div class="text-[10px] text-amber-300">關鍵K:${keyDateSlash} ｜ 買:${buyDateSlash}～今(${sellDateSlash})</div>`;
           } else {
-            const remainDays = 2 - t.daysSinceExit;
-            const todayExitTag = t.daysSinceExit === 0 ? "🔥今日平倉" : `留存剩${remainDays}天`;
             statusBadge = `
               <div class="inline-block px-2 py-0.5 rounded-full bg-purple-500/25 border border-purple-400/50 text-purple-200 font-bold text-[11px]">
-                🏁 持倉 ${t.holdingDays} 天平倉
+                🏁 今日平倉 (${t.holdingDays}天)
               </div>
               <div class="text-[10px] text-purple-300 font-mono mt-0.5">
-                ${buyDateSlash} ～ ${sellDateSlash} (${todayExitTag})
+                ${buyDateSlash} ～ ${sellDateSlash}
               </div>
             `;
             periodSubText = `<div class="text-[10px] text-purple-300 font-medium">關鍵K:${keyDateSlash} ｜ 持倉:${buyDateSlash}～${sellDateSlash} (${t.holdingDays}天)</div>`;
@@ -2421,6 +2453,47 @@
         const maDirArrow = s.isMa20SlopeUp ? "↗" : "↘";
         const maTextColor = s.isMa20SlopeUp ? "text-amber-400" : "text-sky-400";
         const kTypeTag = s.isBullishRedK ? "" : `<span class="ml-1 text-[10px] px-1 rounded bg-slate-800 text-slate-300">跳空/十字</span>`;
+
+        // 若在股池五（BREAKDOWN）且該股屬於 20MA 控盤跌破關鍵K後出現確認K平倉出場 (如 1303 南亞)
+        if (currentFilter === "BREAKDOWN" && s.closedBreakdownInfo && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
+          const cb = s.closedBreakdownInfo;
+          const bdDate = cb.breakdownDate ? formatShortDateSlash(cb.breakdownDate) : formatShortDateSlash(cb.sellDate);
+          const sellDate = formatShortDateSlash(cb.sellDate);
+          const buyDate = formatShortDateSlash(cb.buyDate);
+          const bdHigh = cb.lastBreakdownEvent ? cb.lastBreakdownEvent.high : s.yestHigh;
+          const bdLow = cb.lastBreakdownEvent ? cb.lastBreakdownEvent.low : cb.stopLossPrice;
+          const ptsSign = cb.profitPoints > 0 ? "+" : "";
+
+          return `
+            <tr id="stock-row-${s.code}" onclick="selectStock('${s.code}', true)" class="${rowBg} cursor-pointer transition">
+              <td class="py-2.5 px-3">
+                <div class="font-bold text-white flex flex-wrap items-center gap-1">
+                  <span>${s.code} ${s.name}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono">破20MA關鍵K:${bdDate}</span>
+                </div>
+                <div class="text-[10px] text-emerald-300/90 mt-0.5">買入:${buyDate}(${cb.buyPrice.toFixed(2)}) → ${sellDate}確認K跌破平倉(${cb.sellPrice.toFixed(2)})</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 font-bold text-[11px]">波段 ${ptsSign}${cb.profitPct.toFixed(1)}%</span>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="text-rose-400 font-semibold">${bdHigh.toFixed(2)}</div>
+                <div class="text-emerald-400 font-bold">${bdLow.toFixed(2)}</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="${extraColor} font-bold">${extraSign}${s.volExtraPct}% <span class="text-[10px] text-slate-400">(${s.volRatio}%)</span></div>
+                <div class="text-[10px] text-slate-300">量:${formatVolDisplay(s.yestVol)} / 5均:${formatVolDisplay(s.avgVol5)}</div>
+              </td>
+              <td class="py-2.5 px-2 text-right font-mono">
+                <div class="text-white font-bold">${s.todayPrice.toFixed(2)}</div>
+                <div class="text-[11px] ${pctColor}">${pctSign}${s.changePct}%</div>
+              </td>
+              <td class="py-2.5 px-3 text-center">
+                <span class="inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-semibold text-[11px]">❄️ ${sellDate}破K確認出場</span>
+              </td>
+            </tr>`;
+        }
+
         const keyDateShort = formatShortDateSlash(s.keyKDate);
         const keyDateBadge = s.keyKWaitDays > 1
           ? `<span class="ml-1 text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono">關鍵K:${keyDateShort}</span>`
@@ -2518,12 +2591,13 @@
     }
 
     function updateDetailPanel(stock, resetView = false) {
-      const showTrackingMode = (currentFilter === "TRACKING" && stock.trackingInfo) || (!stock.isFirstDayBreak20Ma && stock.trackingInfo);
+      const activeOrClosedTrack = stock.trackingInfo || ((currentFilter === "BREAKDOWN" || !stock.isFirstDayBreak20Ma || stock.status !== "BREAKOUT") ? stock.closedBreakdownInfo : null);
+      const showTrackingMode = Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !stock.isFirstDayBreak20Ma || Boolean(stock.closedBreakdownInfo));
       const keyDateSlash = formatShortDateSlash(stock.keyKDate);
 
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
       document.getElementById("detailKeyKTag").textContent = showTrackingMode
-        ? `★ 關鍵K(${formatShortDateSlash(stock.trackingInfo.keyKDate)}) → 確認K(${formatShortDateSlash(stock.trackingInfo.buyDate)})買入`
+        ? `★ 關鍵K(${formatShortDateSlash(activeOrClosedTrack.keyKDate)}) → 確認K(${formatShortDateSlash(activeOrClosedTrack.buyDate)})買入`
         : (stock.isFirstDayBreak20Ma ? `★ ${keyDateSlash} 突破20MA關鍵K (+${stock.yestGainPct.toFixed(2)}%)` : `關鍵K漲跌幅 ${stock.yestGainPct >= 0 ? '+' : ''}${stock.yestGainPct.toFixed(2)}%`);
 
       const extraSign = stock.volExtraPct >= 0 ? "+" : "";
@@ -2539,7 +2613,7 @@
       const legendStopItem = document.getElementById("legendStopLossItem");
 
       if (showTrackingMode) {
-        const t = stock.trackingInfo;
+        const t = activeOrClosedTrack;
         trackBanner.classList.remove("hidden");
         const ptsSign = t.profitPoints > 0 ? "+" : "";
         const ptsColor = t.profitPoints > 0 ? "text-rose-400" : (t.profitPoints < 0 ? "text-emerald-400" : "text-slate-200");
@@ -2557,7 +2631,7 @@
           stopPriceEl.textContent = t.stopLossPrice.toFixed(2);
           if (legendStopItem) legendStopItem.classList.remove("hidden");
         } else {
-          stopBannerSegment = `<span>｜ 🛡️ <b class="text-cyan-300">20MA控盤中</b>(${t.ma20ArmedDate ? formatShortDateSlash(t.ma20ArmedDate) : ''}起20MA>買價，固定停損已除)</span>`;
+          stopBannerSegment = `<span>｜ 🛡️ <b class="text-cyan-300">20MA控盤</b>(${t.ma20ArmedDate ? formatShortDateSlash(t.ma20ArmedDate) : ''}起20MA>買價，固定停損已除)</span>`;
           stopBox.className = "bg-slate-900/90 border border-cyan-500/40 rounded-lg p-2 text-center";
           stopTitle.className = "text-[10px] text-cyan-300";
           stopTitle.textContent = `20MA控盤(${t.ma20ArmedDate ? formatShortDateSlash(t.ma20ArmedDate) : ''}起)`;
@@ -2568,13 +2642,13 @@
 
         let bdBannerSegment = "";
         if (t.isClosed) {
-          bdBannerSegment = `｜ 🏁 <b class="text-purple-300">持倉 ${t.holdingDays} 天平倉</b>（持倉期間：<b class="text-white">${buyDateSlash} ～ ${sellDateSlash}</b>）｜ ${t.exitReason} (平倉收:<b class="text-purple-300">${t.sellPrice.toFixed(2)}</b>)`;
+          bdBannerSegment = `｜ ❄️ <b class="text-emerald-300">已破線確認平倉</b>（持倉：<b class="text-white">${buyDateSlash} ～ ${sellDateSlash} 共${t.holdingDays}天</b>）｜ ${t.exitReason} (平倉收:<b class="text-emerald-300">${t.sellPrice.toFixed(2)}</b>)`;
         } else if (t.lastBreakdownEvent) {
           const bd = t.lastBreakdownEvent;
           if (t.breakdownIdx !== -1) {
             bdBannerSegment = `｜ ⚠️ 破20MA關鍵K(${formatShortDateSlash(bd.keyDate)}) 高:<b class="text-rose-400">${bd.high.toFixed(2)}</b> 低:<b class="text-emerald-400">${bd.low.toFixed(2)}</b> (持倉:${buyDateSlash}～今 第${t.holdingDays}天)`;
           } else if (bd.resolvedHoldIdx !== -1) {
-            bdBannerSegment = `｜ ✅ 破20MA關鍵K(${formatShortDateSlash(bd.keyDate)} 高:${bd.high.toFixed(2)}/低:${bd.low.toFixed(2)}) → ${formatShortDateSlash(bd.resolvedHoldDate)}收<b class="text-rose-400">${bd.resolvedHoldClose.toFixed(2)}</b>過高續抱 (持倉:${buyDateSlash}～今 第<b class="text-cyan-300">${t.holdingDays}</b>天)`;
+            bdBannerSegment = `｜ ✅ 破20MA關鍵K(${formatShortDateSlash(bd.keyDate)} 高:${bd.high.toFixed(2)}/低:${bd.low.toFixed(2)}) → ${formatShortDateSlash(bd.resolvedHoldDate)}收<b class="text-rose-400">${bd.resolvedHoldClose.toFixed(2)}</b>過高且站回20MA續抱 (持倉:${buyDateSlash}～今 第<b class="text-cyan-300">${t.holdingDays}</b>天)`;
           }
         } else {
           bdBannerSegment = `｜ 📈 續抱第 <b class="text-cyan-300">${t.holdingDays}</b> 天 (持倉期間：${buyDateSlash} ～ 今)`;
@@ -2598,7 +2672,7 @@
           ${stopBannerSegment}
           ${bdBannerSegment}
         `;
-        trackRight.innerHTML = `<span class="${ptsColor} text-sm">獲利：${ptsSign}${t.profitPoints.toFixed(2)}點 ｜ ${formatMoneyDisplay(profitMoney)} (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
+        trackRight.innerHTML = `<span class="${ptsColor} text-sm">${t.isClosed ? '結算' : '獲利'}：${ptsSign}${t.profitPoints.toFixed(2)}點 ｜ ${formatMoneyDisplay(profitMoney)} (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
       } else {
         trackBanner.classList.add("hidden");
         stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
@@ -2696,8 +2770,8 @@
         }
       }
 
-      if (showTrackingMode && stock.trackingInfo) {
-        const t = stock.trackingInfo;
+      if (showTrackingMode && activeOrClosedTrack) {
+        const t = activeOrClosedTrack;
         if (bars[t.keyKIdx]) bars[t.keyKIdx].isKeyK = true;
         if (bars[t.buyIdx]) bars[t.buyIdx].isTrackBuyK = true;
         if (t.lastBreakdownEvent) {
@@ -2739,15 +2813,16 @@
 
       const badge = document.getElementById("detailDecisionBadge");
       if (showTrackingMode) {
-        const t = stock.trackingInfo;
+        const t = activeOrClosedTrack;
         const bDate = formatShortDateSlash(t.buyDate);
         if (!t.isClosed) {
           badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/20 border border-cyan-500/50 text-cyan-300";
           badge.textContent = `📈 續抱第 ${t.holdingDays} 天 (${bDate}買:${t.buyPrice.toFixed(2)})`;
         } else {
           const sDate = formatShortDateSlash(t.sellDate);
-          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-500/25 border border-purple-400/50 text-purple-200";
-          badge.textContent = `🏁 持倉 ${t.holdingDays} 天平倉 (${bDate}～${sDate})`;
+          const bdDate = t.breakdownDate ? formatShortDateSlash(t.breakdownDate) : sDate;
+          badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/25 border border-emerald-400/50 text-emerald-200";
+          badge.textContent = `❄️ ${bdDate}破20MA → ${sDate}確認K平倉`;
         }
       } else if (stock.isFirstDayBreak20Ma) {
         if (stock.status === "BREAKOUT") {
@@ -2913,8 +2988,9 @@
       const volPlotH = totalPlotH - pricePlotH;
       const plotW = width - padLeft - padRight;
 
-      const showTrackingMode = (currentFilter === "TRACKING" && stock.trackingInfo) || (!stock.isFirstDayBreak20Ma && stock.trackingInfo);
-      const tInfo = showTrackingMode ? stock.trackingInfo : null;
+      const activeOrClosedTrack = stock.trackingInfo || ((currentFilter === "BREAKDOWN" || !stock.isFirstDayBreak20Ma || stock.status !== "BREAKOUT") ? stock.closedBreakdownInfo : null);
+      const showTrackingMode = Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !stock.isFirstDayBreak20Ma || Boolean(stock.closedBreakdownInfo));
+      const tInfo = showTrackingMode ? activeOrClosedTrack : null;
       const shouldShowYellowStop = tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (stock.isFirstDayBreak20Ma && stock.candidateStopLossPrice > 0);
       const yellowStopVal = tInfo ? tInfo.stopLossPrice : stock.candidateStopLossPrice;
 
@@ -3117,7 +3193,7 @@
             ctx.fillStyle = "#c084fc";
             ctx.font = "bold 10px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(`🏁平倉賣(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yHigh - 28);
+            ctx.fillText(`🏁破K確認平倉(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 22);
             ctx.restore();
           }
         }
@@ -3265,9 +3341,9 @@
         }
         const shortDate = chartState.timeframe === '5m' ? b.date : (b.date.length >= 10 ? b.date.slice(5) : b.date);
         const stepLabel = visibleBars.length > 35 ? 8 : (visibleBars.length > 14 ? 3 : 1);
-        if (idx % stepLabel === 0 || b.isKeyK || b.isTrackBuyK || b.isTrackBreakdown20MaK || b.isToday || (showDeduct && b.isTodayDeduct)) {
-          ctx.fillStyle = (showDeduct && b.isTodayDeduct) ? "#e879f9" : (b.isTrackBreakdown20MaK ? "#f59e0b" : (b.isTrackBuyK ? "#38bdf8" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8"))));
-          ctx.font = (b.isKeyK || b.isTrackBuyK || b.isTrackBreakdown20MaK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 9.5px sans-serif" : "9.5px monospace";
+        if (idx % stepLabel === 0 || b.isKeyK || b.isTrackBuyK || b.isTrackBreakdown20MaK || b.isTrackSellK || b.isToday || (showDeduct && b.isTodayDeduct)) {
+          ctx.fillStyle = (showDeduct && b.isTodayDeduct) ? "#e879f9" : (b.isTrackBreakdown20MaK ? "#f59e0b" : (b.isTrackSellK ? "#c084fc" : (b.isTrackBuyK ? "#38bdf8" : (b.isKeyK ? "#fbbf24" : (b.isToday ? "#38bdf8" : "#94a3b8")))));
+          ctx.font = (b.isKeyK || b.isTrackBuyK || b.isTrackBreakdown20MaK || b.isTrackSellK || b.isToday || (showDeduct && b.isTodayDeduct)) ? "bold 9.5px sans-serif" : "9.5px monospace";
           ctx.textAlign = "center";
           ctx.fillText(shortDate, cx, height - 6);
         }
