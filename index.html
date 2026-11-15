@@ -608,10 +608,22 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400 px-0.5">
-              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
-                <input type="checkbox" id="simIncludeFeesChk" checked onchange="runPortfolioCapitalSimulation()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
-                <span>計入台股手續費(0.1425%×6折) ＋ 賣出證交稅(0.3%)</span>
-              </label>
+              <div class="flex flex-wrap items-center gap-3">
+                <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                  <input type="checkbox" id="simIncludeFeesChk" checked onchange="runPortfolioCapitalSimulation()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
+                  <span>計入台股手續費(0.1425%×6折) ＋ 賣出證交稅(0.3%)</span>
+                </label>
+                <label class="inline-flex items-center gap-1 select-none text-amber-200">
+                  <span>同日多檔優先順序：</span>
+                  <select id="simPrioritySelect" onchange="runPortfolioCapitalSimulation()"
+                          class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-amber-300 font-semibold text-[10px] focus:outline-none">
+                    <option value="HIGH_PRICE" selected>高價股優先</option>
+                    <option value="VOL_RATIO">關鍵K量比%高優先</option>
+                    <option value="GAIN_PCT">關鍵K漲幅%高優先</option>
+                    <option value="LOW_PRICE">低價股優先</option>
+                  </select>
+                </label>
+              </div>
               <span id="simStatusNote" class="font-mono text-slate-300"></span>
             </div>
 
@@ -2819,7 +2831,8 @@
             isClosed: !!tr.isClosed,
             sellDate: tr.isClosed ? tr.sellDate : null,
             exitOrNowPrice: tr.isClosed ? tr.sellPrice : (s.todayPrice || tr.currentPrice || tr.buyPrice),
-            volRatio: s.volRatio || 100
+            volRatio: s.volRatio || 100,
+            yestGainPct: s.yestGainPct || 0
           });
         });
       });
@@ -2869,7 +2882,13 @@
           }
         });
 
-        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => (b.volRatio || 0) - (a.volRatio || 0));
+        const priorityMode = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
+        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => {
+          if (priorityMode === "HIGH_PRICE") return (b.buyPrice - a.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
+          if (priorityMode === "LOW_PRICE") return (a.buyPrice - b.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
+          if (priorityMode === "GAIN_PCT") return ((b.yestGainPct || 0) - (a.yestGainPct || 0)) || (b.buyPrice - a.buyPrice);
+          return ((b.volRatio || 0) - (a.volRatio || 0)) || (b.buyPrice - a.buyPrice);
+        });
         dayBuys.forEach(ev => {
           const oneLotGross = ev.buyPrice * 1000;
           const oneLotCost = oneLotGross + Math.round(oneLotGross * feeRate);
