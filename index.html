@@ -551,6 +551,120 @@
           </div>
         </div>
 
+        <!-- 💰 實戰資金模擬回測器 (起始資金 / 起始買入日 / 獲利再投資與提領設定) -->
+        <div class="bg-slate-950/90 border border-amber-500/40 rounded-lg p-2.5 space-y-2 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-amber-300">💰 實戰資金模擬試算</span>
+              <span class="text-[10px] text-slate-400">依目前選用策略與條件，按真實時間軸模擬買賣資金</span>
+            </div>
+            <button type="button" onclick="toggleCapitalSimPanel()" id="btnToggleCapitalSim"
+                    class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 transition">
+              展開/收合資金試算
+            </button>
+          </div>
+
+          <div id="capitalSimBody" class="space-y-2 pt-1 border-t border-slate-800/80">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+              <label class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+                <span class="text-[10px] text-slate-400">起始資金 (元)</span>
+                <input type="number" id="simInitCapitalInput" value="1000000" min="10000" step="50000" onchange="runPortfolioCapitalSimulation()"
+                       class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500" />
+              </label>
+
+              <label class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+                <span class="text-[10px] text-slate-400">開始投入買股日期</span>
+                <input type="date" id="simStartDateInput" onchange="runPortfolioCapitalSimulation()"
+                       class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sky-300 font-mono font-bold focus:outline-none focus:border-sky-500" />
+              </label>
+
+              <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+                <span class="text-[10px] text-slate-400">單檔買進方式</span>
+                <div class="flex items-center gap-1">
+                  <select id="simLotModeSelect" onchange="runPortfolioCapitalSimulation()"
+                          class="flex-1 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-white font-semibold focus:outline-none">
+                    <option value="ONE_LOT" selected>每檔買 1 張</option>
+                    <option value="BUDGET_CAP">單檔上限買整張</option>
+                  </select>
+                  <input type="number" id="simPerStockBudgetInput" value="250000" min="50000" step="50000" onchange="runPortfolioCapitalSimulation()"
+                         class="hidden w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-emerald-300 font-mono text-right focus:outline-none" title="單檔最多投入金額" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+                <span class="text-[10px] text-slate-400">賺到的錢怎麼處理？</span>
+                <div class="flex items-center gap-1">
+                  <select id="simProfitRuleSelect" onchange="runPortfolioCapitalSimulation()"
+                          class="flex-1 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-cyan-300 font-semibold focus:outline-none">
+                    <option value="REINVEST_ALL" selected>全部繼續投入 (複利)</option>
+                    <option value="NO_REINVEST">賺的錢全部不投入 (落袋)</option>
+                    <option value="WITHDRAW_PCT">每筆獲利抽回固定 %</option>
+                    <option value="WITHDRAW_AMOUNT">抽回指定金額不投入</option>
+                  </select>
+                  <input type="number" id="simWithdrawValInput" value="50" min="0" step="10" onchange="runPortfolioCapitalSimulation()"
+                         class="hidden w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-amber-300 font-mono text-right focus:outline-none" />
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400 px-0.5">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="simIncludeFeesChk" checked onchange="runPortfolioCapitalSimulation()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
+                <span>計入台股手續費(0.1425%×6折) ＋ 賣出證交稅(0.3%)</span>
+              </label>
+              <span id="simStatusNote" class="font-mono text-slate-300"></span>
+            </div>
+
+            <!-- 試算結果 4 大卡片 -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[11px] font-mono">
+              <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
+                <div class="text-[10px] text-slate-400">總淨獲利 (已實現＋未實現)</div>
+                <div id="simTotalProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+                <div id="simRoiSubEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
+                <div class="text-[10px] text-slate-400">剩餘可再投入現金</div>
+                <div id="simAvailCashEl" class="text-sm font-bold text-sky-300 mt-0.5">--</div>
+                <div id="simHoldingCostEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
+                <div class="text-[10px] text-slate-400">已抽回不投入資金 (金庫)</div>
+                <div id="simLockedVaultEl" class="text-sm font-bold text-emerald-300 mt-0.5">--</div>
+                <div id="simVaultRuleEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
+                <div class="text-[10px] text-slate-400">實際可買進股票</div>
+                <div id="simBoughtCountEl" class="text-sm font-bold text-amber-300 mt-0.5">--</div>
+                <div id="simSkippedCountEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+              </div>
+            </div>
+
+            <!-- 可展開的買進明細表 -->
+            <div class="flex items-center justify-between pt-0.5">
+              <button type="button" onclick="toggleSimTradesTable()" id="btnToggleSimTable"
+                      class="text-[11px] text-sky-300 hover:text-sky-200 font-semibold underline underline-offset-2">
+                📋 查看可買進股票明細與每筆損益 (0 筆)
+              </button>
+              <span class="text-[10px] text-slate-500">點擊明細列可直接跳轉查看該股 K 線圖</span>
+            </div>
+            <div id="simTradesTableWrap" class="hidden max-h-56 overflow-y-auto border border-slate-800 rounded-lg bg-slate-900/70">
+              <table class="w-full text-[11px] text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-900 text-slate-400 text-[10px] border-b border-slate-800">
+                  <tr>
+                    <th class="py-1.5 px-2">股票 / 買入日</th>
+                    <th class="py-1.5 px-2 text-right">張數 / 買價</th>
+                    <th class="py-1.5 px-2 text-right">投入本金</th>
+                    <th class="py-1.5 px-2 text-right">現價 / 平倉價</th>
+                    <th class="py-1.5 px-2 text-right">淨損益</th>
+                    <th class="py-1.5 px-2 text-center">狀態</th>
+                  </tr>
+                </thead>
+                <tbody id="simTradesTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
           <!-- 1. 賺錢卡片（點擊篩選賺錢股） -->
           <div id="subTab-WIN" onclick="setTrackingSubFilter('WIN')" title="點擊只列出賺錢的股票（再點一次顯示全部）"
@@ -2395,6 +2509,7 @@
       else { sortState.field = null; sortState.dir = null; }
       renderTableHeader();
       renderTable();
+      runPortfolioCapitalSimulation();
     }
 
     function renderTableHeader() {
@@ -2630,6 +2745,243 @@
         showToast(`無法載入 ${code} 的 5 分鐘 K 線：${err.message}`, "error");
       } finally {
         overlay.classList.add("hidden");
+      }
+    }
+
+    function toggleCapitalSimPanel() {
+      const el = document.getElementById("capitalSimBody");
+      if (el) el.classList.toggle("hidden");
+    }
+
+    function toggleSimTradesTable() {
+      const el = document.getElementById("simTradesTableWrap");
+      if (el) el.classList.toggle("hidden");
+    }
+
+    function runPortfolioCapitalSimulation() {
+      const capInput = document.getElementById("simInitCapitalInput");
+      const startInput = document.getElementById("simStartDateInput");
+      const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
+      const budgetInput = document.getElementById("simPerStockBudgetInput");
+      const profitRule = document.getElementById("simProfitRuleSelect")?.value || "REINVEST_ALL";
+      const withdrawInput = document.getElementById("simWithdrawValInput");
+      const includeFees = document.getElementById("simIncludeFeesChk")?.checked ?? true;
+
+      if (budgetInput) budgetInput.classList.toggle("hidden", lotMode !== "BUDGET_CAP");
+      if (withdrawInput) {
+        const showW = (profitRule === "WITHDRAW_PCT" || profitRule === "WITHDRAW_AMOUNT");
+        withdrawInput.classList.toggle("hidden", !showW);
+        if (showW) {
+          if (profitRule === "WITHDRAW_PCT" && Number(withdrawInput.value) > 100) withdrawInput.value = "50";
+          if (profitRule === "WITHDRAW_AMOUNT" && Number(withdrawInput.value) <= 100) withdrawInput.value = "100000";
+          withdrawInput.step = profitRule === "WITHDRAW_PCT" ? "5" : "10000";
+          withdrawInput.title = profitRule === "WITHDRAW_PCT" ? "每筆獲利抽回百分比 (%)" : "累計抽回不投入金額 (元)";
+        }
+      }
+
+      const initCapital = Math.max(10000, parseFloat(capInput?.value || "1000000") || 1000000);
+      const perStockBudget = Math.max(10000, parseFloat(budgetInput?.value || "250000") || 250000);
+      const withdrawParam = Math.max(0, parseFloat(withdrawInput?.value || "0") || 0);
+
+      if (startInput && !startInput.value) {
+        const d = new Date();
+        d.setDate(d.getDate() - 35);
+        startInput.value = d.toISOString().slice(0, 10);
+      }
+      const startDate = startInput?.value || "2000-01-01";
+
+      const events = [];
+      const seenKey = new Set();
+      rawAllLoadedStocks.forEach(s => {
+        const list = [];
+        if (s.trackingInfo && Array.isArray(s.trackingInfo.closedTradesHistory)) {
+          list.push(...s.trackingInfo.closedTradesHistory);
+        } else if (s.closedBreakdownInfo && Array.isArray(s.closedBreakdownInfo.closedTradesHistory)) {
+          list.push(...s.closedBreakdownInfo.closedTradesHistory);
+        } else if (s.closedBreakdownInfo && !s.closedBreakdownInfo.isDirectKeyBreakdown) {
+          list.push(s.closedBreakdownInfo);
+        }
+        if (s.trackingInfo && !s.trackingInfo.isClosed) {
+          list.push(s.trackingInfo);
+        }
+
+        list.forEach(tr => {
+          if (!tr || !tr.buyDate || tr.buyPrice <= 0 || tr.isDirectKeyBreakdown) return;
+          if (tr.buyDate < startDate) return;
+          const uid = `${s.code}_${tr.buyDate}_${tr.buyPrice}`;
+          if (seenKey.has(uid)) return;
+          seenKey.add(uid);
+          events.push({
+            code: s.code,
+            name: s.name,
+            buyDate: tr.buyDate,
+            buyPrice: tr.buyPrice,
+            isClosed: !!tr.isClosed,
+            sellDate: tr.isClosed ? tr.sellDate : null,
+            exitOrNowPrice: tr.isClosed ? tr.sellPrice : (s.todayPrice || tr.currentPrice || tr.buyPrice),
+            volRatio: s.volRatio || 100
+          });
+        });
+      });
+
+      const feeRate = includeFees ? 0.001425 * 0.6 : 0;
+      const taxRate = includeFees ? 0.003 : 0;
+
+      const allDates = new Set();
+      events.forEach(e => {
+        allDates.add(e.buyDate);
+        if (e.isClosed && e.sellDate) allDates.add(e.sellDate);
+      });
+      const sortedDates = [...allDates].sort();
+
+      let availableCash = initCapital;
+      let lockedVault = 0;
+      const boughtTrades = [];
+      const skippedTrades = [];
+
+      sortedDates.forEach(d => {
+        boughtTrades.forEach(bt => {
+          if (bt.isClosed && bt.sellDate === d && !bt.settled) {
+            bt.settled = true;
+            const grossSell = bt.exitOrNowPrice * 1000 * bt.lots;
+            const sellFee = Math.round(grossSell * feeRate) + Math.round(grossSell * taxRate);
+            const netProceeds = grossSell - sellFee;
+            const netProfit = netProceeds - bt.totalCost;
+            bt.netProfit = netProfit;
+            bt.netPct = bt.totalCost > 0 ? (netProfit / bt.totalCost) * 100 : 0;
+
+            if (netProfit > 0) {
+              let toVault = 0;
+              if (profitRule === "NO_REINVEST") {
+                toVault = netProfit;
+              } else if (profitRule === "WITHDRAW_PCT") {
+                const pct = Math.min(100, Math.max(0, withdrawParam));
+                toVault = Math.round(netProfit * (pct / 100));
+              } else if (profitRule === "WITHDRAW_AMOUNT") {
+                const remainTarget = Math.max(0, withdrawParam - lockedVault);
+                toVault = Math.min(netProfit, remainTarget);
+              }
+              lockedVault += toVault;
+              availableCash += (netProceeds - toVault);
+            } else {
+              availableCash += netProceeds;
+            }
+          }
+        });
+
+        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => (b.volRatio || 0) - (a.volRatio || 0));
+        dayBuys.forEach(ev => {
+          const oneLotGross = ev.buyPrice * 1000;
+          const oneLotCost = oneLotGross + Math.round(oneLotGross * feeRate);
+          let lots = 1;
+          if (lotMode === "BUDGET_CAP") {
+            lots = Math.floor(perStockBudget / oneLotCost);
+            if (lots < 1) lots = 1;
+          }
+          const totalCost = oneLotCost * lots;
+          if (availableCash >= totalCost) {
+            availableCash -= totalCost;
+            const uid = `${ev.code}_${ev.buyDate}_${ev.buyPrice}`;
+            const curGross = ev.exitOrNowPrice * 1000 * lots;
+            const estSellFee = Math.round(curGross * feeRate) + Math.round(curGross * taxRate);
+            const curProfit = (curGross - estSellFee) - totalCost;
+            boughtTrades.push({
+              ...ev,
+              uid,
+              lots,
+              totalCost,
+              netProfit: curProfit,
+              netPct: totalCost > 0 ? (curProfit / totalCost) * 100 : 0,
+              settled: false
+            });
+          } else {
+            skippedTrades.push({ ...ev, reqCost: oneLotCost });
+          }
+        });
+      });
+
+      let realizedProfit = 0;
+      let unrealizedProfit = 0;
+      let holdingCostTotal = 0;
+      let holdingMarketValue = 0;
+      let closedCnt = 0, holdingCnt = 0;
+
+      boughtTrades.forEach(bt => {
+        if (bt.isClosed) {
+          realizedProfit += bt.netProfit;
+          closedCnt++;
+        } else {
+          unrealizedProfit += bt.netProfit;
+          holdingCostTotal += bt.totalCost;
+          holdingMarketValue += (bt.exitOrNowPrice * 1000 * bt.lots);
+          holdingCnt++;
+        }
+      });
+
+      const totalNetProfit = realizedProfit + unrealizedProfit;
+      const totalRoiPct = initCapital > 0 ? (totalNetProfit / initCapital) * 100 : 0;
+
+      const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(Math.round(v)).toLocaleString()}`;
+      const fmtCash = (v) => `$${Math.round(v).toLocaleString()}`;
+
+      const pEl = document.getElementById("simTotalProfitEl");
+      if (pEl) {
+        pEl.textContent = `${fmtMoney(totalNetProfit)} (${totalRoiPct >= 0 ? "+" : ""}${totalRoiPct.toFixed(1)}%)`;
+        pEl.className = `text-sm font-bold mt-0.5 ${totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+      }
+      const roiSub = document.getElementById("simRoiSubEl");
+      if (roiSub) roiSub.textContent = `已實現 ${fmtMoney(realizedProfit)} ｜ 未實現 ${fmtMoney(unrealizedProfit)}`;
+
+      const cashEl = document.getElementById("simAvailCashEl");
+      if (cashEl) cashEl.textContent = fmtCash(availableCash);
+      const hcEl = document.getElementById("simHoldingCostEl");
+      if (hcEl) hcEl.textContent = `持股成本 ${fmtCash(holdingCostTotal)} (市值 ${fmtCash(holdingMarketValue)})`;
+
+      const vaultEl = document.getElementById("simLockedVaultEl");
+      if (vaultEl) vaultEl.textContent = fmtCash(lockedVault);
+      const vaultRuleEl = document.getElementById("simVaultRuleEl");
+      if (vaultRuleEl) {
+        vaultRuleEl.textContent = profitRule === "REINVEST_ALL"
+          ? "複利滾存：獲利全數再投入"
+          : (profitRule === "NO_REINVEST" ? "獲利 100% 落袋不投入" : (profitRule === "WITHDRAW_PCT" ? `每筆獲利抽回 ${withdrawParam}%` : `目標抽回 ${fmtCash(withdrawParam)}`));
+      }
+
+      const bCntEl = document.getElementById("simBoughtCountEl");
+      if (bCntEl) bCntEl.textContent = `${boughtTrades.length} 檔 (${closedCnt}平倉・${holdingCnt}續抱)`;
+      const sCntEl = document.getElementById("simSkippedCountEl");
+      if (sCntEl) sCntEl.textContent = skippedTrades.length > 0 ? `資金不足跳過 ${skippedTrades.length} 檔` : "資金充足・無漏單";
+
+      const btnTbl = document.getElementById("btnToggleSimTable");
+      if (btnTbl) btnTbl.textContent = `📋 查看可買進股票明細與每筆損益 (${boughtTrades.length} 筆)`;
+
+      const noteEl = document.getElementById("simStatusNote");
+      if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
+
+      const tbody = document.getElementById("simTradesTableBody");
+      if (tbody) {
+        if (boughtTrades.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
+        } else {
+          tbody.innerHTML = [...boughtTrades].reverse().map(bt => {
+            const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+            const stBadge = bt.isClosed
+              ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉</span>`
+              : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中</span>`;
+            return `
+              <tr onclick="selectStock('${bt.code}', true)" class="hover:bg-slate-800/60 cursor-pointer transition">
+                <td class="py-1.5 px-2">
+                  <div class="font-bold text-white">${bt.code} ${bt.name}</div>
+                  <div class="text-[10px] text-slate-400">${formatShortDateSlash(bt.buyDate)} 買</div>
+                </td>
+                <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
+                <td class="py-1.5 px-2 text-right text-white">${bt.exitOrNowPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${bt.netPct >= 0 ? "+" : ""}${bt.netPct.toFixed(1)}%)</td>
+                <td class="py-1.5 px-2 text-center">${stBadge}</td>
+              </tr>
+            `;
+          }).join("");
+        }
       }
     }
 
