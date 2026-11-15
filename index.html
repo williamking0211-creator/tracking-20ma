@@ -2621,6 +2621,13 @@
           // (3) 策略 C：最高點回落移動停利 ＋ 保本防線
           if (!closedThisBar && cfg.strategy === 'PEAK_TRAILING') {
             if (peakProfitPct >= cfg.peakTrailTriggerPct && activePos.maxCloseSinceEntry > 0) {
+              activePos.dynamicStopPrice = Number((activePos.maxCloseSinceEntry * (1 - cfg.peakDrawdownPct / 100)).toFixed(2));
+              activePos.dynamicStopLabel = `回落${cfg.peakDrawdownPct}%停利`;
+            } else if (peakProfitPct >= cfg.breakevenTriggerPct) {
+              activePos.dynamicStopPrice = activePos.buyPrice;
+              activePos.dynamicStopLabel = `保本防線`;
+            }
+            if (peakProfitPct >= cfg.peakTrailTriggerPct && activePos.maxCloseSinceEntry > 0) {
               const ddPct = ((activePos.maxCloseSinceEntry - curBar.close) / activePos.maxCloseSinceEntry) * 100;
               if (ddPct >= cfg.peakDrawdownPct) {
                 activePos.isClosed = true;
@@ -2693,6 +2700,14 @@
                 }
                 activePos.rrStage = 2;
               }
+            }
+
+            if (activePos.rrStage === 2) {
+              activePos.dynamicStopPrice = activePos.rrStopFloor;
+              activePos.dynamicStopLabel = `鎖利${cfg.rrLockRatio}R`;
+            } else if (activePos.rrStage === 1) {
+              activePos.dynamicStopPrice = activePos.rrStopFloor;
+              activePos.dynamicStopLabel = `保本1:${cfg.rrBreakevenRatio}`;
             }
 
             // 檢查是否跌破階梯保本/鎖利停損底線
@@ -2834,6 +2849,8 @@
                 riskR: Math.max(0.01, Number((curBar.close - pendingKeyK.stopLossPrice).toFixed(2))),
                 rrStopFloor: pendingKeyK.stopLossPrice,
                 rrStage: 0,
+                dynamicStopPrice: 0,
+                dynamicStopLabel: "", 
                 maxCloseSinceEntry: curBar.close,
                 maxHighSinceEntry: curBar.high,
                 shortMaArmed: false,
@@ -3792,6 +3809,18 @@
       evaluateWhaleBubbleComparison(bars, '1d');
       enrichConsecutiveStreakAvg(bars);
 
+      for (let i = 0; i < bars.length; i++) {
+        let sum5 = 0;
+        const s5 = Math.max(0, i - 4);
+        for (let j = s5; j <= i; j++) sum5 += bars[j].close;
+        bars[i].ma5 = Number((sum5 / (i - s5 + 1)).toFixed(2));
+
+        let sum10 = 0;
+        const s10 = Math.max(0, i - 9);
+        for (let j = s10; j <= i; j++) sum10 += bars[j].close;
+        bars[i].ma10 = Number((sum10 / (i - s10 + 1)).toFixed(2));
+      }
+
       if (bars.length >= 20) bars[bars.length - 20].isTodayDeduct = true;
       if (bars.length >= 19) bars[bars.length - 19].isTomorrowDeduct = true;
 
@@ -4011,6 +4040,9 @@
           if (tInfo.lastBreakdownEvent) {
             extraRefPrices.push(tInfo.lastBreakdownEvent.high, tInfo.lastBreakdownEvent.low);
           }
+          if (tInfo.dynamicStopPrice > 0) {
+            extraRefPrices.push(tInfo.dynamicStopPrice);
+          }
         }
         if (shouldShowYellowStop) {
           extraRefPrices.push(yellowStopVal);
@@ -4080,6 +4112,9 @@
         if (shouldShowYellowStop && yellowStopVal > 0) {
           drawHorizontalRefLine(ctx, yellowStopVal, priceToY(yellowStopVal), "#facc15", "停損", padLeft, width - padRight, [6, 4], 1.6);
         }
+        if (tInfo && tInfo.dynamicStopPrice > 0) {
+          drawHorizontalRefLine(ctx, tInfo.dynamicStopPrice, priceToY(tInfo.dynamicStopPrice), "#4ade80", tInfo.dynamicStopLabel || "移動停利", padLeft, width - padRight, [5, 3], 1.6);
+        }
       }
 
       const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
@@ -4097,13 +4132,20 @@
         }
       });
 
-      const ma20Points = [], ma5VolPoints = [];
+      const activeCfg = getExitStrategyConfig();
+      const showShortMaPeriod = (activeCfg.strategy === 'SHORT_MA_TRAIL')
+        ? activeCfg.shortMaPeriod
+        : ((activeCfg.strategy === 'RR_LADDER' && activeCfg.rrTrailMa !== 20) ? activeCfg.rrTrailMa : 0);
+
+      const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
         const yOpen = priceToY(b.open), yClose = priceToY(b.close), yHigh = priceToY(b.high), yLow = priceToY(b.low);
         const prevGlobalBar = (startIdx + idx) > 0 ? bars[startIdx + idx - 1] : null;
 
         if (b.ma20 && b.ma20 > 0) ma20Points.push({ x: cx, y: priceToY(b.ma20), val: b.ma20, prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20 });
+        if (showShortMaPeriod === 5 && b.ma5 > 0) shortMaPoints.push({ x: cx, y: priceToY(b.ma5), val: b.ma5 });
+        else if (showShortMaPeriod === 10 && b.ma10 > 0) shortMaPoints.push({ x: cx, y: priceToY(b.ma10), val: b.ma10 });
         if (b.ma5Vol && b.ma5Vol > 0) ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
 
         const color = b.close >= b.open ? "#f43f5e" : "#10b981";
@@ -4247,6 +4289,26 @@
           ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
         }
+      }
+
+      if (chartState.timeframe === '1d' && shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
+        const shortMaColor = showShortMaPeriod === 5 ? "#e879f9" : "#22d3ee";
+        ctx.save();
+        ctx.strokeStyle = shortMaColor;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        shortMaPoints.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+
+        const lastPt = shortMaPoints[shortMaPoints.length - 1];
+        ctx.fillStyle = shortMaColor;
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`${showShortMaPeriod}MA ${lastPt.val.toFixed(2)}`, lastPt.x + 6, lastPt.y + 3);
+        ctx.restore();
       }
 
       if (showBubbles) {
@@ -4422,6 +4484,13 @@
         const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
         const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
+      }
+      const hudCfg = getExitStrategyConfig();
+      const hudShortMa = (hudCfg.strategy === 'SHORT_MA_TRAIL') ? hudCfg.shortMaPeriod : ((hudCfg.strategy === 'RR_LADDER' && hudCfg.rrTrailMa !== 20) ? hudCfg.rrTrailMa : 0);
+      if (hudShortMa === 5 && bar.ma5 > 0) {
+        maHtml += ` <span class="text-fuchsia-300 font-bold">5MA:${bar.ma5.toFixed(2)}</span>`;
+      } else if (hudShortMa === 10 && bar.ma10 > 0) {
+        maHtml += ` <span class="text-cyan-300 font-bold">10MA:${bar.ma10.toFixed(2)}</span>`;
       }
 
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
