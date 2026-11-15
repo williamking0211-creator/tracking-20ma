@@ -1328,8 +1328,8 @@
       } else if (basis === "BUY_DATE") {
         targetDate = buyD;
       } else {
-        // AUTO: 股池五 (破底K/破線平倉) 預設依破K出場日篩選；股池四 (決策追蹤) 若已平倉依平倉日、續抱中依買入日篩選
-        targetDate = (currentFilter === "BREAKDOWN" || t.isClosed) ? exitD : buyD;
+        // AUTO: 已平倉/破K出場依出場日篩選；續抱中依買入日篩選（跨股池切換完全一致）
+        targetDate = t.isClosed ? exitD : buyD;
       }
 
       if (startStr && targetDate < startStr) return false;
@@ -1625,40 +1625,55 @@
           : "未疊加時間停損";
       }
 
+      const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
+
       const results = list.map(item => {
         const cfg = getExitStrategyConfig(item.key);
         let totalTrades = 0;
         let winSum = 0;
         let lossSum = 0;
         let winCnt = 0;
-        let closedCnt = 0;
-        let closedNet = 0;
-        let holdingCnt = 0;
-        let holdingNet = 0;
+        let pool4Cnt = 0;
+        let pool4Net = 0;
+        let pool5Cnt = 0;
+        let pool5Net = 0;
 
         rawAllLoadedStocks.forEach(s => {
+          if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
+
           const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
-          let rec = null;
-          if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
-            rec = lc.activeOrTodayExit;
-          } else if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
-            rec = lc.closedBreakdown;
+
+          // 股池四（續抱中 + 今日剛平倉）
+          if (lc.activeOrTodayExit && checkStockMatchesPnlDateRange(s, lc.activeOrTodayExit)) {
+            pool4Cnt++;
+            pool4Net += Math.round(lc.activeOrTodayExit.profitPoints * 1000);
+          }
+
+          // 股池五（破K出場 + 直接跌破關鍵低）
+          let p5Rec = null;
+          if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
+            p5Rec = lc.closedBreakdown;
           } else if (allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
-            rec = s.directBreakdownInfo;
+            p5Rec = s.directBreakdownInfo;
           }
-          if (!rec) return;
-          if (!checkStockMatchesPnlDateRange(s, rec)) return;
+          if (p5Rec && checkStockMatchesPnlDateRange(s, p5Rec)) {
+            pool5Cnt++;
+            pool5Net += Math.round(p5Rec.profitPoints * 1000);
+          }
 
-          const money = Math.round(rec.profitPoints * 1000);
+          // 全體去重合計（今日平倉不重複計算）
+          let uniqueRec = null;
+          if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
+            uniqueRec = lc.activeOrTodayExit;
+          } else if (p5Rec) {
+            uniqueRec = p5Rec;
+          } else if (lc.activeOrTodayExit) {
+            uniqueRec = lc.activeOrTodayExit;
+          }
+          if (!uniqueRec || !checkStockMatchesPnlDateRange(s, uniqueRec)) return;
+
+          const money = Math.round(uniqueRec.profitPoints * 1000);
           totalTrades++;
-          if (rec.isClosed) {
-            closedCnt++;
-            closedNet += money;
-          } else {
-            holdingCnt++;
-            holdingNet += money;
-          }
-
           if (money > 0) { winSum += money; winCnt++; }
           else if (money < 0) { lossSum += money; }
         });
@@ -1666,7 +1681,7 @@
         const net = winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
-        return { ...item, totalTrades, closedCnt, closedNet, holdingCnt, holdingNet, net, pf, winRate };
+        return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate };
       });
 
       const bestNet = Math.max(...results.map(r => r.net));
@@ -1675,8 +1690,8 @@
         const isCur = r.key === currentExitStrategy;
         const isBest = r.net === bestNet && r.totalTrades > 0;
         const netColor = r.net > 0 ? "text-rose-400" : (r.net < 0 ? "text-emerald-400" : "text-slate-300");
-        const holdColor = r.holdingNet > 0 ? "text-cyan-300" : (r.holdingNet < 0 ? "text-emerald-400" : "text-slate-300");
-        const closeColor = r.closedNet > 0 ? "text-rose-300" : (r.closedNet < 0 ? "text-emerald-400" : "text-slate-300");
+        const p4Color = r.pool4Net > 0 ? "text-cyan-300" : (r.pool4Net < 0 ? "text-emerald-400" : "text-slate-300");
+        const p5Color = r.pool5Net > 0 ? "text-rose-300" : (r.pool5Net < 0 ? "text-emerald-400" : "text-slate-300");
         const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
         return `
           <div onclick="setExitStrategy('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
@@ -1686,8 +1701,8 @@
             </div>
             <div class="${netColor} font-bold text-xs mt-0.5">合計 ${formatMoneyDisplay(r.net)}</div>
             <div class="text-[9.5px] mt-0.5 space-y-0.5 border-t border-slate-800/80 pt-0.5">
-              <div class="flex justify-between gap-1"><span class="text-slate-400">續抱(${r.holdingCnt}檔):</span><b class="${holdColor}">${formatMoneyDisplay(r.holdingNet)}</b></div>
-              <div class="flex justify-between gap-1"><span class="text-slate-400">平倉(${r.closedCnt}檔):</span><b class="${closeColor}">${formatMoneyDisplay(r.closedNet)}</b></div>
+              <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
+              <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
             </div>
             <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60">
               勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
@@ -4133,9 +4148,14 @@
       });
 
       const activeCfg = getExitStrategyConfig();
-      const showShortMaPeriod = (activeCfg.strategy === 'SHORT_MA_TRAIL')
-        ? activeCfg.shortMaPeriod
-        : ((activeCfg.strategy === 'RR_LADDER' && activeCfg.rrTrailMa !== 20) ? activeCfg.rrTrailMa : 0);
+      let showShortMaPeriod = 0;
+      if (tInfo) {
+        if (activeCfg.strategy === 'SHORT_MA_TRAIL' && tInfo.shortMaArmed) {
+          showShortMaPeriod = activeCfg.shortMaPeriod;
+        } else if (activeCfg.strategy === 'RR_LADDER' && tInfo.rrStage === 2 && activeCfg.rrTrailMa !== 20) {
+          showShortMaPeriod = activeCfg.rrTrailMa;
+        }
+      }
 
       const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
@@ -4486,7 +4506,16 @@
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
       }
       const hudCfg = getExitStrategyConfig();
-      const hudShortMa = (hudCfg.strategy === 'SHORT_MA_TRAIL') ? hudCfg.shortMaPeriod : ((hudCfg.strategy === 'RR_LADDER' && hudCfg.rrTrailMa !== 20) ? hudCfg.rrTrailMa : 0);
+      const hudStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+      const hudTrack = hudStock ? (hudStock.trackingInfo || hudStock.closedBreakdownInfo) : null;
+      let hudShortMa = 0;
+      if (hudTrack) {
+        if (hudCfg.strategy === 'SHORT_MA_TRAIL' && hudTrack.shortMaArmed) {
+          hudShortMa = hudCfg.shortMaPeriod;
+        } else if (hudCfg.strategy === 'RR_LADDER' && hudTrack.rrStage === 2 && hudCfg.rrTrailMa !== 20) {
+          hudShortMa = hudCfg.rrTrailMa;
+        }
+      }
       if (hudShortMa === 5 && bar.ma5 > 0) {
         maHtml += ` <span class="text-fuchsia-300 font-bold">5MA:${bar.ma5.toFixed(2)}</span>`;
       } else if (hudShortMa === 10 && bar.ma10 > 0) {
