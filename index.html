@@ -2591,6 +2591,7 @@
               if (ht.sellIdx !== -1 && bars5m[ht.sellIdx]) {
                 bars5m[ht.sellIdx].isTrackSellK = true;
                 bars5m[ht.sellIdx].closedHoldingDays = ht.holdingDays;
+                bars5m[ht.sellIdx].closedExitLabel = isConfirmKExitTrade(ht) ? "破線確認K平倉" : "破直接平倉";
               }
             });
           }
@@ -2605,6 +2606,7 @@
           if (t5m.isClosed && t5m.sellIdx !== -1 && bars5m[t5m.sellIdx]) {
             bars5m[t5m.sellIdx].isTrackSellK = true;
             bars5m[t5m.sellIdx].closedHoldingDays = t5m.holdingDays;
+            bars5m[t5m.sellIdx].closedExitLabel = isConfirmKExitTrade(t5m) ? "破線確認K平倉" : "破直接平倉";
 
             const postScan5m = Math.max(1, t5m.sellIdx + 1);
             const volOpts5m = { ...filterOpts5m, requireMa20Up: false, requireSolidRedK: false, useGainRange: false };
@@ -3776,6 +3778,14 @@
       document.getElementById("todayExitHoldDays").textContent = `平均 ${todayExitAvgDays} 天 (賺均 ${todayWinAvgD} 天 / 賠均 ${todayLossAvgD} 天)`;
     }
 
+    function isConfirmKExitTrade(t) {
+      if (!t) return false;
+      if (t.exitModeType === 'CONFIRM_K') return true;
+      if (t.exitModeType === 'DIRECT') return false;
+      const reason = String(t.exitReason || "");
+      return /確認K|關鍵K|破20MA關鍵K/.test(reason) && !/跌破即出/.test(reason);
+    }
+
     function getControlConfirmSuffix(t) {
       if (!t) return "";
       const cfg = getExitStrategyConfig();
@@ -3895,10 +3905,10 @@
               : "bg-purple-500/25 border-purple-400/50 text-purple-200";
             statusBadge = `
               <div class="inline-block px-2 py-0.5 rounded-full border font-bold text-[11px] ${badgeColor}">
-                ❄️ 持倉 ${t.holdingDays} 天破K平倉
+                ❄️ 持倉 ${t.holdingDays} 天${isConfirmKExitTrade(t) ? '破線確認K平倉' : '破直接平倉'}
               </div>
               <div class="text-[10px] text-emerald-300 font-mono mt-0.5">
-                ${bdDateSlash}破線K → ${sellDateSlash}確認平倉
+                ${isConfirmKExitTrade(t) ? `${bdDateSlash}破線K → ${sellDateSlash}破線確認K平倉` : `${sellDateSlash} 破直接平倉`}
               </div>
             `;
             periodSubText = `<div class="text-[10px] text-emerald-300 font-medium">關鍵K:${keyDateSlash} ｜ 持倉:${buyDateSlash}～${sellDateSlash} (${t.holdingDays}天)</div>`;
@@ -3942,7 +3952,7 @@
           }
 
           const buySubLabel = t.isDirectKeyBreakdown ? `${buyDateSlash}關鍵K收` : `${buyDateSlash}確認K買`;
-          const sellSubLabel = t.isClosed ? `${sellDateSlash}破K平倉` : '最新收盤';
+          const sellSubLabel = t.isClosed ? `${sellDateSlash}${isConfirmKExitTrade(t) ? '破線確認K平倉' : '破直接平倉'}` : '最新收盤';
 
           return `
             <tr id="stock-row-${s.code}" onclick="selectStock('${s.code}', true)" class="${rowBg} cursor-pointer transition">
@@ -4160,7 +4170,7 @@
 
         let bdBannerSegment = "";
         if (t.isClosed) {
-          bdBannerSegment = `｜ ❄️ <b class="text-emerald-300">已破線確認平倉</b>（持倉：<b class="text-white">${buyDateSlash} ～ ${sellDateSlash} 共${t.holdingDays}天</b>）｜ ${t.exitReason} (平倉收:<b class="text-emerald-300">${t.sellPrice.toFixed(2)}</b>)`;
+          bdBannerSegment = `｜ ❄️ <b class="text-emerald-300">${isConfirmKExitTrade(t) ? '已破線確認K平倉' : '已破直接平倉'}</b>（持倉：<b class="text-white">${buyDateSlash} ～ ${sellDateSlash} 共${t.holdingDays}天</b>）｜ ${t.exitReason} (平倉收:<b class="text-emerald-300">${t.sellPrice.toFixed(2)}</b>)`;
         } else if (t.lastBreakdownEvent) {
           const bd = t.lastBreakdownEvent;
           if (t.breakdownIdx !== -1) {
@@ -4348,6 +4358,7 @@
             if (ht.sellIdx !== -1 && bars[ht.sellIdx]) {
               bars[ht.sellIdx].isTrackSellK = true;
               bars[ht.sellIdx].closedHoldingDays = ht.holdingDays;
+              bars[ht.sellIdx].closedExitLabel = isConfirmKExitTrade(ht) ? "破線確認K平倉" : "破直接平倉";
             }
           });
         }
@@ -4363,6 +4374,7 @@
         if (t.isClosed && t.sellIdx !== -1 && bars[t.sellIdx]) {
           bars[t.sellIdx].isTrackSellK = true;
           bars[t.sellIdx].closedHoldingDays = t.holdingDays;
+          bars[t.sellIdx].closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
 
           // 若該股早已於更早期平倉 (如 7799 於 09/24 平倉)，仍掃描平倉日之後是否有新的 20MA 突破關鍵K與確認K (如 11/11 -> 11/12)
           const postScanFrom = Math.max(1, t.sellIdx + 1);
@@ -4989,7 +5001,7 @@
             ctx.fillStyle = "#c084fc";
             ctx.font = "bold 10px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(`🏁破K確認平倉(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 22);
+            ctx.fillText(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 22);
             ctx.restore();
           }
         }
