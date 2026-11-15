@@ -566,7 +566,7 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <span class="font-bold text-amber-300">💰 實戰資金模擬試算</span>
-              <span class="text-[10px] text-slate-400">依目前選用策略與條件，按真實時間軸模擬買賣資金</span>
+              <span id="simActiveStrategyBadge" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/40 text-indigo-200 font-semibold">目前策略：--</span>
             </div>
             <button type="button" onclick="toggleCapitalSimPanel()" id="btnToggleCapitalSim"
                     class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 transition">
@@ -578,7 +578,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
               <label class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
                 <span class="text-[10px] text-slate-400">起始資金 (元)</span>
-                <input type="number" id="simInitCapitalInput" value="1000000" min="10000" step="50000" onchange="runPortfolioCapitalSimulation()"
+                <input type="number" id="simInitCapitalInput" value="1000000" min="10000" step="50000" oninput="runPortfolioCapitalSimulation()" onchange="runPortfolioCapitalSimulation()"
                        class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500" />
               </label>
 
@@ -596,7 +596,7 @@
                     <option value="ONE_LOT" selected>每檔買 1 張</option>
                     <option value="BUDGET_CAP">單檔上限買整張</option>
                   </select>
-                  <input type="number" id="simPerStockBudgetInput" value="250000" min="50000" step="50000" onchange="runPortfolioCapitalSimulation()"
+                  <input type="number" id="simPerStockBudgetInput" value="250000" min="50000" step="50000" oninput="runPortfolioCapitalSimulation()" onchange="runPortfolioCapitalSimulation()"
                          class="hidden w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-emerald-300 font-mono text-right focus:outline-none" title="單檔最多投入金額" />
                 </div>
               </div>
@@ -611,7 +611,7 @@
                     <option value="WITHDRAW_PCT">每筆獲利抽回固定 %</option>
                     <option value="WITHDRAW_AMOUNT">抽回指定金額不投入</option>
                   </select>
-                  <input type="number" id="simWithdrawValInput" value="50" min="0" step="10" onchange="runPortfolioCapitalSimulation()"
+                  <input type="number" id="simWithdrawValInput" value="50" min="0" step="10" oninput="runPortfolioCapitalSimulation()" onchange="runPortfolioCapitalSimulation()"
                          class="hidden w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-amber-300 font-mono text-right focus:outline-none" />
                 </div>
               </div>
@@ -633,6 +633,38 @@
                     <option value="LOW_PRICE">低價股優先</option>
                   </select>
                 </label>
+                <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-cyan-200">
+                  <span class="font-semibold">買進類股(可複選)：</span>
+                  <button type="button" onclick="toggleAllSimSectors()" id="btnSimSectorAll"
+                          class="px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400">全部</button>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="SEMICONDUCTOR" onchange="onSimSectorChkChange()" />
+                    <span>半導體</span>
+                  </label>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="ELECTRONICS" onchange="onSimSectorChkChange()" />
+                    <span>電子/AI/網通</span>
+                  </label>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="FINANCE" onchange="onSimSectorChkChange()" />
+                    <span>金融</span>
+                  </label>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="SHIPPING_CONST" onchange="onSimSectorChkChange()" />
+                    <span>航運/營建/鋼鐵</span>
+                  </label>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="TRAD_BIO" onchange="onSimSectorChkChange()" />
+                    <span>傳產/生技</span>
+                  </label>
+                  <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 cursor-pointer select-none">
+                    <input type="checkbox" class="sim-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="ETF" onchange="onSimSectorChkChange()" />
+                    <span>ETF</span>
+                  </label>
+                </div>
+                <button type="button" onclick="runPortfolioCapitalSimulation()" class="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 text-sky-200 hover:bg-sky-500/35 font-semibold">
+                  🔄 立即重算
+                </button>
               </div>
               <span id="simStatusNote" class="font-mono text-slate-300"></span>
             </div>
@@ -664,10 +696,14 @@
                 <div id="simLockedVaultEl" class="text-sm font-bold text-emerald-300 mt-0.5">--</div>
                 <div id="simVaultRuleEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
               </div>
-              <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
-                <div class="text-[10px] text-slate-400">實際可買進股票</div>
+              <div onclick="toggleSkippedTradesPanel()" title="點擊查看資金不足跳過的股票及假設買進至今損益"
+                   class="cursor-pointer select-none bg-slate-900/95 hover:bg-slate-800/90 border border-slate-700 hover:border-amber-500/60 rounded-lg p-2 transition">
+                <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                  <span>實際可買進股票</span>
+                  <span class="text-[9px] text-amber-300/80">點看跳過</span>
+                </div>
                 <div id="simBoughtCountEl" class="text-sm font-bold text-amber-300 mt-0.5">--</div>
-                <div id="simSkippedCountEl" class="text-[10px] text-slate-400 mt-0.5">--</div>
+                <div id="simSkippedCountEl" class="text-[10px] text-amber-200/90 underline underline-offset-2 mt-0.5">--</div>
               </div>
             </div>
 
@@ -723,6 +759,7 @@
               <table class="w-full text-[11px] text-left border-collapse">
                 <thead class="sticky top-0 bg-slate-900 text-slate-400 text-[10px] border-b border-slate-800 z-10">
                   <tr>
+                    <th class="py-1.5 px-1.5 text-center w-8">#</th>
                     <th onclick="toggleSimTableSort('buyDate')" class="sortable-th py-1.5 px-2">股票 / 買入日 <span id="simSort-buyDate">▼</span></th>
                     <th onclick="toggleSimTableSort('buyPrice')" class="sortable-th py-1.5 px-2 text-right">張數 / 買價 <span id="simSort-buyPrice">↕</span></th>
                     <th onclick="toggleSimTableSort('totalCost')" class="sortable-th py-1.5 px-2 text-right">投入本金 <span id="simSort-totalCost">↕</span></th>
@@ -734,6 +771,33 @@
                 </thead>
                 <tbody id="simTradesTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
               </table>
+            </div>
+
+            <!-- ⏭️ 資金不足跳過之股票假設試算面板 -->
+            <div id="simSkippedPanel" class="hidden border border-amber-500/40 rounded-lg bg-slate-900/90 p-2 space-y-1.5">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-amber-300">⏭️ 資金不足跳過名單（若當時買進到現在的模擬結果）</span>
+                  <span id="simSkippedSummaryBadge" class="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-200"></span>
+                </div>
+                <button type="button" onclick="document.getElementById('simSkippedPanel').classList.add('hidden')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
+              </div>
+              <div class="max-h-56 overflow-y-auto border border-slate-800 rounded bg-slate-950/70">
+                <table class="w-full text-[11px] text-left border-collapse">
+                  <thead class="sticky top-0 bg-slate-900 text-slate-400 text-[10px] border-b border-slate-800">
+                    <tr>
+                      <th class="py-1.5 px-1.5 text-center w-8">#</th>
+                      <th class="py-1.5 px-2">股票 / 錯失買入日</th>
+                      <th class="py-1.5 px-2 text-right">張數 / 買價</th>
+                      <th class="py-1.5 px-2 text-right">當時所需 vs 可用資金</th>
+                      <th class="py-1.5 px-2 text-right">若買進至今(現價/平倉價)</th>
+                      <th class="py-1.5 px-2 text-right">假設淨損益</th>
+                      <th class="py-1.5 px-2 text-center">目前狀態</th>
+                    </tr>
+                  </thead>
+                  <tbody id="simSkippedTableBody" class="divide-y divide-slate-800/60 font-mono"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -3188,9 +3252,68 @@
       if (el) el.classList.toggle("hidden");
     }
 
+    function toggleSkippedTradesPanel() {
+      const p = document.getElementById("simSkippedPanel");
+      if (!p) return;
+      p.classList.toggle("hidden");
+      if (!p.classList.contains("hidden")) {
+        p.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
     function toggleSimTradesTable() {
       const el = document.getElementById("simTradesTableWrap");
       if (el) el.classList.toggle("hidden");
+    }
+
+    const TW_SEMI_CODES = new Set([
+      "2330","2454","2303","3711","3034","2379","3443","3661","5274","6415","8299","2408","2344",
+      "3529","6488","5483","6182","3105","8086","2449","6239","3264","3006","2337","5347","6770",
+      "3532","6515","6510","6223","3680","3583","6643","4961","3035","6531","4968","5269","6756",
+      "3545","2458","3227","6138","6233","8016","8110","6271","2436","3556"
+    ]);
+
+    function resolveStockCategory(s) {
+      const code = String(s.code || "");
+      const name = String(s.name || "");
+      const rawSec = String(s.sectorRaw || "");
+      if (code.startsWith("00")) return "ETF";
+      if (rawSec.includes("半導") || TW_SEMI_CODES.has(code) || /半導|晶圓|積體|封測|矽晶|記憶體|光罩|IC/.test(name)) return "SEMICONDUCTOR";
+      if (rawSec.includes("金融") || /^28\d\d$|^58\d\d$/.test(code) || /金控|銀行|證券|產險|壽險|期貨/.test(name)) return "FINANCE";
+      if (rawSec.includes("航運") || rawSec.includes("營建") || rawSec.includes("鋼鐵") || /^(20|25|26|55|56)\d\d$/.test(code)) return "SHIPPING_CONST";
+      if (rawSec.includes("電子") || rawSec.includes("光電") || rawSec.includes("網通") || rawSec.includes("電腦") || rawSec.includes("零組件")
+          || /^(23|24|30|31|32|33|34|35|36|37|49|52|53|54|61|62|64|65|66|67|80|81|82)\d\d$/.test(code)
+          || /電子|科技|光電|電通|網路|電腦|資訊|光學|精密|通信/.test(name)) {
+        return "ELECTRONICS";
+      }
+      return "TRAD_BIO";
+    }
+
+    function getSelectedSimSectors() {
+      return [...document.querySelectorAll(".sim-sector-chk:checked")].map(el => el.value);
+    }
+
+    function toggleAllSimSectors() {
+      document.querySelectorAll(".sim-sector-chk").forEach(el => { el.checked = false; });
+      const btn = document.getElementById("btnSimSectorAll");
+      if (btn) btn.className = "px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400";
+      runPortfolioCapitalSimulation();
+    }
+
+    function onSimSectorChkChange() {
+      const checked = getSelectedSimSectors();
+      const btn = document.getElementById("btnSimSectorAll");
+      if (btn) {
+        btn.className = checked.length === 0
+          ? "px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400"
+          : "px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:text-white";
+      }
+      runPortfolioCapitalSimulation();
+    }
+
+    function matchesSimSectorFilter(s, selectedSectors) {
+      if (!selectedSectors || selectedSectors.length === 0) return true;
+      return selectedSectors.includes(resolveStockCategory(s));
     }
 
     function runPortfolioCapitalSimulation() {
@@ -3227,7 +3350,9 @@
 
       const events = [];
       const seenKey = new Set();
+      const sectorMode = getSelectedSimSectors();
       rawAllLoadedStocks.forEach(s => {
+        if (!matchesSimSectorFilter(s, sectorMode)) return;
         const list = [];
         if (s.trackingInfo && Array.isArray(s.trackingInfo.closedTradesHistory)) {
           list.push(...s.trackingInfo.closedTradesHistory);
@@ -3343,7 +3468,17 @@
               settled: false
             });
           } else {
-            skippedTrades.push({ ...ev, reqCost: oneLotCost });
+            const curGross = ev.exitOrNowPrice * 1000 * lots;
+            const estSellFee = Math.round(curGross * feeRate) + Math.round(curGross * taxRate);
+            const hypoProfit = (curGross - estSellFee) - totalCost;
+            skippedTrades.push({
+              ...ev,
+              lots,
+              reqCost: totalCost,
+              cashAtTime: availableCash,
+              hypoProfit,
+              hypoPct: totalCost > 0 ? (hypoProfit / totalCost) * 100 : 0
+            });
           }
         });
       });
@@ -3413,11 +3548,56 @@
       const bCntEl = document.getElementById("simBoughtCountEl");
       if (bCntEl) bCntEl.textContent = `${boughtTrades.length} 檔 (${closedCnt}平倉・${holdingCnt}續抱)`;
       const sCntEl = document.getElementById("simSkippedCountEl");
-      if (sCntEl) sCntEl.textContent = skippedTrades.length > 0 ? `資金不足跳過 ${skippedTrades.length} 檔` : "資金充足・無漏單";
+      if (sCntEl) sCntEl.textContent = skippedTrades.length > 0 ? `資金不足跳過 ${skippedTrades.length} 檔 (點擊查看)` : "資金充足・無漏單";
+
+      const skipBadge = document.getElementById("simSkippedSummaryBadge");
+      const skipTbody = document.getElementById("simSkippedTableBody");
+      if (skipBadge && skipTbody) {
+        if (skippedTrades.length === 0) {
+          skipBadge.textContent = "無跳過股票";
+          skipTbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">起始資金充足，沒有因資金不足跳過的股票</td></tr>`;
+        } else {
+          const hypoTotal = skippedTrades.reduce((acc, x) => acc + x.hypoProfit, 0);
+          skipBadge.innerHTML = `共 ${skippedTrades.length} 檔 ｜ 若當時買進至今合計：<b class="${hypoTotal >= 0 ? 'text-rose-400' : 'text-emerald-400'}">${fmtMoney(hypoTotal)}</b>`;
+          skipTbody.innerHTML = skippedTrades.map((sk, idx) => {
+            const hCls = sk.hypoProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+            const stBadge = sk.isClosed
+              ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(sk.sellDate)}已平倉</span>`
+              : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">仍續抱中</span>`;
+            return `
+              <tr id="skip-row-${sk.code}-${idx}" onclick="openStockFromSimList('${sk.code}', 'skip-row-${sk.code}-${idx}')" class="hover:bg-slate-800/60 cursor-pointer transition">
+                <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
+                <td class="py-1.5 px-2">
+                  <div class="font-bold text-white">${sk.code} ${sk.name}</div>
+                  <div class="text-[10px] text-slate-400">${formatShortDateSlash(sk.buyDate)} 錯失</div>
+                </td>
+                <td class="py-1.5 px-2 text-right">${sk.lots}張 / ${sk.buyPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right">
+                  <div class="text-amber-300">需 ${fmtCash(sk.reqCost)}</div>
+                  <div class="text-[10px] text-slate-400">當時僅餘 ${fmtCash(sk.cashAtTime)}</div>
+                </td>
+                <td class="py-1.5 px-2 text-right text-white">${sk.exitOrNowPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right font-bold ${hCls}">${fmtMoney(sk.hypoProfit)} (${sk.hypoPct >= 0 ? "+" : ""}${sk.hypoPct.toFixed(1)}%)</td>
+                <td class="py-1.5 px-2 text-center">${stBadge}</td>
+              </tr>
+            `;
+          }).join("");
+        }
+      }
 
       const btnTbl = document.getElementById("btnToggleSimTable");
       if (btnTbl) btnTbl.textContent = `📋 查看可買進股票明細與每筆損益 (${boughtTrades.length} 筆)`;
 
+      const stratLabelMap = {
+        DEFAULT_20MA: 'A. 原版20MA破線',
+        SHORT_MA_TRAIL: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA`,
+        PEAK_TRAILING: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%`,
+        WHALE_SELL_EXIT: 'D. 高檔爆量賣出',
+        RR_LADDER: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}`,
+        AI_ADAPTIVE: 'F. 🤖AI自適應'
+      };
+      const stratBadge = document.getElementById("simActiveStrategyBadge");
+      if (stratBadge) stratBadge.textContent = `目前套用：${stratLabelMap[currentExitStrategy] || currentExitStrategy}`;
       const noteEl = document.getElementById("simStatusNote");
       if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
@@ -3479,15 +3659,16 @@
         const tbody = document.getElementById("simTradesTableBody");
         if (tbody) {
           if (portComputed.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="py-5 text-center text-slate-400">尚未加入庫存股票，可點上方「📥 匯入模擬名單為我的庫存」或「➕ 新增庫存股票」</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="py-5 text-center text-slate-400">尚未加入庫存股票，可點上方「📥 匯入模擬名單為我的庫存」或「➕ 新增庫存股票」</td></tr>`;
           } else {
-            tbody.innerHTML = sortSimRows(portComputed.map(pt => ({ ...pt, exitOrNowPrice: pt.curP }))).map(pt => {
+            tbody.innerHTML = sortSimRows(portComputed.map(pt => ({ ...pt, exitOrNowPrice: pt.curP }))).map((pt, idx) => {
               const pCls = pt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
               const stopVal = pt.customStopPrice !== "" && pt.customStopPrice !== undefined ? pt.customStopPrice : (pt.autoRule.stopPrice || "");
               const tpVal = pt.customTakeProfitPrice !== "" && pt.customTakeProfitPrice !== undefined ? pt.customTakeProfitPrice : (pt.autoRule.takeProfitPrice || "");
               const ruleTxt = pt.customRuleText || pt.autoRule.ruleText;
               return `
                 <tr id="${pt.rowId}" class="hover:bg-slate-800/40 transition">
+                  <td class="py-1.5 px-1.5 text-center text-amber-300 font-bold">${idx + 1}</td>
                   <td class="py-1.5 px-2">
                     <div onclick="openStockFromSimList('${pt.code}', '${pt.rowId}')" class="font-bold text-sky-300 hover:underline cursor-pointer">${pt.code} ${pt.name} 📈</div>
                     <input type="date" value="${pt.buyDate}" onchange="updatePortfolioField('${pt.id}', 'buyDate', this.value)"
@@ -3539,7 +3720,7 @@
       const tbody = document.getElementById("simTradesTableBody");
       if (tbody) {
         if (boughtTrades.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
         } else {
           tbody.innerHTML = sortSimRows(boughtTrades).map((bt, idx) => {
             const rowId = `sim-row-${bt.code}-${idx}`;
@@ -3554,6 +3735,7 @@
             ].filter(Boolean).join(" / ") || `<span class="text-slate-400">動態追蹤</span>`;
             return `
               <tr id="${rowId}" onclick="openStockFromSimList('${bt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
+                <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
                 <td class="py-1.5 px-2">
                   <div class="font-bold text-white">${bt.code} ${bt.name}</div>
                   <div class="text-[10px] text-slate-400">${formatShortDateSlash(bt.buyDate)} 買</div>
@@ -3637,6 +3819,7 @@
 
       renderTableHeader();
       renderTable();
+      runPortfolioCapitalSimulation();
 
       if ((!selectedStockCode || !rawAllLoadedStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
         selectStock(filteredStocks[0].code, false);
