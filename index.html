@@ -2024,6 +2024,7 @@
       let bestTotalNet = 0;
 
       // 優先要求樣本數 >= 5 檔，避免單一極端離群值失真
+      const strategyCfg = getExitStrategyConfig(strategyKey);
       for (const minSamples of [5, 1]) {
         for (let pct = 0; pct <= 500; pct += 10) {
           const testOpts = { ...baseOpts, volOp: "GTE", validVolThreshold: pct };
@@ -2031,7 +2032,7 @@
           let cnt = 0;
           for (let i = 0; i < poolStocks.length; i++) {
             const s = poolStocks[i];
-            const lc = evaluateStockTrackingLifecycle(s, testOpts, strategyKey);
+            const lc = evaluateStockTrackingLifecycle(s, testOpts, strategyCfg);
             const activeTrack = lc.activeOrTodayExit;
             const closedBd = lc.closedBreakdown;
             if (activeTrack) {
@@ -2133,6 +2134,7 @@
       }
 
       const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
+      const activeStep1Sectors = getSelectedSimSectors();
 
       const results = list.map(item => {
         const cfg = getExitStrategyConfig(item.key);
@@ -2146,6 +2148,7 @@
         let pool5Net = 0;
 
         rawAllLoadedStocks.forEach(s => {
+          if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
           const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
