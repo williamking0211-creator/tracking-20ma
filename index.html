@@ -2667,7 +2667,9 @@
       legend.addEventListener("touchcancel", endTouch);
     }
 
-    const priceTickState = new Map();
+    const priceTickState = new Map(); // code -> { dir, ts, seq }
+    let globalTickSeq = 0;
+    const flashedSeqTracker = new Map(); // key -> last flashed seq
     const simCardPrevVal = new Map();
 
     function isTaipeiTradingHours() {
@@ -2689,20 +2691,26 @@
 
     function getTickFlashAttr(code) {
       const st = priceTickState.get(code);
-      if (!st || Date.now() - st.ts > 4500) return "";
-      return `data-tick-flash="${st.dir}"`;
+      if (!st || Date.now() - st.ts > 5000) return "";
+      return `data-tick-flash="${st.dir}" data-tick-code="${code}" data-tick-seq="${st.seq || 0}"`;
     }
 
     function getTickFlashClass(code) {
       const st = priceTickState.get(code);
-      if (!st || Date.now() - st.ts > 4500) return "";
+      if (!st || Date.now() - st.ts > 5000) return "";
       return st.dir === "UP" ? "tick-flash-up" : "tick-flash-down";
     }
 
     function applyTableTickFlashes(containerEl) {
       if (!containerEl) return;
-      containerEl.querySelectorAll("[data-tick-flash]").forEach(el => {
+      const prefix = containerEl.id || "tbl";
+      containerEl.querySelectorAll("[data-tick-flash]").forEach((el, idx) => {
         const dir = el.getAttribute("data-tick-flash");
+        const code = el.getAttribute("data-tick-code") || idx;
+        const seq = Number(el.getAttribute("data-tick-seq") || 0);
+        const trackKey = `${prefix}_${code}_${el.cellIndex}`;
+        if (seq > 0 && flashedSeqTracker.get(trackKey) === seq) return;
+        if (seq > 0) flashedSeqTracker.set(trackKey, seq);
         if (dir === "UP" || dir === "DOWN") triggerElementFlash(el, dir);
       });
     }
@@ -2754,7 +2762,12 @@
       isAllQuotesPolling = true;
       try {
         const quotesUrl = apiUrl.replace(/\/stocks$/, "/quotes");
-        const res = await fetch(`${quotesUrl}?_t=${Date.now()}`, {
+        const visCodes = new Set();
+        if (selectedStockCode) visCodes.add(selectedStockCode);
+        if (Array.isArray(lastSimTradesSnapshot)) lastSimTradesSnapshot.slice(0, 80).forEach(t => visCodes.add(t.code));
+        if (Array.isArray(filteredStocks)) filteredStocks.slice(0, 80).forEach(s => visCodes.add(s.code));
+        const codesParam = [...visCodes].slice(0, 120).join(",");
+        const res = await fetch(`${quotesUrl}?codes=${encodeURIComponent(codesParam)}&_t=${Date.now()}`, {
           headers: { "ngrok-skip-browser-warning": "true" }
         });
         if (!res.ok) return;
@@ -2771,7 +2784,8 @@
           if (!q) return;
           if (q.p !== s.todayPrice || q.v !== s.todayVol) {
             if (s.todayPrice > 0 && q.p !== s.todayPrice) {
-              priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs });
+              globalTickSeq++;
+              priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
               anyChanged = true;
             }
             s.todayPrice = q.p;
@@ -2868,7 +2882,6 @@
         // 全體清單每 1.5 秒自動抓輕量 /quotes，不需點擊任何股票，有跳動就自動更新並閃底！
         focusedStockTimer = setInterval(() => {
           pollAllLiveQuotes();
-          pollFocusedStockLivePrice();
         }, 1500);
       }
     }
@@ -3037,7 +3050,7 @@
         rawAllLoadedStocks.forEach(s => {
           const oldP = prevPriceMap.get(s.code);
           if (oldP && s.todayPrice > 0 && s.todayPrice !== oldP) {
-            priceTickState.set(s.code, { dir: s.todayPrice > oldP ? "UP" : "DOWN", ts: nowTs });
+            globalTickSeq++; priceTickState.set(s.code, { dir: s.todayPrice > oldP ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
           }
         });
         try {
@@ -5843,7 +5856,8 @@
           liveBadgeEl.className = `text-2xl font-black font-mono px-2.5 py-0.5 rounded-lg bg-slate-900 border ${vsYestUp ? 'border-rose-500/60 text-rose-400' : (vsYestDown ? 'border-emerald-500/60 text-emerald-400' : 'border-slate-700 text-white')}`;
         }
         const stTick = priceTickState.get(stock.code);
-        if (stTick && Date.now() - stTick.ts <= 4500) {
+        if (stTick && Date.now() - stTick.ts <= 5000 && flashedSeqTracker.get("detail_" + stock.code) !== stTick.seq) {
+          flashedSeqTracker.set("detail_" + stock.code, stTick.seq);
           triggerElementFlash(cardTodayEl, stTick.dir);
           if (cardTodayEl.parentElement) triggerElementFlash(cardTodayEl.parentElement, stTick.dir);
           if (liveBadgeEl) triggerElementFlash(liveBadgeEl, stTick.dir);
