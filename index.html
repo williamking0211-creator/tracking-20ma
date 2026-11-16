@@ -60,6 +60,20 @@
     .row-flash {
       animation: rowPulseHighlight 0.85s ease-in-out 2;
     }
+    @keyframes tickFlashUp {
+      0% { background-color: rgba(244, 63, 94, 0.55); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); border-radius: 4px; }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+    @keyframes tickFlashDown {
+      0% { background-color: rgba(16, 185, 129, 0.55); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); border-radius: 4px; }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+    .tick-flash-up {
+      animation: tickFlashUp 1.3s ease-out;
+    }
+    .tick-flash-down {
+      animation: tickFlashDown 1.3s ease-out;
+    }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -93,6 +107,11 @@
         <span id="apiStatusText">連線初始化中...</span>
       </button>
 
+      <button type="button" onclick="toggleHolidayMarketOpen()" id="btnHolidayMarketOpen"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition"
+              title="若遇特殊假日開市，點擊此鈕強制改為每 5 秒同步一次報價">
+        📅 假日開市 (目前自動)
+      </button>
       <button onclick="fetchStocksData()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium hover:bg-slate-700 transition">
         🔄 刷新報價
       </button>
@@ -236,6 +255,37 @@
               <span onclick="quickSetVol(500)" class="cursor-pointer hover:text-amber-300">500%</span>
             </div>
           </div>
+        </div>
+
+        <!-- STEP 1 同步類股複選（勾選後同步篩選股池與實戰資金模擬） -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-wrap items-center gap-1.5 text-[10px] text-cyan-200">
+          <span class="font-bold text-cyan-300">🏷️ 想買進的類股(可複選)：</span>
+          <button type="button" onclick="toggleAllStep1Sectors()" id="btnStep1SectorAll"
+                  class="px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400">全部</button>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="SEMICONDUCTOR" onchange="onStep1SectorChkChange(this)" />
+            <span>半導體</span>
+          </label>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="ELECTRONICS" onchange="onStep1SectorChkChange(this)" />
+            <span>電子/AI/網通</span>
+          </label>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="FINANCE" onchange="onStep1SectorChkChange(this)" />
+            <span>金融</span>
+          </label>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="SHIPPING_CONST" onchange="onStep1SectorChkChange(this)" />
+            <span>航運/營建/鋼鐵</span>
+          </label>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="TRAD_BIO" onchange="onStep1SectorChkChange(this)" />
+            <span>傳產/生技</span>
+          </label>
+          <label class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-950 border border-slate-700 cursor-pointer select-none">
+            <input type="checkbox" class="step1-sector-chk rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" value="ETF" onchange="onStep1SectorChkChange(this)" />
+            <span>ETF</span>
+          </label>
         </div>
       </div>
     </div>
@@ -2613,12 +2663,62 @@
       legend.addEventListener("touchcancel", endTouch);
     }
 
+    const priceTickState = new Map();
+    const simCardPrevVal = new Map();
+
+    function isTaipeiTradingHours() {
+      const now = new Date();
+      const twStr = now.toLocaleString("en-US", { timeZone: "Asia/Taipei", hour12: false });
+      const d = new Date(twStr);
+      const day = d.getDay();
+      if (day < 1 || day > 5) return false;
+      const mins = d.getHours() * 60 + d.getMinutes();
+      return mins >= (9 * 60) && mins <= (13 * 60 + 35);
+    }
+
+    function getTickFlashClass(code) {
+      const st = priceTickState.get(code);
+      if (!st || Date.now() - st.ts > 2200) return "";
+      return st.dir === "UP" ? "tick-flash-up" : "tick-flash-down";
+    }
+
+    function triggerElementFlash(el, dir) {
+      if (!el) return;
+      el.classList.remove("tick-flash-up", "tick-flash-down");
+      void el.offsetWidth;
+      el.classList.add(dir === "UP" ? "tick-flash-up" : "tick-flash-down");
+    }
+
+    let isHolidayMarketOpen = false;
+
+    function toggleHolidayMarketOpen() {
+      isHolidayMarketOpen = !isHolidayMarketOpen;
+      const btn = document.getElementById("btnHolidayMarketOpen");
+      if (btn) {
+        if (isHolidayMarketOpen) {
+          btn.textContent = "🔥 假日開市：5秒更新中";
+          btn.className = "px-3 py-1.5 rounded-lg bg-amber-500/25 border border-amber-400 text-amber-200 text-xs font-bold hover:bg-amber-500/35 transition animate-pulse";
+        } else {
+          btn.textContent = "📅 假日開市 (目前自動)";
+          btn.className = "px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition";
+        }
+      }
+      startAutoSync();
+      if (isHolidayMarketOpen) fetchStocksData(true);
+    }
+
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
-      syncTimer = setInterval(() => {
-        const cb = document.getElementById("autoSyncCheckbox");
-        if (cb && cb.checked) fetchStocksData(true);
-      }, 30000);
+      const isLive = isTaipeiTradingHours() || isHolidayMarketOpen;
+      const cb = document.getElementById("autoSyncCheckbox");
+      if (cb && isLive) cb.checked = true;
+
+      const intervalMs = isLive ? 5000 : 600000; // 開市/假日開市=5秒；假日/盤後=10分鐘
+      const runTick = () => {
+        const curCb = document.getElementById("autoSyncCheckbox");
+        if (!curCb || curCb.checked) fetchStocksData(true);
+      };
+      syncTimer = setInterval(runTick, intervalMs);
     }
 
     function quickSetVol(pct) {
@@ -2778,7 +2878,16 @@
         );
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
+        const prevPriceMap = new Map();
+        rawAllLoadedStocks.forEach(s => { if (s.todayPrice > 0) prevPriceMap.set(s.code, s.todayPrice); });
         rawAllLoadedStocks = list.map(item => normalizeStockItem(item));
+        const nowTs = Date.now();
+        rawAllLoadedStocks.forEach(s => {
+          const oldP = prevPriceMap.get(s.code);
+          if (oldP && s.todayPrice > 0 && s.todayPrice !== oldP) {
+            priceTickState.set(s.code, { dir: s.todayPrice > oldP ? "UP" : "DOWN", ts: nowTs });
+          }
+        });
         try {
           // 僅存必要欄位與最近 45 根K棒避免超過手機 localStorage 5MB 上限
           const compact = list.map(it => ({
@@ -2791,7 +2900,8 @@
         } catch (e) {}
 
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        statusText.textContent = `即時同步中 (${rawAllLoadedStocks.length}檔)`;
+        const syncModeStr = isHolidayMarketOpen ? "假日開市・5秒同步" : (isTaipeiTradingHours() ? "開市・5秒同步" : "盤後/假日・10分同步");
+        statusText.textContent = `${syncModeStr} (${rawAllLoadedStocks.length}檔)`;
         applyFiltersAndRender();
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
@@ -3321,22 +3431,38 @@
       return [...document.querySelectorAll(".sim-sector-chk:checked")].map(el => el.value);
     }
 
+    function syncSectorCheckboxes(sourceClass, targetClass) {
+      const vals = [...document.querySelectorAll(`.${sourceClass}:checked`)].map(el => el.value);
+      document.querySelectorAll(`.${targetClass}`).forEach(el => { el.checked = vals.includes(el.value); });
+      const isAll = vals.length === 0;
+      const clsAll = "px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400";
+      const clsOff = "px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:text-white";
+      const b1 = document.getElementById("btnSimSectorAll");
+      const b2 = document.getElementById("btnStep1SectorAll");
+      if (b1) b1.className = isAll ? clsAll : clsOff;
+      if (b2) b2.className = isAll ? clsAll : clsOff;
+    }
+
+    function toggleAllStep1Sectors() {
+      document.querySelectorAll(".step1-sector-chk, .sim-sector-chk").forEach(el => { el.checked = false; });
+      syncSectorCheckboxes("step1-sector-chk", "sim-sector-chk");
+      applyFiltersAndRender();
+    }
+
+    function onStep1SectorChkChange() {
+      syncSectorCheckboxes("step1-sector-chk", "sim-sector-chk");
+      applyFiltersAndRender();
+    }
+
     function toggleAllSimSectors() {
-      document.querySelectorAll(".sim-sector-chk").forEach(el => { el.checked = false; });
-      const btn = document.getElementById("btnSimSectorAll");
-      if (btn) btn.className = "px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400";
-      runPortfolioCapitalSimulation();
+      document.querySelectorAll(".sim-sector-chk, .step1-sector-chk").forEach(el => { el.checked = false; });
+      syncSectorCheckboxes("sim-sector-chk", "step1-sector-chk");
+      applyFiltersAndRender();
     }
 
     function onSimSectorChkChange() {
-      const checked = getSelectedSimSectors();
-      const btn = document.getElementById("btnSimSectorAll");
-      if (btn) {
-        btn.className = checked.length === 0
-          ? "px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold border border-cyan-400"
-          : "px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 hover:text-white";
-      }
-      runPortfolioCapitalSimulation();
+      syncSectorCheckboxes("sim-sector-chk", "step1-sector-chk");
+      applyFiltersAndRender();
     }
 
     function matchesSimSectorFilter(s, selectedSectors) {
@@ -3537,10 +3663,19 @@
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(Math.round(v)).toLocaleString()}`;
       const fmtCash = (v) => `$${Math.round(v).toLocaleString()}`;
 
+      const flashIfChanged = (el, key, newVal) => {
+        if (!el) return;
+        const prev = simCardPrevVal.get(key);
+        if (prev !== undefined && prev !== newVal) {
+          triggerElementFlash(el, newVal > prev ? "UP" : "DOWN");
+        }
+        simCardPrevVal.set(key, newVal);
+      };
       const pEl = document.getElementById("simTotalProfitEl");
       if (pEl) {
         pEl.textContent = `${fmtMoney(totalNetProfit)} (${totalRoiPct >= 0 ? "+" : ""}${totalRoiPct.toFixed(1)}%)`;
         pEl.className = `text-sm font-bold mt-0.5 ${totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+        flashIfChanged(pEl, "simTotal", Math.round(totalNetProfit));
       }
       const roiSub = document.getElementById("simRoiSubEl");
       if (roiSub) roiSub.textContent = `合計 ${boughtTrades.length} 筆交易`;
@@ -3557,6 +3692,7 @@
       if (uEl) {
         uEl.textContent = fmtMoney(unrealizedProfit);
         uEl.className = `text-sm font-bold mt-0.5 ${unrealizedProfit >= 0 ? "text-rose-400" : "text-emerald-400"}`;
+        flashIfChanged(uEl, "simUnrealized", Math.round(unrealizedProfit));
       }
       const uSub = document.getElementById("simUnrealizedSubEl");
       if (uSub) uSub.textContent = `續抱中 ${holdingCnt} 檔帳面損益`;
@@ -3772,7 +3908,7 @@
                 </td>
                 <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
-                <td class="py-1.5 px-2 text-right text-white">${bt.exitOrNowPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right text-white ${getTickFlashClass(bt.code)}">${bt.exitOrNowPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2">
                   <div class="text-[10px] font-semibold">${priceLine}</div>
                   <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
@@ -3809,7 +3945,9 @@
         syncStockSortablePnlFields(s);
       });
 
+      const activeStep1Sectors = getSelectedSimSectors();
       allStocks = rawAllLoadedStocks.filter(s => {
+        if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return false;
         if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
         // 若該股為先前 20MA 控盤已破線確認平倉 (如 1303 南亞 10/30破線關鍵K -> 11/03確認K平倉)，且之後並無更新的突破20MA關鍵K，才歸入破K池而非待確認池
         if (s.closedBreakdownInfo && s.closedBreakdownInfo.sellIdx >= s.keyKIdx && s.status !== "BREAKOUT") return false;
@@ -3823,12 +3961,13 @@
         return true;
       });
 
-      trackingStocks = rawAllLoadedStocks.filter(s => s.trackingInfo !== null);
+      trackingStocks = rawAllLoadedStocks.filter(s => s.trackingInfo !== null && (activeStep1Sectors.length === 0 || matchesSimSectorFilter(s, activeStep1Sectors)));
 
       // 股池五（破底K / 破K股池）：包含 (A) 突破20MA關鍵K後跌破低點之股票，以及 (B) 20MA控盤跌破關鍵K後出現確認K平倉出場之股票 (如 1303 南亞)
       const breakdownSet = new Set();
       breakdownPoolStocks = [];
       rawAllLoadedStocks.forEach(s => {
+        if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
         if (s.closedBreakdownInfo && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
           breakdownSet.add(s.code);
           breakdownPoolStocks.push(s);
@@ -5513,13 +5652,14 @@
 
       const isTodayRed = stock.todayPrice >= stock.todayOpen;
       const cardTodayEl = document.getElementById("cardTodayPrice");
+      const tickClsDetail = getTickFlashClass(stock.code);
       if (stock.todayLimitType === 'LIMIT_UP') {
         cardTodayEl.innerHTML = `<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▲${stock.todayPrice.toFixed(2)}</span>`;
       } else if (stock.todayLimitType === 'LIMIT_DOWN') {
         cardTodayEl.innerHTML = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▼${stock.todayPrice.toFixed(2)}</span>`;
       } else {
         cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
-        cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+        cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'} ${tickClsDetail}`;
       }
 
       let bars = stock.realBars.map(b => ({ ...b }));
