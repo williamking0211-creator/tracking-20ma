@@ -2902,6 +2902,26 @@
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         const syncModeStr = isHolidayMarketOpen ? "假日開市・5秒同步" : (isTaipeiTradingHours() ? "開市・5秒同步" : "盤後/假日・10分同步");
         statusText.textContent = `${syncModeStr} (${rawAllLoadedStocks.length}檔)`;
+        if ((isTaipeiTradingHours() || isHolidayMarketOpen) && selectedStockCode) {
+          try {
+            const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
+            const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(selectedStockCode)}&_t=${Date.now()}`, {
+              headers: { "ngrok-skip-browser-warning": "true" }
+            });
+            if (sRes.ok) {
+              const sRaw = await sRes.json();
+              const sNorm = normalizeStockItem(sRaw);
+              const idx = rawAllLoadedStocks.findIndex(x => x.code === sNorm.code);
+              if (idx >= 0) {
+                const oldP = rawAllLoadedStocks[idx].todayPrice;
+                if (oldP && sNorm.todayPrice > 0 && sNorm.todayPrice !== oldP) {
+                  priceTickState.set(sNorm.code, { dir: sNorm.todayPrice > oldP ? "UP" : "DOWN", ts: Date.now() });
+                }
+                rawAllLoadedStocks[idx] = sNorm;
+              }
+            }
+          } catch (e) {}
+        }
         applyFiltersAndRender();
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
