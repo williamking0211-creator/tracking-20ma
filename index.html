@@ -2717,7 +2717,7 @@
       const btn = document.getElementById("btnHolidayMarketOpen");
       if (btn) {
         if (isHolidayMarketOpen) {
-          btn.textContent = "🔥 假日開市：5秒更新中";
+          btn.textContent = "🔥 假日開市：1秒更新中";
           btn.className = "px-3 py-1.5 rounded-lg bg-amber-500/25 border border-amber-400 text-amber-200 text-xs font-bold hover:bg-amber-500/35 transition animate-pulse";
         } else {
           btn.textContent = "📅 假日開市 (目前自動)";
@@ -2729,12 +2729,14 @@
     }
 
     let focusedStockTimer = null;
+    let isFocusedPolling = false;
 
     async function pollFocusedStockLivePrice() {
-      if (!selectedStockCode) return;
+      if (!selectedStockCode || isFocusedPolling) return;
       if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
       const curCb = document.getElementById("autoSyncCheckbox");
       if (curCb && !curCb.checked) return;
+      isFocusedPolling = true;
       try {
         const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
         const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(selectedStockCode)}&_t=${Date.now()}`, {
@@ -2769,7 +2771,9 @@
             tmEl.classList.remove("hidden");
           }
         }
-      } catch (e) {}
+      } catch (e) {} finally {
+        isFocusedPolling = false;
+      }
     }
 
     function startAutoSync() {
@@ -2786,7 +2790,7 @@
       };
       syncTimer = setInterval(runTick, intervalMs);
       if (isLive) {
-        focusedStockTimer = setInterval(pollFocusedStockLivePrice, 3000); // 目前盯盤個股：每3秒極速輕量刷新＋閃底
+        focusedStockTimer = setInterval(pollFocusedStockLivePrice, 1000); // 目前盯盤個股：每3秒極速輕量刷新＋閃底
       }
     }
 
@@ -2969,7 +2973,7 @@
         } catch (e) {}
 
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-        const syncModeStr = isHolidayMarketOpen ? "假日開市・5秒同步" : (isTaipeiTradingHours() ? "開市・5秒同步" : "盤後/假日・10分同步");
+        const syncModeStr = isHolidayMarketOpen ? "假日開市・1秒盯盤" : (isTaipeiTradingHours() ? "開市・1秒盯盤" : "盤後/假日・10分同步");
         statusText.textContent = `${syncModeStr} (${rawAllLoadedStocks.length}檔)`;
         if ((isTaipeiTradingHours() || isHolidayMarketOpen) && selectedStockCode) {
           try {
