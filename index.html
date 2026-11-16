@@ -2695,9 +2695,19 @@
 
     function triggerElementFlash(el, dir) {
       if (!el) return;
-      el.classList.remove("tick-flash-up", "tick-flash-down");
-      void el.offsetWidth;
-      el.classList.add(dir === "UP" ? "tick-flash-up" : "tick-flash-down");
+      const bgStart = dir === "UP" ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
+      const bgMid = dir === "UP" ? "rgba(244, 63, 94, 0.40)" : "rgba(16, 185, 129, 0.40)";
+      if (typeof el.animate === "function") {
+        el.animate([
+          { backgroundColor: bgStart, boxShadow: `0 0 16px ${bgStart}` },
+          { backgroundColor: bgMid, offset: 0.4 },
+          { backgroundColor: "transparent", boxShadow: "none" }
+        ], { duration: 1500, easing: "ease-out" });
+      } else {
+        el.classList.remove("tick-flash-up", "tick-flash-down");
+        void el.offsetWidth;
+        el.classList.add(dir === "UP" ? "tick-flash-up" : "tick-flash-down");
+      }
     }
 
     let isHolidayMarketOpen = false;
