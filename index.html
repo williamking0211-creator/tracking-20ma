@@ -6599,6 +6599,34 @@
         showShortMaPeriod = tInfo.activeControlMa;
       }
 
+      const placedLabelBoxes = [];
+      const drawNonOverlappingLabel = (text, cx, targetY, dir, color, font = "bold 10px sans-serif") => {
+        ctx.save();
+        ctx.font = font;
+        ctx.textAlign = "center";
+        const w = ctx.measureText(text).width + 8;
+        const h = 13;
+        let y = Math.max(padTop + 12, Math.min(volPlotTop - 10, targetY));
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const x1 = cx - w / 2, x2 = cx + w / 2;
+          const y1 = y - h + 2, y2 = y + 3;
+          const collides = placedLabelBoxes.some(box => !(x2 < box.x1 || x1 > box.x2 || y2 < box.y1 || y1 > box.y2));
+          if (!collides) {
+            placedLabelBoxes.push({ x1, x2, y1, y2 });
+            break;
+          }
+          y += (dir < 0 ? -14 : 14);
+          if (y < padTop + 12 || y > volPlotTop - 10) {
+            y = Math.max(padTop + 12, Math.min(volPlotTop - 10, y));
+            break;
+          }
+        }
+        ctx.fillStyle = color;
+        ctx.fillText(text, cx, y);
+        ctx.restore();
+        return y;
+      };
+
       const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
@@ -6626,10 +6654,7 @@
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.strokeRect(cx - candleW / 2 - 1, bodyTop - 1, candleW + 2, bodyH + 2);
-          ctx.fillStyle = "#fbbf24";
-          ctx.font = "bold 9.5px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText("★突破關鍵K", cx, yLow + 13);
+          drawNonOverlappingLabel("★突破關鍵K", cx, yLow + 13, 1, "#fbbf24", "bold 9.5px sans-serif");
         }
 
         if (true) {
@@ -6642,12 +6667,8 @@
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1.5;
             ctx.stroke();
-
-            ctx.fillStyle = "#38bdf8";
-            ctx.font = "bold 11px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(`🎯確認K買(${b.close.toFixed(2)})`, cx, yHigh - 10);
             ctx.restore();
+            drawNonOverlappingLabel(`🎯確認K買(${b.close.toFixed(2)})`, cx, yHigh - 10, -1, "#38bdf8", "bold 10.5px sans-serif");
           }
 
           if (b.isTrackBreakdown20MaK) {
@@ -6655,15 +6676,8 @@
             ctx.strokeStyle = "#f59e0b";
             ctx.lineWidth = 2;
             ctx.strokeRect(cx - candleW / 2 - 2, bodyTop - 2, candleW + 4, bodyH + 4);
-
-            ctx.fillStyle = "#fbbf24";
-            ctx.font = "bold 10px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(`⚠️破20MA關鍵K`, cx, yHigh - 18);
-            ctx.fillStyle = "#fde68a";
-            ctx.font = "bold 9.5px monospace";
-            ctx.fillText(`高:${b.high.toFixed(2)} 低:${b.low.toFixed(2)}`, cx, yHigh - 7);
             ctx.restore();
+            drawNonOverlappingLabel(`⚠️破20MA關鍵K (高:${b.high.toFixed(2)} 低:${b.low.toFixed(2)})`, cx, yHigh - 10, -1, "#fbbf24", "bold 9.5px sans-serif");
           }
 
           if (b.isTrackConfirmHoldK) {
@@ -6675,12 +6689,8 @@
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1.2;
             ctx.stroke();
-
-            ctx.fillStyle = "#34d399";
-            ctx.font = "bold 10px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(`✅過高續抱(收:${b.close.toFixed(2)})`, cx, yHigh - 10);
             ctx.restore();
+            drawNonOverlappingLabel(`✅過高續抱(收:${b.close.toFixed(2)})`, cx, yHigh - 10, -1, "#34d399", "bold 10px sans-serif");
           }
 
           if (b.isTrackSellK) {
@@ -6692,14 +6702,9 @@
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1.5;
             ctx.stroke();
-
-            const holdDaysText = b.closedHoldingDays ? `｜持倉${b.closedHoldingDays}天` : "";
-            const flagY = b.isKeyK ? (yLow + 26) : (yLow + 14);
-            ctx.fillStyle = "#c084fc";
-            ctx.font = "bold 10.5px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, flagY);
             ctx.restore();
+            const holdDaysText = b.closedHoldingDays ? `｜持倉${b.closedHoldingDays}天` : "";
+            drawNonOverlappingLabel(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 14, 1, "#c084fc", "bold 10px sans-serif");
           }
         }
 
@@ -6714,19 +6719,10 @@
             ctx.lineTo(width - padRight, yClose);
             ctx.stroke();
             ctx.restore();
-
-            ctx.fillStyle = "#e879f9";
-            ctx.font = "bold 10px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("▼扣抵", cx, yHigh - 14);
-            ctx.fillText(`${b.close.toFixed(2)}`, cx, yHigh - 4);
+            drawNonOverlappingLabel(`▼扣抵 ${b.close.toFixed(2)}`, cx, yHigh - 10, -1, "#e879f9", "bold 10px sans-serif");
           }
           if (b.isTomorrowDeduct) {
-            ctx.fillStyle = "#22d3ee";
-            ctx.font = "bold 10px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText("▲明扣抵", cx, yLow + 14);
-            ctx.fillText(`${b.close.toFixed(2)}`, cx, yLow + 24);
+            drawNonOverlappingLabel(`▲明扣抵 ${b.close.toFixed(2)}`, cx, yLow + 14, 1, "#22d3ee", "bold 10px sans-serif");
           }
         }
       });
