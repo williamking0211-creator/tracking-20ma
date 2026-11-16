@@ -2744,6 +2744,67 @@
 
     let focusedStockTimer = null;
     let isFocusedPolling = false;
+    let isAllQuotesPolling = false;
+
+    async function pollAllLiveQuotes() {
+      if (isAllQuotesPolling || rawAllLoadedStocks.length === 0) return;
+      if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
+      const curCb = document.getElementById("autoSyncCheckbox");
+      if (curCb && !curCb.checked) return;
+      isAllQuotesPolling = true;
+      try {
+        const quotesUrl = apiUrl.replace(/\/stocks$/, "/quotes");
+        const res = await fetch(`${quotesUrl}?_t=${Date.now()}`, {
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        const qMap = new Map();
+        rows.forEach(r => { if (r && r.c && r.p > 0) qMap.set(r.c, r); });
+
+        let anyChanged = false;
+        const nowTs = Date.now();
+        rawAllLoadedStocks.forEach(s => {
+          const q = qMap.get(s.code);
+          if (!q) return;
+          if (q.p !== s.todayPrice || q.v !== s.todayVol) {
+            if (s.todayPrice > 0 && q.p !== s.todayPrice) {
+              priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs });
+              anyChanged = true;
+            }
+            s.todayPrice = q.p;
+            if (q.o > 0) s.todayOpen = q.o;
+            if (q.h > 0) s.todayHigh = Math.max(s.todayHigh || q.h, q.h, q.p);
+            if (q.l > 0) s.todayLow = Math.min(s.todayLow || q.l, q.l, q.p);
+            if (q.v > 0) s.todayVol = q.v;
+            if (Array.isArray(s.realBars) && s.realBars.length > 0) {
+              const lastBar = s.realBars[s.realBars.length - 1];
+              if (lastBar.date === s.latestTradeDate) {
+                lastBar.close = q.p;
+                lastBar.high = Math.max(lastBar.high, s.todayHigh, q.p);
+                lastBar.low = Math.min(lastBar.low, s.todayLow, q.p);
+                if (q.v > 0) lastBar.vol = q.v;
+              }
+            }
+            syncStockSortablePnlFields(s);
+          }
+        });
+
+        if (anyChanged) {
+          applyFiltersAndRender();
+          const tmEl = document.getElementById("detailLiveTimeTag");
+          if (tmEl) {
+            const nowStr = new Date().toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
+            tmEl.textContent = `● 即時 ${nowStr}`;
+            tmEl.classList.remove("hidden");
+          }
+        }
+      } catch (e) {} finally {
+        isAllQuotesPolling = false;
+      }
+    }
 
     async function pollFocusedStockLivePrice() {
       if (!selectedStockCode || isFocusedPolling) return;
@@ -2797,14 +2858,18 @@
       const cb = document.getElementById("autoSyncCheckbox");
       if (cb && isLive) cb.checked = true;
 
-      const intervalMs = isLive ? 10000 : 600000; // 全體股池：開市10秒同步；盤後/假日10分鐘
+      const intervalMs = isLive ? 60000 : 600000; // 完整K線同步：開市1分鐘；盤後/假日10分鐘
       const runTick = () => {
         const curCb = document.getElementById("autoSyncCheckbox");
         if (!curCb || curCb.checked) fetchStocksData(true);
       };
       syncTimer = setInterval(runTick, intervalMs);
       if (isLive) {
-        focusedStockTimer = setInterval(pollFocusedStockLivePrice, 1000); // 目前盯盤個股：每3秒極速輕量刷新＋閃底
+        // 全體清單每 1.5 秒自動抓輕量 /quotes，不需點擊任何股票，有跳動就自動更新並閃底！
+        focusedStockTimer = setInterval(() => {
+          pollAllLiveQuotes();
+          pollFocusedStockLivePrice();
+        }, 1500);
       }
     }
 
