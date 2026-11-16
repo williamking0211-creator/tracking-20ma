@@ -242,6 +242,21 @@
             </div>
           </div>
 
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-purple-950/35 border border-purple-500/35 rounded px-2 py-1 text-[10px]">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none text-purple-200 font-semibold">
+              <input type="checkbox" id="chkAiAutoBestVol" checked onchange="onAiAutoBestVolToggle()"
+                     class="rounded bg-slate-800 border-purple-500/60 text-purple-500 focus:ring-0" />
+              <span>🤖 AI 自動依所選策略鎖定「單檔淨賺最多」之成交量%</span>
+            </label>
+            <div class="flex items-center gap-1.5">
+              <span id="aiBestVolBadge" class="text-amber-300 font-mono font-bold">--</span>
+              <button type="button" onclick="onAiAutoBestVolToggle(true)"
+                      class="px-2 py-0.5 rounded bg-purple-600/80 hover:bg-purple-500 text-white font-bold transition">
+                ⚡ 立即AI找最佳量%
+              </button>
+            </div>
+          </div>
+
           <!-- 超長全寬度成交量拉桿 (0 ~ 500%) -->
           <div class="pt-0.5">
             <input type="range" id="volThresholdSlider" min="0" max="500" step="1" value="70" oninput="onVolSliderChange(this.value)"
@@ -1996,9 +2011,92 @@
       });
     }
 
+    function findBestVolThresholdForStrategy(strategyKey) {
+      if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
+      const baseOpts = getCurrentFilterOptions();
+      const activeSectors = getSelectedSimSectors();
+      const poolStocks = rawAllLoadedStocks.filter(s => activeSectors.length === 0 || matchesSimSectorFilter(s, activeSectors));
+      if (poolStocks.length === 0) return null;
+
+      let bestPct = null;
+      let bestPerStock = -Infinity;
+      let bestCount = 0;
+      let bestTotalNet = 0;
+
+      // 優先要求樣本數 >= 5 檔，避免單一極端離群值失真
+      for (const minSamples of [5, 1]) {
+        for (let pct = 0; pct <= 500; pct += 10) {
+          const testOpts = { ...baseOpts, volOp: "GTE", validVolThreshold: pct };
+          let sumNet = 0;
+          let cnt = 0;
+          for (let i = 0; i < poolStocks.length; i++) {
+            const s = poolStocks[i];
+            const lc = evaluateStockTrackingLifecycle(s, testOpts, strategyKey);
+            const activeTrack = lc.activeOrTodayExit;
+            const closedBd = lc.closedBreakdown;
+            if (activeTrack) {
+              sumNet += Math.round((activeTrack.profitPoints || 0) * 1000);
+              cnt++;
+            } else if (closedBd) {
+              sumNet += Math.round((closedBd.profitPoints || 0) * 1000);
+              cnt++;
+            }
+          }
+          if (cnt >= minSamples) {
+            const perStock = sumNet / cnt;
+            if (perStock > bestPerStock) {
+              bestPerStock = perStock;
+              bestPct = pct;
+              bestCount = cnt;
+              bestTotalNet = sumNet;
+            }
+          }
+        }
+        if (bestPct !== null) break;
+      }
+
+      if (bestPct === null) return null;
+      return { bestPct, bestPerStock: Math.round(bestPerStock), bestCount, bestTotalNet };
+    }
+
+    function applyAiBestVolForCurrentStrategy(forceToast = false) {
+      const res = findBestVolThresholdForStrategy(currentExitStrategy);
+      const badge = document.getElementById("aiBestVolBadge");
+      if (!res) {
+        if (badge) badge.textContent = "等待資料載入...";
+        return false;
+      }
+      document.getElementById("volOperatorSelect").value = "GTE";
+      document.getElementById("volThresholdInput").value = res.bestPct;
+      document.getElementById("volThresholdSlider").value = res.bestPct;
+      syncStep1ControlsUI();
+      if (badge) {
+        const sign = res.bestPerStock >= 0 ? "+" : "";
+        badge.textContent = `AI 最佳量: ≥${res.bestPct}% (單檔淨賺 ${sign}$${res.bestPerStock.toLocaleString()}/檔 · ${res.bestCount}檔)`;
+      }
+      if (forceToast) {
+        const sign = res.bestPerStock >= 0 ? "+" : "";
+        showToast(`🤖 AI 已為目前策略鎖定「單檔淨賺最多」成交量：≥ ${res.bestPct}% (單檔淨賺 ${sign}$${res.bestPerStock.toLocaleString()}元)`, "success");
+      }
+      return true;
+    }
+
+    function onAiAutoBestVolToggle(forceRun = false) {
+      const chk = document.getElementById("chkAiAutoBestVol");
+      if (forceRun || (chk && chk.checked)) {
+        applyAiBestVolForCurrentStrategy(true);
+        saveUserSettingsToStorage(false);
+        applyFiltersAndRender();
+      }
+    }
+
     function setExitStrategy(strategyName) {
       currentExitStrategy = strategyName;
       updateExitStrategyUI();
+      const chk = document.getElementById("chkAiAutoBestVol");
+      if (chk && chk.checked) {
+        applyAiBestVolForCurrentStrategy(true);
+      }
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
