@@ -988,6 +988,7 @@
             </button>
             <h2 id="detailTitle" class="text-xl font-bold text-white">--</h2>
             <span id="detailLivePriceBadge" class="text-2xl font-black font-mono px-2.5 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-white">--</span>
+            <span id="detailLiveChangeBadge" class="text-sm font-bold font-mono px-2 py-0.5 rounded-md bg-slate-900/90 border border-slate-700/80 text-slate-300">--</span>
             <span id="detailLiveTimeTag" class="text-[10px] font-mono text-emerald-300/90 hidden"></span>
             <span id="detailKeyKTag" class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-medium">★ 首日突破20MA關鍵K</span>
           </div>
@@ -5848,12 +5849,30 @@
       } else {
         cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
         cardTodayEl.className = `text-base font-black font-mono mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+        const latestD = stock.latestTradeDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+        let prevSessionClose = stock.yestClose || 0;
+        if (Array.isArray(stock.realBars) && stock.realBars.length >= 2) {
+          const lastB = stock.realBars[stock.realBars.length - 1];
+          prevSessionClose = (lastB.date === latestD)
+            ? stock.realBars[stock.realBars.length - 2].close
+            : lastB.close;
+        }
+        const dayDiffPts = prevSessionClose > 0 ? (stock.todayPrice - prevSessionClose) : 0;
+        const dayDiffPct = prevSessionClose > 0 ? (dayDiffPts / prevSessionClose) * 100 : 0;
+        const vsYestUp = dayDiffPts > 0.0001;
+        const vsYestDown = dayDiffPts < -0.0001;
+
         const liveBadgeEl = document.getElementById("detailLivePriceBadge");
         if (liveBadgeEl) {
-          const vsYestUp = stock.todayPrice > stock.yestClose;
-          const vsYestDown = stock.todayPrice < stock.yestClose;
           liveBadgeEl.textContent = stock.todayPrice.toFixed(2);
           liveBadgeEl.className = `text-2xl font-black font-mono px-2.5 py-0.5 rounded-lg bg-slate-900 border ${vsYestUp ? 'border-rose-500/60 text-rose-400' : (vsYestDown ? 'border-emerald-500/60 text-emerald-400' : 'border-slate-700 text-white')}`;
+        }
+        const liveChgEl = document.getElementById("detailLiveChangeBadge");
+        if (liveChgEl) {
+          const arrow = vsYestUp ? "▲" : (vsYestDown ? "▼" : "");
+          const sign = dayDiffPts > 0 ? "+" : "";
+          liveChgEl.textContent = `${arrow ? arrow + " " : ""}${sign}${dayDiffPts.toFixed(2)} (${sign}${dayDiffPct.toFixed(2)}%)`;
+          liveChgEl.className = `text-sm font-bold font-mono px-2 py-0.5 rounded-md bg-slate-900/90 border ${vsYestUp ? 'border-rose-500/40 text-rose-400' : (vsYestDown ? 'border-emerald-500/40 text-emerald-400' : 'border-slate-700/80 text-slate-300')}`;
         }
         const stTick = priceTickState.get(stock.code);
         if (stTick && Date.now() - stTick.ts <= 5000 && flashedSeqTracker.get("detail_" + stock.code) !== stTick.seq) {
@@ -5861,6 +5880,7 @@
           triggerElementFlash(cardTodayEl, stTick.dir);
           if (cardTodayEl.parentElement) triggerElementFlash(cardTodayEl.parentElement, stTick.dir);
           if (liveBadgeEl) triggerElementFlash(liveBadgeEl, stTick.dir);
+          if (liveChgEl) triggerElementFlash(liveChgEl, stTick.dir);
         }
       }
 
