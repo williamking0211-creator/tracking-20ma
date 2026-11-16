@@ -2733,6 +2733,15 @@
         if (!sRes.ok) return;
         const sRaw = await sRes.json();
         const sNorm = normalizeStockItem(sRaw);
+        const filterOpts = getCurrentFilterOptions();
+        const candUnfiltered = resolveCandidateKeyKForToday(sNorm, null);
+        if (candUnfiltered) applyCandidateKeyKToStock(sNorm, candUnfiltered);
+        const lifecycle = evaluateStockTrackingLifecycle(sNorm, filterOpts);
+        sNorm.trackingInfo = lifecycle.activeOrTodayExit;
+        sNorm.closedBreakdownInfo = lifecycle.closedBreakdown;
+        sNorm.directBreakdownInfo = buildDirectKeyBreakdownRecord(sNorm);
+        syncStockSortablePnlFields(sNorm);
+
         const idx = rawAllLoadedStocks.findIndex(x => x.code === sNorm.code);
         const liveBadgeEl = document.getElementById("detailLivePriceBadge");
         const displayedOldP = liveBadgeEl ? parseFloat(liveBadgeEl.textContent) : (idx >= 0 ? rawAllLoadedStocks[idx].todayPrice : 0);
