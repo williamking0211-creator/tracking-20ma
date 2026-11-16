@@ -570,7 +570,7 @@
             </div>
             <button type="button" onclick="toggleCapitalSimPanel()" id="btnToggleCapitalSim"
                     class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 transition">
-              展開/收合資金試算
+              🔼 收合資金試算
             </button>
           </div>
 
@@ -588,17 +588,24 @@
                        class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sky-300 font-mono font-bold focus:outline-none focus:border-sky-500" />
               </label>
 
-              <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+              <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5 min-w-0">
                 <span class="text-[10px] text-slate-400">單檔買進方式</span>
-                <div class="flex items-center gap-1">
-                  <select id="simLotModeSelect" onchange="runPortfolioCapitalSimulation()"
-                          class="flex-1 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-white font-semibold focus:outline-none">
-                    <option value="ONE_LOT" selected>每檔買 1 張</option>
-                    <option value="BUDGET_CAP">單檔上限買整張</option>
-                  </select>
-                  <input type="number" id="simPerStockBudgetInput" value="250000" min="50000" step="50000" oninput="runPortfolioCapitalSimulation()" onchange="runPortfolioCapitalSimulation()"
-                         class="hidden w-20 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-emerald-300 font-mono text-right focus:outline-none" title="單檔最多投入金額" />
-                </div>
+                <select id="simLotModeSelect" onchange="runPortfolioCapitalSimulation()"
+                        class="w-full bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-white font-semibold focus:outline-none">
+                  <option value="LOTS_1" selected>每檔買 1 張</option>
+                  <option value="LOTS_2">每檔買 2 張</option>
+                  <option value="LOTS_3">每檔買 3 張</option>
+                  <option value="LOTS_4">每檔買 4 張</option>
+                  <option value="LOTS_5">每檔買 5 張</option>
+                  <option value="LOTS_6">每檔買 6 張</option>
+                  <option value="LOTS_7">每檔買 7 張</option>
+                  <option value="LOTS_8">每檔買 8 張</option>
+                  <option value="LOTS_9">每檔買 9 張</option>
+                  <option value="LOTS_10">每檔買 10 張</option>
+                  <option value="BUDGET_CAP">單檔上限買整張</option>
+                </select>
+                <input type="number" id="simPerStockBudgetInput" value="250000" min="50000" step="50000" oninput="runPortfolioCapitalSimulation()" onchange="runPortfolioCapitalSimulation()"
+                       class="hidden w-full bg-slate-950 border border-emerald-500/40 rounded px-2 py-0.5 text-emerald-300 font-mono text-right text-[11px] focus:outline-none" placeholder="單檔上限金額(元)" title="單檔最多投入金額" />
               </div>
 
               <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
@@ -729,6 +736,10 @@
                 <button type="button" onclick="openAddPortfolioRow()"
                         class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/35 transition">
                   ➕ 新增庫存股票
+                </button>
+                <button type="button" onclick="resetSimAndPortfolioToStrategy()"
+                        class="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-400/40 text-rose-200 hover:bg-rose-500/35 transition font-semibold" title="清除手動平倉與自訂編輯，一鍵還原成目前策略的買進清單">
+                  ↺ 一鍵還原依策略買進清單
                 </button>
               </div>
             </div>
@@ -1257,6 +1268,7 @@
       visibleCount: 22,
       rightOffset: 0,
       verticalOffsetPx: 0,
+      priceZoomScale: 1.0,
       mouseX: -1,
       mouseY: -1,
       isDragging: false,
@@ -3039,6 +3051,15 @@
       openManualCloseModal("SIM", uid, code, defaultPrice);
     }
 
+    function resetSimAndPortfolioToStrategy() {
+      simManualCloseMap = {};
+      saveSimManualCloseMap();
+      setSimTableMode("SIM");
+      const wrap = document.getElementById("simTradesTableWrap");
+      if (wrap) wrap.classList.remove("hidden");
+      showToast("已一鍵還原為目前出場策略之標準買進清單", "success");
+    }
+
     function undoManualCloseSimTrade(uid, e) {
       if (e) e.stopPropagation();
       delete simManualCloseMap[uid];
@@ -3249,7 +3270,10 @@
 
     function toggleCapitalSimPanel() {
       const el = document.getElementById("capitalSimBody");
-      if (el) el.classList.toggle("hidden");
+      const btn = document.getElementById("btnToggleCapitalSim");
+      if (!el) return;
+      const isHidden = el.classList.toggle("hidden");
+      if (btn) btn.textContent = isHidden ? "🔽 展開資金試算" : "🔼 收合資金試算";
     }
 
     function toggleSkippedTradesPanel() {
@@ -3454,6 +3478,8 @@
           if (lotMode === "BUDGET_CAP") {
             lots = Math.floor(perStockBudget / oneLotCost);
             if (lots < 1) lots = 1;
+          } else if (lotMode.startsWith("LOTS_")) {
+            lots = Math.max(1, Math.min(10, parseInt(lotMode.split("_")[1], 10) || 1));
           }
           const totalCost = oneLotCost * lots;
           if (availableCash >= totalCost) {
@@ -5814,8 +5840,26 @@
       const canvas = document.getElementById("klineCanvas");
       canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
-        zoomChart(e.deltaY > 0 ? 2 : -2);
+        const rect = canvas.getBoundingClientRect();
+        const localX = e.clientX - rect.left;
+        if (localX >= rect.width - 75) {
+          const curScale = chartState.priceZoomScale || 1.0;
+          const nextScale = e.deltaY < 0 ? curScale * 1.12 : curScale / 1.12;
+          chartState.priceZoomScale = Math.max(0.25, Math.min(5.0, nextScale));
+          renderCanvasChart();
+        } else {
+          zoomChart(e.deltaY > 0 ? 2 : -2);
+        }
       }, { passive: false });
+
+      canvas.addEventListener("dblclick", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        if (e.clientX - rect.left >= rect.width - 75) {
+          chartState.priceZoomScale = 1.0;
+          chartState.verticalOffsetPx = 0;
+          renderCanvasChart();
+        }
+      });
 
       canvas.addEventListener("mousedown", (e) => {
         chartState.isDragging = true;
@@ -5971,7 +6015,14 @@
 
       const rawMax = Math.max(...allPrices), rawMin = Math.min(...allPrices);
       const span = (rawMax - rawMin) || (rawMax * 0.03) || 1;
-      const maxY = rawMax + span * 0.16, minY = rawMin - span * 0.16;
+      let maxY = rawMax + span * 0.16, minY = rawMin - span * 0.16;
+      const pZoom = chartState.priceZoomScale || 1.0;
+      if (pZoom !== 1.0) {
+        const midY = (maxY + minY) / 2;
+        const halfSpan = ((maxY - minY) / 2) / pZoom;
+        maxY = midY + halfSpan;
+        minY = midY - halfSpan;
+      }
 
       const vShift = chartState.verticalOffsetPx || 0;
       const priceToY = (p) => padTop + ((maxY - p) / (maxY - minY)) * pricePlotH + vShift;
@@ -6100,18 +6151,10 @@
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            let labelTopY = yHigh - 10;
-            if (showBubbles && b.showBubble && b.close >= b.open) {
-              const avgP = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
-              const bY = priceToY(avgP);
-              const rad = calcWhaleBubbleRadius(b.bubbleMult || 1, stepX);
-              labelTopY = Math.min(labelTopY, bY - rad - (b.streakDir === 1 && b.streakAvgPrice > 0 ? 38 : 28));
-            }
-
             ctx.fillStyle = "#38bdf8";
-            ctx.font = "bold 10px sans-serif";
+            ctx.font = "bold 11px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(`🎯確認K買(收:${b.close.toFixed(2)})`, cx, labelTopY);
+            ctx.fillText(`🎯確認K買(${b.close.toFixed(2)})`, cx, yHigh - 10);
             ctx.restore();
           }
 
@@ -6159,10 +6202,11 @@
             ctx.stroke();
 
             const holdDaysText = b.closedHoldingDays ? `｜持倉${b.closedHoldingDays}天` : "";
+            const flagY = b.isKeyK ? (yLow + 26) : (yLow + 14);
             ctx.fillStyle = "#c084fc";
-            ctx.font = "bold 10px sans-serif";
+            ctx.font = "bold 10.5px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 22);
+            ctx.fillText(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, flagY);
             ctx.restore();
           }
         }
