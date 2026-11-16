@@ -61,18 +61,20 @@
       animation: rowPulseHighlight 0.85s ease-in-out 2;
     }
     @keyframes tickFlashUp {
-      0% { background-color: rgba(244, 63, 94, 0.55); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); border-radius: 4px; }
+      0% { background-color: rgba(244, 63, 94, 0.72); box-shadow: 0 0 12px rgba(244, 63, 94, 0.65); border-radius: 6px; }
+      45% { background-color: rgba(244, 63, 94, 0.38); }
       100% { background-color: transparent; box-shadow: none; }
     }
     @keyframes tickFlashDown {
-      0% { background-color: rgba(16, 185, 129, 0.55); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); border-radius: 4px; }
+      0% { background-color: rgba(16, 185, 129, 0.72); box-shadow: 0 0 12px rgba(16, 185, 129, 0.65); border-radius: 6px; }
+      45% { background-color: rgba(16, 185, 129, 0.38); }
       100% { background-color: transparent; box-shadow: none; }
     }
     .tick-flash-up {
-      animation: tickFlashUp 1.3s ease-out;
+      animation: tickFlashUp 1.6s ease-out !important;
     }
     .tick-flash-down {
-      animation: tickFlashDown 1.3s ease-out;
+      animation: tickFlashDown 1.6s ease-out !important;
     }
   </style>
 </head>
@@ -2668,11 +2670,18 @@
 
     function isTaipeiTradingHours() {
       const now = new Date();
-      const twStr = now.toLocaleString("en-US", { timeZone: "Asia/Taipei", hour12: false });
-      const d = new Date(twStr);
-      const day = d.getDay();
-      if (day < 1 || day > 5) return false;
-      const mins = d.getHours() * 60 + d.getMinutes();
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Taipei",
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).formatToParts(now);
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      if (map.weekday === "Sat" || map.weekday === "Sun") return false;
+      const hh = parseInt(map.hour, 10) % 24;
+      const mm = parseInt(map.minute, 10) || 0;
+      const mins = hh * 60 + mm;
       return mins >= (9 * 60) && mins <= (13 * 60 + 35);
     }
 
@@ -5679,7 +5688,12 @@
         cardTodayEl.innerHTML = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▼${stock.todayPrice.toFixed(2)}</span>`;
       } else {
         cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
-        cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'} ${tickClsDetail}`;
+        cardTodayEl.className = `text-xs font-bold mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+        const stTick = priceTickState.get(stock.code);
+        if (stTick && Date.now() - stTick.ts <= 4500) {
+          triggerElementFlash(cardTodayEl, stTick.dir);
+          if (cardTodayEl.parentElement) triggerElementFlash(cardTodayEl.parentElement, stTick.dir);
+        }
       }
 
       let bars = stock.realBars.map(b => ({ ...b }));
