@@ -2717,18 +2717,51 @@
       if (isHolidayMarketOpen) fetchStocksData(true);
     }
 
+    let focusedStockTimer = null;
+
+    async function pollFocusedStockLivePrice() {
+      if (!selectedStockCode) return;
+      if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
+      const curCb = document.getElementById("autoSyncCheckbox");
+      if (curCb && !curCb.checked) return;
+      try {
+        const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
+        const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(selectedStockCode)}&_t=${Date.now()}`, {
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!sRes.ok) return;
+        const sRaw = await sRes.json();
+        const sNorm = normalizeStockItem(sRaw);
+        const idx = rawAllLoadedStocks.findIndex(x => x.code === sNorm.code);
+        const liveBadgeEl = document.getElementById("detailLivePriceBadge");
+        const displayedOldP = liveBadgeEl ? parseFloat(liveBadgeEl.textContent) : (idx >= 0 ? rawAllLoadedStocks[idx].todayPrice : 0);
+
+        if (idx >= 0) rawAllLoadedStocks[idx] = sNorm;
+        if (displayedOldP > 0 && sNorm.todayPrice > 0 && sNorm.todayPrice !== displayedOldP) {
+          priceTickState.set(sNorm.code, { dir: sNorm.todayPrice > displayedOldP ? "UP" : "DOWN", ts: Date.now() });
+        }
+        if (selectedStockCode === sNorm.code) {
+          updateDetailPanel(sNorm, false);
+        }
+      } catch (e) {}
+    }
+
     function startAutoSync() {
       if (syncTimer) clearInterval(syncTimer);
+      if (focusedStockTimer) clearInterval(focusedStockTimer);
       const isLive = isTaipeiTradingHours() || isHolidayMarketOpen;
       const cb = document.getElementById("autoSyncCheckbox");
       if (cb && isLive) cb.checked = true;
 
-      const intervalMs = isLive ? 5000 : 600000; // 開市/假日開市=5秒；假日/盤後=10分鐘
+      const intervalMs = isLive ? 10000 : 600000; // 全體股池：開市10秒同步；盤後/假日10分鐘
       const runTick = () => {
         const curCb = document.getElementById("autoSyncCheckbox");
         if (!curCb || curCb.checked) fetchStocksData(true);
       };
       syncTimer = setInterval(runTick, intervalMs);
+      if (isLive) {
+        focusedStockTimer = setInterval(pollFocusedStockLivePrice, 3000); // 目前盯盤個股：每3秒極速輕量刷新＋閃底
+      }
     }
 
     function quickSetVol(pct) {
