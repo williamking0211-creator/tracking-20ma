@@ -5945,11 +5945,15 @@
       const tickClsDetail = getTickFlashClass(stock.code);
       if (stock.todayLimitType === 'LIMIT_UP') {
         cardTodayEl.innerHTML = `<span class="bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▲${stock.todayPrice.toFixed(2)}</span>`;
+        cardTodayEl.className = `text-base font-black font-mono mt-0.5 text-rose-400`;
       } else if (stock.todayLimitType === 'LIMIT_DOWN') {
         cardTodayEl.innerHTML = `<span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold">${stock.todayOpen.toFixed(2)} / ▼${stock.todayPrice.toFixed(2)}</span>`;
+        cardTodayEl.className = `text-base font-black font-mono mt-0.5 text-emerald-400`;
       } else {
         cardTodayEl.textContent = `${stock.todayOpen.toFixed(2)} / ${stock.todayPrice.toFixed(2)}`;
         cardTodayEl.className = `text-base font-black font-mono mt-0.5 ${isTodayRed ? 'text-rose-400' : 'text-emerald-400'}`;
+      }
+      {
         const latestD = stock.latestTradeDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
         let prevSessionClose = stock.yestClose || 0;
         if (Array.isArray(stock.realBars) && stock.realBars.length >= 2) {
@@ -6042,6 +6046,31 @@
       }
 
       chartState.postExitActiveRef = null;
+      // 同步標記所有歷史完整波段交易 (含資金模擬清單中已平倉的歷史買賣點，避免被後續新關鍵K蓋掉)
+      const histTradesToMark = [];
+      if (stock.trackingInfo && Array.isArray(stock.trackingInfo.closedTradesHistory)) {
+        histTradesToMark.push(...stock.trackingInfo.closedTradesHistory);
+      } else if (stock.closedBreakdownInfo && Array.isArray(stock.closedBreakdownInfo.closedTradesHistory)) {
+        histTradesToMark.push(...stock.closedBreakdownInfo.closedTradesHistory);
+      } else if (stock.closedBreakdownInfo && !stock.closedBreakdownInfo.isDirectKeyBreakdown) {
+        histTradesToMark.push(stock.closedBreakdownInfo);
+      }
+      histTradesToMark.forEach(ht => {
+        if (!ht || ht.isDirectKeyBreakdown) return;
+        const kBar = bars.find(b => b.date === ht.keyKDate);
+        if (kBar) kBar.isKeyK = true;
+        const bBar = bars.find(b => b.date === ht.buyDate);
+        if (bBar) bBar.isTrackBuyK = true;
+        if (ht.isClosed && ht.sellDate) {
+          const sBar = bars.find(b => b.date === ht.sellDate);
+          if (sBar) {
+            sBar.isTrackSellK = true;
+            sBar.closedExitLabel = ht.exitReason || "平倉";
+            sBar.closedHoldingDays = ht.holdingDays || 1;
+          }
+        }
+      });
+
       if (showTrackingMode && activeOrClosedTrack) {
         const t = activeOrClosedTrack;
         if (Array.isArray(t.closedTradesHistory)) {
