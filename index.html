@@ -1289,9 +1289,9 @@
       </div>
 
       <!-- 獨立於 K 線圖上方的 HUD 與快捷控制列（與 K 線完全分離，永不重疊） -->
-      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex items-start justify-between gap-2 h-[88px] overflow-hidden shrink-0">
+      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex items-start justify-between gap-2 min-h-[80px] h-auto shrink-0">
         <div class="flex-1 min-w-[220px] flex flex-col gap-1">
-          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-0.5 h-[74px] overflow-y-auto content-start">
+          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-0.5 min-h-[72px] h-auto overflow-visible content-start">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
           </div>
           <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
@@ -2354,12 +2354,14 @@
       const seenKey = new Set([candList[0].join("|")]);
 
       for (const reqMa of [true, false]) {
-        for (const [minG, maxG] of gainOpts) {
-          for (const minV of volOpts) {
-            const k = `${reqMa}|true|${minG}|${maxG}|${minV}`;
-            if (!seenKey.has(k)) {
-              seenKey.add(k);
-              candList.push([reqMa, true, minG, maxG, minV]);
+        for (const reqRed of [true, false]) {
+          for (const [minG, maxG] of gainOpts) {
+            for (const minV of volOpts) {
+              const k = `${reqMa}|${reqRed}|${minG}|${maxG}|${minV}`;
+              if (!seenKey.has(k)) {
+                seenKey.add(k);
+                candList.push([reqMa, reqRed, minG, maxG, minV]);
+              }
             }
           }
         }
@@ -4732,6 +4734,10 @@
       if (bestS1) {
         _aiFullStep1PerStrategyMap[strategyKey] = bestS1;
         applyStep1ParamsToUI(bestS1);
+        const fullBanner = document.getElementById("aiFullStep1AdviceText");
+        if (fullBanner) {
+          fullBanner.innerHTML = `依【${getStrategyDisplayName(strategyKey)}】實戰資金最佳 STEP 1：<b>20MA向上(${bestS1.reqMaUp ? '✔' : '不限'})</b> ｜ <b>實體紅K(${bestS1.reqRed ? '✔' : '不限'})</b> ｜ <b>漲幅 ${bestS1.minG}%~${bestS1.maxG}%</b> ｜ <b>成交量 ≥ ${bestS1.minV}%</b>`;
+        }
       }
       const bestP = _aiCapitalBestParamsMap[strategyKey];
       if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
@@ -4792,27 +4798,44 @@
       _aiCapitalBestParamsMap = {};
       _aiCapitalBestStep1Map = {};
       const results = defs.map(d => {
-        const s1Best = computeAiBestFullStep1ForStrategy(d.key);
-        if (s1Best) _aiCapitalBestStep1Map[d.key] = s1Best;
-        const s1Opts = s1Best
-          ? { requireMa20Up: s1Best.reqMaUp, requireSolidRedK: s1Best.reqRed, useGainRange: true, minGain: s1Best.minG, maxGain: s1Best.maxG, volOp: "GTE", validVolThreshold: s1Best.minV }
-          : null;
+        const s1Full = computeAiBestFullStep1ForStrategy(d.key);
+        const s1Candidates = [];
+        if (s1Full) s1Candidates.push(s1Full);
+        // 針對實戰有限資金，同步測試不同量能門檻與紅K組合，找出實戰資金報酬最高（而非僅單口數最多）的 STEP 1
+        [
+          { reqMaUp: true, reqRed: true, minG: 0, maxG: 10.5, minV: 150 },
+          { reqMaUp: true, reqRed: false, minG: 0, maxG: 10.5, minV: 150 },
+          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 300 },
+          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 500 },
+          { reqMaUp: true, reqRed: false, minG: 2, maxG: 10.5, minV: 500 },
+          { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 700 }
+        ].forEach(sc => {
+          if (!s1Candidates.some(x => x.reqMaUp === sc.reqMaUp && x.reqRed === sc.reqRed && x.minG === sc.minG && x.minV === sc.minV)) {
+            s1Candidates.push(sc);
+          }
+        });
         const baseCfg = getExitStrategyConfig(d.key);
         const cands = baseCands[d.key] || [{ tag: '預設', patch: {} }];
         let bestRes = null;
         let bestTag = '';
         let bestPatch = {};
+        let bestS1 = s1Full;
         cands.forEach(c => {
           const testCfg = { ...baseCfg, ...c.patch };
-          const simRes = simulateCapitalForStrategy(d.key, testCfg, s1Opts);
-          if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
-            bestRes = simRes;
-            bestTag = c.tag;
-            bestPatch = c.patch;
-          }
+          s1Candidates.forEach(sc => {
+            const s1Opts = { requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV };
+            const simRes = simulateCapitalForStrategy(d.key, testCfg, s1Opts);
+            if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
+              bestRes = simRes;
+              bestTag = c.tag;
+              bestPatch = c.patch;
+              bestS1 = sc;
+            }
+          });
         });
+        if (bestS1) _aiCapitalBestStep1Map[d.key] = bestS1;
         _aiCapitalBestParamsMap[d.key] = bestPatch;
-        return { ...d, ...bestRes, bestTag, s1Best };
+        return { ...d, ...bestRes, bestTag, s1Best: bestS1 };
       });
 
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
@@ -9198,7 +9221,10 @@
             ? ` ｜ 當前波段(${matchedTr.buyDate.slice(5)}買 ${matchedTr.buyPrice.toFixed(1)} → ${matchedTr.isClosed ? matchedTr.sellDate.slice(5)+'賣 '+matchedTr.sellPrice.toFixed(1) : '續抱'}：<b class="${matchedTr.profitPoints >= 0 ? 'text-amber-300' : 'text-emerald-300'}">${matchedTr.profitPoints >= 0 ? '+' : ''}${matchedTr.profitPoints.toFixed(2)}點</b>)`
             : "";
           if (document.getElementById("chkShowAiPowerMarkers")?.checked) {
-            flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
+            const bRuleTxt = aiHudPlan.buyRule ? aiHudPlan.buyRule.name : "--";
+            const sRuleTxt = aiHudPlan.sellRule ? aiHudPlan.sellRule.name : "--";
+            flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5 w-full">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
+            flowHudHtml += `<div class="text-[10.5px] font-mono text-amber-200/95 mt-0.5 w-full">📌 AI 選出規則：買入【<b class="text-rose-300">${bRuleTxt}</b>】 ｜ 平倉【<b class="text-cyan-300">${sRuleTxt}</b>】</div>`;
           }
         }
       }
