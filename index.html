@@ -2339,7 +2339,12 @@
       });
       if (poolStocks.length === 0) return null;
 
-      const cfg = overrideCfg || getExitStrategyConfig(strategyKey);
+      const cfg = getExitStrategyConfig(strategyKey);
+      const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
+      const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
+      const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
+      const fCacheKey = `${strategyKey}|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(cfg)}`;
+      if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
       const curOpts = getCurrentFilterOptions();
       const candList = [
         [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
@@ -4368,12 +4373,7 @@
       const startDate = startInput?.value || "2000-01-01";
       const sectorMode = getSelectedSimSectors();
       const filterOpts = overrideFilterOpts || getCurrentFilterOptions();
-      const cfg = getExitStrategyConfig(strategyKey);
-      const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
-      const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
-      const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
-      const fCacheKey = `${strategyKey}|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(cfg)}`;
-      if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
+      const cfg = overrideCfg || getExitStrategyConfig(strategyKey);
 
       const events = [];
       const seenKey = new Set();
