@@ -457,7 +457,7 @@
             <button type="button" onclick="setExitStrategy('RR_LADDER')" id="exitBtn-RR_LADDER"
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-emerald-500/50 text-slate-300 transition">
               <div class="font-bold text-[11px]">E. 風險報酬比階梯控盤</div>
-              <div class="text-[10px] text-slate-400">1:1保本 → 1:3鎖2R奔跑</div>
+              <div id="strategyECardSub" class="text-[10px] text-slate-400">1:1保本 → 1:3鎖2R奔跑</div>
             </button>
             <button type="button" onclick="setExitStrategy('AI_ADAPTIVE')" id="exitBtn-AI_ADAPTIVE"
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-violet-500/50 text-slate-300 transition">
@@ -559,9 +559,9 @@
             <label class="inline-flex items-center gap-1">
               <span class="text-sky-300 font-semibold">奔跑控盤：</span>
               <select id="rrTrailMaSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-sky-300 font-bold">
-                <option value="20" selected>20MA</option>
+                <option value="5" selected>5MA</option>
                 <option value="10">10MA</option>
-                <option value="5">5MA</option>
+                <option value="20">20MA</option>
               </select>
               <select id="rrMaConfirmModeSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-cyan-300 font-bold">
                 <option value="KEY_K" selected>＋ 確認K (破線關鍵K再破低)</option>
@@ -1397,7 +1397,7 @@
         rrTier2Ratio: document.getElementById("rrTier2RatioInput")?.value || "3.0",
         rrTier2Action: document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN",
         rrLockRatio: document.getElementById("rrLockRatioInput")?.value || "2.0",
-        rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "20",
+        rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "5",
         rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K"
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
@@ -1965,7 +1965,7 @@
       const rrTier2Ratio = parseFloat(document.getElementById("rrTier2RatioInput")?.value || "3.0") || 3.0;
       const rrTier2Action = document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN";
       const rrLockRatio = parseFloat(document.getElementById("rrLockRatioInput")?.value || "2.0") || 2.0;
-      const rrTrailMa = parseInt(document.getElementById("rrTrailMaSelect")?.value || "20", 10) || 20;
+      const rrTrailMa = parseInt(document.getElementById("rrTrailMaSelect")?.value || "5", 10) || 5;
       const rrMaConfirmMode = document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K";
 
       const globalConfirmMode = document.getElementById("globalExitConfirmMode")?.value || "AUTO";
@@ -1993,6 +1993,7 @@
     }
 
     function updateExitStrategyUI() {
+      syncStrategyEDescText();
       const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'];
       strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
@@ -2102,9 +2103,31 @@
       applyFiltersAndRender();
     }
 
+    function syncStrategyEDescText() {
+      const cfg = getExitStrategyConfig('RR_LADDER');
+      const subEl = document.getElementById("strategyECardSub");
+      if (subEl) {
+        const actTxt = cfg.rrTier2Action === 'FIXED_TP' ? '直接停利' : `鎖${cfg.rrLockRatio}R+${cfg.rrTrailMa}MA`;
+        subEl.textContent = `1:${cfg.rrBreakevenRatio}(+${cfg.rrBreakevenBufferPct}%) → 1:${cfg.rrTier2Ratio}${actTxt}`;
+      }
+    }
+
     function onExitStrategyChanged() {
+      syncStrategyEDescText();
+      updateExitStrategyUI();
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
+      if (selectedStockCode) {
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        if (cur) updateDetailPanel(cur, false);
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
+          const customS = window._lastCustomInspectedStock;
+          const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
+          customS.trackingInfo = lc.activeOrTodayExit;
+          customS.closedBreakdownInfo = lc.closedBreakdown;
+          updateDetailPanel(customS, false);
+        }
+      }
     }
 
     function toggleStrategyCompareBox() {
@@ -3626,6 +3649,10 @@
           stopPrice = t.stopLossPrice || 0;
           takeProfitPrice = t.sellPrice > t.buyPrice ? t.sellPrice : 0;
           ruleText = t.exitReason || (isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉");
+        } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 1) {
+          controlTxt = `🛡️ 1:1保本線(${(t.dynamicStopPrice || t.buyPrice).toFixed(2)}) 奔跑中，等達1:${getExitStrategyConfig().rrTier2Ratio}切鎖利`;
+        } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 0) {
+          controlTxt = `🔴 守初始停損線(${t.stopLossPrice.toFixed(2)})（未達1:1前不用20MA）`;
         } else if (!t.ma20ControlArmed) {
           stopPrice = t.stopLossPrice || 0;
           ruleText = `初始停損(-2%) (20MA未過買價)`;
@@ -4715,8 +4742,10 @@
           }
 
           // (5) 基礎防線：初始停損 (-2%) 或 20MA 破線確認平倉
+          //     ★ 策略 E (RR_LADDER) 採純風報比階梯：未達1R守初始停損 → 達1R只守保本線自由奔馳 → 達3R鎖2R並交由5MA(或所選均線)控盤，不被20MA提早洗出
+          const skipGeneric20MaForRR = (cfg.strategy === 'RR_LADDER') && (activePos.rrStage < 2 || cfg.rrTrailMa !== 20);
           if (!closedThisBar) {
-            if (!activePos.ma20ControlArmed) {
+            if (!activePos.ma20ControlArmed || (cfg.strategy === 'RR_LADDER' && activePos.rrStage === 0)) {
               if (curBar.close < activePos.stopLossPrice) {
                 activePos.isClosed = true;
                 activePos.sellIdx = i;
@@ -4730,7 +4759,7 @@
             closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
               }
-            } else {
+            } else if (!skipGeneric20MaForRR) {
               const force20Direct = cfg.globalConfirmMode === 'FORCE_DIRECT' || (cfg.globalConfirmMode === 'AUTO' && cfg.strategy === 'RR_LADDER' && activePos.rrStage === 2 && cfg.rrTrailMa === 20 && cfg.rrMaConfirmMode === 'DIRECT');
               if (force20Direct) {
                 if (curBar.ma20 > 0 && curBar.close < curBar.ma20) {
@@ -5817,7 +5846,23 @@
         const sellDateSlash = t.isClosed ? formatShortDateSlash(t.sellDate) : formatShortDateSlash(stock.latestTradeDate);
 
         let stopBannerSegment = "";
-        if (!t.ma20ControlArmed) {
+        const curStratCfg = getExitStrategyConfig();
+        if (curStratCfg.strategy === 'RR_LADDER' && !t.isClosed && t.rrStage === 1) {
+          const beP = t.dynamicStopPrice > 0 ? t.dynamicStopPrice : t.buyPrice;
+          cardCtrlLabelEl.textContent = `1:1保本奔跑中`;
+          cardCtrlValEl.textContent = `${beP.toFixed(2)}`;
+          cardCtrlBoxEl.className = "bg-slate-950/70 rounded-lg p-2.5 border border-emerald-500/50 text-center flex flex-col justify-center";
+          cardCtrlLabelEl.className = "text-[10px] text-emerald-300 font-semibold";
+          cardCtrlValEl.className = "text-xs font-bold text-emerald-400 mt-0.5";
+          bannerCtrlText = `🛡️ <span class="text-emerald-300 font-bold">1:1保本奔跑中</span>(守 ${beP.toFixed(2)}，等達 1:${curStratCfg.rrTier2Ratio} 鎖${curStratCfg.rrLockRatio}R＋${curStratCfg.rrTrailMa}MA)`;
+        } else if (curStratCfg.strategy === 'RR_LADDER' && !t.isClosed && t.rrStage === 0) {
+          cardCtrlLabelEl.textContent = `初始停損價(-2%)`;
+          cardCtrlValEl.textContent = `${t.stopLossPrice.toFixed(2)}`;
+          cardCtrlBoxEl.className = "bg-slate-950/70 rounded-lg p-2.5 border border-amber-500/50 text-center flex flex-col justify-center";
+          cardCtrlLabelEl.className = "text-[10px] text-amber-300 font-semibold";
+          cardCtrlValEl.className = "text-xs font-bold text-amber-300 mt-0.5";
+          bannerCtrlText = `🛡️ <span class="text-amber-300 font-bold">初始停損(${t.stopLossPrice.toFixed(2)})</span>(未達1:1前不受20MA干擾)`;
+        } else if (!t.ma20ControlArmed) {
           stopBannerSegment = `<span>｜ 🛑 初始停損(${t.stopRefDesc})：<b class="text-yellow-300">${t.stopLossPrice.toFixed(2)}</b></span>`;
           stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
           stopTitle.className = "text-[10px] text-yellow-300";
@@ -6477,7 +6522,8 @@
 
       const postRef = (!is5mTf && tInfo && tInfo.isClosed && chartState.postExitActiveRef) ? chartState.postExitActiveRef : null;
       const effBuyPrice = postRef ? postRef.buyPrice : (tInfo ? tInfo.buyPrice : 0);
-      const effMa20Armed = postRef ? postRef.ma20Armed : (tInfo ? tInfo.ma20ControlArmed : false);
+      const isRRMode = getExitStrategyConfig().strategy === 'RR_LADDER';
+      const effMa20Armed = postRef ? postRef.ma20Armed : (tInfo ? (isRRMode ? (tInfo.rrStage === 2 && getExitStrategyConfig().rrTrailMa === 20) : tInfo.ma20ControlArmed) : false);
       const shouldShowYellowStop = postRef ? (!postRef.ma20Armed && postRef.stopLossPrice > 0) : (tInfo ? (!tInfo.ma20ControlArmed && tInfo.stopLossPrice > 0) : (hasCandKey && candStopVal > 0));
       const yellowStopVal = postRef ? postRef.stopLossPrice : (tInfo ? tInfo.stopLossPrice : candStopVal);
 
@@ -6571,7 +6617,7 @@
           drawHorizontalRefLine(ctx, yellowStopVal, priceToY(yellowStopVal), "#facc15", "停損", padLeft, width - padRight, [6, 4], 1.6);
         }
         if (tInfo && tInfo.dynamicStopPrice > 0) {
-          drawHorizontalRefLine(ctx, tInfo.dynamicStopPrice, priceToY(tInfo.dynamicStopPrice), "#4ade80", tInfo.dynamicStopLabel || "移動停利", padLeft, width - padRight, [5, 3], 1.6);
+          drawHorizontalRefLine(ctx, tInfo.dynamicStopPrice, priceToY(tInfo.dynamicStopPrice), "#4ade80", `${tInfo.dynamicStopLabel || "移動停利"} ${tInfo.dynamicStopPrice.toFixed(2)}`, padLeft, width - padRight, [5, 3], 1.6);
         }
         if (tInfo && tInfo.shortBdIdx !== -1 && tInfo.shortBdLow > 0 && tInfo.shortBdHigh > 0) {
           drawHorizontalRefLine(ctx, tInfo.shortBdHigh, priceToY(tInfo.shortBdHigh), "#fb7185", "關鍵高", padLeft, width - padRight, [4, 4], 1.3);
