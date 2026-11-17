@@ -4574,7 +4574,7 @@
             // 若處於第二階奔跑狀態，且使用者選擇以 5MA / 10MA (若選 20MA 則交由下方基礎 20MA 控盤) 控盤
             if (!closedThisBar && activePos.rrStage === 2 && cfg.rrTrailMa !== 20) {
               const trailMa = cfg.rrTrailMa === 5 ? curBar.ma5 : curBar.ma10;
-              const eUseDirect = cfg.globalConfirmMode === 'FORCE_DIRECT' ? true : (cfg.globalConfirmMode === 'FORCE_KEY_K' ? false : (cfg.rrMaConfirmMode === 'DIRECT'));
+              const eUseDirect = cfg.rrMaConfirmMode === 'DIRECT';
               if (eUseDirect) {
                 if (trailMa > 0 && curBar.close < trailMa) {
                   activePos.isClosed = true;
@@ -6846,10 +6846,25 @@
         ctx.stroke();
 
         const lastPt = shortMaPoints[shortMaPoints.length - 1];
-        ctx.fillStyle = shortMaColor;
+        let maLblY = lastPt.y + 3;
+        if (typeof placedRightLabelYs !== 'undefined' && Array.isArray(placedRightLabelYs)) {
+          for (const off of [0, -13, 13, -26, 26, -39, 39]) {
+            const candY = lastPt.y + 3 + off;
+            if (!placedRightLabelYs.some(py => Math.abs(py - candY) < 12)) {
+              maLblY = candY;
+              break;
+            }
+          }
+          placedRightLabelYs.push(maLblY);
+        }
         ctx.font = "bold 10px sans-serif";
+        const maTxt = `${showShortMaPeriod}MA ${lastPt.val.toFixed(2)}`;
+        const maTw = ctx.measureText(maTxt).width;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(width - padRight + 2, maLblY - 10, maTw + 4, 12);
+        ctx.fillStyle = shortMaColor;
         ctx.textAlign = "left";
-        ctx.fillText(`${showShortMaPeriod}MA ${lastPt.val.toFixed(2)}`, lastPt.x + 6, lastPt.y + 3);
+        ctx.fillText(maTxt, width - padRight + 4, maLblY);
         ctx.restore();
       }
 
@@ -7050,7 +7065,15 @@
       let maHtml = "";
       const hudStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
       const hudTrack = hudStock ? (hudStock.trackingInfo || hudStock.closedBreakdownInfo) : null;
-      const hudShortMa = (hudTrack && !hudTrack.isClosed && (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10)) ? hudTrack.activeControlMa : 0;
+      const hudCfg = getExitStrategyConfig();
+      let hudShortMa = 0;
+      if (hudCfg.strategy === 'RR_LADDER' && (hudCfg.rrTrailMa === 5 || hudCfg.rrTrailMa === 10)) {
+        hudShortMa = hudCfg.rrTrailMa;
+      } else if (hudCfg.strategy === 'SHORT_MA_TRAIL' && (hudCfg.shortMaPeriod === 5 || hudCfg.shortMaPeriod === 10)) {
+        hudShortMa = hudCfg.shortMaPeriod;
+      } else if (hudTrack && !hudTrack.isClosed && (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10)) {
+        hudShortMa = hudTrack.activeControlMa;
+      }
       if (hudShortMa === 5 && bar.ma5 > 0) {
         maHtml = `<span class="text-fuchsia-300 font-bold">5MA:${bar.ma5.toFixed(2)}</span>`;
       } else if (hudShortMa === 10 && bar.ma10 > 0) {
