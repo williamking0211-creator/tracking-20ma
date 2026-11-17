@@ -2349,8 +2349,8 @@
       const candList = [
         [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
       ];
-      const gainOpts = [[0, 10.5], [2.0, 10.5], [3.0, 10.5], [5.0, 10.5], [6.5, 10.5], [8.0, 10.5]];
-      const volOpts = [70, 100, 150, 200, 300, 400, 500, 600, 650, 700, 720, 750, 800, 850, 900, 950, 1000];
+      const gainOpts = [[0, 10.5], [2.0, 10.5], [3.5, 10.5], [5.0, 10.5], [7.0, 10.5]];
+      const volOpts = [70, 100, 150, 200, 300, 400, 500, 650, 750, 850, 950];
       const seenKey = new Set([candList[0].join("|")]);
 
       for (const reqMa of [true, false]) {
@@ -2444,6 +2444,11 @@
     }
 
     function selectComparisonStrategyCard(strategyKey) {
+      currentExitStrategy = strategyKey;
+      updateExitStrategyUI();
+      if (document.getElementById("strategyCompareGrid") && Array.isArray(_lastCmpResultsCache)) {
+        renderStrategyComparisonSummary(getCurrentFilterOptions(), true);
+      }
       const useAiStep1 = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
       if (useAiStep1) {
         if (!_aiFullStep1PerStrategyMap[strategyKey]) {
@@ -2453,7 +2458,9 @@
           applyStep1ParamsToUI(_aiFullStep1PerStrategyMap[strategyKey]);
         }
       }
-      setExitStrategy(strategyKey);
+      requestAnimationFrame(() => {
+        setExitStrategy(strategyKey);
+      });
     }
 
     function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
@@ -2546,7 +2553,10 @@
       if (document.getElementById("strategyCompareGrid")) {
         renderStrategyComparisonSummary(getCurrentFilterOptions(), true);
       }
-      runPortfolioCapitalSimulation();
+      const capContent = document.getElementById("capitalSimBody");
+      if (capContent && !capContent.classList.contains("hidden")) {
+        runPortfolioCapitalSimulation();
+      }
       if (selectedStockCode) {
         const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (cur) updateDetailPanel(cur, false);
@@ -3948,6 +3958,8 @@
       try { localStorage.setItem(SIM_MANUAL_CLOSE_KEY, JSON.stringify(simManualCloseMap)); } catch (e) {}
     }
 
+    let lastPortComputedSnapshot = [];
+
     function toggleSimTableSort(field) {
       if (simSortState.field === field) {
         simSortState.dir = simSortState.dir === "desc" ? "asc" : "desc";
@@ -3961,19 +3973,130 @@
         if (f === simSortState.field) el.textContent = simSortState.dir === "desc" ? "▼" : "▲";
         else el.textContent = "↕";
       });
-      runPortfolioCapitalSimulation();
+      if (!renderSimTradesTableOnly()) {
+        runPortfolioCapitalSimulation();
+      }
     }
 
     function sortSimRows(rows) {
       const f = simSortState.field;
       const factor = simSortState.dir === "desc" ? -1 : 1;
       return [...rows].sort((a, b) => {
-        if (f === "buyDate") return (a.buyDate || "").localeCompare(b.buyDate || "") * factor;
-        if (f === "isClosed") return ((a.isClosed ? 1 : 0) - (b.isClosed ? 1 : 0)) * factor;
-        const va = Number(a[f] ?? (f === "exitOrNowPrice" ? a.curP : 0)) || 0;
-        const vb = Number(b[f] ?? (f === "exitOrNowPrice" ? b.curP : 0)) || 0;
-        return (va - vb) * factor;
+        if (f === "buyDate") {
+          const cmp = String(a.buyDate || "").localeCompare(String(b.buyDate || "")) * factor;
+          return cmp !== 0 ? cmp : String(a.code || "").localeCompare(String(b.code || ""));
+        }
+        if (f === "isClosed") {
+          const cmp = ((a.isClosed ? 1 : 0) - (b.isClosed ? 1 : 0)) * factor;
+          return cmp !== 0 ? cmp : ((Number(b.netProfit) || 0) - (Number(a.netProfit) || 0));
+        }
+        const rawA = f === "exitOrNowPrice" ? (a.exitOrNowPrice ?? a.curP ?? a.sellPrice ?? a.buyPrice) : a[f];
+        const rawB = f === "exitOrNowPrice" ? (b.exitOrNowPrice ?? b.curP ?? b.sellPrice ?? b.buyPrice) : b[f];
+        const va = Number(rawA);
+        const vb = Number(rawB);
+        const na = Number.isFinite(va) ? va : 0;
+        const nb = Number.isFinite(vb) ? vb : 0;
+        return (na - nb) * factor;
       });
+    }
+
+    function renderSimTradesTableOnly() {
+      const tbody = document.getElementById("simTradesTableBody");
+      if (!tbody) return false;
+      const fmtCash = (v) => `$${Math.round(v).toLocaleString()}`;
+      const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(Math.round(v)).toLocaleString()}`;
+
+      if (simTableMode === "PORTFOLIO") {
+        if (!Array.isArray(lastPortComputedSnapshot) || lastPortComputedSnapshot.length === 0) return false;
+        tbody.innerHTML = sortSimRows(lastPortComputedSnapshot.map(pt => ({ ...pt, exitOrNowPrice: pt.curP }))).map((pt, idx) => {
+          const rowId = `sim-row-${pt.id || idx}`;
+          const pCls = pt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+          return `
+            <tr id="${rowId}" onclick="openStockFromSimList('${pt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
+              <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
+              <td class="py-1.5 px-2">
+                <div class="font-bold text-white">${pt.code} ${pt.name}</div>
+                <input type="date" value="${pt.buyDate}" onclick="event.stopPropagation()" onchange="updatePortfolioField('${pt.id}', 'buyDate', this.value)"
+                       class="mt-0.5 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300 w-24" />
+              </td>
+              <td class="py-1.5 px-2 text-right space-y-0.5" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-end gap-1">
+                  <input type="number" value="${pt.lots}" min="1" step="1" onchange="updatePortfolioField('${pt.id}', 'lots', this.value)"
+                         class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-amber-300 w-10 text-right" /><span>張</span>
+                </div>
+                <div class="flex items-center justify-end gap-1">
+                  <input type="number" value="${pt.buyPrice}" min="0.01" step="0.05" onchange="updatePortfolioField('${pt.id}', 'buyPrice', this.value)"
+                         class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-sky-300 w-16 text-right" />
+                </div>
+              </td>
+              <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(pt.totalCost)}</td>
+              <td class="py-1.5 px-2 text-right" onclick="event.stopPropagation()">
+                ${pt.isClosed
+                  ? `<input type="number" value="${pt.curP}" min="0.01" step="0.05" onchange="updatePortfolioField('${pt.id}', 'exitOrNowPrice', this.value)" class="bg-slate-900 border border-emerald-600/60 rounded px-1 py-0.5 text-[10px] text-emerald-300 w-16 text-right" />`
+                  : `<span class="text-white font-bold" ${getTickFlashAttr(pt.code)}>${pt.curP.toFixed(2)}</span>`
+                }
+              </td>
+              <td class="py-1.5 px-2">
+                <div class="text-[10px] font-semibold">
+                  ${pt.autoRule.stopPrice > 0 ? `<span class="text-yellow-300">停損:${pt.autoRule.stopPrice.toFixed(2)}</span>` : ''}
+                  ${pt.autoRule.takeProfitPrice > 0 ? `<span class="text-rose-300 ml-1">停利:${pt.autoRule.takeProfitPrice.toFixed(2)}</span>` : ''}
+                </div>
+                <div class="text-[10px] text-cyan-300/90">${pt.autoRule.ruleText}</div>
+              </td>
+              <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(pt.netProfit)} (${pt.netPct >= 0 ? "+" : ""}${pt.netPct.toFixed(1)}%)</td>
+              <td class="py-1.5 px-2 text-center space-y-1" onclick="event.stopPropagation()">
+                <select onchange="updatePortfolioField('${pt.id}', 'isClosed', this.value === '1')" class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-200">
+                  <option value="0" ${!pt.isClosed ? 'selected' : ''}>續抱中</option>
+                  <option value="1" ${pt.isClosed ? 'selected' : ''}>已平倉</option>
+                </select>
+                ${!pt.isClosed ? `<button type="button" onclick="manualClosePortfolioTrade('${pt.id}', '${pt.code}', ${pt.curP}, event)" class="block mx-auto px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : ''}
+                <button type="button" onclick="deletePortfolioTrade('${pt.id}')" class="block mx-auto text-[10px] text-rose-400 hover:text-rose-300">🗑️ 刪除</button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+        applyTableTickFlashes(tbody);
+        return true;
+      }
+
+      if (!Array.isArray(lastSimTradesSnapshot) || lastSimTradesSnapshot.length === 0) return false;
+      tbody.innerHTML = sortSimRows(lastSimTradesSnapshot).map((bt, idx) => {
+        const rowId = `sim-row-${bt.code}-${idx}`;
+        const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+        const stBadge = bt.isClosed
+          ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中</span>`;
+        const ruleInfo = resolveTradeStopAndRuleInfo(bt.code, bt);
+        const priceLine = [
+          ruleInfo.stopPrice > 0 ? `<span class="text-yellow-300">停損:${ruleInfo.stopPrice.toFixed(2)}</span>` : "",
+          ruleInfo.takeProfitPrice > 0 ? `<span class="text-rose-300">停利:${ruleInfo.takeProfitPrice.toFixed(2)}</span>` : ""
+        ].filter(Boolean).join(" / ") || `<span class="text-slate-400">動態追蹤</span>`;
+        const rowKey = `${bt.code}_${bt.buyDate}`;
+        const hasManualMc = Boolean(simManualCloseMap[rowKey]);
+        return `
+          <tr id="${rowId}" onclick="openStockFromSimList('${bt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
+            <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
+            <td class="py-1.5 px-2">
+              <div class="font-bold text-white">${bt.code} ${bt.name}</div>
+              <div class="text-[10px] text-slate-400">${formatShortDateSlash(bt.buyDate)} 買</div>
+            </td>
+            <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
+            <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
+            <td class="py-1.5 px-2 text-right text-white" ${getTickFlashAttr(bt.code)}>${bt.exitOrNowPrice.toFixed(2)}</td>
+            <td class="py-1.5 px-2">
+              <div class="text-[10px] font-semibold">${priceLine}</div>
+              <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
+            </td>
+            <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${bt.netPct >= 0 ? "+" : ""}${bt.netPct.toFixed(1)}%)</td>
+            <td class="py-1.5 px-2 text-center space-y-1">
+              <div>${stBadge}</div>
+              ${!bt.isClosed ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 恢復追蹤</button>` : '')}
+            </td>
+          </tr>
+        `;
+      }).join("");
+      applyTableTickFlashes(tbody);
+      return true;
     }
 
     let pendingManualCloseCtx = null;
@@ -4688,8 +4811,8 @@
             <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 truncate">最佳出場：${r.bestTag}</div>
             ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono truncate">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
             <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
-            <div class="text-[9.5px] text-slate-400 font-mono">權益:$${r.totalEquity.toLocaleString()}</div>
-            <div class="text-[9.5px] text-slate-400 font-mono">${r.totalCount}筆 ｜ 勝率${r.winRate}%</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
             ${topStr}
           </div>
         `;
@@ -5044,6 +5167,7 @@
           return { ...pt, curP, totalCost, netProfit, netPct, autoRule, rowId: `sim-row-${pt.id || idx}` };
         });
 
+        lastPortComputedSnapshot = portComputed;
         const portNet = pRealized + pUnrealized;
         const portRoi = initCapital > 0 ? (portNet / initCapital) * 100 : 0;
         const portCash = initCapital - pSpentCash + pReturnedCash;
@@ -7508,13 +7632,14 @@
             }
           } else {
             const scanFrom = Math.max(1, bars.length - 15);
-            simulateChartFallbackLifecycleFrom(bars, scanFrom, null);
+            const allowFb = Boolean(document.getElementById("chkSimulateRawBreakoutEntry")?.checked);
+            simulateChartFallbackLifecycleFrom(bars, scanFrom, allowFb ? null : getCurrentFilterOptions());
           }
         }
       }
 
       chartState.postExitActiveRef = null;
-      // 同步標記所有歷史完整波段交易 (含資金模擬清單中已平倉的歷史買賣點，避免被後續新關鍵K蓋掉)
+      // 同步標記所有歷史完整波段交易 (含資金模擬清單中已平倉/續抱的買賣點，避免被後續新關鍵K或條件切換蓋掉)
       const histTradesToMark = [];
       if (stock.trackingInfo && Array.isArray(stock.trackingInfo.closedTradesHistory)) {
         histTradesToMark.push(...stock.trackingInfo.closedTradesHistory);
@@ -7523,6 +7648,25 @@
       } else if (stock.closedBreakdownInfo && !stock.closedBreakdownInfo.isDirectKeyBreakdown) {
         histTradesToMark.push(stock.closedBreakdownInfo);
       }
+      if (lastListOrigin === "SIM" && Array.isArray(lastSimTradesSnapshot)) {
+        lastSimTradesSnapshot.filter(st => st.code === stock.code).forEach(st => {
+          const exists = histTradesToMark.some(h => h.buyDate === st.buyDate);
+          if (!exists) {
+            let kDate = st.keyKDate || st.keyDate || "";
+            if (!kDate && st.buyDate) {
+              const bIdx = bars.findIndex(b => b.date === st.buyDate);
+              if (bIdx > 0) kDate = bars[bIdx - 1].date;
+            }
+            histTradesToMark.push({
+              ...st,
+              keyKDate: kDate,
+              sellPrice: st.sellPrice || st.exitOrNowPrice,
+              stopLossPrice: st.stopLossPrice || (st.buyPrice ? Number((st.buyPrice * 0.98).toFixed(2)) : 0)
+            });
+          }
+        });
+      }
+      chartState.simPreservedTrades = (lastListOrigin === "SIM") ? histTradesToMark.filter(h => h && !h.isDirectKeyBreakdown) : [];
       histTradesToMark.forEach(ht => {
         if (!ht || ht.isDirectKeyBreakdown) return;
         const kDateVal = ht.keyKDate || ht.keyDate;
@@ -8464,6 +8608,13 @@
       // 已平倉舊有進出場訊號：從進場K線拉虛線到停損/停利平倉該K線即停止，方便回顧當時進出場觸發點
       if (!is5mTf) {
         const closedHistList = [];
+        if (Array.isArray(chartState.simPreservedTrades)) {
+          chartState.simPreservedTrades.forEach(sp => {
+            if (sp && !closedHistList.some(h => h.buyDate === sp.buyDate)) {
+              closedHistList.push(sp);
+            }
+          });
+        }
         const seenHistKey = new Set();
         const pushHist = (ht) => {
           if (!ht || !ht.isClosed || ht.isDirectKeyBreakdown || !ht.buyDate || !ht.sellDate) return;
