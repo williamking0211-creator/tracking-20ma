@@ -2138,15 +2138,18 @@
           for (let i = 0; i < poolStocks.length; i++) {
             const s = poolStocks[i];
             const lc = evaluateStockTrackingLifecycle(s, testOpts, strategyCfg);
-            const activeTrack = lc.activeOrTodayExit;
-            const closedBd = lc.closedBreakdown;
-            if (activeTrack) {
-              sumNet += Math.round((activeTrack.profitPoints || 0) * 1000);
-              cnt++;
-            } else if (closedBd) {
-              sumNet += Math.round((closedBd.profitPoints || 0) * 1000);
-              cnt++;
+            const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
+            let uniqueRec = null;
+            if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
+              uniqueRec = lc.activeOrTodayExit;
+            } else if (p5Rec) {
+              uniqueRec = p5Rec;
+            } else if (lc.activeOrTodayExit) {
+              uniqueRec = lc.activeOrTodayExit;
             }
+            if (!uniqueRec || !checkStockMatchesPnlDateRange(s, uniqueRec)) continue;
+            sumNet += Math.round((uniqueRec.profitPoints || 0) * 1000);
+            cnt++;
           }
           if (cnt >= minSamples) {
             const perStock = sumNet / cnt;
@@ -2188,96 +2191,97 @@
       return true;
     }
 
-    function computeAiBestFullStep1ForStrategy() {
-      if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
-      const relaxedBase = {
-        requireMa20Up: false,
-        requireSolidRedK: false,
-        useGainRange: false,
-        minGain: -999,
-        maxGain: 999,
-        volOp: "ALL",
-        validVolThreshold: 0
+    function evaluateFullStep1ComboExact(poolStocks, cfg, reqMaUp, reqRed, minG, maxG, minV) {
+      const testOpts = {
+        requireMa20Up: reqMaUp,
+        requireSolidRedK: reqRed,
+        useGainRange: true,
+        minGain: minG,
+        maxGain: maxG,
+        volOp: "GTE",
+        validVolThreshold: minV
       };
-      const samples = [];
-      for (let i = 0; i < rawAllLoadedStocks.length; i++) {
-        const st = rawAllLoadedStocks[i];
-        const bars = buildStockDailyBarsWithToday(st);
-        if (!bars || bars.length < 22) continue;
-        const lc = evaluateStockTrackingLifecycle(st, relaxedBase);
-        const tr = lc.activeOrTodayExit || lc.closedBreakdown;
-        if (!tr || tr.isDirectKeyBreakdown || tr.buyPrice <= 0) continue;
-        const kIdx = (typeof tr.keyKIdx === 'number' && tr.keyKIdx >= 1 && bars[tr.keyKIdx]) ? tr.keyKIdx : bars.findIndex(b => b.date === (tr.keyKDate || tr.keyDate));
-        if (kIdx < 1 || !bars[kIdx] || !bars[kIdx - 1]) continue;
-        const kb = bars[kIdx], pb = bars[kIdx - 1];
-        const keyMa20Up = kb.ma20 >= pb.ma20;
-        const keySolidRed = kb.close > kb.open;
-        const keyGainPct = pb.close > 0 ? ((kb.close - pb.close) / pb.close) * 100 : 0;
-        let avg5 = 1;
-        if (kIdx >= 5) {
-          let s5 = 0;
-          for (let m = kIdx - 5; m < kIdx; m++) s5 += (bars[m].vol || 0);
-          avg5 = s5 / 5;
+      let totalNtd = 0, totalTrades = 0, wins = 0;
+      for (let i = 0; i < poolStocks.length; i++) {
+        const s = poolStocks[i];
+        const lc = evaluateStockTrackingLifecycle(s, testOpts, cfg);
+        const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
+        let uniqueRec = null;
+        if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
+          uniqueRec = lc.activeOrTodayExit;
+        } else if (p5Rec) {
+          uniqueRec = p5Rec;
+        } else if (lc.activeOrTodayExit) {
+          uniqueRec = lc.activeOrTodayExit;
         }
-        const keyVolPct = avg5 > 0 ? Math.round((kb.vol / avg5) * 100) : 100;
-        const exitP = tr.isClosed ? tr.sellPrice : st.todayPrice;
-        const profitNtd = (exitP - tr.buyPrice) * 1000;
-        samples.push({ keyMa20Up, keySolidRed, keyGainPct, keyVolPct, profitNtd, isWin: profitNtd > 0 });
+        if (!uniqueRec || !checkStockMatchesPnlDateRange(s, uniqueRec)) continue;
+        const p = Math.round((uniqueRec.profitPoints || 0) * 1000);
+        totalNtd += p;
+        totalTrades++;
+        if (p > 0) wins++;
       }
-      if (samples.length === 0) return null;
+      return {
+        reqMaUp,
+        reqRed,
+        minG,
+        maxG,
+        minV,
+        cnt: totalTrades,
+        winRate: totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0,
+        avgProfitNtd: totalTrades > 0 ? Math.round(totalNtd / totalTrades) : 0,
+        totalProfitNtd: Math.round(totalNtd)
+      };
+    }
 
-      const maOpts = [true, false];
-      const redOpts = [true, false];
-      const gainRanges = [
-        [0, 10.5],
-        [2.0, 10.5],
-        [3.0, 10.5],
-        [5.0, 10.5],
-        [6.5, 10.5],
-        [3.0, 9.0]
+    function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy) {
+      if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
+      const activeSectors = getSelectedSimSectors();
+      const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
+      const poolStocks = rawAllLoadedStocks.filter(s => {
+        if (activeSectors.length > 0 && !matchesSimSectorFilter(s, activeSectors)) return false;
+        if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return false;
+        const bars = buildStockDailyBarsWithToday(s);
+        for (let i = 1; i < bars.length; i++) {
+          if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) return true;
+        }
+        return false;
+      });
+      if (poolStocks.length === 0) return null;
+
+      const cfg = getExitStrategyConfig(strategyKey);
+      const curOpts = getCurrentFilterOptions();
+      const candList = [
+        [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
       ];
-      const volThresholds = [70, 100, 150, 200, 250, 300, 400, 500];
+      const gainOpts = [[0, 10.5], [2.0, 10.5], [3.0, 10.5], [5.0, 10.5], [6.5, 10.5], [8.0, 10.5]];
+      const volOpts = [70, 100, 150, 200, 300, 400, 500];
+      const seenKey = new Set([candList[0].join("|")]);
 
-      let best = null;
-      const minSamplesReq = samples.length >= 15 ? 5 : 2;
-      for (const reqMaUp of maOpts) {
-        for (const reqRed of redOpts) {
-          for (const [minG, maxG] of gainRanges) {
-            for (const minV of volThresholds) {
-              let cnt = 0, wins = 0, sumP = 0;
-              for (let j = 0; j < samples.length; j++) {
-                const sp = samples[j];
-                if (reqMaUp && !sp.keyMa20Up) continue;
-                if (reqRed && !sp.keySolidRed) continue;
-                if (sp.keyGainPct < minG || sp.keyGainPct > maxG) continue;
-                if (sp.keyVolPct < minV) continue;
-                cnt++;
-                if (sp.isWin) wins++;
-                sumP += sp.profitNtd;
-              }
-              if (cnt < minSamplesReq) continue;
-              const avgP = sumP / cnt;
-              const wr = (wins / cnt) * 100;
-              const score = avgP + (wr >= 55 ? 2500 : 0) + Math.min(cnt, 20) * 150;
-              if (!best || score > best.score) {
-                best = {
-                  reqMaUp,
-                  reqRed,
-                  minG,
-                  maxG,
-                  minV,
-                  cnt,
-                  winRate: Math.round(wr),
-                  avgProfitNtd: Math.round(avgP),
-                  totalProfitNtd: Math.round(sumP),
-                  score
-                };
-              }
+      for (const reqMa of [true, false]) {
+        for (const [minG, maxG] of gainOpts) {
+          for (const minV of volOpts) {
+            const k = `${reqMa}|true|${minG}|${maxG}|${minV}`;
+            if (!seenKey.has(k)) {
+              seenKey.add(k);
+              candList.push([reqMa, true, minG, maxG, minV]);
             }
           }
         }
       }
-      return best;
+
+      let best = null;
+      let fallbackBest = null;
+      for (const [reqMa, reqRed, minG, maxG, minV] of candList) {
+        const res = evaluateFullStep1ComboExact(poolStocks, cfg, reqMa, reqRed, minG, maxG, minV);
+        if (res.cnt === 0) continue;
+        if (!fallbackBest || res.totalProfitNtd > fallbackBest.totalProfitNtd) {
+          fallbackBest = { ...res, score: res.totalProfitNtd };
+        }
+        if (res.cnt >= 5 && (!best || res.totalProfitNtd > best.totalProfitNtd)) {
+          best = { ...res, score: res.totalProfitNtd };
+        }
+      }
+      return best || fallbackBest;
     }
 
     function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
@@ -2288,10 +2292,10 @@
         return null;
       }
       const stratNames = {
-        'PURE_20MA': '策略 A (純20MA)',
+        'DEFAULT_20MA': '策略 A (原版20MA破線)',
         'SHORT_MA_TRAIL': '策略 B (達標短均線)',
-        'FIXED_TP_SL': '策略 C (固定停利停損)',
-        'TRAILING_PEAK': '策略 D (高點回落移動)',
+        'WHALE_SELL_EXIT': '策略 D (高檔爆量賣出)',
+        'PEAK_TRAILING': '策略 C (高點回落移動)',
         'RR_LADDER': '策略 E (1:1保本階梯)',
         'AI_ADAPTIVE': '策略 F (AI動態偵測)'
       };
@@ -2357,12 +2361,13 @@
     function setExitStrategy(strategyName) {
       currentExitStrategy = strategyName;
       updateExitStrategyUI();
+      const chkFull = document.getElementById("chkAiAutoFullStep1");
+      const useFullOpt = Boolean(chkFull && chkFull.checked);
       const chk = document.getElementById("chkAiAutoBestVol");
-      if (chk && chk.checked) {
+      if (!useFullOpt && chk && chk.checked) {
         applyAiBestVolForCurrentStrategy(true);
       }
-      const chkFull = document.getElementById("chkAiAutoFullStep1");
-      runAiFullStep1Optimizer(Boolean(chkFull && chkFull.checked), false);
+      runAiFullStep1Optimizer(useFullOpt, false);
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
