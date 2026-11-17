@@ -7705,6 +7705,27 @@
         if (tInfo && tInfo.isClosed) pushHist(tInfo);
 
         const visEndIdx = startIdx + visibleBars.length - 1;
+        if (stock._isRelaxedPreviewSim) {
+          const simCfg = getExitStrategyConfig();
+          const simStopFactor = 1 - (simCfg.initStopBufferPct / 100);
+          for (let ri = bars.length - 1; ri >= 1; ri--) {
+            const rb = bars[ri], rprev = bars[ri - 1];
+            if (rprev.ma20 > 0 && rb.ma20 > 0 && rprev.close <= rprev.ma20 && rb.close > rb.ma20 && rb.close > rprev.close) {
+              const alreadyMarked = closedHistList.some(ht => ht.keyDate === rb.date) || (tInfo && tInfo.keyDate === rb.date);
+              if (!alreadyMarked && ri >= startIdx && ri <= visEndIdx) {
+                const rx = padLeft + stepX * (ri - startIdx) + stepX / 2;
+                const rBaseLow = Math.min(rprev.low > 0 ? rprev.low : rb.low, rb.low > 0 ? rb.low : rprev.low);
+                const rEstStop = rBaseLow > 0 ? Number((rBaseLow * simStopFactor).toFixed(2)) : 0;
+                drawNonOverlappingLabel(`★突破關鍵K(${rb.date.slice(5).replace('-', '/')})`, rx, priceToY(rb.low) + 14, 1, "#fde047", "bold 9.5px sans-serif");
+                if (rEstStop > 0) {
+                  const rySl = priceToY(rEstStop);
+                  drawHorizontalRefLine(ctx, rEstStop, rySl, "#fbbf24", "預估初始停損", rx, width - padRight, [4, 4], 1.4, placedRightLabelYs);
+                }
+              }
+              break;
+            }
+          }
+        }
         closedHistList.forEach(ht => {
           const bIdx = bars.findIndex(b => b.date === ht.buyDate);
           const sIdx = bars.findIndex(b => b.date === ht.sellDate);
@@ -7725,6 +7746,23 @@
           ctx.lineTo(x2, yBuy);
           ctx.stroke();
           ctx.restore();
+
+          // 1b. 若該筆交易有紀錄初始停損價，也畫出「初始停損」參考點線，方便對照當初停損位置
+          if (ht.stopLossPrice > 0 && !String(ht.exitReason || "").includes("初始停損")) {
+            const yInitSl = priceToY(ht.stopLossPrice);
+            ctx.save();
+            ctx.strokeStyle = "rgba(251, 191, 36, 0.55)";
+            ctx.lineWidth = 1.1;
+            ctx.setLineDash([2, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x1, yInitSl);
+            ctx.lineTo(x2, yInitSl);
+            ctx.stroke();
+            ctx.restore();
+            if (bIdx >= startIdx && bIdx <= visEndIdx) {
+              drawNonOverlappingLabel(`初始停損 ${ht.stopLossPrice.toFixed(2)}`, x1, yInitSl + 12, 1, "#fbbf24", "bold 9px monospace");
+            }
+          }
 
           // 2. 停損 / 停利觸發線（只畫到出場該 K 線即停止）
           const isWinExit = (ht.sellPrice || 0) > (ht.buyPrice || 0);
