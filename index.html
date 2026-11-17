@@ -275,6 +275,24 @@
           </div>
         </div>
 
+        <!-- 🤖 AI 整合 STEP 1 全條件尋優（隨策略 A~F 動態找出最佳 20MA / 紅K / 漲幅 / 成交量% 組合） -->
+        <div class="bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900/90 border border-indigo-500/45 rounded-lg p-2.5 space-y-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] font-bold text-indigo-200">
+              <input type="checkbox" id="chkAiAutoFullStep1" onchange="onAiAutoFullStep1Toggle()"
+                     class="rounded bg-slate-800 border-indigo-500/60 text-indigo-400 focus:ring-0" />
+              <span>🧠 AI 整合全條件尋優（隨所選策略自動找最佳 20MA＋紅K＋漲幅＋量%）</span>
+            </label>
+            <button type="button" onclick="runAiFullStep1Optimizer(true, true)"
+                    class="px-2.5 py-1 rounded bg-gradient-to-r from-indigo-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white font-bold text-[11px] shadow transition">
+              ⚡ 立即 AI 全條件尋優並套用
+            </button>
+          </div>
+          <div id="aiFullStep1AdviceText" class="text-[11px] font-mono text-slate-300 leading-relaxed">
+            點擊「立即 AI 全條件尋優並套用」或切換策略，AI 將聯合回測找出目前策略獲利最佳的 STEP 1 參數組合。
+          </div>
+        </div>
+
         <!-- STEP 1 同步類股複選（勾選後同步篩選股池與實戰資金模擬） -->
         <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-wrap items-center gap-1.5 text-[10px] text-cyan-200">
           <span class="font-bold text-cyan-300">🏷️ 想買進的類股(可複選)：</span>
@@ -2170,6 +2188,163 @@
       return true;
     }
 
+    function computeAiBestFullStep1ForStrategy() {
+      if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
+      const relaxedBase = {
+        requireMa20Up: false,
+        requireSolidRedK: false,
+        useGainRange: false,
+        minGain: -999,
+        maxGain: 999,
+        volOp: "ALL",
+        validVolThreshold: 0
+      };
+      const samples = [];
+      for (let i = 0; i < rawAllLoadedStocks.length; i++) {
+        const st = rawAllLoadedStocks[i];
+        const bars = buildStockDailyBarsWithToday(st);
+        if (!bars || bars.length < 22) continue;
+        const lc = evaluateStockTrackingLifecycle(st, relaxedBase);
+        const tr = lc.activeOrTodayExit || lc.closedBreakdown;
+        if (!tr || tr.isDirectKeyBreakdown || tr.buyPrice <= 0) continue;
+        const kIdx = (typeof tr.keyKIdx === 'number' && tr.keyKIdx >= 1 && bars[tr.keyKIdx]) ? tr.keyKIdx : bars.findIndex(b => b.date === (tr.keyKDate || tr.keyDate));
+        if (kIdx < 1 || !bars[kIdx] || !bars[kIdx - 1]) continue;
+        const kb = bars[kIdx], pb = bars[kIdx - 1];
+        const keyMa20Up = kb.ma20 >= pb.ma20;
+        const keySolidRed = kb.close > kb.open;
+        const keyGainPct = pb.close > 0 ? ((kb.close - pb.close) / pb.close) * 100 : 0;
+        let avg5 = 1;
+        if (kIdx >= 5) {
+          let s5 = 0;
+          for (let m = kIdx - 5; m < kIdx; m++) s5 += (bars[m].vol || 0);
+          avg5 = s5 / 5;
+        }
+        const keyVolPct = avg5 > 0 ? Math.round((kb.vol / avg5) * 100) : 100;
+        const exitP = tr.isClosed ? tr.sellPrice : st.todayPrice;
+        const profitNtd = (exitP - tr.buyPrice) * 1000;
+        samples.push({ keyMa20Up, keySolidRed, keyGainPct, keyVolPct, profitNtd, isWin: profitNtd > 0 });
+      }
+      if (samples.length === 0) return null;
+
+      const maOpts = [true, false];
+      const redOpts = [true, false];
+      const gainRanges = [
+        [0, 10.5],
+        [2.0, 10.5],
+        [3.0, 10.5],
+        [5.0, 10.5],
+        [6.5, 10.5],
+        [3.0, 9.0]
+      ];
+      const volThresholds = [70, 100, 150, 200, 250, 300, 400, 500];
+
+      let best = null;
+      const minSamplesReq = samples.length >= 15 ? 5 : 2;
+      for (const reqMaUp of maOpts) {
+        for (const reqRed of redOpts) {
+          for (const [minG, maxG] of gainRanges) {
+            for (const minV of volThresholds) {
+              let cnt = 0, wins = 0, sumP = 0;
+              for (let j = 0; j < samples.length; j++) {
+                const sp = samples[j];
+                if (reqMaUp && !sp.keyMa20Up) continue;
+                if (reqRed && !sp.keySolidRed) continue;
+                if (sp.keyGainPct < minG || sp.keyGainPct > maxG) continue;
+                if (sp.keyVolPct < minV) continue;
+                cnt++;
+                if (sp.isWin) wins++;
+                sumP += sp.profitNtd;
+              }
+              if (cnt < minSamplesReq) continue;
+              const avgP = sumP / cnt;
+              const wr = (wins / cnt) * 100;
+              const score = avgP + (wr >= 55 ? 2500 : 0) + Math.min(cnt, 20) * 150;
+              if (!best || score > best.score) {
+                best = {
+                  reqMaUp,
+                  reqRed,
+                  minG,
+                  maxG,
+                  minV,
+                  cnt,
+                  winRate: Math.round(wr),
+                  avgProfitNtd: Math.round(avgP),
+                  totalProfitNtd: Math.round(sumP),
+                  score
+                };
+              }
+            }
+          }
+        }
+      }
+      return best;
+    }
+
+    function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
+      const adviceEl = document.getElementById("aiFullStep1AdviceText");
+      const best = computeAiBestFullStep1ForStrategy();
+      if (!best) {
+        if (adviceEl) adviceEl.innerHTML = `<span class="text-amber-300">⚠️ 尚未載入足夠全市場樣本，請先更新股池資料後再試。</span>`;
+        return null;
+      }
+      const stratNames = {
+        'PURE_20MA': '策略 A (純20MA)',
+        'SHORT_MA_TRAIL': '策略 B (達標短均線)',
+        'FIXED_TP_SL': '策略 C (固定停利停損)',
+        'TRAILING_PEAK': '策略 D (高點回落移動)',
+        'RR_LADDER': '策略 E (1:1保本階梯)',
+        'AI_ADAPTIVE': '策略 F (AI動態偵測)'
+      };
+      const sTitle = stratNames[currentExitStrategy] || currentExitStrategy;
+      const avgSign = best.avgProfitNtd >= 0 ? "+" : "";
+      const totSign = best.totalProfitNtd >= 0 ? "+" : "";
+      const avgCol = best.avgProfitNtd >= 0 ? "text-rose-300" : "text-emerald-300";
+
+      if (adviceEl) {
+        adviceEl.innerHTML = `
+          <div>🤖 依【<b class="text-indigo-300">${sTitle}</b>】AI 建議最佳條件：
+            <b class="text-white">20MA向上(${best.reqMaUp ? '✔' : '不限'})</b> ｜
+            <b class="text-white">實體紅K(${best.reqRed ? '✔' : '不限'})</b> ｜
+            <b class="text-rose-300">漲幅 ${best.minG.toFixed(1)}% ~ ${best.maxG.toFixed(1)}%</b> ｜
+            <b class="text-amber-300">成交量 ≥ ${best.minV}%</b>
+          </div>
+          <div class="text-slate-300">
+            📊 聯合回測預估：共 <b class="text-white">${best.cnt}</b> 檔 ｜ 勝率 <b class="text-cyan-300">${best.winRate}%</b> ｜ 單檔均賺 <b class="${avgCol}">${avgSign}$${best.avgProfitNtd.toLocaleString()}</b> ｜ 合計淨利 <b class="${avgCol}">${totSign}$${best.totalProfitNtd.toLocaleString()}</b>
+          </div>
+        `;
+      }
+
+      if (applyToControls) {
+        const chkMa = document.getElementById("chkMa20Up");
+        const chkRed = document.getElementById("chkSolidRedK");
+        const chkGain = document.getElementById("chkGainRange");
+        const minIn = document.getElementById("minGainInput");
+        const maxIn = document.getElementById("maxGainInput");
+        const volOp = document.getElementById("volOperatorSelect");
+        const volIn = document.getElementById("volThresholdInput");
+        if (chkMa) chkMa.checked = best.reqMaUp;
+        if (chkRed) chkRed.checked = best.reqRed;
+        if (chkGain) chkGain.checked = true;
+        if (minIn) minIn.value = best.minG;
+        if (maxIn) maxIn.value = best.maxG;
+        if (volOp) volOp.value = "GTE";
+        if (volIn) volIn.value = best.minV;
+        syncStep1ControlsUI();
+        saveUserSettingsToStorage(false);
+        if (runFilterRender) applyFiltersAndRender();
+      }
+      return best;
+    }
+
+    function onAiAutoFullStep1Toggle() {
+      const chk = document.getElementById("chkAiAutoFullStep1");
+      if (chk && chk.checked) {
+        runAiFullStep1Optimizer(true, true);
+      } else {
+        runAiFullStep1Optimizer(false, false);
+      }
+    }
+
     function onAiAutoBestVolToggle(forceRun = false) {
       const chk = document.getElementById("chkAiAutoBestVol");
       if (forceRun || (chk && chk.checked)) {
@@ -2186,6 +2361,8 @@
       if (chk && chk.checked) {
         applyAiBestVolForCurrentStrategy(true);
       }
+      const chkFull = document.getElementById("chkAiAutoFullStep1");
+      runAiFullStep1Optimizer(Boolean(chkFull && chkFull.checked), false);
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
@@ -2202,6 +2379,8 @@
     function onExitStrategyChanged() {
       syncStrategyEDescText();
       updateExitStrategyUI();
+      const chkFullChg = document.getElementById("chkAiAutoFullStep1");
+      runAiFullStep1Optimizer(Boolean(chkFullChg && chkFullChg.checked), false);
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
       if (selectedStockCode) {
@@ -7233,7 +7412,20 @@
     }
 
     function resetChartZoom() {
-      chartState.visibleCount = chartState.timeframe === '5m' ? Math.min(48, Math.max(22, chartState.bars.length)) : 22;
+      let targetResetCount = chartState.timeframe === '5m' ? Math.min(48, Math.max(22, chartState.bars.length)) : 22;
+      const simOnReset = document.getElementById("chkSimulateRawBreakoutEntry")?.checked;
+      if (chartState.timeframe !== '5m' && simOnReset && selectedStockCode) {
+        const rawSt = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode ? window._lastCustomInspectedStock : null);
+        const simSt = resolveSimulatedStockForPreview(rawSt);
+        const trk = simSt ? (simSt.trackingInfo || simSt.closedBreakdownInfo) : null;
+        if (trk) {
+          const fIdx = trk.keyKIdx >= 0 ? trk.keyKIdx : trk.buyIdx;
+          if (fIdx >= 0 && fIdx < chartState.bars.length) {
+            targetResetCount = Math.min(chartState.bars.length, Math.max(22, chartState.bars.length - Math.max(0, fIdx - 2)));
+          }
+        }
+      }
+      chartState.visibleCount = targetResetCount;
       chartState.rightOffset = 0;
       chartState.verticalOffsetPx = 0;
       renderCanvasChart();
@@ -7750,10 +7942,31 @@
                 const rx = padLeft + stepX * (ri - startIdx) + stepX / 2;
                 const rBaseLow = Math.min(rprev.low > 0 ? rprev.low : rb.low, rb.low > 0 ? rb.low : rprev.low);
                 const rEstStop = rBaseLow > 0 ? Number((rBaseLow * simStopFactor).toFixed(2)) : 0;
-                drawNonOverlappingLabel(`★突破關鍵K(${rb.date.slice(5).replace('-', '/')})`, rx, priceToY(rb.low) + 14, 1, "#fde047", "bold 9.5px sans-serif");
+                const rKeyHigh = rb.high || rb.close;
+                const rKeyLow = rb.low || rb.close;
+                const rEstTarget = (rKeyHigh > rEstStop && rEstStop > 0) ? Number((rKeyHigh + (rKeyHigh - rEstStop) * 2).toFixed(2)) : 0;
+
+                // 關鍵K黃框
+                const rkTop = Math.min(priceToY(rb.open), priceToY(rb.close));
+                const rkH = Math.max(2, Math.abs(priceToY(rb.close) - priceToY(rb.open)));
+                ctx.save();
+                ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 1.6;
+                ctx.strokeRect(rx - candleW / 2 - 1, rkTop - 1, candleW + 2, rkH + 2);
+                ctx.restore();
+
+                drawNonOverlappingLabel(`★突破關鍵K(${rb.date.slice(5).replace('-', '/')})`, rx, priceToY(rKeyLow) + 14, 1, "#fde047", "bold 9.5px sans-serif");
+                // 關鍵K上線(高點 / 確認買進門檻) & 關鍵K下線(低點)
+                if (rKeyHigh > 0) {
+                  drawHorizontalRefLine(ctx, rKeyHigh, priceToY(rKeyHigh), "#38bdf8", "關鍵高(確認買>)", rx, width - padRight, [4, 3], 1.4, placedRightLabelYs);
+                }
+                if (rKeyLow > 0) {
+                  drawHorizontalRefLine(ctx, rKeyLow, priceToY(rKeyLow), "#34d399", "關鍵低(下線)", rx, width - padRight, [4, 4], 1.2, placedRightLabelYs);
+                }
                 if (rEstStop > 0) {
-                  const rySl = priceToY(rEstStop);
-                  drawHorizontalRefLine(ctx, rEstStop, rySl, "#fbbf24", "預估初始停損", rx, width - padRight, [4, 4], 1.4, placedRightLabelYs);
+                  drawHorizontalRefLine(ctx, rEstStop, priceToY(rEstStop), "#fbbf24", "初始停損", rx, width - padRight, [4, 4], 1.5, placedRightLabelYs);
+                }
+                if (rEstTarget > 0) {
+                  drawHorizontalRefLine(ctx, rEstTarget, priceToY(rEstTarget), "#4ade80", "1:2停利目標", rx, width - padRight, [3, 4], 1.2, placedRightLabelYs);
                 }
               }
               break;
@@ -8150,14 +8363,16 @@
       }
 
       ctx.save();
-      ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
       ctx.font = "bold 10px sans-serif";
       const txt = `${label} ${price.toFixed(2)}`;
       const tw = ctx.measureText(txt).width;
-      ctx.fillRect(x2 + 2, labelY - 10, tw + 4, 12);
+      const cssW = ctx.canvas.width / (window.devicePixelRatio || 1);
+      const drawX = (x2 + tw + 8 <= cssW) ? (x2 + 2) : Math.max(4, x2 - tw - 6);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+      ctx.fillRect(drawX, labelY - 10, tw + 4, 12);
       ctx.fillStyle = color;
       ctx.textAlign = "left";
-      ctx.fillText(txt, x2 + 4, labelY);
+      ctx.fillText(txt, drawX + 2, labelY);
       ctx.restore();
     }
 
