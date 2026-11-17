@@ -2413,6 +2413,8 @@
       if (maxIn) maxIn.value = p.maxG;
       if (volOp) volOp.value = "GTE";
       if (volIn) volIn.value = p.minV;
+      const chkBestVol = document.getElementById("chkAiAutoBestVol");
+      if (chkBestVol && chkBestVol.checked) chkBestVol.checked = false;
       syncStep1ControlsUI();
     }
 
@@ -4082,12 +4084,12 @@
             </td>
             <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
             <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
-            <td class="py-1.5 px-2 text-right text-white" ${getTickFlashAttr(bt.code)}>${bt.exitOrNowPrice.toFixed(2)}</td>
+            <td class="py-1.5 px-2 text-right text-white" ${getTickFlashAttr(bt.code)}>${(Number(bt.exitOrNowPrice ?? bt.curP ?? bt.buyPrice) || 0).toFixed(2)}</td>
             <td class="py-1.5 px-2">
               <div class="text-[10px] font-semibold">${priceLine}</div>
               <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
             </td>
-            <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${bt.netPct >= 0 ? "+" : ""}${bt.netPct.toFixed(1)}%)</td>
+            <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
             <td class="py-1.5 px-2 text-center space-y-1">
               <div>${stBadge}</div>
               ${!bt.isClosed ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 恢復追蹤</button>` : '')}
@@ -4686,7 +4688,46 @@
       }
     }
 
+    let _lastAiCapitalResultsCache = null;
+
+    function renderAiCapitalCompareCardsOnly() {
+      const grid = document.getElementById("simAiStrategyCompareGrid");
+      const summary = document.getElementById("simAiWinnerSummary");
+      if (!grid || !Array.isArray(_lastAiCapitalResultsCache) || _lastAiCapitalResultsCache.length === 0) return false;
+      const results = _lastAiCapitalResultsCache;
+      const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
+      const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
+      if (summary && winner) {
+        summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
+      }
+      grid.innerHTML = results.map(r => {
+        const isWin = winner && r.strategyKey === winner.strategyKey;
+        const isCur = r.strategyKey === currentExitStrategy;
+        const pCls = r.totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+        const topStr = r.topTrade
+          ? `<div class="text-[9.5px] text-amber-300 mt-1 truncate" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
+          : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
+        return `
+          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isCur ? 'bg-purple-900/55 border-purple-400 ring-2 ring-purple-400/70' : (isWin ? 'bg-purple-900/35 border-amber-400/80 ring-1 ring-amber-400/50' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
+            <div class="flex items-center justify-between gap-1 font-bold text-slate-200">
+              <span class="truncate">${r.label}</span>
+              ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
+            </div>
+            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 truncate">最佳出場：${r.bestTag}</div>
+            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono truncate">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
+            <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
+            ${topStr}
+          </div>
+        `;
+      }).join("");
+      return true;
+    }
+
     function selectAiOptimizedCapitalStrategy(strategyKey) {
+      currentExitStrategy = strategyKey;
+      updateExitStrategyUI();
       const bestS1 = _aiCapitalBestStep1Map[strategyKey];
       if (bestS1) {
         _aiFullStep1PerStrategyMap[strategyKey] = bestS1;
@@ -4694,11 +4735,13 @@
       }
       const bestP = _aiCapitalBestParamsMap[strategyKey];
       if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
-      setExitStrategy(strategyKey);
-      const chk = document.getElementById("chkAiCapitalOpt");
-      if (chk && chk.checked) {
-        runAiCapitalStrategyOptimizer(false);
-      }
+      renderAiCapitalCompareCardsOnly();
+      window._skipNextAiCapOptInSim = true;
+      requestAnimationFrame(() => {
+        if (bestS1) applyStep1ParamsToUI(bestS1);
+        if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
+        setExitStrategy(strategyKey);
+      });
     }
 
     function runAiCapitalStrategyOptimizer(autoSwitch = false) {
@@ -4785,38 +4828,15 @@
         }
         updateExitStrategyUI();
         saveUserSettingsToStorage(false);
+        window._skipNextAiCapOptInSim = true;
         applyFiltersAndRender();
         renderStrategyComparisonSummary(getCurrentFilterOptions());
         runPortfolioCapitalSimulation();
       }
 
+      _lastAiCapitalResultsCache = results;
+      renderAiCapitalCompareCardsOnly();
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
-      if (summary && winner) {
-        summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
-      }
-
-      grid.innerHTML = results.map(r => {
-        const isWin = winner && r.strategyKey === winner.strategyKey;
-        const isCur = r.strategyKey === currentExitStrategy;
-        const pCls = r.totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400";
-        const topStr = r.topTrade
-          ? `<div class="text-[9.5px] text-amber-300 mt-1 truncate" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
-          : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
-        return `
-          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isWin ? 'bg-purple-900/45 border-amber-400 ring-1 ring-amber-400/60' : (isCur ? 'bg-slate-900 border-purple-400' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
-            <div class="flex items-center justify-between gap-1 font-bold text-slate-200">
-              <span class="truncate">${r.label}</span>
-              ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
-            </div>
-            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 truncate">最佳出場：${r.bestTag}</div>
-            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono truncate">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
-            <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
-            <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
-            <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
-            ${topStr}
-          </div>
-        `;
-      }).join("");
       if (autoSwitch && winner) {
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
@@ -5135,7 +5155,11 @@
       lastSimTradesSnapshot = boughtTrades;
       const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
       if (aiCmpBox && !aiCmpBox.classList.contains("hidden")) {
-        runAiCapitalStrategyOptimizer(false);
+        if (window._skipNextAiCapOptInSim) {
+          window._skipNextAiCapOptInSim = false;
+        } else {
+          runAiCapitalStrategyOptimizer(false);
+        }
       }
 
       // 若切換為「我的實際庫存」，改以使用者可編輯庫存重算4大卡片與表格
@@ -5279,12 +5303,12 @@
                 </td>
                 <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
-                <td class="py-1.5 px-2 text-right text-white" ${getTickFlashAttr(bt.code)}>${bt.exitOrNowPrice.toFixed(2)}</td>
+                <td class="py-1.5 px-2 text-right text-white" ${getTickFlashAttr(bt.code)}>${(Number(bt.exitOrNowPrice ?? bt.curP ?? bt.buyPrice) || 0).toFixed(2)}</td>
                 <td class="py-1.5 px-2">
                   <div class="text-[10px] font-semibold">${priceLine}</div>
                   <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
                 </td>
-                <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${bt.netPct >= 0 ? "+" : ""}${bt.netPct.toFixed(1)}%)</td>
+                <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
                 <td class="py-1.5 px-2 text-center space-y-1">
                   <div>${stBadge}</div>
                   ${!bt.isClosed
