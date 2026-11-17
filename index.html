@@ -1289,9 +1289,9 @@
       </div>
 
       <!-- 獨立於 K 線圖上方的 HUD 與快捷控制列（與 K 線完全分離，永不重疊） -->
-      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex flex-wrap items-start justify-between gap-2">
+      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex items-start justify-between gap-2 h-[88px] overflow-hidden shrink-0">
         <div class="flex-1 min-w-[220px] flex flex-col gap-1">
-          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-0.5 h-[74px] overflow-y-auto content-start">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
           </div>
           <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
@@ -2323,6 +2323,7 @@
       };
     }
 
+    const _fullStep1Cache = new Map();
     function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy) {
       if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
       const activeSectors = getSelectedSimSectors();
@@ -2371,7 +2372,9 @@
           best = { ...res, score: res.totalProfitNtd };
         }
       }
-      return best || fallbackBest;
+      const finalOut = best || fallbackBest;
+      if (finalOut) _fullStep1Cache.set(fCacheKey, finalOut);
+      return finalOut;
     }
 
     let _aiFullStep1PerStrategyMap = {};
@@ -2492,9 +2495,12 @@
     function onAiAutoFullStep1Toggle() {
       const chk = document.getElementById("chkAiAutoFullStep1");
       if (chk && chk.checked) {
+        _aiFullStep1ModeActive = true;
         runAiFullStep1Optimizer(true, true);
       } else {
+        _aiFullStep1ModeActive = false;
         runAiFullStep1Optimizer(false, false);
+        renderStrategyComparisonSummary(getCurrentFilterOptions());
       }
     }
 
@@ -2511,14 +2517,30 @@
       currentExitStrategy = strategyName;
       updateExitStrategyUI();
       const chkFull = document.getElementById("chkAiAutoFullStep1");
-      const useFullOpt = Boolean(chkFull && chkFull.checked);
+      const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive;
       const chk = document.getElementById("chkAiAutoBestVol");
       if (!useFullOpt && chk && chk.checked) {
-        applyAiBestVolForCurrentStrategy(true);
+        applyAiBestVolForCurrentStrategy(false);
       }
       runAiFullStep1Optimizer(useFullOpt, false);
       saveUserSettingsToStorage(false);
+      window._skipNextCmpTimer = true;
       applyFiltersAndRender();
+      if (document.getElementById("strategyCompareGrid")) {
+        renderStrategyComparisonSummary(getCurrentFilterOptions(), true);
+      }
+      runPortfolioCapitalSimulation();
+      if (selectedStockCode) {
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        if (cur) updateDetailPanel(cur, false);
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
+          const customS = window._lastCustomInspectedStock;
+          const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
+          customS.trackingInfo = lc.activeOrTodayExit;
+          customS.closedBreakdownInfo = lc.closedBreakdown;
+          updateDetailPanel(customS, false);
+        }
+      }
     }
 
     function syncStrategyEDescText() {
@@ -2555,7 +2577,8 @@
       if (el) el.classList.toggle("hidden");
     }
 
-    function renderStrategyComparisonSummary(filterOpts) {
+    let _lastCmpResultsCache = null;
+    function renderStrategyComparisonSummary(filterOpts, fastHighlightOnly = false) {
       const grid = document.getElementById("strategyCompareGrid");
       const note = document.getElementById("strategyCompareNote");
       if (!grid || !isPnlPoolActive() || rawAllLoadedStocks.length === 0) return;
@@ -2580,7 +2603,11 @@
       const activeStep1Sectors = getSelectedSimSectors();
 
       const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
-      const results = list.map(item => {
+      let results;
+      if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 6) {
+        results = _lastCmpResultsCache;
+      } else {
+      results = list.map(item => {
         const cfg = getExitStrategyConfig(item.key);
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || computeAiBestFullStep1ForStrategy(item.key)) : null;
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
@@ -2643,6 +2670,8 @@
         return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
       });
 
+      }
+      _lastCmpResultsCache = results;
       const bestNet = Math.max(...results.map(r => r.net));
 
       grid.innerHTML = results.map(r => {
@@ -4340,6 +4369,11 @@
       const sectorMode = getSelectedSimSectors();
       const filterOpts = getCurrentFilterOptions();
       const cfg = getExitStrategyConfig(strategyKey);
+      const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
+      const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
+      const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
+      const fCacheKey = `${strategyKey}|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(cfg)}`;
+      if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
 
       const events = [];
       const seenKey = new Set();
@@ -6296,7 +6330,7 @@
     // 共用圖表備援生命週期模擬：統一處理日K備援、日K平倉後接續、以及5分K平倉後接續（含關鍵K、確認K買進、-2%停損、時間停損、20MA控盤與平倉標記）
     function simulateChartFallbackLifecycleFrom(bars, startScanIdx, volFilterOpts = null) {
       const cfgPost = getExitStrategyConfig();
-      const useVolPasses = volFilterOpts ? [true, false] : [false];
+      const useVolPasses = volFilterOpts ? [true] : [false];
       let firstKey = -1;
       for (const useVolCheck of useVolPasses) {
         for (let k = Math.max(1, startScanIdx); k < bars.length; k++) {
@@ -6440,7 +6474,11 @@
       if (isPnlPoolActive()) {
         const cmpOpts = getCurrentFilterOptions();
         clearTimeout(window.__strategyCmpTimer);
-        window.__strategyCmpTimer = setTimeout(() => renderStrategyComparisonSummary(cmpOpts), 40);
+        if (window._skipNextCmpTimer) {
+          window._skipNextCmpTimer = false;
+        } else {
+          window.__strategyCmpTimer = setTimeout(() => renderStrategyComparisonSummary(cmpOpts), 40);
+        }
       }
 
       let list = baseList;
@@ -7277,10 +7315,29 @@
         }
 
         const buyTagTitle = t.isDirectKeyBreakdown ? `關鍵K基準(${buyDateSlash}收)` : `確認K買入(${buyDateSlash}收)`;
+        let multiHistHtml = "";
+        if (Array.isArray(t.closedTradesHistory) && t.closedTradesHistory.length > 0) {
+          const allHist = t.isClosed ? t.closedTradesHistory : [...t.closedTradesHistory];
+          const extraHist = allHist.filter(ht => !(ht.buyDate === t.buyDate && ht.sellDate === t.sellDate));
+          if (extraHist.length > 0) {
+            multiHistHtml = `<div class="w-full mt-1 pt-1 border-t border-slate-700/60 text-[10.5px] text-slate-300 space-y-0.5">` +
+              extraHist.map(ht => {
+                const hBuyD = formatShortDateSlash(ht.buyDate);
+                const hSellD = formatShortDateSlash(ht.sellDate);
+                const hPts = (ht.sellPrice - ht.buyPrice);
+                const hMoney = Math.round(hPts * 1000);
+                const hCol = hPts >= 0 ? "text-rose-300" : "text-emerald-300";
+                const hSign = hPts >= 0 ? "+" : "";
+                return `<div>📌 符合條件波段：🎯 <b>${hBuyD}買(${ht.buyPrice.toFixed(2)})</b> ｜ 🛑 初始停損 <b class="text-yellow-300">${(ht.stopLossPrice || 0).toFixed(2)}</b> ｜ ❄️ <b>${hSellD}平倉(${ht.sellPrice.toFixed(2)}｜${ht.holdingDays}天)</b> ｜ ${ht.exitReason || ''} <b class="${hCol}">${hSign}${hPts.toFixed(2)}點 (${formatMoneyDisplay(hMoney)})</b></div>`;
+              }).join("") +
+            `</div>`;
+          }
+        }
         trackLeft.innerHTML = `
           <span>🎯 ${buyTagTitle}：<b class="text-sky-300">${t.buyPrice.toFixed(2)}</b></span>
           ${stopBannerSegment}
           ${bdBannerSegment}
+          ${multiHistHtml}
         `;
         trackRight.innerHTML = `<span class="${ptsColor} text-sm">${t.isClosed ? '結算' : '獲利'}：${ptsSign}${t.profitPoints.toFixed(2)}點 ｜ ${formatMoneyDisplay(profitMoney)} (${ptsSign}${t.profitPct.toFixed(2)}%)</span>`;
       } else {
@@ -7506,7 +7563,7 @@
             tsb.closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
           }
           if (tsbIdx >= 0) {
-            chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, tsbIdx + 1, null);
+            chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, tsbIdx + 1, getCurrentFilterOptions());
           }
         }
       }
@@ -8473,7 +8530,7 @@
           ctx.restore();
 
           // 1b. 若該筆交易有紀錄初始停損價，也畫出「初始停損」參考點線，方便對照當初停損位置
-          if (ht.stopLossPrice > 0 && !String(ht.exitReason || "").includes("初始停損")) {
+          if (ht.stopLossPrice > 0) {
             const yInitSl = priceToY(ht.stopLossPrice);
             ctx.save();
             ctx.strokeStyle = "rgba(251, 191, 36, 0.55)";
