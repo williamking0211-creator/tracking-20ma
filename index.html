@@ -833,9 +833,11 @@
                     <option value="5">剔除獲利前 5 名</option>
                   </select>
                 </label>
-                <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2.5 py-0.5 rounded bg-purple-600/80 hover:bg-purple-500 border border-purple-400/60 text-white font-bold transition shadow-sm">
-                  🤖 AI 找實戰最大收益策略
-                </button>
+                <label id="lblAiCapitalOpt" class="inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm">
+                  <input type="checkbox" id="chkAiCapitalOpt" onchange="toggleAiCapitalStrategyOptimizer()"
+                         class="rounded bg-slate-900 border-purple-400 text-purple-500 focus:ring-0" />
+                  <span id="txtAiCapitalOpt">🤖 AI 找實戰最大收益策略 (未開啟)</span>
+                </label>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <span id="simTrimmedInfoBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-200"></span>
@@ -850,7 +852,7 @@
                   <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬六大策略收益對比</span>
                   <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span>
                 </div>
-                <button type="button" onclick="document.getElementById('simAiStrategyCompareBox').classList.add('hidden')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
+                <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
               <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[10.5px]"></div>
             </div>
@@ -1288,23 +1290,25 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
-        <!-- 圖表右上角懸浮快捷鍵：手機/電腦皆可一鍵 放大、縮小、回復視角、佔滿全螢幕 -->
-        <div id="chartFloatingControls" class="absolute top-2 right-2 z-30 flex items-center gap-1 bg-slate-900/90 backdrop-blur-sm border border-slate-700/80 rounded-lg p-1 shadow-lg">
-          <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
-                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
-          <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
-                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">－</button>
-          <button type="button" onclick="resetChartZoom()" title="回復預設視角"
-                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 text-[11px] font-bold leading-none">↺ 回復</button>
-          <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
-                  class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
-        </div>
-        <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col gap-1">
-          <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
+        <div class="absolute top-2 left-3 right-2 z-30 pointer-events-none flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0 flex flex-col gap-1">
+            <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
+            </div>
+            <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
+              ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
+            </div>
           </div>
-          <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
-            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
+          <!-- 圖表右上角懸浮快捷鍵：自動靠右不遮擋左側 HUD 文字 -->
+          <div id="chartFloatingControls" class="pointer-events-auto shrink-0 flex items-center gap-1 bg-slate-900/90 backdrop-blur-sm border border-slate-700/80 rounded-lg p-1 shadow-lg">
+            <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
+                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
+            <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
+                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">－</button>
+            <button type="button" onclick="resetChartZoom()" title="回復預設視角"
+                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 text-[11px] font-bold leading-none">↺ 回復</button>
+            <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
+                    class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
           </div>
         </div>
 
@@ -1669,6 +1673,21 @@
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
+      const chkAiCap = document.getElementById("chkAiCapitalOpt");
+      if (chkAiCap && chkAiCap.checked) {
+        runAiCapitalStrategyOptimizer(false);
+      }
+      if (selectedStockCode) {
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        if (cur) updateDetailPanel(cur, false);
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
+          const customS = window._lastCustomInspectedStock;
+          const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
+          customS.trackingInfo = lc.activeOrTodayExit;
+          customS.closedBreakdownInfo = lc.closedBreakdown;
+          updateDetailPanel(customS, false);
+        }
+      }
     }
 
     function onChartToggleChanged() {
@@ -2312,7 +2331,7 @@
       });
       if (poolStocks.length === 0) return null;
 
-      const cfg = getExitStrategyConfig(strategyKey);
+      const cfg = overrideCfg || getExitStrategyConfig(strategyKey);
       const curOpts = getCurrentFilterOptions();
       const candList = [
         [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
@@ -2972,7 +2991,7 @@
         return {
           bannerClass: "bg-rose-950/50 border border-rose-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
           titleHtml: `<span class="text-rose-300 font-bold">🔥 目前階段：【確認K買進階段${crossNote}】${keyDateTag} 突破20MA關鍵K，今日收盤(${stock.todayPrice.toFixed(2)})突破關鍵K高點(${stock.yestHigh.toFixed(2)})！</span>`,
-          detailHtml: `<span class="text-yellow-300">初始停損(-2%)：${stock.candidateStopLossPrice.toFixed(2)}</span>`
+          detailHtml: `<span class="text-yellow-300">初始停損(-${getExitStrategyConfig().initStopBufferPct}%)：${stock.candidateStopLossPrice.toFixed(2)}</span>`
         };
       }
 
@@ -4065,10 +4084,10 @@
           ruleText = `1:1保本奔跑中 (等達1:${getExitStrategyConfig().rrTier2Ratio}切鎖利)`;
         } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 0) {
           stopPrice = t.stopLossPrice || 0;
-          ruleText = `初始停損(-2%) (未達1:1不用20MA)`;
+          ruleText = `初始停損(-${cfg.initStopBufferPct}%) (未達1:1不用20MA)`;
         } else if (!t.ma20ControlArmed) {
           stopPrice = t.stopLossPrice || 0;
-          ruleText = `初始停損(-2%) (20MA未過買價)`;
+          ruleText = `初始停損(-${cfg.initStopBufferPct}%) (20MA未過買價)`;
         } else {
           const ma = t.activeControlMa || 20;
           const maVal = ma === 5 ? (t.currentMa5 || t.currentMa20) : (ma === 10 ? (t.currentMa10 || t.currentMa20) : t.currentMa20);
@@ -4231,7 +4250,7 @@
       };
     }
 
-    function simulateCapitalForStrategy(strategyKey) {
+    function simulateCapitalForStrategy(strategyKey, overrideCfg = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
@@ -4362,6 +4381,78 @@
       };
     }
 
+    let _aiCapitalBestParamsMap = {};
+
+    function toggleAiCapitalStrategyOptimizer() {
+      const chk = document.getElementById("chkAiCapitalOpt");
+      const txt = document.getElementById("txtAiCapitalOpt");
+      const lbl = document.getElementById("lblAiCapitalOpt");
+      const box = document.getElementById("simAiStrategyCompareBox");
+      const isOn = Boolean(chk && chk.checked);
+      if (txt) txt.textContent = isOn ? "🤖 AI 找實戰最大收益策略 (已開啟)" : "🤖 AI 找實戰最大收益策略 (未開啟)";
+      if (lbl) {
+        lbl.className = isOn
+          ? "inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-purple-600/90 border border-purple-300 text-white font-bold transition shadow-md ring-1 ring-purple-400/60"
+          : "inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm";
+      }
+      if (isOn) {
+        runAiCapitalStrategyOptimizer(true);
+      } else if (box) {
+        box.classList.add("hidden");
+      }
+    }
+
+    function closeAiCapitalCompareBox() {
+      const box = document.getElementById("simAiStrategyCompareBox");
+      const chk = document.getElementById("chkAiCapitalOpt");
+      if (box) box.classList.add("hidden");
+      if (chk && chk.checked) {
+        chk.checked = false;
+        toggleAiCapitalStrategyOptimizer();
+      }
+    }
+
+    function applyBestParamsToStrategyUI(strategyKey, bestParamObj) {
+      if (!bestParamObj) return;
+      if (strategyKey === 'SHORT_MA_TRAIL') {
+        if (bestParamObj.shortMaPeriod && document.getElementById("shortMaPeriodSelect")) {
+          document.getElementById("shortMaPeriodSelect").value = String(bestParamObj.shortMaPeriod);
+        }
+        if (bestParamObj.shortMaTriggerPct && document.getElementById("shortMaTriggerPctInput")) {
+          document.getElementById("shortMaTriggerPctInput").value = String(bestParamObj.shortMaTriggerPct);
+        }
+      } else if (strategyKey === 'PEAK_TRAILING') {
+        if (bestParamObj.peakDrawdownPct && document.getElementById("peakDrawdownPctInput")) {
+          document.getElementById("peakDrawdownPctInput").value = String(bestParamObj.peakDrawdownPct);
+        }
+      } else if (strategyKey === 'WHALE_SELL_EXIT') {
+        if (bestParamObj.whaleTriggerPct !== undefined && document.getElementById("whaleTriggerPctInput")) {
+          document.getElementById("whaleTriggerPctInput").value = String(bestParamObj.whaleTriggerPct);
+        }
+        if (bestParamObj.whaleSellMult && document.getElementById("whaleSellMultInput")) {
+          document.getElementById("whaleSellMultInput").value = String(bestParamObj.whaleSellMult);
+        }
+      } else if (strategyKey === 'RR_LADDER') {
+        if (bestParamObj.rrBreakevenRatio && document.getElementById("rrBreakevenRatioInput")) {
+          document.getElementById("rrBreakevenRatioInput").value = String(bestParamObj.rrBreakevenRatio);
+        }
+        if (bestParamObj.rrTier2Ratio && document.getElementById("rrTier2RatioInput")) {
+          document.getElementById("rrTier2RatioInput").value = String(bestParamObj.rrTier2Ratio);
+        }
+        syncStrategyEDescText();
+      }
+    }
+
+    function selectAiOptimizedCapitalStrategy(strategyKey) {
+      const bestP = _aiCapitalBestParamsMap[strategyKey];
+      if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
+      setExitStrategy(strategyKey);
+      const chk = document.getElementById("chkAiCapitalOpt");
+      if (chk && chk.checked) {
+        runAiCapitalStrategyOptimizer(false);
+      }
+    }
+
     function runAiCapitalStrategyOptimizer(autoSwitch = false) {
       const box = document.getElementById("simAiStrategyCompareBox");
       const grid = document.getElementById("simAiStrategyCompareGrid");
@@ -4369,20 +4460,71 @@
       if (!box || !grid || rawAllLoadedStocks.length === 0) return;
       box.classList.remove("hidden");
 
+      const baseCands = {
+        'DEFAULT_20MA': [{ tag: '原版20MA', patch: {} }],
+        'SHORT_MA_TRAIL': [
+          { tag: '5MA/達3%', patch: { shortMaPeriod: 5, shortMaTriggerPct: 3 } },
+          { tag: '5MA/達6%', patch: { shortMaPeriod: 5, shortMaTriggerPct: 6 } },
+          { tag: '10MA/達3%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 3 } },
+          { tag: '10MA/達6%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 6 } },
+          { tag: '10MA/達10%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10 } }
+        ],
+        'PEAK_TRAILING': [
+          { tag: '回落5%', patch: { peakDrawdownPct: 5 } },
+          { tag: '回落8%', patch: { peakDrawdownPct: 8 } },
+          { tag: '回落10%', patch: { peakDrawdownPct: 10 } },
+          { tag: '回落12%', patch: { peakDrawdownPct: 12 } }
+        ],
+        'WHALE_SELL_EXIT': [
+          { tag: '賺6%/1.5x', patch: { whaleTriggerPct: 6, whaleSellMult: 1.5 } },
+          { tag: '賺10%/2.0x', patch: { whaleTriggerPct: 10, whaleSellMult: 2.0 } },
+          { tag: '賺12%/2.0x', patch: { whaleTriggerPct: 12, whaleSellMult: 2.0 } },
+          { tag: '賺15%/2.5x', patch: { whaleTriggerPct: 15, whaleSellMult: 2.5 } }
+        ],
+        'RR_LADDER': [
+          { tag: '1:1/1:2', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 2.0 } },
+          { tag: '1:1/1:3', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 3.0 } },
+          { tag: '1:1.5/1:3', patch: { rrBreakevenRatio: 1.5, rrTier2Ratio: 3.0 } }
+        ],
+        'AI_ADAPTIVE': [{ tag: 'AI動態偵測', patch: {} }]
+      };
+
       const defs = [
         { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
-        { key: 'SHORT_MA_TRAIL', label: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA` },
-        { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
+        { key: 'SHORT_MA_TRAIL', label: 'B. 賺達標守短均' },
+        { key: 'PEAK_TRAILING', label: 'C. 高點回落停利' },
         { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
-        { key: 'RR_LADDER', label: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}` },
+        { key: 'RR_LADDER', label: 'E. 風報比階梯' },
         { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' }
       ];
 
-      const results = defs.map(d => ({ ...d, ...simulateCapitalForStrategy(d.key) }));
+      _aiCapitalBestParamsMap = {};
+      const results = defs.map(d => {
+        const baseCfg = getExitStrategyConfig(d.key);
+        const cands = baseCands[d.key] || [{ tag: '預設', patch: {} }];
+        let bestRes = null;
+        let bestTag = '';
+        let bestPatch = {};
+        cands.forEach(c => {
+          const testCfg = { ...baseCfg, ...c.patch };
+          const simRes = simulateCapitalForStrategy(d.key, testCfg);
+          if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
+            bestRes = simRes;
+            bestTag = c.tag;
+            bestPatch = c.patch;
+          }
+        });
+        _aiCapitalBestParamsMap[d.key] = bestPatch;
+        return { ...d, ...bestRes, bestTag };
+      });
+
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
 
-      if (autoSwitch && winner && winner.strategyKey !== currentExitStrategy) {
-        currentExitStrategy = winner.strategyKey;
+      if (autoSwitch && winner) {
+        applyBestParamsToStrategyUI(winner.strategyKey, _aiCapitalBestParamsMap[winner.strategyKey]);
+        if (winner.strategyKey !== currentExitStrategy) {
+          currentExitStrategy = winner.strategyKey;
+        }
         updateExitStrategyUI();
         saveUserSettingsToStorage(false);
         applyFiltersAndRender();
@@ -4390,7 +4532,7 @@
 
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
       if (summary && winner) {
-        summary.textContent = `🏆 實戰收益最大：${winner.label} (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
+        summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
       }
 
       grid.innerHTML = results.map(r => {
@@ -4401,19 +4543,19 @@
           ? `<div class="text-[9.5px] text-amber-300 mt-1 truncate" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
           : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
         return `
-          <div onclick="setExitStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isCur ? 'border-purple-400 bg-purple-900/35 ring-1 ring-purple-400/50' : (isWin ? 'border-amber-400/70 bg-amber-950/25' : 'border-slate-800 bg-slate-900/80 hover:border-slate-600')}">
-            <div class="flex items-center justify-between gap-1">
-              <span class="font-bold text-slate-200 truncate">${r.label}</span>
-              ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black text-[9px] shrink-0">🏆最大</span>' : ''}
+          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isWin ? 'bg-purple-900/45 border-amber-400 ring-1 ring-amber-400/60' : (isCur ? 'bg-slate-900 border-purple-400' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
+            <div class="flex items-center justify-between gap-1 font-bold text-slate-200">
+              <span class="truncate">${r.label}</span>
+              ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
             </div>
-            <div class="font-mono font-black text-xs mt-1 ${pCls}">${fmtMoney(r.totalNetProfit)} <span class="text-[10px]">(${r.totalRoiPct >= 0 ? "+" : ""}${r.totalRoiPct.toFixed(1)}%)</span></div>
-            <div class="text-[9.5px] text-slate-400 mt-0.5 font-mono">權益:$${r.finalEquity.toLocaleString()}</div>
-            <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount}筆 ｜ 勝率${r.winRate}%</div>
+            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5">最佳條件：${r.bestTag}</div>
+            <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">權益:$${r.totalEquity.toLocaleString()}</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">${r.totalCount}筆 ｜ 勝率${r.winRate}%</div>
             ${topStr}
           </div>
         `;
       }).join("");
-
       if (autoSwitch && winner) {
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
@@ -4896,6 +5038,17 @@
     }
 
     function applyFiltersAndRender() {
+      const _liveCfg = getExitStrategyConfig();
+      const _liveStopFactor = 1 - (_liveCfg.initStopBufferPct / 100);
+      rawAllLoadedStocks.forEach(s => {
+        const baseL = Math.min(s.prevDayLow > 0 ? s.prevDayLow : s.yestLow, s.yestLow > 0 ? s.yestLow : s.prevDayLow);
+        const isLimUpCand = _liveCfg.entryLimitUpStopAtLow && s.status === "BREAKOUT" && s.todayLimitType === "LIMIT_UP" && s.todayLow > 0;
+        if (isLimUpCand) {
+          s.candidateStopLossPrice = Number(s.todayLow.toFixed(2));
+        } else if (baseL > 0) {
+          s.candidateStopLossPrice = Number((baseL * _liveStopFactor).toFixed(2));
+        }
+      });
       const filterOpts = getCurrentFilterOptions();
 
       rawAllLoadedStocks.forEach(s => {
@@ -5428,7 +5581,7 @@
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
                 activePos.sellPrice = curBar.close;
-                activePos.exitReason = "跌破初始停損(-2%)平倉";
+                activePos.exitReason = `跌破初始停損(-${cfg.initStopBufferPct}%)平倉`;
                 if (activePos.sellPrice > activePos.buyPrice && activePos.exitReason) {
               activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
             }
@@ -5597,7 +5750,7 @@
               atrPct,
               washoutCount,
               aiNeedConfirmK,
-              stopRefDesc: usePrevLow ? `前根低(${prevBar.low.toFixed(2)})-2%` : `關鍵K低(${curBar.low.toFixed(2)})-2%`
+              stopRefDesc: usePrevLow ? `前根低(${prevBar.low.toFixed(2)})-${cfg.initStopBufferPct}%` : `關鍵K低(${curBar.low.toFixed(2)})-${cfg.initStopBufferPct}%`
             };
           }
         }
@@ -6935,6 +7088,10 @@
       const trackRight = document.getElementById("trackingDetailRight");
 
       const stopBox = document.getElementById("cardStopLossBox");
+      const legendSl = document.getElementById("legendStopLossItem");
+      if (legendSl) {
+        legendSl.innerHTML = `<span class="w-3 border-b-2 border-dashed border-yellow-400 inline-block"></span>初始停損線(-${getExitStrategyConfig().initStopBufferPct}%)`;
+      }
       const stopTitle = document.getElementById("cardStopLossTitle");
       const stopPriceEl = document.getElementById("cardStopLossPrice");
       const legendStopItem = document.getElementById("legendStopLossItem");
@@ -6963,7 +7120,7 @@
           stopBannerSegment = `<span>｜ 🛑 初始停損(${t.stopRefDesc})：<b class="text-yellow-300">${t.stopLossPrice.toFixed(2)}</b>(未達1:1前不受20MA干擾)</span>`;
           stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
           stopTitle.className = "text-[10px] text-yellow-300";
-          stopTitle.textContent = "初始停損價(-2%)";
+          stopTitle.textContent = `初始停損價(-${getExitStrategyConfig().initStopBufferPct}%)`;
           stopPriceEl.className = "text-xs font-bold text-yellow-300 mt-0.5";
           stopPriceEl.textContent = t.stopLossPrice.toFixed(2);
           if (legendStopItem) legendStopItem.classList.remove("hidden");
@@ -6971,7 +7128,7 @@
           stopBannerSegment = `<span>｜ 🛑 初始停損(${t.stopRefDesc})：<b class="text-yellow-300">${t.stopLossPrice.toFixed(2)}</b></span>`;
           stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
           stopTitle.className = "text-[10px] text-yellow-300";
-          stopTitle.textContent = "初始停損價(-2%)";
+          stopTitle.textContent = `初始停損價(-${getExitStrategyConfig().initStopBufferPct}%)`;
           stopPriceEl.className = "text-xs font-bold text-yellow-300 mt-0.5";
           stopPriceEl.textContent = t.stopLossPrice.toFixed(2);
           if (legendStopItem) legendStopItem.classList.remove("hidden");
@@ -7042,7 +7199,7 @@
         trackBanner.classList.add("hidden");
         stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
         stopTitle.className = "text-[10px] text-yellow-300";
-        stopTitle.textContent = "初始停損價(-2%)";
+        stopTitle.textContent = `初始停損價(-${getExitStrategyConfig().initStopBufferPct}%)`;
         stopPriceEl.className = "text-xs font-bold text-yellow-300 mt-0.5";
         stopPriceEl.textContent = stock.candidateStopLossPrice > 0 ? stock.candidateStopLossPrice.toFixed(2) : "--";
         if (legendStopItem) legendStopItem.classList.remove("hidden");
