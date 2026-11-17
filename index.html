@@ -1288,32 +1288,32 @@
         </div>
       </div>
 
-      <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
-      <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
-        <div class="absolute top-2 left-3 right-2 z-30 pointer-events-none flex items-start justify-between gap-2">
-          <div class="flex-1 min-w-0 flex flex-col gap-1">
-            <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
-            </div>
-            <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
-              ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
-            </div>
+      <!-- 獨立於 K 線圖上方的 HUD 與快捷控制列（與 K 線完全分離，永不重疊） -->
+      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex flex-wrap items-start justify-between gap-2">
+        <div class="flex-1 min-w-[220px] flex flex-col gap-1">
+          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
           </div>
-          <!-- 圖表右上角懸浮快捷鍵：自動靠右不遮擋左側 HUD 文字 -->
-          <div id="chartFloatingControls" class="pointer-events-auto shrink-0 flex items-center gap-1 bg-slate-900/90 backdrop-blur-sm border border-slate-700/80 rounded-lg p-1 shadow-lg">
-            <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
-                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
-            <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
-                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">－</button>
-            <button type="button" onclick="resetChartZoom()" title="回復預設視角"
-                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 text-[11px] font-bold leading-none">↺ 回復</button>
-            <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
-                    class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
+          <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
+            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
           </div>
         </div>
+        <div id="chartFloatingControls" class="shrink-0 flex items-center gap-1 bg-slate-900/95 border border-slate-700/80 rounded-lg p-1 shadow">
+          <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
+          <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">－</button>
+          <button type="button" onclick="resetChartZoom()" title="回復預設視角"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 text-[11px] font-bold leading-none">↺ 回復</button>
+          <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
+                  class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
+        </div>
+      </div>
 
+      <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區（預設拉長至 540px，並支援上下拖拉分隔線與底框縮放） -->
+      <div id="chartContainer" style="height: 540px;" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex flex-col">
         <!-- 支援手機「長按」拖拉移動的懸浮圖例 -->
-        <div id="floatingLegend" style="top: 46px; left: 12px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
+        <div id="floatingLegend" style="top: 8px; left: 10px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
              class="absolute z-20 flex flex-wrap items-center gap-2 text-[10px] text-slate-300 bg-slate-900/90 backdrop-blur-sm border border-slate-700/90 hover:border-blue-400/70 shadow-lg px-2.5 py-1 rounded-md transition-transform">
           <span class="text-slate-400 font-bold pr-0.5">⋮⋮(長按移動)</span>
           <span class="flex items-center gap-1 font-medium text-pink-300"><span class="w-2.5 h-2.5 rounded-full bg-pink-400/40 border border-pink-300/70 inline-block"></span>大戶買泡泡(內定倍數/張數/金額/均價)</span>
@@ -1336,7 +1336,12 @@
           </p>
         </div>
 
-        <canvas id="klineCanvas" class="w-full h-[460px] block"></canvas>
+        <canvas id="klineCanvas" class="w-full flex-1 min-h-0 block"></canvas>
+        <!-- K 線圖框下底線拖拉把：往上拉縮小、往下拉放大拉長 -->
+        <div id="chartBottomResizeHandle" title="按住上下拖曳：往下拉放大拉長 K 線圖，往上拉縮小顯示"
+             class="fs-hide h-3 w-full bg-slate-900/95 hover:bg-indigo-600/35 border-t border-slate-700/80 cursor-ns-resize flex items-center justify-center select-none shrink-0 touch-none transition">
+          <span class="w-12 h-1 rounded-full bg-slate-500/80"></span>
+        </div>
       </div>
 
       <div class="fs-hide mt-2 flex justify-between items-center text-[11px] text-slate-500">
@@ -1673,6 +1678,8 @@
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
+      renderStrategyComparisonSummary(getCurrentFilterOptions());
+      runPortfolioCapitalSimulation();
       const chkAiCap = document.getElementById("chkAiCapitalOpt");
       if (chkAiCap && chkAiCap.checked) {
         runAiCapitalStrategyOptimizer(false);
@@ -2367,9 +2374,78 @@
       return best || fallbackBest;
     }
 
+    let _aiFullStep1PerStrategyMap = {};
+    let _aiFullStep1ModeActive = false;
+
+    function applyStep1ParamsToUI(p) {
+      if (!p) return;
+      const chkMa = document.getElementById("chkMa20Up");
+      const chkRed = document.getElementById("chkSolidRedK");
+      const chkGain = document.getElementById("chkGainRange");
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
+      const volOp = document.getElementById("volOperatorSelect");
+      const volIn = document.getElementById("volThresholdInput");
+      if (chkMa) chkMa.checked = Boolean(p.reqMaUp);
+      if (chkRed) chkRed.checked = Boolean(p.reqRed);
+      if (chkGain) chkGain.checked = true;
+      if (minIn) minIn.value = p.minG;
+      if (maxIn) maxIn.value = p.maxG;
+      if (volOp) volOp.value = "GTE";
+      if (volIn) volIn.value = p.minV;
+      syncStep1ControlsUI();
+    }
+
+    function applyAiStep1AllStrategiesAndPickBest(autoSelectBestStrategy = false) {
+      const keys = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'];
+      _aiFullStep1PerStrategyMap = {};
+      let globalWinnerKey = currentExitStrategy;
+      let globalBestProfit = -Infinity;
+      keys.forEach(k => {
+        const res = computeAiBestFullStep1ForStrategy(k);
+        if (res) {
+          _aiFullStep1PerStrategyMap[k] = res;
+          if (res.totalProfitNtd > globalBestProfit) {
+            globalBestProfit = res.totalProfitNtd;
+            globalWinnerKey = k;
+          }
+        }
+      });
+      _aiFullStep1ModeActive = true;
+      if (autoSelectBestStrategy && globalWinnerKey) {
+        currentExitStrategy = globalWinnerKey;
+        updateExitStrategyUI();
+      }
+      const targetBest = _aiFullStep1PerStrategyMap[currentExitStrategy];
+      if (targetBest) {
+        applyStep1ParamsToUI(targetBest);
+      }
+      return { bestForCurrent: targetBest, globalWinnerKey, globalBestProfit };
+    }
+
+    function selectComparisonStrategyCard(strategyKey) {
+      const useAiStep1 = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
+      if (useAiStep1) {
+        if (!_aiFullStep1PerStrategyMap[strategyKey]) {
+          _aiFullStep1PerStrategyMap[strategyKey] = computeAiBestFullStep1ForStrategy(strategyKey);
+        }
+        if (_aiFullStep1PerStrategyMap[strategyKey]) {
+          applyStep1ParamsToUI(_aiFullStep1PerStrategyMap[strategyKey]);
+        }
+      }
+      setExitStrategy(strategyKey);
+    }
+
     function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
       const adviceEl = document.getElementById("aiFullStep1AdviceText");
-      const best = computeAiBestFullStep1ForStrategy();
+      let best = null;
+      if (applyToControls && runFilterRender) {
+        const allRes = applyAiStep1AllStrategiesAndPickBest(true);
+        best = allRes.bestForCurrent;
+      } else {
+        best = computeAiBestFullStep1ForStrategy(currentExitStrategy);
+        if (best) _aiFullStep1PerStrategyMap[currentExitStrategy] = best;
+      }
       if (!best) {
         if (adviceEl) adviceEl.innerHTML = `<span class="text-amber-300">⚠️ 尚未載入足夠全市場樣本，請先更新股池資料後再試。</span>`;
         return null;
@@ -2402,23 +2478,13 @@
       }
 
       if (applyToControls) {
-        const chkMa = document.getElementById("chkMa20Up");
-        const chkRed = document.getElementById("chkSolidRedK");
-        const chkGain = document.getElementById("chkGainRange");
-        const minIn = document.getElementById("minGainInput");
-        const maxIn = document.getElementById("maxGainInput");
-        const volOp = document.getElementById("volOperatorSelect");
-        const volIn = document.getElementById("volThresholdInput");
-        if (chkMa) chkMa.checked = best.reqMaUp;
-        if (chkRed) chkRed.checked = best.reqRed;
-        if (chkGain) chkGain.checked = true;
-        if (minIn) minIn.value = best.minG;
-        if (maxIn) maxIn.value = best.maxG;
-        if (volOp) volOp.value = "GTE";
-        if (volIn) volIn.value = best.minV;
-        syncStep1ControlsUI();
+        applyStep1ParamsToUI(best);
         saveUserSettingsToStorage(false);
-        if (runFilterRender) applyFiltersAndRender();
+        if (runFilterRender) {
+          applyFiltersAndRender();
+          renderStrategyComparisonSummary(getCurrentFilterOptions());
+          runPortfolioCapitalSimulation();
+        }
       }
       return best;
     }
@@ -2513,8 +2579,14 @@
       const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
       const activeStep1Sectors = getSelectedSimSectors();
 
+      const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
       const results = list.map(item => {
         const cfg = getExitStrategyConfig(item.key);
+        const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || computeAiBestFullStep1ForStrategy(item.key)) : null;
+        if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
+        const effOpts = (useAiFullCards && aiS1)
+          ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: "GTE", validVolThreshold: aiS1.minV }
+          : filterOpts;
         let totalTrades = 0;
         let winSum = 0;
         let lossSum = 0;
@@ -2528,7 +2600,7 @@
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
-          const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
+          const lc = evaluateStockTrackingLifecycle(s, effOpts, cfg);
 
           // 股池四（續抱中 + 今日剛平倉）
           if (lc.activeOrTodayExit && checkStockMatchesPnlDateRange(s, lc.activeOrTodayExit)) {
@@ -2568,7 +2640,7 @@
         const net = winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
-        return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate };
+        return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
       });
 
       const bestNet = Math.max(...results.map(r => r.net));
@@ -2581,7 +2653,7 @@
         const p5Color = r.pool5Net > 0 ? "text-rose-300" : (r.pool5Net < 0 ? "text-emerald-400" : "text-slate-300");
         const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
         return `
-          <div onclick="setExitStrategy('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
+          <div onclick="selectComparisonStrategyCard('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
             <div class="flex items-center justify-between gap-1 text-[10px]">
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
@@ -2594,6 +2666,7 @@
             <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60">
               勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
             </div>
+            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳STEP1">🤖 20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 漲${r.aiS1.minG}~${r.aiS1.maxG}% 量≥${r.aiS1.minV}%</div>` : ''}
           </div>
         `;
       }).join("");
@@ -4382,6 +4455,7 @@
     }
 
     let _aiCapitalBestParamsMap = {};
+    let _aiCapitalBestStep1Map = {};
 
     function toggleAiCapitalStrategyOptimizer() {
       const chk = document.getElementById("chkAiCapitalOpt");
@@ -4444,6 +4518,11 @@
     }
 
     function selectAiOptimizedCapitalStrategy(strategyKey) {
+      const bestS1 = _aiCapitalBestStep1Map[strategyKey];
+      if (bestS1) {
+        _aiFullStep1PerStrategyMap[strategyKey] = bestS1;
+        applyStep1ParamsToUI(bestS1);
+      }
       const bestP = _aiCapitalBestParamsMap[strategyKey];
       if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
       setExitStrategy(strategyKey);
@@ -4499,7 +4578,10 @@
       ];
 
       _aiCapitalBestParamsMap = {};
+      _aiCapitalBestStep1Map = {};
       const results = defs.map(d => {
+        const s1Best = computeAiBestFullStep1ForStrategy(d.key);
+        if (s1Best) _aiCapitalBestStep1Map[d.key] = s1Best;
         const baseCfg = getExitStrategyConfig(d.key);
         const cands = baseCands[d.key] || [{ tag: '預設', patch: {} }];
         let bestRes = null;
@@ -4515,12 +4597,16 @@
           }
         });
         _aiCapitalBestParamsMap[d.key] = bestPatch;
-        return { ...d, ...bestRes, bestTag };
+        return { ...d, ...bestRes, bestTag, s1Best };
       });
 
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
 
       if (autoSwitch && winner) {
+        if (_aiCapitalBestStep1Map[winner.strategyKey]) {
+          _aiFullStep1PerStrategyMap[winner.strategyKey] = _aiCapitalBestStep1Map[winner.strategyKey];
+          applyStep1ParamsToUI(_aiCapitalBestStep1Map[winner.strategyKey]);
+        }
         applyBestParamsToStrategyUI(winner.strategyKey, _aiCapitalBestParamsMap[winner.strategyKey]);
         if (winner.strategyKey !== currentExitStrategy) {
           currentExitStrategy = winner.strategyKey;
@@ -4528,6 +4614,8 @@
         updateExitStrategyUI();
         saveUserSettingsToStorage(false);
         applyFiltersAndRender();
+        renderStrategyComparisonSummary(getCurrentFilterOptions());
+        runPortfolioCapitalSimulation();
       }
 
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
@@ -7724,6 +7812,13 @@
       });
 
       canvas.addEventListener("mousedown", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const localY = e.clientY - rect.top;
+        if (chartState._lastDividerY && Math.abs(localY - chartState._lastDividerY) <= 10) {
+          chartState.isDraggingDivider = true;
+          chartState.isDragging = false;
+          return;
+        }
         chartState.isDragging = true;
         chartState.dragStartX = e.clientX;
         chartState.dragStartY = e.clientY;
@@ -7731,12 +7826,31 @@
         chartState.dragStartVerticalPx = chartState.verticalOffsetPx;
       });
 
-      window.addEventListener("mouseup", () => { chartState.isDragging = false; });
+      window.addEventListener("mouseup", () => {
+        chartState.isDragging = false;
+        if (chartState.isDraggingDivider) {
+          chartState.isDraggingDivider = false;
+          renderCanvasChart();
+        }
+      });
 
       canvas.addEventListener("mousemove", (e) => {
         const rect = canvas.getBoundingClientRect();
         chartState.mouseX = e.clientX - rect.left;
         chartState.mouseY = e.clientY - rect.top;
+
+        if (chartState.isDraggingDivider && chartState._lastTotalPlotH > 0) {
+          const newRatio = (chartState.mouseY - (chartState._lastPadTop || 34)) / chartState._lastTotalPlotH;
+          chartState.priceSplitRatio = Math.max(0.28, Math.min(0.86, newRatio));
+          renderCanvasChart();
+          return;
+        }
+
+        if (chartState._lastDividerY && Math.abs(chartState.mouseY - chartState._lastDividerY) <= 10) {
+          canvas.style.cursor = "ns-resize";
+        } else {
+          canvas.style.cursor = "crosshair";
+        }
 
         if (chartState.isDragging) {
           const dx = e.clientX - chartState.dragStartX;
@@ -7751,6 +7865,37 @@
         renderCanvasChart();
       });
 
+      const bottomHandle = document.getElementById("chartBottomResizeHandle");
+      const chartBox = document.getElementById("chartContainer");
+      if (bottomHandle && chartBox) {
+        let resizingBox = false, startResizeY = 0, startBoxH = 540;
+        const startBoxResize = (clientY) => {
+          resizingBox = true;
+          startResizeY = clientY;
+          startBoxH = chartBox.getBoundingClientRect().height;
+        };
+        const moveBoxResize = (clientY) => {
+          if (!resizingBox) return;
+          const nextH = Math.max(260, Math.min(960, Math.round(startBoxH + (clientY - startResizeY))));
+          chartBox.style.height = `${nextH}px`;
+          renderCanvasChart();
+        };
+        const endBoxResize = () => { resizingBox = false; };
+        bottomHandle.addEventListener("mousedown", (e) => { e.preventDefault(); startBoxResize(e.clientY); });
+        window.addEventListener("mousemove", (e) => { if (resizingBox) moveBoxResize(e.clientY); });
+        window.addEventListener("mouseup", endBoxResize);
+        bottomHandle.addEventListener("touchstart", (e) => {
+          if (e.touches.length === 1) startBoxResize(e.touches[0].clientY);
+        }, { passive: true });
+        bottomHandle.addEventListener("touchmove", (e) => {
+          if (resizingBox && e.touches.length === 1) {
+            e.preventDefault();
+            moveBoxResize(e.touches[0].clientY);
+          }
+        }, { passive: false });
+        bottomHandle.addEventListener("touchend", endBoxResize);
+      }
+
       let pinchStartDist = 0;
       let pinchStartVisCount = 22;
       let isPriceAxisTouch = false;
@@ -7761,6 +7906,7 @@
       canvas.addEventListener("touchstart", (e) => {
         if (e.touches.length === 2) {
           chartState.isDragging = false;
+          chartState.isDraggingDivider = false;
           isPriceAxisTouch = false;
           pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
           pinchStartVisCount = chartState.visibleCount;
@@ -7770,6 +7916,13 @@
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         const localX = touch.clientX - rect.left;
+        const localY = touch.clientY - rect.top;
+        if (chartState._lastDividerY && Math.abs(localY - chartState._lastDividerY) <= 14 && localX < rect.width - 80) {
+          chartState.isDraggingDivider = true;
+          chartState.isDragging = false;
+          isPriceAxisTouch = false;
+          return;
+        }
         if (localX >= rect.width - 80) {
           // 手指在最右邊價格軸滑動：往上滑放大價格、往下滑壓縮價格
           isPriceAxisTouch = true;
@@ -7795,6 +7948,15 @@
           const maxAllow = Math.max(22, chartState.bars.length);
           chartState.visibleCount = Math.max(5, Math.min(maxAllow, Math.round(pinchStartVisCount / scale)));
           clampRightOffset();
+          renderCanvasChart();
+          return;
+        }
+        if (chartState.isDraggingDivider && e.touches.length === 1 && chartState._lastTotalPlotH > 0) {
+          e.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const localY = e.touches[0].clientY - rect.top;
+          const newRatio = (localY - (chartState._lastPadTop || 34)) / chartState._lastTotalPlotH;
+          chartState.priceSplitRatio = Math.max(0.28, Math.min(0.86, newRatio));
           renderCanvasChart();
           return;
         }
@@ -7879,9 +8041,12 @@
       document.getElementById("visibleCountBadge").textContent = `${tfLabel} 顯示 ${visibleBars.length} 根 (共 ${bars.length} 根)`;
       if (visibleBars.length > 0) document.getElementById("dataRangeInfo").textContent = `區間：${visibleBars[0].date} ～ ${visibleBars[visibleBars.length - 1].date}`;
 
-      const padLeft = 14, padRight = 76, padTop = 76, padBottom = 22, gapBetweenCharts = 16;
+      const padLeft = 14, padRight = 76, padTop = 34, padBottom = 22, gapBetweenCharts = 16;
       const totalPlotH = height - padTop - padBottom - gapBetweenCharts;
-      const pricePlotH = Math.floor(totalPlotH * 0.72);
+      const splitRatio = Math.max(0.28, Math.min(0.86, chartState.priceSplitRatio || 0.70));
+      const pricePlotH = Math.floor(totalPlotH * splitRatio);
+      chartState._lastPadTop = padTop;
+      chartState._lastTotalPlotH = totalPlotH;
       const volPlotTop = padTop + pricePlotH + gapBetweenCharts;
       const volPlotH = totalPlotH - pricePlotH;
       const plotW = width - padLeft - padRight;
@@ -8555,7 +8720,27 @@
       ctx.restore();
 
       ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(padLeft, volPlotTop - 6); ctx.lineTo(width - padRight, volPlotTop - 6); ctx.stroke();
+      chartState._lastDividerY = volPlotTop - 6;
+      {
+        const divY = volPlotTop - 6;
+        const midX = padLeft + plotW / 2;
+        ctx.save();
+        ctx.strokeStyle = chartState.isDraggingDivider ? "#818cf8" : "rgba(148, 163, 184, 0.55)";
+        ctx.lineWidth = chartState.isDraggingDivider ? 2 : 1.2;
+        ctx.beginPath(); ctx.moveTo(padLeft, divY); ctx.lineTo(width - padRight, divY); ctx.stroke();
+        ctx.fillStyle = chartState.isDraggingDivider ? "#6366f1" : "rgba(30, 41, 59, 0.94)";
+        ctx.strokeStyle = chartState.isDraggingDivider ? "#c7d2fe" : "rgba(100, 116, 139, 0.65)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(midX - 28, divY - 5.5, 56, 11, 4);
+        else ctx.rect(midX - 28, divY - 5.5, 56, 11);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "bold 8px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("↕ 調比例", midX, divY + 3);
+        ctx.restore();
+      }
 
       ctx.fillStyle = "#94a3b8"; ctx.font = "10px monospace"; ctx.textAlign = "left";
       ctx.fillText(chartState.timeframe === '5m' ? "最新量" : "今日量", width - padRight + 6, volPlotTop + 10);
@@ -8764,7 +8949,9 @@
           const trNote = matchedTr
             ? ` ｜ 當前波段(${matchedTr.buyDate.slice(5)}買 ${matchedTr.buyPrice.toFixed(1)} → ${matchedTr.isClosed ? matchedTr.sellDate.slice(5)+'賣 '+matchedTr.sellPrice.toFixed(1) : '續抱'}：<b class="${matchedTr.profitPoints >= 0 ? 'text-amber-300' : 'text-emerald-300'}">${matchedTr.profitPoints >= 0 ? '+' : ''}${matchedTr.profitPoints.toFixed(2)}點</b>)`
             : "";
-          flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
+          if (document.getElementById("chkShowAiPowerMarkers")?.checked) {
+            flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
+          }
         }
       }
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
