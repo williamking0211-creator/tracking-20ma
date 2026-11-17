@@ -426,6 +426,17 @@
                   <option value="FORCE_DIRECT">一律跌破即出 (不需確認K)</option>
                 </select>
               </label>
+              <label class="inline-flex items-center gap-1 select-none bg-slate-900 border border-yellow-500/40 px-2 py-0.5 rounded text-[11px] text-yellow-200">
+                <span>🛑 初始停損：前低 -</span>
+                <input type="number" id="initStopBufferPctInput" value="2.0" min="0" max="15" step="0.5"
+                       oninput="onExitStrategyChanged()" onchange="onExitStrategyChanged()"
+                       class="w-11 bg-slate-950 border border-slate-700 rounded px-1 text-right text-yellow-300 font-mono font-bold text-[11px]" />
+                <span>%</span>
+              </label>
+              <label class="inline-flex items-center gap-1 cursor-pointer select-none bg-slate-900 border border-rose-500/40 px-2 py-0.5 rounded text-[11px] text-rose-200" title="若確認K買進當天收盤漲停，則改以該根漲停K棒的最低點作為初始停損防守">
+                <input type="checkbox" id="chkEntryLimitUpStopAtLow" checked onchange="onExitStrategyChanged()" class="rounded bg-slate-800 border-slate-600 text-rose-400 focus:ring-0" />
+                <span>🔥 進場K若漲停改守該K低點</span>
+              </label>
             </div>
             <button type="button" onclick="toggleStrategyCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/35 transition">
               📊 顯示/隱藏 6大策略總績效對比
@@ -1014,6 +1025,10 @@
               查詢階段
             </button>
           </div>
+          <label class="inline-flex items-center gap-1.5 cursor-pointer select-none bg-purple-950/50 border border-purple-500/45 rounded-md px-2 py-1 text-[11px] text-purple-200 hover:bg-purple-900/50 transition w-full sm:w-auto" title="勾選後，若該股未通過STEP1量價條件但仍突破20MA關鍵K高點買進，將於右側試算其初始停損價與後續出場走勢（不影響左側股池與資金試算）">
+            <input type="checkbox" id="chkSimulateRawBreakoutEntry" onchange="onSimulateRawBreakoutToggle()" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
+            <span>🧪 未達條件仍模擬「過關鍵K高買進」看停損價</span>
+          </label>
         </div>
 
         <!-- 任意股階段診斷結果顯示條 -->
@@ -1411,6 +1426,8 @@
         pnlEndDate: document.getElementById("pnlEndDateInput")?.value || "",
         exitStrategy: currentExitStrategy,
         simTrimTopWinners: document.getElementById("simTrimTopWinnersSelect")?.value || "0",
+        initStopBufferPct: document.getElementById("initStopBufferPctInput")?.value || "2.0",
+        entryLimitUpStopAtLow: document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true,
         chkTimeStop: document.getElementById("chkTimeStop")?.checked || false,
         globalExitConfirmMode: document.getElementById("globalExitConfirmMode")?.value || "AUTO",
         timeStopDays: document.getElementById("timeStopDaysInput")?.value || "15",
@@ -1524,6 +1541,12 @@
         }
         if (s.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
           document.getElementById("rrMaConfirmModeSelect").value = s.rrMaConfirmMode;
+        }
+        if (s.initStopBufferPct !== undefined && document.getElementById("initStopBufferPctInput")) {
+          document.getElementById("initStopBufferPctInput").value = s.initStopBufferPct;
+        }
+        if (s.entryLimitUpStopAtLow !== undefined && document.getElementById("chkEntryLimitUpStopAtLow")) {
+          document.getElementById("chkEntryLimitUpStopAtLow").checked = !!s.entryLimitUpStopAtLow;
         }
         if (s.simTrimTopWinners !== undefined && document.getElementById("simTrimTopWinnersSelect")) {
           document.getElementById("simTrimTopWinnersSelect").value = s.simTrimTopWinners;
@@ -2002,9 +2025,14 @@
       const rrMaConfirmMode = document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K";
 
       const globalConfirmMode = document.getElementById("globalExitConfirmMode")?.value || "AUTO";
+      const rawInitStop = parseFloat(document.getElementById("initStopBufferPctInput")?.value ?? "2.0");
+      const initStopBufferPct = isNaN(rawInitStop) ? 2.0 : Math.min(15, Math.max(0, rawInitStop));
+      const entryLimitUpStopAtLow = document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true;
       return {
         strategy,
         globalConfirmMode,
+        initStopBufferPct,
+        entryLimitUpStopAtLow,
         useTimeStop,
         timeStopDays,
         shortMaTriggerPct,
@@ -2400,7 +2428,8 @@
       const volExtraPct = Number(((((keyB.vol || 0) - avg5) / avg5) * 100).toFixed(1));
       const gainPct = prevB.close > 0 ? Number((((keyB.close - prevB.close) / prevB.close) * 100).toFixed(2)) : 0;
       const baseLow = Math.min(prevB.low, keyB.low);
-      const stopLossPrice = Number((baseLow * 0.98).toFixed(2));
+      const initStopFactor = 1 - (getExitStrategyConfig().initStopBufferPct / 100);
+      const stopLossPrice = Number((baseLow * initStopFactor).toFixed(2));
       const todayClose = bars[lastIdx].close;
       const waitDays = lastIdx - matchedKeyIdx;
 
@@ -2639,6 +2668,7 @@
       const opts = getCurrentFilterOptions();
       const t = stock.trackingInfo;
       const cb = stock.closedBreakdownInfo;
+      const simPrefix = stock._isRelaxedPreviewSim ? '<span class="px-1.5 py-0.5 rounded bg-purple-600/80 text-white text-[10px] mr-1">🧪 模擬過高買進試算</span>' : '';
       const bars = chartState.dailyBars.length > 0 ? chartState.dailyBars : (stock.realBars || []);
       const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
       const prevBar = bars.length >= 2 ? bars[bars.length - 2] : null;
@@ -2669,7 +2699,7 @@
         const pSign = cb.profitPoints > 0 ? "+" : "";
         return {
           bannerClass: "bg-emerald-950/55 border border-emerald-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-          titleHtml: `<span class="text-emerald-300 font-bold">❄️ 目前階段：【20MA控盤破線確認K出場（已歸入破底K股池）】${bDate}買入後，於 ${bdDate} 跌破20MA出現關鍵K，${sDate} 出現確認K跌破低點平倉！</span>`,
+          titleHtml: `${simPrefix}<span class="text-emerald-300 font-bold">❄️ 目前階段：【20MA控盤破線確認K出場（已歸入破底K股池）】${bDate}買入後，於 ${bdDate} 跌破20MA出現關鍵K，${sDate} 出現確認K跌破低點平倉！</span>`,
           detailHtml: `<span class="text-emerald-200">${cb.exitReason} ｜ 波段結算：${pSign}${cb.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(cb.profitPoints * 1000))})</span>`
         };
       }
@@ -2729,7 +2759,7 @@
           const pSign = t.profitPoints > 0 ? "+" : "";
           return {
             bannerClass: "bg-cyan-950/50 border border-cyan-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-            titleHtml: `<span class="text-cyan-300 font-bold">📈 目前階段：【確認K波段續抱第 ${t.holdingDays} 天】${kDate}關鍵K → ${bDate}確認K收盤(${t.buyPrice.toFixed(2)})買入</span>`,
+            titleHtml: `${simPrefix}<span class="text-cyan-300 font-bold">📈 目前階段：【確認K波段續抱第 ${t.holdingDays} 天】${kDate}關鍵K → ${bDate}確認K收盤(${t.buyPrice.toFixed(2)})買入</span>`,
             detailHtml: `<span class="text-amber-300">${ctrlStr} ｜ 目前損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
           };
         } else {
@@ -2737,7 +2767,7 @@
           const pSign = t.profitPoints > 0 ? "+" : "";
           return {
             bannerClass: "bg-purple-950/50 border border-purple-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-            titleHtml: `<span class="text-purple-300 font-bold">🏁 目前階段：【今日確認K波段平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
+            titleHtml: `${simPrefix}<span class="text-purple-300 font-bold">🏁 目前階段：【今日確認K波段平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
             detailHtml: `<span class="text-purple-200">結算損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
           };
         }
@@ -2764,19 +2794,71 @@
         };
       }
 
-      // 階段 G：一般多頭運行（在 20MA 之上）或空頭整理（在 20MA 之下）
+      // 階段 G：詳細診斷「為何未符合進場條件」（找出最近一次首日突破20MA的K棒並逐項比對 STEP 1 與確認K條件）
+      const inspectKeyKFailures = (barIdx) => {
+        const kb = bars[barIdx], pb = bars[barIdx - 1];
+        if (!kb || !pb) return [];
+        const reasons = [];
+        if (kb.close <= pb.close) reasons.push(`非上漲紅K(收${kb.close.toFixed(2)} ≤ 昨${pb.close.toFixed(2)})`);
+        if (opts.requireMa20Up && kb.ma20 <= pb.ma20) reasons.push(`20MA未向上(${pb.ma20.toFixed(2)}→${kb.ma20.toFixed(2)})`);
+        if (opts.requireSolidRedK && kb.close <= kb.open) reasons.push(`非實體紅K(開${kb.open.toFixed(2)}/收${kb.close.toFixed(2)})`);
+        const gainPct = pb.close > 0 ? ((kb.close - pb.close) / pb.close) * 100 : 0;
+        if (opts.useGainRange && (gainPct < opts.minGain || gainPct > opts.maxGain)) {
+          reasons.push(`漲幅(${gainPct.toFixed(2)}%)未在設定區間(${opts.minGain}%~${opts.maxGain}%)`);
+        }
+        const avg5Vol = kb.ma5Vol > 0 ? kb.ma5Vol : 0;
+        const vRatio = avg5Vol > 0 ? Math.round((kb.vol / avg5Vol) * 100) : 100;
+        if (opts.volOp === "GTE" && vRatio < opts.validVolThreshold) {
+          reasons.push(`關鍵K量比(${vRatio}%)低於設定門檻(${opts.validVolThreshold}%)`);
+        } else if (opts.volOp === "LTE" && vRatio > opts.validVolThreshold) {
+          reasons.push(`關鍵K量比(${vRatio}%)高於設定門檻(${opts.validVolThreshold}%)`);
+        }
+        // 若關鍵K本身條件都過了，檢查確認K後續是否破低或逾期未過高
+        if (reasons.length === 0) {
+          let brokeLow = false, passedHigh = false;
+          const endW = Math.min(bars.length - 1, barIdx + 10);
+          for (let j = barIdx + 1; j <= endW; j++) {
+            if (bars[j].close > kb.high) { passedHigh = true; break; }
+            if (bars[j].close < kb.low) { brokeLow = true; break; }
+          }
+          if (brokeLow) reasons.push(`後續收盤曾跌破該關鍵K低點(${kb.low.toFixed(2)})已淘汰`);
+          else if (!passedHigh) reasons.push(`1~10日內尚未出現收盤突破關鍵K高點(${kb.high.toFixed(2)})之確認K`);
+        }
+        return reasons;
+      };
+
+      let recentBreakIdx = -1;
+      for (let idx = bars.length - 1; idx >= 1; idx--) {
+        if (bars[idx - 1].ma20 > 0 && bars[idx].ma20 > 0 && bars[idx - 1].close <= bars[idx - 1].ma20 && bars[idx].close > bars[idx].ma20) {
+          recentBreakIdx = idx;
+          break;
+        }
+      }
+
+      let missDetailHtml = "";
+      if (recentBreakIdx !== -1) {
+        const rb = bars[recentBreakIdx];
+        const rbDate = formatShortDateSlash(rb.date);
+        const rbReasons = inspectKeyKFailures(recentBreakIdx);
+        missDetailHtml = rbReasons.length > 0
+          ? `❌ 未符合進場原因（最近一次 ${rbDate} 突破20MA）：${rbReasons.join(" ｜ ")}`
+          : `❌ 最近一次 ${rbDate} 突破20MA條件雖達標，但後續已結束追蹤或未在設定區間內`;
+      } else {
+        missDetailHtml = `❌ 近 ${bars.length} 個交易日內皆無「首日由下往上突破20MA」之關鍵K`;
+      }
+
       const curMa20 = lastBar && lastBar.ma20 ? lastBar.ma20 : stock.yestMa20;
       if (stock.todayPrice >= curMa20) {
         return {
-          bannerClass: "bg-slate-900/95 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-          titleHtml: `<span class="text-sky-300 font-bold">📊 目前階段：【20MA之上多頭運行（非近期確認K觸發標的）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之上</span>`,
-          detailHtml: `<span class="text-slate-400">早已站上20MA，目前無新進場訊號</span>`
+          bannerClass: "bg-slate-900/95 border border-amber-500/40 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-sky-300 font-bold">📊 目前階段：【20MA之上多頭運行（未觸發進場）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之上</span>`,
+          detailHtml: `<span class="text-rose-300 font-semibold">${missDetailHtml}</span>`
         };
       } else {
         return {
-          bannerClass: "bg-slate-900/95 border border-slate-800 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
-          titleHtml: `<span class="text-slate-400 font-bold">📉 目前階段：【20MA之下弱勢整理（尚未突破20MA）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之下</span>`,
-          detailHtml: `<span class="text-slate-500">需等待股價首日帶量站上 ${curMa20.toFixed(2)} 才會成為關鍵K</span>`
+          bannerClass: "bg-slate-900/95 border border-slate-700 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-slate-300 font-bold">📉 目前階段：【20MA之下弱勢整理（未觸發進場）】現價(${stock.todayPrice.toFixed(2)})位於 20MA(${curMa20.toFixed(2)}) 之下</span>`,
+          detailHtml: `<span class="text-rose-300/90">${missDetailHtml}（需先站上 ${curMa20.toFixed(2)}）</span>`
         };
       }
     }
@@ -5166,13 +5248,13 @@
                 keyKHigh: pendingKeyK.keyKHigh,
                 keyKLow: pendingKeyK.keyKLow,
                 prev2Low: pendingKeyK.prev2Low,
-                stopLossPrice: pendingKeyK.stopLossPrice,
-                stopRefDesc: pendingKeyK.stopRefDesc,
+                stopLossPrice: (cfg.entryLimitUpStopAtLow && prevBar && checkLimitUpDown(curBar.close, prevBar.close) === 'LIMIT_UP' && curBar.low > 0) ? Number(curBar.low.toFixed(2)) : pendingKeyK.stopLossPrice,
+                stopRefDesc: (cfg.entryLimitUpStopAtLow && prevBar && checkLimitUpDown(curBar.close, prevBar.close) === 'LIMIT_UP' && curBar.low > 0) ? `漲停進場K低點(${curBar.low.toFixed(2)})` : pendingKeyK.stopRefDesc,
                 buyIdx: i,
                 buyDate: curBar.date,
                 buyPrice: curBar.close,
-                riskR: Math.max(0.01, Number((curBar.close - pendingKeyK.stopLossPrice).toFixed(2))),
-                rrStopFloor: pendingKeyK.stopLossPrice,
+                riskR: Math.max(0.01, Number((curBar.close - ((cfg.entryLimitUpStopAtLow && prevBar && checkLimitUpDown(curBar.close, prevBar.close) === 'LIMIT_UP' && curBar.low > 0) ? Number(curBar.low.toFixed(2)) : pendingKeyK.stopLossPrice)).toFixed(2))),
+                rrStopFloor: (cfg.entryLimitUpStopAtLow && prevBar && checkLimitUpDown(curBar.close, prevBar.close) === 'LIMIT_UP' && curBar.low > 0) ? Number(curBar.low.toFixed(2)) : pendingKeyK.stopLossPrice,
                 rrStage: 0,
                 dynamicStopPrice: 0,
                 dynamicStopLabel: "", 
@@ -5211,7 +5293,8 @@
           if (i < lastIdx && checkBarPassesStep1Filter(bars, i, filterOpts)) {
             const usePrevLow = prevBar.low < curBar.low;
             const baseStopLow = usePrevLow ? prevBar.low : curBar.low;
-            const stopLossPrice = Number((baseStopLow * 0.98).toFixed(2));
+            const initStopFactor = 1 - ((cfg.initStopBufferPct ?? 2.0) / 100);
+            const stopLossPrice = Number((baseStopLow * initStopFactor).toFixed(2));
             let atrSum = 0, atrCnt = 0;
             for (let a = Math.max(1, i - 13); a <= i; a++) {
               const pC = bars[a - 1].close || bars[a].open;
@@ -5482,7 +5565,10 @@
       const isFirstDayBreak20Ma = wasBelowOrOnMa20 && (yestClose > yestMa20) && (yestHigh > 0);
 
       const candidateBaseLow = Math.min(prevDayLow > 0 ? prevDayLow : yestLow, yestLow > 0 ? yestLow : prevDayLow);
-      const candidateStopLossPrice = candidateBaseLow > 0 ? Number((candidateBaseLow * 0.98).toFixed(2)) : 0;
+      const _curInitCfg = getExitStrategyConfig();
+      const _candStopFactor = 1 - (_curInitCfg.initStopBufferPct / 100);
+      const _isCandLimitUp = _curInitCfg.entryLimitUpStopAtLow && stock.status === "BREAKOUT" && stock.todayLimitType === "LIMIT_UP" && stock.todayLow > 0;
+      const candidateStopLossPrice = _isCandLimitUp ? Number(stock.todayLow.toFixed(2)) : (candidateBaseLow > 0 ? Number((candidateBaseLow * _candStopFactor).toFixed(2)) : 0);
 
       let status = "CONSOLIDATE";
       if (todayPrice > yestHigh) status = "BREAKOUT";
@@ -5732,7 +5818,8 @@
       while (scanIdx !== -1 && scanIdx < bars.length) {
         const pkBar = bars[scanIdx];
         const pkPrev = bars[scanIdx - 1] || pkBar;
-        const pkStop = Number((Math.min(pkPrev.low, pkBar.low) * 0.98).toFixed(2));
+        const _pkFactor = 1 - (getExitStrategyConfig().initStopBufferPct / 100);
+        const pkStop = Number((Math.min(pkPrev.low, pkBar.low) * _pkFactor).toFixed(2));
         let cIdx = -1;
         let brokeKey = false;
         for (let c = scanIdx + 1; c <= Math.min(bars.length - 1, scanIdx + 10); c++) {
@@ -6140,7 +6227,40 @@
       return Number(((sum19 + todayPrice) / 20).toFixed(2));
     }
 
+    function onSimulateRawBreakoutToggle() {
+      if (selectedStockCode) {
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode ? window._lastCustomInspectedStock : null);
+        if (cur) updateDetailPanel(cur, false);
+      }
+    }
+
+    function resolveSimulatedStockForPreview(stock) {
+      const simChk = document.getElementById("chkSimulateRawBreakoutEntry");
+      if (!simChk || !simChk.checked || !stock) return stock;
+      if (stock.trackingInfo || stock.closedBreakdownInfo) return stock;
+      // 放寬 STEP 1 條件，僅於右側個股詳情與 K 線圖試算「若仍過關鍵K高買進」之停損價與出場狀態（不更動原股池）
+      const relaxedOpts = {
+        requireMa20Up: false,
+        requireSolidRedK: false,
+        useGainRange: false,
+        minGain: -999,
+        maxGain: 999,
+        volOp: "GTE",
+        validVolThreshold: 0
+      };
+      const simLc = evaluateStockTrackingLifecycle(stock, relaxedOpts);
+      if (!simLc.activeOrTodayExit && !simLc.closedBreakdown) return stock;
+      return {
+        ...stock,
+        trackingInfo: simLc.activeOrTodayExit,
+        closedBreakdownInfo: simLc.closedBreakdown,
+        _isRelaxedPreviewSim: true
+      };
+    }
+
     function updateDetailPanel(stock, resetView = false) {
+      if (!rawAllLoadedStocks.some(s => s.code === stock.code)) window._lastCustomInspectedStock = stock;
+      stock = resolveSimulatedStockForPreview(stock);
       const hasNewerKeyK = stock.isFirstDayBreak20Ma && (!stock.closedBreakdownInfo || stock.keyKIdx > stock.closedBreakdownInfo.sellIdx);
       const activeOrClosedTrack = stock.trackingInfo || ((currentFilter === "BREAKDOWN" || !hasNewerKeyK) ? (stock.closedBreakdownInfo || stock.directBreakdownInfo) : null);
       const showTrackingMode = Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
@@ -7169,6 +7289,89 @@
         ctx.textAlign = "left";
         ctx.fillText(maTxt, width - padRight + 4, maLblY);
         ctx.restore();
+      }
+
+      // 已平倉舊有進出場訊號：從進場K線拉虛線到停損/停利平倉該K線即停止，方便回顧當時進出場觸發點
+      if (!is5mTf) {
+        const closedHistList = [];
+        const seenHistKey = new Set();
+        const pushHist = (ht) => {
+          if (!ht || !ht.isClosed || ht.isDirectKeyBreakdown || !ht.buyDate || !ht.sellDate) return;
+          const k = `${ht.buyDate}_${ht.sellDate}_${ht.buyPrice}`;
+          if (seenHistKey.has(k)) return;
+          seenHistKey.add(k);
+          closedHistList.push(ht);
+        };
+        if (stock.trackingInfo && Array.isArray(stock.trackingInfo.closedTradesHistory)) {
+          stock.trackingInfo.closedTradesHistory.forEach(pushHist);
+        }
+        if (stock.closedBreakdownInfo && Array.isArray(stock.closedBreakdownInfo.closedTradesHistory)) {
+          stock.closedBreakdownInfo.closedTradesHistory.forEach(pushHist);
+        }
+        if (stock.closedBreakdownInfo) pushHist(stock.closedBreakdownInfo);
+        if (tInfo && tInfo.isClosed) pushHist(tInfo);
+
+        const visEndIdx = startIdx + visibleBars.length - 1;
+        closedHistList.forEach(ht => {
+          const bIdx = bars.findIndex(b => b.date === ht.buyDate);
+          const sIdx = bars.findIndex(b => b.date === ht.sellDate);
+          if (bIdx === -1 || sIdx === -1) return;
+          if (sIdx < startIdx || bIdx > visEndIdx) return;
+
+          const x1 = bIdx < startIdx ? padLeft : (padLeft + stepX * (bIdx - startIdx) + stepX / 2);
+          const x2 = sIdx > visEndIdx ? (width - padRight) : (padLeft + stepX * (sIdx - startIdx) + stepX / 2);
+          const yBuy = priceToY(ht.buyPrice);
+
+          // 1. 進場買價虛線（只畫到出場該 K 線即停止）
+          ctx.save();
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.78)";
+          ctx.lineWidth = 1.3;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x1, yBuy);
+          ctx.lineTo(x2, yBuy);
+          ctx.stroke();
+          ctx.restore();
+
+          // 2. 停損 / 停利觸發線（只畫到出場該 K 線即停止）
+          const isWinExit = (ht.sellPrice || 0) > (ht.buyPrice || 0);
+          let triggerPrice = ht.sellPrice || ht.buyPrice;
+          let triggerTag = isWinExit ? "停利線" : "停損線";
+          if (!isWinExit && ht.stopLossPrice > 0 && String(ht.exitReason || "").includes("初始停損")) {
+            triggerPrice = ht.stopLossPrice;
+            triggerTag = "初始停損";
+          } else if (ht.dynamicStopPrice > 0 && String(ht.exitReason || "").match(/保本|鎖利|回落/)) {
+            triggerPrice = ht.dynamicStopPrice;
+            triggerTag = isWinExit ? "鎖利線" : "保本線";
+          }
+          const yExit = priceToY(triggerPrice);
+          const lineColor = isWinExit ? "rgba(74, 222, 128, 0.85)" : "rgba(250, 204, 21, 0.85)";
+          const labelColor = isWinExit ? "#4ade80" : "#facc15";
+
+          ctx.save();
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(x1, yExit);
+          ctx.lineTo(x2, yExit);
+          ctx.stroke();
+
+          // 在出場該 K 線畫上停止終點圓點
+          ctx.setLineDash([]);
+          ctx.fillStyle = labelColor;
+          ctx.beginPath();
+          ctx.arc(x2, yExit, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          if (sIdx >= startIdx && sIdx <= visEndIdx) {
+            drawNonOverlappingLabel(`${triggerTag} ${triggerPrice.toFixed(2)}`, x2, yExit - 6, -1, labelColor, "bold 9.5px monospace");
+          }
+          if (bIdx >= startIdx && bIdx <= visEndIdx) {
+            drawNonOverlappingLabel(`買價 ${ht.buyPrice.toFixed(2)}`, x1, yBuy + 12, 1, "#38bdf8", "bold 9.5px monospace");
+          }
+        });
       }
 
       if (showBubbles) {
