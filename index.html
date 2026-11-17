@@ -228,7 +228,7 @@
               </select>
               <span class="text-[11px] text-slate-300">前5日均量 ×</span>
               <div class="inline-flex items-center bg-slate-950 border border-slate-700 focus-within:border-amber-400 rounded px-1.5 py-0.5 gap-1">
-                <input type="number" id="volThresholdInput" value="70" min="0" max="500" step="1" oninput="onVolInputChange(this.value)"
+                <input type="number" id="volThresholdInput" value="70" min="0" max="1000" step="1" oninput="onVolInputChange(this.value)"
                        class="w-11 bg-transparent text-amber-300 font-bold text-right focus:outline-none text-xs" />
                 <span class="text-amber-300 font-bold text-[11px]">%</span>
                 <button type="button" onclick="clearInputField('volThresholdInput', true)" title="重設成交量門檻為 0%" class="clear-input-btn">✕</button>
@@ -257,19 +257,20 @@
             </div>
           </div>
 
-          <!-- 超長全寬度成交量拉桿 (0 ~ 500%) -->
+          <!-- 超長全寬度成交量拉桿 (0 ~ 1000%) -->
           <div class="pt-0.5">
-            <input type="range" id="volThresholdSlider" min="0" max="500" step="1" value="70" oninput="onVolSliderChange(this.value)"
-                   title="拖曳調整關鍵K成交量門檻 (0% ~ 500%)"
+            <input type="range" id="volThresholdSlider" min="0" max="1000" step="1" value="70" oninput="onVolSliderChange(this.value)"
+                   title="拖曳調整關鍵K成交量門檻 (0% ~ 1000%)"
                    class="range-amber w-full h-2.5 bg-slate-700 rounded-lg cursor-pointer" />
             <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-1 select-none">
               <span onclick="quickSetVol(0)" class="cursor-pointer hover:text-amber-300">0%</span>
               <span onclick="quickSetVol(70)" class="cursor-pointer hover:text-amber-300 text-amber-300/90 font-semibold">70%</span>
               <span onclick="quickSetVol(100)" class="cursor-pointer hover:text-amber-300">100%</span>
               <span onclick="quickSetVol(200)" class="cursor-pointer hover:text-amber-300">200%</span>
-              <span onclick="quickSetVol(300)" class="cursor-pointer hover:text-amber-300">300%</span>
               <span onclick="quickSetVol(400)" class="cursor-pointer hover:text-amber-300">400%</span>
-              <span onclick="quickSetVol(500)" class="cursor-pointer hover:text-amber-300">500%</span>
+              <span onclick="quickSetVol(600)" class="cursor-pointer hover:text-amber-300">600%</span>
+              <span onclick="quickSetVol(800)" class="cursor-pointer hover:text-amber-300">800%</span>
+              <span onclick="quickSetVol(1000)" class="cursor-pointer hover:text-amber-300">1000%</span>
             </div>
           </div>
         </div>
@@ -1720,9 +1721,9 @@
     function onVolInputChange(val) {
       let v = parseFloat(val);
       if (!isNaN(v)) {
-        if (v > 500) {
+        if (v > 1000) {
           v = 500;
-          document.getElementById("volThresholdInput").value = 500;
+          document.getElementById("volThresholdInput").value = 1000;
         } else if (v < 0) {
           v = 0;
           document.getElementById("volThresholdInput").value = 0;
@@ -2096,7 +2097,7 @@
       let bestPerStock = -Infinity;
       let bestCount = 0;
       let bestTotalNet = 0;
-      const scanSteps = [0, 50, 70, 100, 120, 150, 180, 200, 250, 300, 400, 500];
+      const scanSteps = [0, 50, 70, 100, 120, 150, 180, 200, 250, 300, 400, 500, 600, 750, 1000];
 
       for (const minSamples of [5, 1]) {
         for (const pct of scanSteps) {
@@ -2326,7 +2327,7 @@
       const maxGain = parseFloat(document.getElementById("maxGainInput").value);
       const volOp = document.getElementById("volOperatorSelect").value;
       const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
-      const validVolThreshold = isNaN(volThreshold) ? 70 : Math.min(500, Math.max(0, volThreshold));
+      const validVolThreshold = isNaN(volThreshold) ? 70 : Math.min(1000, Math.max(0, volThreshold));
 
       return {
         requireMa20Up,
@@ -5564,18 +5565,17 @@
       const wasBelowOrOnMa20 = prevClose > 0 && calculatedPrevMa20 > 0 ? (prevClose <= calculatedPrevMa20) : (yestOpen <= yestMa20);
       const isFirstDayBreak20Ma = wasBelowOrOnMa20 && (yestClose > yestMa20) && (yestHigh > 0);
 
-      const candidateBaseLow = Math.min(prevDayLow > 0 ? prevDayLow : yestLow, yestLow > 0 ? yestLow : prevDayLow);
-      const _curInitCfg = getExitStrategyConfig();
-      const _candStopFactor = 1 - (_curInitCfg.initStopBufferPct / 100);
-      const _isCandLimitUp = _curInitCfg.entryLimitUpStopAtLow && stock.status === "BREAKOUT" && stock.todayLimitType === "LIMIT_UP" && stock.todayLow > 0;
-      const candidateStopLossPrice = _isCandLimitUp ? Number(stock.todayLow.toFixed(2)) : (candidateBaseLow > 0 ? Number((candidateBaseLow * _candStopFactor).toFixed(2)) : 0);
-
       let status = "CONSOLIDATE";
       if (todayPrice > yestHigh) status = "BREAKOUT";
       else if (todayPrice < yestLow) status = "BREAKDOWN";
       const changePct = actualYestClose > 0 ? (((todayPrice - actualYestClose) / actualYestClose) * 100).toFixed(2) : "0.00";
 
       const todayLimitType = checkLimitUpDown(todayPrice, actualYestClose);
+      const candidateBaseLow = Math.min(prevDayLow > 0 ? prevDayLow : yestLow, yestLow > 0 ? yestLow : prevDayLow);
+      const _curInitCfg = getExitStrategyConfig();
+      const _candStopFactor = 1 - (_curInitCfg.initStopBufferPct / 100);
+      const _isCandLimitUp = _curInitCfg.entryLimitUpStopAtLow && status === "BREAKOUT" && todayLimitType === "LIMIT_UP" && todayLow > 0;
+      const candidateStopLossPrice = _isCandLimitUp ? Number(todayLow.toFixed(2)) : (candidateBaseLow > 0 ? Number((candidateBaseLow * _candStopFactor).toFixed(2)) : 0);
       const yestLimitType = checkLimitUpDown(yestClose, baseRefPrice);
 
       const item = {
