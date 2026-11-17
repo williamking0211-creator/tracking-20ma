@@ -533,16 +533,16 @@
           <div id="exitParams-RR_LADDER" class="exit-params-box hidden bg-slate-900/80 border border-emerald-500/35 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
             <label class="inline-flex items-center gap-1">
               <span class="text-emerald-300 font-semibold">第一階 1:</span>
-              <input type="number" id="rrBreakevenRatioInput" value="1.0" min="0.5" max="5.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrBreakevenRatioInput" onchange="onExitStrategyChanged()" value="1.0" min="0.5" max="5.0" step="0.5" oninput="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-300 font-mono font-bold" />
               <span>保本，停損拉至進場價 +</span>
-              <input type="number" id="rrBreakevenBufferPctInput" value="0.5" min="0" max="5.0" step="0.1" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrBreakevenBufferPctInput" onchange="onExitStrategyChanged()" value="0.5" min="0" max="5.0" step="0.1" oninput="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-200 font-mono font-bold" />
               <span>%</span>
             </label>
             <label class="inline-flex items-center gap-1">
               <span class="text-amber-300 font-semibold">第二階 1:</span>
-              <input type="number" id="rrTier2RatioInput" value="3.0" min="1.5" max="15.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrTier2RatioInput" onchange="onExitStrategyChanged()" value="3.0" min="1.5" max="15.0" step="0.5" oninput="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
               <span>後：</span>
               <select id="rrTier2ActionSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-200 font-bold">
@@ -552,7 +552,7 @@
             </label>
             <label class="inline-flex items-center gap-1">
               <span class="text-rose-300 font-semibold">停損拉至</span>
-              <input type="number" id="rrLockRatioInput" value="2.0" min="0.5" max="10.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrLockRatioInput" onchange="onExitStrategyChanged()" value="2.0" min="0.5" max="10.0" step="0.5" oninput="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-rose-300 font-mono font-bold" />
               <span>倍R</span>
             </label>
@@ -2656,9 +2656,25 @@
         const kDate = formatShortDateSlash(t.keyKDate);
         const bDate = formatShortDateSlash(t.buyDate);
         if (!t.isClosed) {
-          const ctrlStr = t.ma20ControlArmed
-            ? (t.breakdownIdx !== -1 ? `⚠️破20MA守關鍵K低點(${t.breakdownLow.toFixed(2)})` : `🛡️20MA控盤中(${t.currentMa20.toFixed(2)})`)
-            : `🛑守初始停損線(${t.stopLossPrice.toFixed(2)})`;
+          const curCfg = getExitStrategyConfig();
+          let ctrlStr = "";
+          if (curCfg.strategy === 'RR_LADDER') {
+            if (t.rrStage === 2) {
+              const maP = curCfg.rrTrailMa === 5 ? (t.currentMa5 || t.currentMa20) : (curCfg.rrTrailMa === 10 ? (t.currentMa10 || t.currentMa20) : t.currentMa20);
+              ctrlStr = `🚀 鎖利${curCfg.rrLockRatio}R(${(t.dynamicStopPrice || t.buyPrice).toFixed(2)}) ＋ ${curCfg.rrTrailMa}MA控盤中(${maP.toFixed(2)})`;
+            } else if (t.rrStage === 1) {
+              ctrlStr = `🛡️ 1:${curCfg.rrBreakevenRatio}保本奔跑中(${(t.dynamicStopPrice || t.buyPrice).toFixed(2)}，等達1:${curCfg.rrTier2Ratio}切${curCfg.rrTrailMa}MA)`;
+            } else {
+              ctrlStr = `🛑 初始停損(${t.stopLossPrice.toFixed(2)}) (未達1:${curCfg.rrBreakevenRatio}不用20MA)`;
+            }
+          } else if (!t.ma20ControlArmed) {
+            ctrlStr = `🛑守初始停損線(${t.stopLossPrice.toFixed(2)})`;
+          } else if (t.activeControlMa === 5 || t.activeControlMa === 10) {
+            const maP = t.activeControlMa === 5 ? (t.currentMa5 || t.currentMa20) : (t.currentMa10 || t.currentMa20);
+            ctrlStr = `🚀${t.activeControlMa}MA控盤中(${maP.toFixed(2)})`;
+          } else {
+            ctrlStr = t.breakdownIdx !== -1 ? `⚠️破20MA守關鍵K低點(${t.breakdownLow.toFixed(2)})` : `🛡️20MA控盤中(${t.currentMa20.toFixed(2)})`;
+          }
           const pSign = t.profitPoints > 0 ? "+" : "";
           return {
             bannerClass: "bg-cyan-950/50 border border-cyan-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
@@ -6652,8 +6668,13 @@
       });
 
       let showShortMaPeriod = 0;
-      if (tInfo && !tInfo.isClosed && (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10)) {
-        showShortMaPeriod = tInfo.activeControlMa;
+      const activeStratCfg = getExitStrategyConfig();
+      if (tInfo && !tInfo.isClosed) {
+        if (activeStratCfg.strategy === 'RR_LADDER' && tInfo.rrStage === 2 && (activeStratCfg.rrTrailMa === 5 || activeStratCfg.rrTrailMa === 10)) {
+          showShortMaPeriod = activeStratCfg.rrTrailMa;
+        } else if (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10) {
+          showShortMaPeriod = tInfo.activeControlMa;
+        }
       }
 
       const placedLabelBoxes = [];
