@@ -6319,76 +6319,106 @@
       const bars = buildStockDailyBarsWithToday(stock);
       if (!bars || bars.length < 10) return null;
 
-      const sig = `${stock.code}|v2|${bars.length}|${bars[bars.length - 1].close}|${stock.tickPower ? stock.tickPower.outerPct : -1}`;
+      const sig = `${stock.code}|v3_profit_opt|${bars.length}|${bars[bars.length - 1].close}|${stock.tickPower ? stock.tickPower.outerPct : -1}`;
       if (stock._aiPowerPlanSig === sig && stock._aiPowerPlanCache) return stock._aiPowerPlanCache;
 
       const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
       const isCleanBuyBar = (i) => checkAiBuyTrapReasons(bars, i, buyPowers).length === 0;
+      const isMa20TrendingUp = (i) => i >= 1 && bars[i].ma20 > 0 && bars[i - 1].ma20 > 0 && bars[i].ma20 >= bars[i - 1].ma20 * 0.999;
 
+      // 8 大「獲利導向」高勝率買入條件（均已排除 5 大出貨禁忌）
       const buyRules = [
         {
-          id: 'P60_MA20_CLEAN',
-          name: '無出貨禁忌 ＋ 買力≥60% 且站穩 20MA 紅K',
-          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.60 && bars[i].ma20 > 0 && bars[i].close > bars[i].ma20 && (i === 0 || bars[i].close > bars[i - 1].close)
+          id: 'OPT_MA_ALIGN_58',
+          name: '多頭排列(5>10>20MA) ＋ 買力≥58%紅K',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.58 && bars[i].ma5 > bars[i].ma10 && bars[i].ma10 > bars[i].ma20 && bars[i].close > bars[i].ma5
         },
         {
-          id: 'P65_MODVOL_CLEAN',
-          name: '無出貨禁忌 ＋ 買力≥65% 且溫和放量(1.2~5倍)',
-          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.65 && bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.2 && bars[i].vol <= bars[i].ma5Vol * 5.0
+          id: 'OPT_PULLBACK_10MA',
+          name: '多頭回測10MA/20MA支撐 ＋ 買力≥60%轉強紅K',
+          check: (i) => i >= 2 && isCleanBuyBar(i) && isMa20TrendingUp(i) && buyPowers[i] >= 0.60 && bars[i].close > bars[i].ma10 && bars[i - 1].low <= Math.max(bars[i - 1].ma10, bars[i - 1].ma20) * 1.015 && bars[i].close > bars[i - 1].close
         },
         {
-          id: 'P70_SOLID_CLEAN',
-          name: '無出貨禁忌 ＋ 買力≥70% 實體強勢紅K',
-          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.70 && bars[i].close > bars[i].open
+          id: 'OPT_BREAK_MA20_MOD',
+          name: '無禁忌 ＋ 買力≥60% 站穩20MA翻揚',
+          check: (i) => isCleanBuyBar(i) && isMa20TrendingUp(i) && buyPowers[i] >= 0.60 && bars[i].close > bars[i].ma20 && (i === 0 || bars[i].close > bars[i - 1].close)
         },
         {
-          id: 'P75_MA5_CLEAN',
-          name: '無出貨禁忌 ＋ 買力≥75% 且站上 5MA',
+          id: 'OPT_VOL_POWER_65',
+          name: '無禁忌 ＋ 買力≥65% 溫和放量(1.2~4.5倍)',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.65 && bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.2 && bars[i].vol <= bars[i].ma5Vol * 4.5
+        },
+        {
+          id: 'OPT_SOLID_70',
+          name: '無禁忌 ＋ 買力≥70% 實體強勢紅K',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.70 && bars[i].close > bars[i].open && bars[i].close > bars[i].ma20
+        },
+        {
+          id: 'OPT_POWER_75_MA5',
+          name: '無禁忌 ＋ 買力≥75% 站上5MA強攻',
           check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.75 && bars[i].ma5 > 0 && bars[i].close > bars[i].ma5
         },
         {
-          id: 'CONSEC2_CLEAN',
-          name: '無出貨禁忌 ＋ 連續2日紅K且買力≥60%',
+          id: 'OPT_CONSEC2_60',
+          name: '無禁忌 ＋ 連續2日紅K買力≥60%',
           check: (i) => i >= 1 && isCleanBuyBar(i) && bars[i - 1].close >= bars[i - 1].open && buyPowers[i] >= 0.60 && buyPowers[i - 1] >= 0.60 && bars[i].close >= bars[i - 1].close
+        },
+        {
+          id: 'OPT_LOWER_WICK_REVERSAL',
+          name: '下影線強承接(買力≥68%) ＋ 20MA之上止跌紅K',
+          check: (i) => isCleanBuyBar(i) && bars[i].close > bars[i].ma20 && buyPowers[i] >= 0.68 && (Math.min(bars[i].open, bars[i].close) - bars[i].low) > (bars[i].high - bars[i].low) * 0.25
         }
       ];
 
+      // 8 大「抱牢波段＋鎖利最大化」出場條件（避免被單日小洗盤洗掉，只在趨勢反轉或爆量出貨時出場）
       const sellRules = [
         {
-          id: 'S_P35',
-          name: '買力跌破 35% (賣壓 ≥ 65%) 即出',
-          check: (i, pos) => buyPowers[i] < 0.35,
-          planDesc: (lastB) => `買力跌破 35%（賣壓 ≥ 65%）收盤即出場`
+          id: 'EXIT_MA10_SELL_CONFIRM',
+          name: '跌破10MA且賣壓≥60% (抱牢主升段)',
+          check: (i, pos) => bars[i].ma10 > 0 && bars[i].close < bars[i].ma10 && buyPowers[i] <= 0.40,
+          planDesc: (lastB) => `抱牢主升段：收盤跌破 10MA (${lastB.ma10 > 0 ? lastB.ma10.toFixed(2) : '--'}) 且賣壓 ≥ 60% 才出場`
         },
         {
-          id: 'S_P40_VOL13',
-          name: '買力 < 40% 且放量 ≥ 1.3倍5均',
-          check: (i, pos) => buyPowers[i] < 0.40 && bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.3,
-          planDesc: (lastB) => `買力 < 40% 且爆量 ≥ 1.3倍5均（高檔出貨）出場`
+          id: 'EXIT_MA20_SELL_CONFIRM',
+          name: '跌破20MA且賣壓≥55% (長波段抱牢)',
+          check: (i, pos) => bars[i].ma20 > 0 && bars[i].close < bars[i].ma20 && buyPowers[i] <= 0.45,
+          planDesc: (lastB) => `長波段抱牢：收盤跌破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 且賣壓 ≥ 55% 才出場`
         },
         {
-          id: 'S_MA5_P30',
-          name: '跌破 5MA 或買力 < 30%',
-          check: (i, pos) => (bars[i].ma5 > 0 && bars[i].close < bars[i].ma5) || buyPowers[i] < 0.30,
-          planDesc: (lastB) => `跌破 5MA (${lastB.ma5 > 0 ? lastB.ma5.toFixed(2) : '--'}) 或買力 < 30% 出場`
+          id: 'EXIT_TRAIL_MA5_AFTER_5PCT',
+          name: '賺逾5%後改守5MA移動停利',
+          check: (i, pos) => (pos.maxHigh >= pos.buyPrice * 1.05 && bars[i].ma5 > 0 && bars[i].close < bars[i].ma5) || (bars[i].ma20 > 0 && bars[i].close < bars[i].ma20),
+          planDesc: (lastB) => `波段賺逾 5% 後改守 5MA (${lastB.ma5 > 0 ? lastB.ma5.toFixed(2) : '--'}) 移動停利，未達標前守 20MA`
         },
         {
-          id: 'S_MA10_P30',
-          name: '跌破 10MA 或買力 < 30%',
-          check: (i, pos) => (bars[i].ma10 > 0 && bars[i].close < bars[i].ma10) || buyPowers[i] < 0.30,
-          planDesc: (lastB) => `跌破 10MA (${lastB.ma10 > 0 ? lastB.ma10.toFixed(2) : '--'}) 或買力 < 30% 出場`
+          id: 'EXIT_TRAIL_PEAK_4PCT',
+          name: '賺逾6%後自高點回落4%鎖利',
+          check: (i, pos) => (pos.maxHigh >= pos.buyPrice * 1.06 && bars[i].close <= pos.maxHigh * 0.96) || (bars[i].ma10 > 0 && bars[i].close < bars[i].ma10 && buyPowers[i] < 0.35),
+          planDesc: (lastB) => `波段賺逾 6% 後自最高點回落 4% 鎖利，或跌破 10MA 且賣壓 > 65% 出場`
         },
         {
-          id: 'S_MA20_P25',
-          name: '跌破 20MA 或買力 < 25%',
-          check: (i, pos) => (bars[i].ma20 > 0 && bars[i].close < bars[i].ma20) || buyPowers[i] < 0.25,
-          planDesc: (lastB) => `跌破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 或買力 < 25% 出場`
+          id: 'EXIT_TRAIL_PEAK_7PCT',
+          name: '自波段高點回落7%或破20MA',
+          check: (i, pos) => (pos.maxHigh > pos.buyPrice && bars[i].close <= pos.maxHigh * 0.93) || (bars[i].ma20 > 0 && bars[i].close < bars[i].ma20),
+          planDesc: (lastB) => `自波段最高點回落 7% 移動停利，或收盤跌破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 出場`
         },
         {
-          id: 'S_PEAK6_P32',
-          name: '最高點回落 6% 或買力 < 32%',
-          check: (i, pos) => (pos.maxHigh > 0 && bars[i].close <= pos.maxHigh * 0.94) || buyPowers[i] < 0.32,
-          planDesc: (lastB) => `波段高點回落 6% 或買力 < 32% 出場`
+          id: 'EXIT_HEAVY_DUMP',
+          name: '高檔爆量出貨(量≥1.6x且買力<28%)或破10MA',
+          check: (i, pos) => (bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.6 && buyPowers[i] < 0.28 && bars[i].close < bars[i].open) || (bars[i].ma10 > 0 && bars[i].close < bars[i].ma10),
+          planDesc: (lastB) => `高檔爆量長黑出貨（買力 < 28% 且量 ≥ 1.6倍）或跌破 10MA 出場`
+        },
+        {
+          id: 'EXIT_MA5_STRICT',
+          name: '跌破5MA或高檔爆量長黑(買力<25%)',
+          check: (i, pos) => (bars[i].ma5 > 0 && bars[i].close < bars[i].ma5) || (buyPowers[i] < 0.25 && bars[i].close < bars[i].open),
+          planDesc: (lastB) => `收盤跌破 5MA (${lastB.ma5 > 0 ? lastB.ma5.toFixed(2) : '--'}) 或爆量長黑（買力 < 25%）出場`
+        },
+        {
+          id: 'EXIT_MA20_PURE',
+          name: '純粹抱牢20MA趨勢線(破線即出)',
+          check: (i, pos) => bars[i].ma20 > 0 && bars[i].close < bars[i].ma20,
+          planDesc: (lastB) => `趨勢抱牢：收盤未破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 不賣`
         }
       ];
 
@@ -6401,17 +6431,19 @@
             const b = bars[i];
             if (!pos) {
               if (br.check(i)) {
+                const swingLow = Math.min(b.low, bars[i - 1].low || b.low);
                 pos = {
                   buyIdx: i,
                   buyDate: b.date,
                   buyPrice: b.close,
                   buyPowerPct: Math.round(buyPowers[i] * 100),
-                  maxHigh: b.high
+                  maxHigh: b.high,
+                  initStop: Math.max(b.close * 0.94, swingLow * 0.985)
                 };
               }
             } else {
               if (b.high > pos.maxHigh) pos.maxHigh = b.high;
-              const isHardStop = b.close <= pos.buyPrice * 0.93;
+              const isHardStop = b.close <= pos.initStop;
               if (sr.check(i, pos) || isHardStop) {
                 const pts = Number((b.close - pos.buyPrice).toFixed(2));
                 trades.push({
@@ -6422,7 +6454,7 @@
                   sellPowerPct: Math.round(buyPowers[i] * 100),
                   profitPoints: pts,
                   isClosed: true,
-                  exitTag: isHardStop ? '7%硬停損' : sr.name
+                  exitTag: isHardStop ? '動態停損' : sr.name
                 });
                 pos = null;
               }
@@ -6446,7 +6478,8 @@
           const totalPts = trades.reduce((acc, t) => acc + t.profitPoints, 0);
           const wins = trades.filter(t => t.profitPoints > 0).length;
           const winRate = Math.round((wins / trades.length) * 100);
-          const score = totalPts + (winRate >= 50 ? 0.5 : -2);
+          // 獲利最佳化：優先追求最大總獲利點數，同時給予高勝率與較少無效頻繁進出加分
+          const score = totalPts + (winRate >= 55 ? 2 : 0) - (trades.length > 6 ? (trades.length - 6) * 0.5 : 0);
           if (!bestPlan || score > bestPlan.score) {
             bestPlan = {
               buyRule: br,
