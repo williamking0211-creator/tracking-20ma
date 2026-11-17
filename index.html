@@ -4186,10 +4186,10 @@
           ruleText = `1:1保本奔跑中 (等達1:${getExitStrategyConfig().rrTier2Ratio}切鎖利)`;
         } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 0) {
           stopPrice = t.stopLossPrice || 0;
-          ruleText = `初始停損(-${cfg.initStopBufferPct}%) (未達1:1不用20MA)`;
+          ruleText = `初始停損(-${getExitStrategyConfig().initStopBufferPct}%) (未達1:1不用20MA)`;
         } else if (!t.ma20ControlArmed) {
           stopPrice = t.stopLossPrice || 0;
-          ruleText = `初始停損(-${cfg.initStopBufferPct}%) (20MA未過買價)`;
+          ruleText = `初始停損(-${getExitStrategyConfig().initStopBufferPct}%) (20MA未過買價)`;
         } else {
           const ma = t.activeControlMa || 20;
           const maVal = ma === 5 ? (t.currentMa5 || t.currentMa20) : (ma === 10 ? (t.currentMa10 || t.currentMa20) : t.currentMa20);
@@ -4352,7 +4352,7 @@
       };
     }
 
-    function simulateCapitalForStrategy(strategyKey, overrideCfg = null) {
+    function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
@@ -4367,7 +4367,7 @@
       const withdrawParam = Math.max(0, parseFloat(withdrawInput?.value || "0") || 0);
       const startDate = startInput?.value || "2000-01-01";
       const sectorMode = getSelectedSimSectors();
-      const filterOpts = getCurrentFilterOptions();
+      const filterOpts = overrideFilterOpts || getCurrentFilterOptions();
       const cfg = getExitStrategyConfig(strategyKey);
       const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
       const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
@@ -4616,6 +4616,9 @@
       const results = defs.map(d => {
         const s1Best = computeAiBestFullStep1ForStrategy(d.key);
         if (s1Best) _aiCapitalBestStep1Map[d.key] = s1Best;
+        const s1Opts = s1Best
+          ? { requireMa20Up: s1Best.reqMaUp, requireSolidRedK: s1Best.reqRed, useGainRange: true, minGain: s1Best.minG, maxGain: s1Best.maxG, volOp: "GTE", validVolThreshold: s1Best.minV }
+          : null;
         const baseCfg = getExitStrategyConfig(d.key);
         const cands = baseCands[d.key] || [{ tag: '預設', patch: {} }];
         let bestRes = null;
@@ -4623,7 +4626,7 @@
         let bestPatch = {};
         cands.forEach(c => {
           const testCfg = { ...baseCfg, ...c.patch };
-          const simRes = simulateCapitalForStrategy(d.key, testCfg);
+          const simRes = simulateCapitalForStrategy(d.key, testCfg, s1Opts);
           if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
             bestRes = simRes;
             bestTag = c.tag;
@@ -4670,7 +4673,8 @@
               <span class="truncate">${r.label}</span>
               ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
             </div>
-            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5">最佳條件：${r.bestTag}</div>
+            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 truncate">最佳出場：${r.bestTag}</div>
+            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono truncate">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
             <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
             <div class="text-[9.5px] text-slate-400 font-mono">權益:$${r.totalEquity.toLocaleString()}</div>
             <div class="text-[9.5px] text-slate-400 font-mono">${r.totalCount}筆 ｜ 勝率${r.winRate}%</div>
