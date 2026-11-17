@@ -76,6 +76,22 @@
     .tick-flash-down {
       animation: tickFlashDown 1.6s ease-out !important;
     }
+    #klineCanvas { touch-action: none; }
+    #chartContainer.chart-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9999 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: #080c14 !important;
+    }
+    #chartContainer.chart-fullscreen #klineCanvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -1235,6 +1251,17 @@
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區 -->
       <div id="chartContainer" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex-1 min-h-[460px]">
+        <!-- 圖表右上角懸浮快捷鍵：手機/電腦皆可一鍵 放大、縮小、回復視角、佔滿全螢幕 -->
+        <div id="chartFloatingControls" class="absolute top-2 right-2 z-30 flex items-center gap-1 bg-slate-900/90 backdrop-blur-sm border border-slate-700/80 rounded-lg p-1 shadow-lg">
+          <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
+          <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">－</button>
+          <button type="button" onclick="resetChartZoom()" title="回復預設視角"
+                  class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 text-[11px] font-bold leading-none">↺ 回復</button>
+          <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
+                  class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
+        </div>
         <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col gap-1">
           <div id="ohlcHud" class="bg-slate-900/90 backdrop-blur-sm border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
@@ -7438,8 +7465,27 @@
 
     function clampRightOffset() {
       const maxOffset = Math.max(0, chartState.bars.length - chartState.visibleCount);
-      chartState.rightOffset = Math.max(0, Math.min(maxOffset, chartState.rightOffset));
+      const minOffset = -Math.max(4, Math.floor(chartState.visibleCount * 0.7));
+      chartState.rightOffset = Math.max(minOffset, Math.min(maxOffset, chartState.rightOffset));
     }
+
+    function toggleChartFullscreen() {
+      const container = document.getElementById("chartContainer");
+      const btn = document.getElementById("btnChartFullscreen");
+      if (!container) return;
+      const isFull = container.classList.toggle("chart-fullscreen");
+      document.body.style.overflow = isFull ? "hidden" : "";
+      if (btn) btn.textContent = isFull ? "🗗 回復" : "⛶ 放大";
+      requestAnimationFrame(() => renderCanvasChart());
+    }
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const container = document.getElementById("chartContainer");
+        if (container && container.classList.contains("chart-fullscreen")) {
+          toggleChartFullscreen();
+        }
+      }
+    });
 
     function initCanvasEvents() {
       const canvas = document.getElementById("klineCanvas");
@@ -7494,7 +7540,17 @@
         renderCanvasChart();
       });
 
+      let pinchStartDist = 0;
+      let pinchStartVisCount = 22;
+      const getTouchDist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
       canvas.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 2) {
+          chartState.isDragging = false;
+          pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
+          pinchStartVisCount = chartState.visibleCount;
+          return;
+        }
         if (e.touches.length !== 1) return;
         const touch = e.touches[0];
         chartState.isDragging = true;
@@ -7505,6 +7561,17 @@
       }, { passive: true });
 
       canvas.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 10) {
+          e.preventDefault();
+          const curDist = getTouchDist(e.touches[0], e.touches[1]);
+          const scale = curDist / pinchStartDist;
+          // 兩指往外拉(scale > 1) -> 放大K線(顯示較少根)；兩指往內縮(scale < 1) -> 縮小K線(顯示較多根)
+          const maxAllow = Math.max(22, chartState.bars.length);
+          chartState.visibleCount = Math.max(5, Math.min(maxAllow, Math.round(pinchStartVisCount / scale)));
+          clampRightOffset();
+          renderCanvasChart();
+          return;
+        }
         if (!chartState.isDragging || e.touches.length !== 1) return;
         e.preventDefault();
         const touch = e.touches[0];
@@ -7523,7 +7590,10 @@
         renderCanvasChart();
       }, { passive: false });
 
-      canvas.addEventListener("touchend", () => { chartState.isDragging = false; });
+      canvas.addEventListener("touchend", (e) => {
+        if (e.touches.length < 2) pinchStartDist = 0;
+        if (e.touches.length === 0) chartState.isDragging = false;
+      });
 
       canvas.addEventListener("mouseleave", () => {
         chartState.mouseX = -1;
@@ -7563,8 +7633,10 @@
       const showDeduct = document.getElementById("chkShowDeduct").checked;
 
       clampRightOffset();
-      const endIdx = bars.length - chartState.rightOffset;
-      const startIdx = Math.max(0, endIdx - chartState.visibleCount);
+      const rawEndIdx = bars.length - chartState.rightOffset;
+      const endIdx = Math.min(bars.length, rawEndIdx);
+      const startIdx = Math.max(0, rawEndIdx - chartState.visibleCount);
+      const blankRightSlots = Math.max(0, rawEndIdx - bars.length);
       const visibleBars = bars.slice(startIdx, endIdx);
 
       const tfLabel = chartState.timeframe === '5m' ? '5分K' : '日K';
@@ -7701,7 +7773,7 @@
         }
       }
 
-      const slotCount = Math.max(visibleBars.length, Math.min(chartState.visibleCount, 10));
+      const slotCount = Math.max(visibleBars.length + blankRightSlots, Math.min(chartState.visibleCount, 10));
       const stepX = plotW / slotCount;
       const candleW = Math.max(4, Math.min(34, stepX * 0.62));
 
