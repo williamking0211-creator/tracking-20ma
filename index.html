@@ -740,8 +740,23 @@
                 <button type="button" onclick="runPortfolioCapitalSimulation()" class="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 text-sky-200 hover:bg-sky-500/35 font-semibold">
                   🔄 立即重算
                 </button>
+                <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2.5 py-0.5 rounded bg-purple-600/80 hover:bg-purple-500 border border-purple-400/60 text-white font-bold transition shadow-sm">
+                  🤖 AI 找實戰最大收益策略
+                </button>
               </div>
               <span id="simStatusNote" class="font-mono text-slate-300"></span>
+            </div>
+
+            <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
+            <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬六大策略收益對比</span>
+                  <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span>
+                </div>
+                <button type="button" onclick="document.getElementById('simAiStrategyCompareBox').classList.add('hidden')" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
+              </div>
+              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[10.5px]"></div>
             </div>
 
             <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
@@ -3803,6 +3818,191 @@
       return selectedSectors.includes(resolveStockCategory(s));
     }
 
+    function simulateCapitalForStrategy(strategyKey) {
+      const capInput = document.getElementById("simInitCapitalInput");
+      const startInput = document.getElementById("simStartDateInput");
+      const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
+      const budgetInput = document.getElementById("simPerStockBudgetInput");
+      const profitRule = document.getElementById("simProfitRuleSelect")?.value || "REINVEST_ALL";
+      const withdrawInput = document.getElementById("simWithdrawValInput");
+      const includeFees = document.getElementById("simIncludeFeesChk")?.checked ?? true;
+      const priorityMode = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
+
+      const initCapital = Math.max(10000, parseFloat(capInput?.value || "1000000") || 1000000);
+      const perStockBudget = Math.max(10000, parseFloat(budgetInput?.value || "250000") || 250000);
+      const withdrawParam = Math.max(0, parseFloat(withdrawInput?.value || "0") || 0);
+      const startDate = startInput?.value || "2000-01-01";
+      const sectorMode = getSelectedSimSectors();
+      const filterOpts = getCurrentFilterOptions();
+      const cfg = getExitStrategyConfig(strategyKey);
+
+      const events = [];
+      const seenKey = new Set();
+      rawAllLoadedStocks.forEach(s => {
+        if (!matchesSimSectorFilter(s, sectorMode)) return;
+        const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
+        const list = [];
+        if (lc.activeOrTodayExit && Array.isArray(lc.activeOrTodayExit.closedTradesHistory)) {
+          list.push(...lc.activeOrTodayExit.closedTradesHistory);
+        } else if (lc.closedBreakdown && Array.isArray(lc.closedBreakdown.closedTradesHistory)) {
+          list.push(...lc.closedBreakdown.closedTradesHistory);
+        } else if (lc.closedBreakdown && !lc.closedBreakdown.isDirectKeyBreakdown) {
+          list.push(lc.closedBreakdown);
+        }
+        if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
+          list.push(lc.activeOrTodayExit);
+        }
+        list.forEach(tr => {
+          if (!tr || !tr.buyDate || tr.buyPrice <= 0 || tr.isDirectKeyBreakdown) return;
+          if (tr.buyDate < startDate) return;
+          const uid = `${s.code}_${tr.buyDate}_${tr.buyPrice}`;
+          if (seenKey.has(uid)) return;
+          seenKey.add(uid);
+          const mc = simManualCloseMap[uid];
+          events.push({
+            uid,
+            code: s.code,
+            name: s.name,
+            buyDate: tr.buyDate,
+            buyPrice: tr.buyPrice,
+            isClosed: mc ? true : !!tr.isClosed,
+            sellDate: mc ? mc.sellDate : (tr.isClosed ? tr.sellDate : null),
+            exitOrNowPrice: mc ? mc.sellPrice : (tr.isClosed ? tr.sellPrice : (s.todayPrice || tr.currentPrice || tr.buyPrice)),
+            volRatio: s.volRatio || 100,
+            yestGainPct: s.yestGainPct || 0
+          });
+        });
+      });
+
+      const feeRate = includeFees ? 0.001425 * 0.6 : 0;
+      const taxRate = includeFees ? 0.003 : 0;
+      const allDates = new Set();
+      events.forEach(e => { allDates.add(e.buyDate); if (e.isClosed && e.sellDate) allDates.add(e.sellDate); });
+      const sortedDates = [...allDates].sort();
+
+      let availableCash = initCapital, lockedVault = 0;
+      const boughtTrades = [];
+      sortedDates.forEach(d => {
+        boughtTrades.forEach(bt => {
+          if (bt.isClosed && bt.sellDate === d && !bt.settled) {
+            bt.settled = true;
+            const grossSell = bt.exitOrNowPrice * 1000 * bt.lots;
+            const netProceeds = grossSell - (Math.round(grossSell * feeRate) + Math.round(grossSell * taxRate));
+            const netProfit = netProceeds - bt.totalCost;
+            bt.netProfit = netProfit;
+            if (netProfit > 0) {
+              let toVault = 0;
+              if (profitRule === "NO_REINVEST") toVault = netProfit;
+              else if (profitRule === "WITHDRAW_PCT") toVault = Math.round(netProfit * Math.min(100, Math.max(0, withdrawParam)) / 100);
+              else if (profitRule === "WITHDRAW_AMOUNT") toVault = Math.min(netProfit, Math.max(0, withdrawParam - lockedVault));
+              lockedVault += toVault;
+              availableCash += (netProceeds - toVault);
+            } else {
+              availableCash += netProceeds;
+            }
+          }
+        });
+        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => {
+          if (priorityMode === "HIGH_PRICE") return (b.buyPrice - a.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
+          if (priorityMode === "LOW_PRICE") return (a.buyPrice - b.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
+          if (priorityMode === "GAIN_PCT") return ((b.yestGainPct || 0) - (a.yestGainPct || 0)) || (b.buyPrice - a.buyPrice);
+          return ((b.volRatio || 0) - (a.volRatio || 0)) || (b.buyPrice - a.buyPrice);
+        });
+        dayBuys.forEach(ev => {
+          const oneLotCost = ev.buyPrice * 1000 + Math.round(ev.buyPrice * 1000 * feeRate);
+          let lots = 1;
+          if (lotMode === "BUDGET_CAP") lots = Math.max(1, Math.floor(perStockBudget / oneLotCost));
+          else if (lotMode.startsWith("LOTS_")) lots = Math.max(1, Math.min(10, parseInt(lotMode.split("_")[1], 10) || 1));
+          const totalCost = oneLotCost * lots;
+          if (availableCash >= totalCost) {
+            availableCash -= totalCost;
+            const curGross = ev.exitOrNowPrice * 1000 * lots;
+            const curProfit = (curGross - (Math.round(curGross * feeRate) + Math.round(curGross * taxRate))) - totalCost;
+            boughtTrades.push({ ...ev, lots, totalCost, netProfit: curProfit, settled: false });
+          }
+        });
+      });
+
+      let realizedProfit = 0, unrealizedProfit = 0, holdingMarketValue = 0, winCnt = 0;
+      let topTrade = null;
+      boughtTrades.forEach(bt => {
+        if (bt.isClosed) realizedProfit += bt.netProfit;
+        else { unrealizedProfit += bt.netProfit; holdingMarketValue += (bt.exitOrNowPrice * 1000 * bt.lots); }
+        if (bt.netProfit > 0) winCnt++;
+        if (!topTrade || bt.netProfit > topTrade.netProfit) topTrade = bt;
+      });
+      const totalNetProfit = realizedProfit + unrealizedProfit;
+      const totalRoiPct = initCapital > 0 ? (totalNetProfit / initCapital) * 100 : 0;
+      const finalEquity = availableCash + lockedVault + holdingMarketValue;
+      const winRate = boughtTrades.length > 0 ? Math.round((winCnt / boughtTrades.length) * 100) : 0;
+      return {
+        strategyKey,
+        totalNetProfit: Math.round(totalNetProfit),
+        totalRoiPct,
+        finalEquity: Math.round(finalEquity),
+        tradeCount: boughtTrades.length,
+        winRate,
+        topTrade
+      };
+    }
+
+    function runAiCapitalStrategyOptimizer(autoSwitch = false) {
+      const box = document.getElementById("simAiStrategyCompareBox");
+      const grid = document.getElementById("simAiStrategyCompareGrid");
+      const summary = document.getElementById("simAiWinnerSummary");
+      if (!box || !grid || rawAllLoadedStocks.length === 0) return;
+      box.classList.remove("hidden");
+
+      const defs = [
+        { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
+        { key: 'SHORT_MA_TRAIL', label: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA` },
+        { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
+        { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
+        { key: 'RR_LADDER', label: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}` },
+        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' }
+      ];
+
+      const results = defs.map(d => ({ ...d, ...simulateCapitalForStrategy(d.key) }));
+      const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
+
+      if (autoSwitch && winner && winner.strategyKey !== currentExitStrategy) {
+        currentExitStrategy = winner.strategyKey;
+        updateExitStrategyUI();
+        saveUserSettingsToStorage(false);
+        applyFiltersAndRender();
+      }
+
+      const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
+      if (summary && winner) {
+        summary.textContent = `🏆 實戰收益最大：${winner.label} (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
+      }
+
+      grid.innerHTML = results.map(r => {
+        const isWin = winner && r.strategyKey === winner.strategyKey;
+        const isCur = r.strategyKey === currentExitStrategy;
+        const pCls = r.totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400";
+        const topStr = r.topTrade
+          ? `<div class="text-[9.5px] text-amber-300 mt-1 truncate" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
+          : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
+        return `
+          <div onclick="setExitStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isCur ? 'border-purple-400 bg-purple-900/35 ring-1 ring-purple-400/50' : (isWin ? 'border-amber-400/70 bg-amber-950/25' : 'border-slate-800 bg-slate-900/80 hover:border-slate-600')}">
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-bold text-slate-200 truncate">${r.label}</span>
+              ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black text-[9px] shrink-0">🏆最大</span>' : ''}
+            </div>
+            <div class="font-mono font-black text-xs mt-1 ${pCls}">${fmtMoney(r.totalNetProfit)} <span class="text-[10px]">(${r.totalRoiPct >= 0 ? "+" : ""}${r.totalRoiPct.toFixed(1)}%)</span></div>
+            <div class="text-[9.5px] text-slate-400 mt-0.5 font-mono">權益:$${r.finalEquity.toLocaleString()}</div>
+            <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount}筆 ｜ 勝率${r.winRate}%</div>
+            ${topStr}
+          </div>
+        `;
+      }).join("");
+
+      if (autoSwitch && winner) {
+        showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
+      }
+    }
+
     function runPortfolioCapitalSimulation() {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
@@ -4101,6 +4301,10 @@
       if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
       lastSimTradesSnapshot = boughtTrades;
+      const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
+      if (aiCmpBox && !aiCmpBox.classList.contains("hidden")) {
+        runAiCapitalStrategyOptimizer(false);
+      }
 
       // 若切換為「我的實際庫存」，改以使用者可編輯庫存重算4大卡片與表格
       if (simTableMode === "PORTFOLIO") {
