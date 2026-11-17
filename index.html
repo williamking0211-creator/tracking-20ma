@@ -547,6 +547,7 @@
               <span>後：</span>
               <select id="rrTier2ActionSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-200 font-bold">
                 <option value="LOCK_R_AND_RUN" selected>鎖利停損並讓獲利奔跑</option>
+                <option value="STEP_LADDER">📈 階梯式停利 (每+1R停利上移+1R)</option>
                 <option value="FIXED_TP">直接達標停利平倉</option>
               </select>
             </label>
@@ -2107,7 +2108,7 @@
       const cfg = getExitStrategyConfig('RR_LADDER');
       const subEl = document.getElementById("strategyECardSub");
       if (subEl) {
-        const actTxt = cfg.rrTier2Action === 'FIXED_TP' ? '直接停利' : `鎖${cfg.rrLockRatio}R+${cfg.rrTrailMa}MA`;
+        const actTxt = cfg.rrTier2Action === 'FIXED_TP' ? '直接停利' : (cfg.rrTier2Action === 'STEP_LADDER' ? `階梯+1R+${cfg.rrTrailMa}MA` : `鎖${cfg.rrLockRatio}R+${cfg.rrTrailMa}MA`);
         subEl.textContent = `1:${cfg.rrBreakevenRatio}(+${cfg.rrBreakevenBufferPct}%) → 1:${cfg.rrTier2Ratio}${actTxt}`;
       }
     }
@@ -4522,18 +4523,28 @@
             closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
                 activePos = null;
                 closedThisBar = true;
+              } else if (cfg.rrTier2Action === 'STEP_LADDER') {
+                const stepLockR = Math.max(cfg.rrLockRatio, Math.floor(peakR) - 1);
+                const lockFloor = Number((activePos.buyPrice + riskR * stepLockR).toFixed(2));
+                if (lockFloor > activePos.rrStopFloor) {
+                  activePos.rrStopFloor = lockFloor;
+                }
+                activePos.rrLockedR = stepLockR;
+                activePos.rrStage = 2;
               } else {
                 const lockFloor = Number((activePos.buyPrice + riskR * cfg.rrLockRatio).toFixed(2));
                 if (lockFloor > activePos.rrStopFloor) {
                   activePos.rrStopFloor = lockFloor;
                 }
+                activePos.rrLockedR = cfg.rrLockRatio;
                 activePos.rrStage = 2;
               }
             }
 
             if (activePos.rrStage === 2) {
+              const effLockedR = activePos.rrLockedR || cfg.rrLockRatio;
               activePos.dynamicStopPrice = activePos.rrStopFloor;
-              activePos.dynamicStopLabel = `鎖利${cfg.rrLockRatio}R`;
+              activePos.dynamicStopLabel = cfg.rrTier2Action === 'STEP_LADDER' ? `階梯鎖利${effLockedR}R` : `鎖利${effLockedR}R`;
             } else if (activePos.rrStage === 1) {
               activePos.dynamicStopPrice = activePos.rrStopFloor;
               activePos.dynamicStopLabel = `保本1:${cfg.rrBreakevenRatio}`;
@@ -6669,12 +6680,16 @@
 
       let showShortMaPeriod = 0;
       const activeStratCfg = getExitStrategyConfig();
-      if (tInfo && !tInfo.isClosed) {
-        if (activeStratCfg.strategy === 'RR_LADDER' && tInfo.rrStage === 2 && (activeStratCfg.rrTrailMa === 5 || activeStratCfg.rrTrailMa === 10)) {
+      if (activeStratCfg.strategy === 'RR_LADDER') {
+        if (activeStratCfg.rrTrailMa === 5 || activeStratCfg.rrTrailMa === 10) {
           showShortMaPeriod = activeStratCfg.rrTrailMa;
-        } else if (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10) {
-          showShortMaPeriod = tInfo.activeControlMa;
         }
+      } else if (activeStratCfg.strategy === 'SHORT_MA_TRAIL') {
+        if (activeStratCfg.shortMaPeriod === 5 || activeStratCfg.shortMaPeriod === 10) {
+          showShortMaPeriod = activeStratCfg.shortMaPeriod;
+        }
+      } else if (tInfo && !tInfo.isClosed && (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10)) {
+        showShortMaPeriod = tInfo.activeControlMa;
       }
 
       const placedLabelBoxes = [];
