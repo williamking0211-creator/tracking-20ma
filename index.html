@@ -1173,6 +1173,10 @@
               <input type="checkbox" id="chkShowDeduct" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-fuchsia-500 focus:ring-0" />
               <span>扣抵</span>
             </label>
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/35 px-2 py-0.5 rounded" title="在 K 棒量柱內顯示內外盤買賣比例，並於今日 K 棒標示富邦逐筆外盤大單與 VWAP 均價線">
+              <input type="checkbox" id="chkShowOrderFlow" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" />
+              <span>🔥 內外盤/大單/VWAP</span>
+            </label>
           </div>
 
           <div class="flex items-center gap-1">
@@ -6258,6 +6262,26 @@
       };
     }
 
+    async function fetchIntradayTickPower(code) {
+      if (!code || !apiUrl) return;
+      try {
+        const tickUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/intraday-ticks');
+        const res = await fetch(`${tickUrl}?code=${encodeURIComponent(code)}&_t=${Date.now()}`);
+        if (!res.ok) return;
+        const tp = await res.json();
+        if (tp && tp.source === 'FubonTrades') {
+          const target = rawAllLoadedStocks.find(s => s.code === code) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === code ? window._lastCustomInspectedStock : null);
+          if (target) target.tickPower = tp;
+          if (selectedStockCode === code) {
+            renderCanvasChart();
+            if (chartState.bars.length > 0) {
+              updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
     function updateDetailPanel(stock, resetView = false) {
       if (!rawAllLoadedStocks.some(s => s.code === stock.code)) window._lastCustomInspectedStock = stock;
       stock = resolveSimulatedStockForPreview(stock);
@@ -6678,6 +6702,7 @@
         badge.textContent = stock.todayPrice >= todayMa20 ? "📊 20MA之上運行" : "📉 20MA之下整理";
       }
 
+      fetchIntradayTickPower(stock.code);
       if (chartState.timeframe === '5m') {
         load5mKlineData(stock.code, resetView);
       } else {
@@ -7224,6 +7249,15 @@
           }
         }
 
+        if (showOrderFlow && b.isToday && curTickPower) {
+          const netSign = curTickPower.netOuterLots >= 0 ? "+" : "";
+          const flowColor = curTickPower.outerPct >= 58 ? "#fb7185" : (curTickPower.outerPct <= 42 ? "#34d399" : "#38bdf8");
+          drawNonOverlappingLabel(`🔥外盤${curTickPower.outerPct}% (${netSign}${curTickPower.netOuterLots}張)`, cx, yHigh - 12, -1, flowColor, "bold 9.5px sans-serif");
+          if (curTickPower.bigOuterCount > 0) {
+            drawNonOverlappingLabel(`⚡大單敲外盤 ${curTickPower.bigOuterCount}筆(${curTickPower.bigOuterLots}張)`, cx, yHigh - 25, -1, "#fde047", "bold 9.5px sans-serif");
+          }
+        }
+
         if (showDeduct) {
           if (b.isTodayDeduct) {
             ctx.save();
@@ -7462,13 +7496,47 @@
       const latestVolVal = visibleBars.length > 0 ? visibleBars[visibleBars.length - 1].vol : stock.todayVol;
       ctx.fillText(formatShortVol(latestVolVal), width - padRight + 6, volPlotTop + 23);
 
+      const showOrderFlow = document.getElementById("chkShowOrderFlow")?.checked ?? true;
+      const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
+      if (showOrderFlow && curTickPower && curTickPower.vwap > 0) {
+        const yVwap = priceToY(curTickPower.vwap);
+        if (yVwap >= padTop && yVwap <= volPlotTop - 8) {
+          drawHorizontalRefLine(ctx, curTickPower.vwap, yVwap, "#22d3ee", "VWAP均價", padLeft, width - padRight, [3, 3], 1.4, placedRightLabelYs);
+        }
+      }
+
       window._xDateBoxesTmp = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
         if (b.vol > 0) {
           const yVolTop = volToY(b.vol);
-          ctx.fillStyle = b.close >= b.open ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
-          ctx.fillRect(cx - candleW / 2, yVolTop, candleW, Math.max(3, (volPlotTop + volPlotH) - yVolTop));
+          const barH = Math.max(3, (volPlotTop + volPlotH) - yVolTop);
+          if (showOrderFlow) {
+            let buyRatio = 0.5;
+            if (b.isToday && curTickPower) {
+              buyRatio = Math.max(0.05, Math.min(0.95, curTickPower.outerPct / 100));
+            } else {
+              const rng = b.high - b.low;
+              buyRatio = rng > 0 ? Math.max(0.12, Math.min(0.88, (b.close - b.low) / rng)) : (b.close >= b.open ? 0.65 : 0.35);
+            }
+            const buyW = Math.max(1, Math.round(candleW * buyRatio));
+            const sellW = Math.max(0, candleW - buyW);
+            ctx.fillStyle = "rgba(244, 63, 94, 0.88)";
+            ctx.fillRect(cx - candleW / 2, yVolTop, buyW, barH);
+            if (sellW > 0) {
+              ctx.fillStyle = "rgba(16, 185, 129, 0.85)";
+              ctx.fillRect(cx - candleW / 2 + buyW, yVolTop, sellW, barH);
+            }
+            if (b.isToday && curTickPower) {
+              ctx.fillStyle = curTickPower.outerPct >= 55 ? "#fda4af" : "#6ee7b7";
+              ctx.font = "bold 9px sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText(`外買${curTickPower.outerPct}%`, cx, Math.max(volPlotTop + 9, yVolTop - 13));
+            }
+          } else {
+            ctx.fillStyle = b.close >= b.open ? "rgba(244, 63, 94, 0.85)" : "rgba(16, 185, 129, 0.85)";
+            ctx.fillRect(cx - candleW / 2, yVolTop, candleW, barH);
+          }
           if (b.isToday) {
             ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center";
             const shortV = b.vol >= 100000 ? Math.round(b.vol / 1000) : Math.round(b.vol);
@@ -7590,6 +7658,17 @@
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
       }
 
+      const tp = (hudStock && hudStock.tickPower && hudStock.tickPower.source === 'FubonTrades') ? hudStock.tickPower : null;
+      let flowHudHtml = "";
+      if (bar.isToday && tp) {
+        const netS = tp.netOuterLots >= 0 ? "+" : "";
+        const vwapPos = tp.vwap > 0 ? (bar.close >= tp.vwap ? `<span class="text-rose-300">VWAP:${tp.vwap.toFixed(2)}(站上)</span>` : `<span class="text-emerald-300">VWAP:${tp.vwap.toFixed(2)}(跌破)</span>`) : "";
+        flowHudHtml = `<div class="text-[10.5px] font-mono text-cyan-200 mt-0.5">🔥 富邦逐筆：外盤買 <b class="text-rose-300">${tp.outerPct}%</b>(${tp.outerLots}張) ｜ 內盤賣 ${tp.innerLots}張 ｜ 淨外盤 <b class="${tp.netOuterLots >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${netS}${tp.netOuterLots}張</b> ｜ ⚡大單敲外盤 <b class="text-amber-300">${tp.bigOuterCount}筆(${tp.bigOuterLots}張)</b> ｜ ${vwapPos}</div>`;
+      } else {
+        const rng = bar.high - bar.low;
+        const estBuyPct = rng > 0 ? Math.round(Math.max(12, Math.min(88, ((bar.close - bar.low) / rng) * 100))) : (bar.close >= bar.open ? 65 : 35);
+        flowHudHtml = `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱左粉紅=買力 / 右青綠=賣壓）</div>`;
+      }
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
       const amtStr = formatAmountWan(bar.amountWan);
       const baseStr = `${bar.baseLots || 0}張(${formatAmountWan(bar.baseAmountWan)})`;
@@ -7607,7 +7686,7 @@
       }
 
       const deductTag = bar.isTodayDeduct ? `<span class="px-1.5 py-0.2 rounded bg-fuchsia-500/25 text-fuchsia-300 font-bold">[扣抵]</span>` : (bar.isTomorrowDeduct ? `<span class="px-1.5 py-0.2 rounded bg-cyan-500/25 text-cyan-300 font-bold">[明扣抵]</span>` : "");
-      hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>${closeHtml}<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}`;
+      hud.innerHTML = `<span class="text-amber-300 font-bold">${bar.date}</span><span>開:<b class="text-white">${bar.open.toFixed(2)}</b></span><span>高:<b class="text-rose-400">${bar.high.toFixed(2)}</b></span><span>低:<b class="text-emerald-400">${bar.low.toFixed(2)}</b></span>${closeHtml}<span class="text-purple-300 font-bold">量:${formatVolDisplay(bar.vol)}</span>${maHtml}${forceHtml}${deductTag}${flowHudHtml}`;
     }
 
     const geminiAnalysisCache = new Map();
