@@ -6926,7 +6926,8 @@
       }
       histTradesToMark.forEach(ht => {
         if (!ht || ht.isDirectKeyBreakdown) return;
-        const kBar = bars.find(b => b.date === ht.keyKDate);
+        const kDateVal = ht.keyKDate || ht.keyDate;
+        const kBar = kDateVal ? bars.find(b => b.date === kDateVal) : (typeof ht.keyKIdx === 'number' ? bars[ht.keyKIdx] : null);
         if (kBar) kBar.isKeyK = true;
         const bBar = bars.find(b => b.date === ht.buyDate);
         if (bBar) bBar.isTrackBuyK = true;
@@ -7801,6 +7802,32 @@
           }
           if (bIdx >= startIdx && bIdx <= visEndIdx) {
             drawNonOverlappingLabel(`買價 ${ht.buyPrice.toFixed(2)}`, x1, yBuy + 12, 1, "#38bdf8", "bold 9.5px monospace");
+            const bBarVis = visibleBars[bIdx - startIdx];
+            if (bBarVis && !bBarVis.isTrackBuyK) {
+              const yH = priceToY(bBarVis.high), yC = priceToY(bBarVis.close);
+              ctx.save();
+              ctx.fillStyle = "#38bdf8";
+              ctx.beginPath(); ctx.arc(x1, yC, 4.5, 0, Math.PI * 2); ctx.fill();
+              ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.5; ctx.stroke();
+              ctx.restore();
+              drawNonOverlappingLabel(`🎯確認K買(${ht.buyPrice.toFixed(2)})`, x1, yH - 10, -1, "#38bdf8", "bold 10.5px sans-serif");
+            }
+          }
+          const kDateStr = ht.keyKDate || ht.keyDate;
+          const kIdx = (typeof ht.keyKIdx === 'number' && bars[ht.keyKIdx]) ? ht.keyKIdx : (kDateStr ? bars.findIndex(b => b.date === kDateStr) : -1);
+          if (kIdx >= startIdx && kIdx <= visEndIdx) {
+            const kBarVis = visibleBars[kIdx - startIdx];
+            if (kBarVis && !kBarVis.isKeyK) {
+              const kx = padLeft + stepX * (kIdx - startIdx) + stepX / 2;
+              const yKLow = priceToY(kBarVis.low);
+              const kTop = Math.min(priceToY(kBarVis.open), priceToY(kBarVis.close));
+              const kH = Math.max(2, Math.abs(priceToY(kBarVis.close) - priceToY(kBarVis.open)));
+              ctx.save();
+              ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 1.6;
+              ctx.strokeRect(kx - candleW / 2 - 1, kTop - 1, candleW + 2, kH + 2);
+              ctx.restore();
+              drawNonOverlappingLabel("★突破關鍵K", kx, yKLow + 13, 1, "#fbbf24", "bold 9.5px sans-serif");
+            }
           }
         });
       }
