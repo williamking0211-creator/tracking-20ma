@@ -7128,16 +7128,14 @@
 
       let showShortMaPeriod = 0;
       const activeStratCfg = getExitStrategyConfig();
-      if (activeStratCfg.strategy === 'RR_LADDER') {
-        if (activeStratCfg.rrTrailMa === 5 || activeStratCfg.rrTrailMa === 10) {
-          showShortMaPeriod = activeStratCfg.rrTrailMa;
+      if (tInfo && !tInfo.isClosed) {
+        if (activeStratCfg.strategy === 'RR_LADDER') {
+          if (tInfo.rrStage === 2 && (activeStratCfg.rrTrailMa === 5 || activeStratCfg.rrTrailMa === 10)) {
+            showShortMaPeriod = activeStratCfg.rrTrailMa;
+          }
+        } else if (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10) {
+          showShortMaPeriod = tInfo.activeControlMa;
         }
-      } else if (activeStratCfg.strategy === 'SHORT_MA_TRAIL') {
-        if (activeStratCfg.shortMaPeriod === 5 || activeStratCfg.shortMaPeriod === 10) {
-          showShortMaPeriod = activeStratCfg.shortMaPeriod;
-        }
-      } else if (tInfo && !tInfo.isClosed && (tInfo.activeControlMa === 5 || tInfo.activeControlMa === 10)) {
-        showShortMaPeriod = tInfo.activeControlMa;
       }
 
       const placedLabelBoxes = [];
@@ -7641,12 +7639,14 @@
       const hudTrack = hudStock ? (hudStock.trackingInfo || hudStock.closedBreakdownInfo) : null;
       const hudCfg = getExitStrategyConfig();
       let hudShortMa = 0;
-      if (hudCfg.strategy === 'RR_LADDER' && (hudCfg.rrTrailMa === 5 || hudCfg.rrTrailMa === 10)) {
-        hudShortMa = hudCfg.rrTrailMa;
-      } else if (hudCfg.strategy === 'SHORT_MA_TRAIL' && (hudCfg.shortMaPeriod === 5 || hudCfg.shortMaPeriod === 10)) {
-        hudShortMa = hudCfg.shortMaPeriod;
-      } else if (hudTrack && !hudTrack.isClosed && (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10)) {
-        hudShortMa = hudTrack.activeControlMa;
+      if (hudTrack && !hudTrack.isClosed) {
+        if (hudCfg.strategy === 'RR_LADDER') {
+          if (hudTrack.rrStage === 2 && (hudCfg.rrTrailMa === 5 || hudCfg.rrTrailMa === 10)) {
+            hudShortMa = hudCfg.rrTrailMa;
+          }
+        } else if (hudTrack.activeControlMa === 5 || hudTrack.activeControlMa === 10) {
+          hudShortMa = hudTrack.activeControlMa;
+        }
       }
       if (hudShortMa === 5 && bar.ma5 > 0) {
         maHtml = `<span class="text-fuchsia-300 font-bold">5MA:${bar.ma5.toFixed(2)}</span>`;
