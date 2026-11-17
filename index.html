@@ -3650,9 +3650,11 @@
           takeProfitPrice = t.sellPrice > t.buyPrice ? t.sellPrice : 0;
           ruleText = t.exitReason || (isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉");
         } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 1) {
-          controlTxt = `🛡️ 1:1保本線(${(t.dynamicStopPrice || t.buyPrice).toFixed(2)}) 奔跑中，等達1:${getExitStrategyConfig().rrTier2Ratio}切鎖利`;
+          takeProfitPrice = t.dynamicStopPrice || t.buyPrice;
+          ruleText = `1:1保本奔跑中 (等達1:${getExitStrategyConfig().rrTier2Ratio}切鎖利)`;
         } else if (getExitStrategyConfig().strategy === 'RR_LADDER' && t.rrStage === 0) {
-          controlTxt = `🔴 守初始停損線(${t.stopLossPrice.toFixed(2)})（未達1:1前不用20MA）`;
+          stopPrice = t.stopLossPrice || 0;
+          ruleText = `初始停損(-2%) (未達1:1不用20MA)`;
         } else if (!t.ma20ControlArmed) {
           stopPrice = t.stopLossPrice || 0;
           ruleText = `初始停損(-2%) (20MA未過買價)`;
@@ -5849,19 +5851,21 @@
         const curStratCfg = getExitStrategyConfig();
         if (curStratCfg.strategy === 'RR_LADDER' && !t.isClosed && t.rrStage === 1) {
           const beP = t.dynamicStopPrice > 0 ? t.dynamicStopPrice : t.buyPrice;
-          cardCtrlLabelEl.textContent = `1:1保本奔跑中`;
-          cardCtrlValEl.textContent = `${beP.toFixed(2)}`;
-          cardCtrlBoxEl.className = "bg-slate-950/70 rounded-lg p-2.5 border border-emerald-500/50 text-center flex flex-col justify-center";
-          cardCtrlLabelEl.className = "text-[10px] text-emerald-300 font-semibold";
-          cardCtrlValEl.className = "text-xs font-bold text-emerald-400 mt-0.5";
-          bannerCtrlText = `🛡️ <span class="text-emerald-300 font-bold">1:1保本奔跑中</span>(守 ${beP.toFixed(2)}，等達 1:${curStratCfg.rrTier2Ratio} 鎖${curStratCfg.rrLockRatio}R＋${curStratCfg.rrTrailMa}MA)`;
+          stopBannerSegment = `<span>｜ 🛡️ <b class="text-emerald-300">1:1保本奔跑中</b>(守 ${beP.toFixed(2)}，等達 1:${curStratCfg.rrTier2Ratio} 鎖${curStratCfg.rrLockRatio}R＋${curStratCfg.rrTrailMa}MA)</span>`;
+          stopBox.className = "bg-slate-900/90 border border-emerald-500/50 rounded-lg p-2 text-center";
+          stopTitle.className = "text-[10px] text-emerald-300";
+          stopTitle.textContent = "1:1保本奔跑中";
+          stopPriceEl.className = "text-xs font-bold text-emerald-400 mt-0.5";
+          stopPriceEl.textContent = beP.toFixed(2);
+          if (legendStopItem) legendStopItem.classList.add("hidden");
         } else if (curStratCfg.strategy === 'RR_LADDER' && !t.isClosed && t.rrStage === 0) {
-          cardCtrlLabelEl.textContent = `初始停損價(-2%)`;
-          cardCtrlValEl.textContent = `${t.stopLossPrice.toFixed(2)}`;
-          cardCtrlBoxEl.className = "bg-slate-950/70 rounded-lg p-2.5 border border-amber-500/50 text-center flex flex-col justify-center";
-          cardCtrlLabelEl.className = "text-[10px] text-amber-300 font-semibold";
-          cardCtrlValEl.className = "text-xs font-bold text-amber-300 mt-0.5";
-          bannerCtrlText = `🛡️ <span class="text-amber-300 font-bold">初始停損(${t.stopLossPrice.toFixed(2)})</span>(未達1:1前不受20MA干擾)`;
+          stopBannerSegment = `<span>｜ 🛑 初始停損(${t.stopRefDesc})：<b class="text-yellow-300">${t.stopLossPrice.toFixed(2)}</b>(未達1:1前不受20MA干擾)</span>`;
+          stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
+          stopTitle.className = "text-[10px] text-yellow-300";
+          stopTitle.textContent = "初始停損價(-2%)";
+          stopPriceEl.className = "text-xs font-bold text-yellow-300 mt-0.5";
+          stopPriceEl.textContent = t.stopLossPrice.toFixed(2);
+          if (legendStopItem) legendStopItem.classList.remove("hidden");
         } else if (!t.ma20ControlArmed) {
           stopBannerSegment = `<span>｜ 🛑 初始停損(${t.stopRefDesc})：<b class="text-yellow-300">${t.stopLossPrice.toFixed(2)}</b></span>`;
           stopBox.className = "bg-slate-900/90 border border-yellow-500/40 rounded-lg p-2 text-center";
