@@ -7381,32 +7381,45 @@
 
       if (showTrackingMode && activeOrClosedTrack) {
         const t = activeOrClosedTrack;
+        const _findBar = (dStr, idx) => (dStr ? bars.find(b => b.date === dStr) : null) || (typeof idx === 'number' && idx >= 0 && bars[idx] ? bars[idx] : null);
         if (Array.isArray(t.closedTradesHistory)) {
           t.closedTradesHistory.forEach(ht => {
-            if (bars[ht.keyKIdx]) bars[ht.keyKIdx].isKeyK = true;
-            if (!ht.isDirectKeyBreakdown && bars[ht.buyIdx]) bars[ht.buyIdx].isTrackBuyK = true;
-            if (ht.sellIdx !== -1 && bars[ht.sellIdx]) {
-              bars[ht.sellIdx].isTrackSellK = true;
-              bars[ht.sellIdx].closedHoldingDays = ht.holdingDays;
-              bars[ht.sellIdx].closedExitLabel = isConfirmKExitTrade(ht) ? "破線確認K平倉" : "破直接平倉";
+            const kb = _findBar(ht.keyKDate || ht.keyDate, ht.keyKIdx);
+            if (kb) kb.isKeyK = true;
+            const bb = !ht.isDirectKeyBreakdown ? _findBar(ht.buyDate, ht.buyIdx) : null;
+            if (bb) bb.isTrackBuyK = true;
+            const sb = (ht.sellDate || ht.sellIdx !== -1) ? _findBar(ht.sellDate, ht.sellIdx) : null;
+            if (sb && ht.isClosed) {
+              sb.isTrackSellK = true;
+              sb.closedHoldingDays = ht.holdingDays;
+              sb.closedExitLabel = isConfirmKExitTrade(ht) ? "破線確認K平倉" : "破直接平倉";
             }
           });
         }
-        if (bars[t.keyKIdx]) bars[t.keyKIdx].isKeyK = true;
-        if (!t.isDirectKeyBreakdown && bars[t.buyIdx]) bars[t.buyIdx].isTrackBuyK = true;
+        const tkb = _findBar(t.keyKDate || t.keyDate, t.keyKIdx);
+        if (tkb) tkb.isKeyK = true;
+        const tbb = !t.isDirectKeyBreakdown ? _findBar(t.buyDate, t.buyIdx) : null;
+        if (tbb) tbb.isTrackBuyK = true;
         if (t.lastBreakdownEvent && !t.isDirectKeyBreakdown) {
           const bd = t.lastBreakdownEvent;
-          if (bars[bd.keyIdx]) bars[bd.keyIdx].isTrackBreakdown20MaK = true;
-          if (bd.resolvedHoldIdx !== -1 && bars[bd.resolvedHoldIdx]) {
-            bars[bd.resolvedHoldIdx].isTrackConfirmHoldK = true;
+          const bdb = _findBar(bd.date, bd.keyIdx);
+          if (bdb) bdb.isTrackBreakdown20MaK = true;
+          if (bd.resolvedHoldIdx !== -1 || bd.resolvedDate) {
+            const rhb = _findBar(bd.resolvedDate, bd.resolvedHoldIdx);
+            if (rhb) rhb.isTrackConfirmHoldK = true;
           }
         }
-        if (t.isClosed && t.sellIdx !== -1 && bars[t.sellIdx]) {
-          bars[t.sellIdx].isTrackSellK = true;
-          bars[t.sellIdx].closedHoldingDays = t.holdingDays;
-          bars[t.sellIdx].closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
-
-          chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, t.sellIdx + 1, null);
+        if (t.isClosed) {
+          const tsb = _findBar(t.sellDate, t.sellIdx);
+          const tsbIdx = tsb ? bars.indexOf(tsb) : t.sellIdx;
+          if (tsb) {
+            tsb.isTrackSellK = true;
+            tsb.closedHoldingDays = t.holdingDays;
+            tsb.closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
+          }
+          if (tsbIdx >= 0) {
+            chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, tsbIdx + 1, null);
+          }
         }
       }
 
@@ -8360,7 +8373,7 @@
             }
           }
           const kDateStr = ht.keyKDate || ht.keyDate;
-          const kIdx = (typeof ht.keyKIdx === 'number' && bars[ht.keyKIdx]) ? ht.keyKIdx : (kDateStr ? bars.findIndex(b => b.date === kDateStr) : -1);
+          const kIdx = kDateStr ? bars.findIndex(b => b.date === kDateStr) : ((typeof ht.keyKIdx === 'number' && bars[ht.keyKIdx]) ? ht.keyKIdx : -1);
           if (kIdx >= startIdx && kIdx <= visEndIdx) {
             const kBarVis = visibleBars[kIdx - startIdx];
             if (kBarVis && !kBarVis.isKeyK) {
