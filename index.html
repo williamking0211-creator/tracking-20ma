@@ -740,11 +740,24 @@
                 <button type="button" onclick="runPortfolioCapitalSimulation()" class="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 text-sky-200 hover:bg-sky-500/35 font-semibold">
                   🔄 立即重算
                 </button>
+                <label class="inline-flex items-center gap-1 bg-slate-900 border border-rose-500/40 rounded px-2 py-0.5 text-[11px] text-rose-200">
+                  <span>🧹 剔除獲利王：</span>
+                  <select id="simTrimTopWinnersSelect" onchange="onTrimTopWinnersChanged()" class="bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-amber-300 font-bold focus:outline-none">
+                    <option value="0" selected>不剔除 (含全部)</option>
+                    <option value="1">剔除獲利第 1 名</option>
+                    <option value="2">剔除獲利前 2 名</option>
+                    <option value="3">剔除獲利前 3 名</option>
+                    <option value="5">剔除獲利前 5 名</option>
+                  </select>
+                </label>
                 <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2.5 py-0.5 rounded bg-purple-600/80 hover:bg-purple-500 border border-purple-400/60 text-white font-bold transition shadow-sm">
                   🤖 AI 找實戰最大收益策略
                 </button>
               </div>
-              <span id="simStatusNote" class="font-mono text-slate-300"></span>
+              <div class="flex flex-wrap items-center gap-2">
+                <span id="simTrimmedInfoBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-200"></span>
+                <span id="simStatusNote" class="font-mono text-slate-300"></span>
+              </div>
             </div>
 
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
@@ -1397,6 +1410,7 @@
         pnlStartDate: document.getElementById("pnlStartDateInput")?.value || "",
         pnlEndDate: document.getElementById("pnlEndDateInput")?.value || "",
         exitStrategy: currentExitStrategy,
+        simTrimTopWinners: document.getElementById("simTrimTopWinnersSelect")?.value || "0",
         chkTimeStop: document.getElementById("chkTimeStop")?.checked || false,
         globalExitConfirmMode: document.getElementById("globalExitConfirmMode")?.value || "AUTO",
         timeStopDays: document.getElementById("timeStopDaysInput")?.value || "15",
@@ -1510,6 +1524,9 @@
         }
         if (s.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
           document.getElementById("rrMaConfirmModeSelect").value = s.rrMaConfirmMode;
+        }
+        if (s.simTrimTopWinners !== undefined && document.getElementById("simTrimTopWinnersSelect")) {
+          document.getElementById("simTrimTopWinnersSelect").value = s.simTrimTopWinners;
         }
         if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'].includes(s.exitStrategy)) {
           currentExitStrategy = s.exitStrategy;
@@ -3836,6 +3853,40 @@
       return selectedSectors.includes(resolveStockCategory(s));
     }
 
+    function getTrimTopWinnersCount() {
+      return Math.max(0, parseInt(document.getElementById("simTrimTopWinnersSelect")?.value || "0", 10) || 0);
+    }
+
+    function onTrimTopWinnersChanged() {
+      saveUserSettingsToStorage(false);
+      applyFiltersAndRender();
+    }
+
+    function applyOutlierTrimToEvents(events, trimN, includeFees) {
+      if (!trimN || trimN <= 0 || events.length <= trimN) {
+        return { filteredEvents: events, trimmedItems: [] };
+      }
+      const feeRate = includeFees ? 0.001425 * 0.6 : 0;
+      const taxRate = includeFees ? 0.003 : 0;
+      const scored = events.map(ev => {
+        const buyCost = ev.buyPrice * 1000 + Math.round(ev.buyPrice * 1000 * feeRate);
+        const sellGross = ev.exitOrNowPrice * 1000;
+        const sellNet = sellGross - (Math.round(sellGross * feeRate) + Math.round(sellGross * taxRate));
+        return { ev, estNet1Lot: sellNet - buyCost };
+      });
+      const positiveSorted = scored.filter(x => x.estNet1Lot > 0).sort((a, b) => b.estNet1Lot - a.estNet1Lot);
+      const toRemoveUids = new Set(positiveSorted.slice(0, trimN).map(x => x.ev.uid));
+      const trimmedItems = positiveSorted.slice(0, trimN).map(x => ({
+        code: x.ev.code,
+        name: x.ev.name,
+        estNet1Lot: Math.round(x.estNet1Lot)
+      }));
+      return {
+        filteredEvents: events.filter(ev => !toRemoveUids.has(ev.uid)),
+        trimmedItems
+      };
+    }
+
     function simulateCapitalForStrategy(strategyKey) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
@@ -3892,10 +3943,13 @@
         });
       });
 
+      const trimN = getTrimTopWinnersCount();
+      const trimRes = applyOutlierTrimToEvents(events, trimN, includeFees);
+      const effEvents = trimRes.filteredEvents;
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
       const taxRate = includeFees ? 0.003 : 0;
       const allDates = new Set();
-      events.forEach(e => { allDates.add(e.buyDate); if (e.isClosed && e.sellDate) allDates.add(e.sellDate); });
+      effEvents.forEach(e => { allDates.add(e.buyDate); if (e.isClosed && e.sellDate) allDates.add(e.sellDate); });
       const sortedDates = [...allDates].sort();
 
       let availableCash = initCapital, lockedVault = 0;
@@ -3920,7 +3974,7 @@
             }
           }
         });
-        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => {
+        const dayBuys = effEvents.filter(e => e.buyDate === d).sort((a, b) => {
           if (priorityMode === "HIGH_PRICE") return (b.buyPrice - a.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "LOW_PRICE") return (a.buyPrice - b.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "GAIN_PCT") return ((b.yestGainPct || 0) - (a.yestGainPct || 0)) || (b.buyPrice - a.buyPrice);
@@ -4096,11 +4150,24 @@
         });
       });
 
+      const trimN = getTrimTopWinnersCount();
+      const trimRes = applyOutlierTrimToEvents(events, trimN, includeFees);
+      const effEvents = trimRes.filteredEvents;
+      const trimBadge = document.getElementById("simTrimmedInfoBadge");
+      if (trimBadge) {
+        if (trimRes.trimmedItems.length > 0) {
+          trimBadge.textContent = "已剔除極端獲利王：" + trimRes.trimmedItems.map(x => `${x.code} ${x.name}(+$${x.estNet1Lot.toLocaleString()})`).join("、");
+          trimBadge.classList.remove("hidden");
+        } else {
+          trimBadge.classList.add("hidden");
+        }
+      }
+
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
       const taxRate = includeFees ? 0.003 : 0;
 
       const allDates = new Set();
-      events.forEach(e => {
+      effEvents.forEach(e => {
         allDates.add(e.buyDate);
         if (e.isClosed && e.sellDate) allDates.add(e.sellDate);
       });
@@ -4142,7 +4209,7 @@
         });
 
         const priorityMode = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
-        const dayBuys = events.filter(e => e.buyDate === d).sort((a, b) => {
+        const dayBuys = effEvents.filter(e => e.buyDate === d).sort((a, b) => {
           if (priorityMode === "HIGH_PRICE") return (b.buyPrice - a.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "LOW_PRICE") return (a.buyPrice - b.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "GAIN_PCT") return ((b.yestGainPct || 0) - (a.yestGainPct || 0)) || (b.buyPrice - a.buyPrice);
