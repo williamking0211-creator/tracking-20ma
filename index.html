@@ -4743,8 +4743,8 @@
 
           // (5) 基礎防線：初始停損 (-2%) 或 20MA 破線確認平倉
           //     ★ 策略 E (RR_LADDER) 採純風報比階梯：未達1R守初始停損 → 達1R只守保本線自由奔馳 → 達3R鎖2R並交由5MA(或所選均線)控盤，不被20MA提早洗出
-          const skipGeneric20MaForRR = (cfg.strategy === 'RR_LADDER') && (activePos.rrStage < 2 || cfg.rrTrailMa !== 20);
-          if (!closedThisBar) {
+          if (!closedThisBar && activePos) {
+            const skipGeneric20MaForRR = (cfg.strategy === 'RR_LADDER') && (activePos.rrStage < 2 || cfg.rrTrailMa !== 20);
             if (!activePos.ma20ControlArmed || (cfg.strategy === 'RR_LADDER' && activePos.rrStage === 0)) {
               if (curBar.close < activePos.stopLossPrice) {
                 activePos.isClosed = true;
