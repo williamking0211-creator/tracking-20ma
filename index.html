@@ -2028,22 +2028,33 @@
       });
     }
 
+    const _bestVolCache = new Map();
     function findBestVolThresholdForStrategy(strategyKey) {
       if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
       const baseOpts = getCurrentFilterOptions();
       const activeSectors = getSelectedSimSectors();
-      const poolStocks = rawAllLoadedStocks.filter(s => activeSectors.length === 0 || matchesSimSectorFilter(s, activeSectors));
+      const strategyCfg = getExitStrategyConfig(strategyKey);
+      const cacheKey = `${strategyKey}|${activeSectors.join(',')}|${baseOpts.requireMa20Up}|${baseOpts.requireSolidRedK}|${baseOpts.useGainRange}|${baseOpts.minGain}|${baseOpts.maxGain}|${JSON.stringify(strategyCfg)}|${rawAllLoadedStocks.length}`;
+      if (_bestVolCache.has(cacheKey)) return _bestVolCache.get(cacheKey);
+
+      const poolStocks = rawAllLoadedStocks.filter(s => {
+        if (activeSectors.length > 0 && !matchesSimSectorFilter(s, activeSectors)) return false;
+        const bars = buildStockDailyBarsWithToday(s);
+        for (let i = 1; i < bars.length; i++) {
+          if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) return true;
+        }
+        return false;
+      });
       if (poolStocks.length === 0) return null;
 
       let bestPct = null;
       let bestPerStock = -Infinity;
       let bestCount = 0;
       let bestTotalNet = 0;
+      const scanSteps = [0, 50, 70, 100, 120, 150, 180, 200, 250, 300, 400, 500];
 
-      // 優先要求樣本數 >= 5 檔，避免單一極端離群值失真
-      const strategyCfg = getExitStrategyConfig(strategyKey);
       for (const minSamples of [5, 1]) {
-        for (let pct = 0; pct <= 500; pct += 10) {
+        for (const pct of scanSteps) {
           const testOpts = { ...baseOpts, volOp: "GTE", validVolThreshold: pct };
           let sumNet = 0;
           let cnt = 0;
@@ -2074,9 +2085,10 @@
       }
 
       if (bestPct === null) return null;
-      return { bestPct, bestPerStock: Math.round(bestPerStock), bestCount, bestTotalNet };
+      const out = { bestPct, bestPerStock: Math.round(bestPerStock), bestCount, bestTotalNet };
+      _bestVolCache.set(cacheKey, out);
+      return out;
     }
-
     function applyAiBestVolForCurrentStrategy(forceToast = false) {
       const res = findBestVolThresholdForStrategy(currentExitStrategy);
       const badge = document.getElementById("aiBestVolBadge");
@@ -2411,6 +2423,10 @@
     }
 
     function buildStockDailyBarsWithToday(stock) {
+      const cacheSig = `${stock.todayPrice}|${stock.todayOpen}|${stock.todayHigh}|${stock.todayLow}|${stock.todayVol}|${stock.latestTradeDate}|${(stock.realBars || []).length}`;
+      if (stock._barsCacheSig === cacheSig && Array.isArray(stock._barsCache)) {
+        return stock._barsCache;
+      }
       const bars = stock.realBars ? stock.realBars.map(b => ({ ...b })) : [];
       if (bars.length === 0) return bars;
       const latestDate = stock.latestTradeDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
@@ -2450,6 +2466,8 @@
         for (let j = vs5; j <= i; j++) vSum5 += (bars[j].vol || 0);
         bars[i].ma5Vol = vSum5 / (i - vs5 + 1);
       }
+      stock._barsCacheSig = cacheSig;
+      stock._barsCache = bars;
       return bars;
     }
 
@@ -2483,7 +2501,7 @@
     // 為「突破20MA關鍵K後未過高直接跌破關鍵K低點」之標的建立標準化損益結構，讓股池五所有股票皆可一致計算損益與篩選日期區間
     function buildDirectKeyBreakdownRecord(stock) {
       if (!stock || !stock.isFirstDayBreak20Ma || stock.status !== "BREAKDOWN") return null;
-      const bars = buildStockDailyBarsWithToday(stock);
+      const bars = buildStockDailyBarsWithToday(stock).map(b => ({ ...b }));
       const lastIdx = Math.max(0, bars.length - 1);
       const latestMa20 = bars[lastIdx]?.ma20 || stock.yestMa20;
       const buyPrice = stock.yestClose;
@@ -4541,6 +4559,20 @@
     // 1. 關鍵K後 1~10 日內未破低點之「跨日確認K買進」(如 4561 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
     // 2. 20MA 控盤跌破 20MA 首根為「破20MA關鍵K」，反彈若未站回 20MA 之上不得解除警報；後續收盤跌破該關鍵K低點即觸發「破K確認平倉」(如 1303 南亞 10/30 關鍵K -> 11/03 確認K平倉)
     function evaluateStockTrackingLifecycle(stock, filterOpts, exitConfig = null, overrideBars = null) {
+      const cfg = exitConfig || getExitStrategyConfig();
+      if (!overrideBars) {
+        const barsSig = `${stock.todayPrice}|${stock.todayVol}|${stock.latestTradeDate}`;
+        const lcKey = `${barsSig}|${filterOpts.requireMa20Up}|${filterOpts.requireSolidRedK}|${filterOpts.useGainRange}|${filterOpts.minGain}|${filterOpts.maxGain}|${filterOpts.volOp}|${filterOpts.validVolThreshold}|${JSON.stringify(cfg)}`;
+        if (stock._lcCache && stock._lcCacheKey === lcKey) return stock._lcCache;
+        const res = _evaluateStockTrackingLifecycleCore(stock, filterOpts, cfg, null);
+        stock._lcCacheKey = lcKey;
+        stock._lcCache = res;
+        return res;
+      }
+      return _evaluateStockTrackingLifecycleCore(stock, filterOpts, cfg, overrideBars);
+    }
+
+    function _evaluateStockTrackingLifecycleCore(stock, filterOpts, exitConfig = null, overrideBars = null) {
       const cfg = exitConfig || getExitStrategyConfig();
       const bars = overrideBars ? overrideBars.map(b => ({ ...b })) : buildStockDailyBarsWithToday(stock);
       if (bars.length < 21) return { activeOrTodayExit: null, closedBreakdown: null };
