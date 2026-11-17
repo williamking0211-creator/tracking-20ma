@@ -1628,7 +1628,7 @@
       const volSl = document.getElementById("volThresholdSlider");
       const volBg = document.getElementById("volSliderBadge");
       const vVal = parseFloat(volIn.value);
-      const cleanVol = isNaN(vVal) ? 70 : Math.max(0, Math.min(500, Math.round(vVal)));
+      const cleanVol = isNaN(vVal) ? 70 : Math.max(0, Math.min(1000, Math.round(vVal)));
       if (volSl) volSl.value = cleanVol;
       if (volBg) volBg.textContent = `目前：${cleanVol}%`;
     }
@@ -1712,7 +1712,7 @@
 
     function onVolSliderChange(val) {
       let v = Math.round(parseFloat(val) || 0);
-      v = Math.max(0, Math.min(500, v));
+      v = Math.max(0, Math.min(1000, v));
       document.getElementById("volThresholdInput").value = v;
       if (document.getElementById("volOperatorSelect").value === "ALL") {
         document.getElementById("volOperatorSelect").value = "GTE";
@@ -1726,7 +1726,7 @@
       let v = parseFloat(val);
       if (!isNaN(v)) {
         if (v > 1000) {
-          v = 500;
+          v = 1000;
           document.getElementById("volThresholdInput").value = 1000;
         } else if (v < 0) {
           v = 0;
@@ -1742,7 +1742,7 @@
       const volIn = document.getElementById("volThresholdInput");
       let cur = parseFloat(volIn.value);
       if (isNaN(cur)) cur = 70;
-      const next = Math.max(0, Math.min(500, Math.round(cur + delta)));
+      const next = Math.max(0, Math.min(1000, Math.round(cur + delta)));
       volIn.value = next;
       if (document.getElementById("volOperatorSelect").value === "ALL") {
         document.getElementById("volOperatorSelect").value = "GTE";
@@ -7166,6 +7166,8 @@
         return y;
       };
 
+      const showOrderFlow = document.getElementById("chkShowOrderFlow")?.checked ?? true;
+      const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
       const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
@@ -7494,8 +7496,7 @@
       const latestVolVal = visibleBars.length > 0 ? visibleBars[visibleBars.length - 1].vol : stock.todayVol;
       ctx.fillText(formatShortVol(latestVolVal), width - padRight + 6, volPlotTop + 23);
 
-      const showOrderFlow = document.getElementById("chkShowOrderFlow")?.checked ?? true;
-      const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
+
       if (showOrderFlow && curTickPower && curTickPower.vwap > 0) {
         const yVwap = priceToY(curTickPower.vwap);
         if (yVwap >= padTop && yVwap <= volPlotTop - 8) {
