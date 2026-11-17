@@ -4701,10 +4701,11 @@
       renderTable();
       runPortfolioCapitalSimulation();
 
-      if ((!selectedStockCode || !rawAllLoadedStocks.some(s => s.code === selectedStockCode)) && filteredStocks.length > 0) {
+      const isCustomInspected = window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode;
+      if ((!selectedStockCode || (!rawAllLoadedStocks.some(s => s.code === selectedStockCode) && !isCustomInspected)) && filteredStocks.length > 0) {
         selectStock(filteredStocks[0].code, false);
       } else if (selectedStockCode) {
-        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+        const current = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (isCustomInspected ? window._lastCustomInspectedStock : null);
         if (current) updateDetailPanel(current, false);
       }
     }
@@ -6234,7 +6235,8 @@
     function onSimulateRawBreakoutToggle() {
       if (selectedStockCode) {
         const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode ? window._lastCustomInspectedStock : null);
-        if (cur) updateDetailPanel(cur, false);
+        const simOn = document.getElementById("chkSimulateRawBreakoutEntry")?.checked;
+        if (cur) updateDetailPanel(cur, !!simOn);
       }
     }
 
@@ -6707,7 +6709,18 @@
         load5mKlineData(stock.code, resetView);
       } else {
         chartState.bars = bars;
-        if (resetView) { chartState.visibleCount = 22; chartState.rightOffset = 0; chartState.verticalOffsetPx = 0; }
+        if (resetView) {
+          let targetVis = 22;
+          if (stock._isRelaxedPreviewSim && activeOrClosedTrack) {
+            const firstIdx = activeOrClosedTrack.keyKIdx >= 0 ? activeOrClosedTrack.keyKIdx : activeOrClosedTrack.buyIdx;
+            if (firstIdx >= 0 && firstIdx < bars.length) {
+              targetVis = Math.min(bars.length, Math.max(22, bars.length - Math.max(0, firstIdx - 2)));
+            }
+          }
+          chartState.visibleCount = targetVis;
+          chartState.rightOffset = 0;
+          chartState.verticalOffsetPx = 0;
+        }
         updateStockWhaleBaselineBanner();
         updateHudDisplay(bars[bars.length - 1], bars.length >= 2 ? bars[bars.length - 2] : null);
         renderCanvasChart();
@@ -7518,13 +7531,15 @@
               const rng = b.high - b.low;
               buyRatio = rng > 0 ? Math.max(0.12, Math.min(0.88, (b.close - b.low) / rng)) : (b.close >= b.open ? 0.65 : 0.35);
             }
-            const buyW = Math.max(1, Math.round(candleW * buyRatio));
-            const sellW = Math.max(0, candleW - buyW);
-            ctx.fillStyle = "rgba(244, 63, 94, 0.88)";
-            ctx.fillRect(cx - candleW / 2, yVolTop, buyW, barH);
-            if (sellW > 0) {
+            const volBaseY = volPlotTop + volPlotH;
+            const buyH = Math.max(1, Math.round(barH * buyRatio));
+            const sellH = Math.max(0, barH - buyH);
+            // 下半部粉紅 = 買方力道(外盤)；上半部青綠 = 賣方力道(內盤)
+            ctx.fillStyle = "rgba(244, 63, 94, 0.90)";
+            ctx.fillRect(cx - candleW / 2, volBaseY - buyH, candleW, buyH);
+            if (sellH > 0) {
               ctx.fillStyle = "rgba(16, 185, 129, 0.85)";
-              ctx.fillRect(cx - candleW / 2 + buyW, yVolTop, sellW, barH);
+              ctx.fillRect(cx - candleW / 2, yVolTop, candleW, sellH);
             }
             if (b.isToday && curTickPower) {
               ctx.fillStyle = curTickPower.outerPct >= 55 ? "#fda4af" : "#6ee7b7";
@@ -7668,7 +7683,7 @@
       } else {
         const rng = bar.high - bar.low;
         const estBuyPct = rng > 0 ? Math.round(Math.max(12, Math.min(88, ((bar.close - bar.low) / rng) * 100))) : (bar.close >= bar.open ? 65 : 35);
-        flowHudHtml = `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱左粉紅=買力 / 右青綠=賣壓）</div>`;
+        flowHudHtml = `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
       }
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
       const amtStr = formatAmountWan(bar.amountWan);
