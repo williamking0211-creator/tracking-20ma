@@ -2350,7 +2350,7 @@
         [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
       ];
       const gainOpts = [[0, 10.5], [2.0, 10.5], [3.0, 10.5], [5.0, 10.5], [6.5, 10.5], [8.0, 10.5]];
-      const volOpts = [70, 100, 150, 200, 300, 400, 500];
+      const volOpts = [70, 100, 150, 200, 300, 400, 500, 600, 650, 700, 720, 750, 800, 850, 900, 950, 1000];
       const seenKey = new Set([candList[0].join("|")]);
 
       for (const reqMa of [true, false]) {
@@ -2366,18 +2366,30 @@
       }
 
       let best = null;
-      let fallbackBest = null;
       for (const [reqMa, reqRed, minG, maxG, minV] of candList) {
         const res = evaluateFullStep1ComboExact(poolStocks, cfg, reqMa, reqRed, minG, maxG, minV);
         if (res.cnt === 0) continue;
-        if (!fallbackBest || res.totalProfitNtd > fallbackBest.totalProfitNtd) {
-          fallbackBest = { ...res, score: res.totalProfitNtd };
-        }
-        if (res.cnt >= 5 && (!best || res.totalProfitNtd > best.totalProfitNtd)) {
+        if (!best || res.totalProfitNtd > best.totalProfitNtd) {
           best = { ...res, score: res.totalProfitNtd };
         }
       }
-      const finalOut = best || fallbackBest;
+      // 第二階段：在最佳成交量附近 ±40% 進行微調搜尋，並測試不限實體紅K，確保找出真正的全區間最高獲利
+      if (best) {
+        const fineVols = [-30, -20, -10, 0, 10, 20, 30].map(d => Math.max(0, Math.min(1000, best.minV + d)));
+        for (const fv of fineVols) {
+          for (const fRed of [true, false]) {
+            const k = `${best.reqMaUp}|${fRed}|${best.minG}|${best.maxG}|${fv}`;
+            if (!seenKey.has(k)) {
+              seenKey.add(k);
+              const res = evaluateFullStep1ComboExact(poolStocks, cfg, best.reqMaUp, fRed, best.minG, best.maxG, fv);
+              if (res.cnt > 0 && res.totalProfitNtd > best.totalProfitNtd) {
+                best = { ...res, score: res.totalProfitNtd };
+              }
+            }
+          }
+        }
+      }
+      const finalOut = best;
       if (finalOut) _fullStep1Cache.set(fCacheKey, finalOut);
       return finalOut;
     }
