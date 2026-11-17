@@ -1090,6 +1090,11 @@
         <div id="aiAdviceBody" class="text-[11px] text-slate-200 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
           --
         </div>
+        <!-- 🧠 AI 依買賣力道計算「最佳買入點位 × 最大價差出場規劃」 -->
+        <div id="aiPowerPlanBox" class="mt-1.5 pt-1.5 border-t border-violet-500/25 text-[11px] font-mono space-y-1">
+          <div class="text-slate-400">🧠 AI 買賣力道最佳買賣點演算中...</div>
+        </div>
+        <div id="aiMarketLearnBox" class="hidden mt-1.5 pt-2 border-t border-cyan-500/30 text-[11px] font-mono bg-slate-950/70 rounded-md p-2.5 space-y-1.5"></div>
         <!-- 做法二：Gemini LLM 文字分析結果區 -->
         <div id="geminiAiResultBox" class="hidden mt-1.5 pt-2 border-t border-violet-500/30 text-[11.5px] leading-relaxed text-slate-100 space-y-1">
           <div class="flex items-center justify-between gap-2">
@@ -1176,6 +1181,10 @@
             <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/35 px-2 py-0.5 rounded" title="在 K 棒量柱內顯示內外盤買賣比例，並於今日 K 棒標示富邦逐筆外盤大單與 VWAP 均價線">
               <input type="checkbox" id="chkShowOrderFlow" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" />
               <span>🔥 內外盤/大單/VWAP</span>
+            </label>
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-purple-300 bg-purple-500/15 border border-purple-500/35 px-2 py-0.5 rounded" title="在 K 線圖上直接標出 AI 依買賣力道算出「價差最大」的最佳買入 K 與最佳出場 K">
+              <input type="checkbox" id="chkShowAiPowerMarkers" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
+              <span>🧠 AI最佳買賣點</span>
             </label>
           </div>
 
@@ -6264,6 +6273,340 @@
       };
     }
 
+    function getBarBuyPowerRatio(b, stock) {
+      if (b.isToday && stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') {
+        return Math.max(0.05, Math.min(0.95, stock.tickPower.outerPct / 100));
+      }
+      const rng = (b.high || 0) - (b.low || 0);
+      if (rng > 0) return Math.max(0.08, Math.min(0.92, (b.close - b.low) / rng));
+      return b.close >= b.open ? 0.78 : 0.22;
+    }
+
+    function checkAiBuyTrapReasons(bars, i, buyPowers) {
+      const b = bars[i];
+      const prev = i > 0 ? bars[i - 1] : null;
+      const reasons = [];
+      if (!b) return reasons;
+
+      // 禁忌 1：開高走低出貨黑K (如 2431 隔日沖倒貨盤，假陽真陰)
+      if (b.close < b.open) {
+        reasons.push("開高走低收黑K(出貨盤)");
+      }
+      // 禁忌 2：爆量長上影線避雷針 (量>=2.5倍5均 且 上影線 > 實體1.1倍)
+      const body = Math.max(0.01, Math.abs(b.close - b.open));
+      const upperShadow = Math.max(0, b.high - Math.max(b.open, b.close));
+      const volRatio = b.ma5Vol > 0 ? (b.vol / b.ma5Vol) : 1;
+      if (volRatio >= 2.5 && upperShadow > body * 1.1 && upperShadow > (b.high - b.low) * 0.35) {
+        reasons.push("爆量長上影線(高檔賣壓)");
+      }
+      // 禁忌 3：前日極端天量(>=8倍)隔日追高誘多風險
+      if (prev && prev.ma5Vol > 0 && (prev.vol / prev.ma5Vol) >= 8.0 && (b.close <= prev.high || upperShadow > body * 0.8)) {
+        reasons.push("前日天量>=8倍隔日誘多");
+      }
+      // 禁忌 4：20MA 正乖離過熱 (>18%) 追高風險
+      if (b.ma20 > 0 && ((b.close - b.ma20) / b.ma20) * 100 > 18) {
+        reasons.push("20MA乖離>18%過熱追高");
+      }
+      // 禁忌 5：20MA 明顯下彎反壓 (除非帶溫和量1.5倍+實體紅K強勢扭轉)
+      if (prev && prev.ma20 > 0 && b.ma20 > 0 && b.ma20 < prev.ma20 * 0.997 && b.close <= b.ma20 * 1.01) {
+        reasons.push("20MA下彎反壓");
+      }
+      return reasons;
+    }
+
+    function computeAiBuySellPowerOptimalPlan(stock) {
+      if (!stock) return null;
+      const bars = buildStockDailyBarsWithToday(stock);
+      if (!bars || bars.length < 10) return null;
+
+      const sig = `${stock.code}|v2|${bars.length}|${bars[bars.length - 1].close}|${stock.tickPower ? stock.tickPower.outerPct : -1}`;
+      if (stock._aiPowerPlanSig === sig && stock._aiPowerPlanCache) return stock._aiPowerPlanCache;
+
+      const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
+      const isCleanBuyBar = (i) => checkAiBuyTrapReasons(bars, i, buyPowers).length === 0;
+
+      const buyRules = [
+        {
+          id: 'P60_MA20_CLEAN',
+          name: '無出貨禁忌 ＋ 買力≥60% 且站穩 20MA 紅K',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.60 && bars[i].ma20 > 0 && bars[i].close > bars[i].ma20 && (i === 0 || bars[i].close > bars[i - 1].close)
+        },
+        {
+          id: 'P65_MODVOL_CLEAN',
+          name: '無出貨禁忌 ＋ 買力≥65% 且溫和放量(1.2~5倍)',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.65 && bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.2 && bars[i].vol <= bars[i].ma5Vol * 5.0
+        },
+        {
+          id: 'P70_SOLID_CLEAN',
+          name: '無出貨禁忌 ＋ 買力≥70% 實體強勢紅K',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.70 && bars[i].close > bars[i].open
+        },
+        {
+          id: 'P75_MA5_CLEAN',
+          name: '無出貨禁忌 ＋ 買力≥75% 且站上 5MA',
+          check: (i) => isCleanBuyBar(i) && buyPowers[i] >= 0.75 && bars[i].ma5 > 0 && bars[i].close > bars[i].ma5
+        },
+        {
+          id: 'CONSEC2_CLEAN',
+          name: '無出貨禁忌 ＋ 連續2日紅K且買力≥60%',
+          check: (i) => i >= 1 && isCleanBuyBar(i) && bars[i - 1].close >= bars[i - 1].open && buyPowers[i] >= 0.60 && buyPowers[i - 1] >= 0.60 && bars[i].close >= bars[i - 1].close
+        }
+      ];
+
+      const sellRules = [
+        {
+          id: 'S_P35',
+          name: '買力跌破 35% (賣壓 ≥ 65%) 即出',
+          check: (i, pos) => buyPowers[i] < 0.35,
+          planDesc: (lastB) => `買力跌破 35%（賣壓 ≥ 65%）收盤即出場`
+        },
+        {
+          id: 'S_P40_VOL13',
+          name: '買力 < 40% 且放量 ≥ 1.3倍5均',
+          check: (i, pos) => buyPowers[i] < 0.40 && bars[i].ma5Vol > 0 && bars[i].vol >= bars[i].ma5Vol * 1.3,
+          planDesc: (lastB) => `買力 < 40% 且爆量 ≥ 1.3倍5均（高檔出貨）出場`
+        },
+        {
+          id: 'S_MA5_P30',
+          name: '跌破 5MA 或買力 < 30%',
+          check: (i, pos) => (bars[i].ma5 > 0 && bars[i].close < bars[i].ma5) || buyPowers[i] < 0.30,
+          planDesc: (lastB) => `跌破 5MA (${lastB.ma5 > 0 ? lastB.ma5.toFixed(2) : '--'}) 或買力 < 30% 出場`
+        },
+        {
+          id: 'S_MA10_P30',
+          name: '跌破 10MA 或買力 < 30%',
+          check: (i, pos) => (bars[i].ma10 > 0 && bars[i].close < bars[i].ma10) || buyPowers[i] < 0.30,
+          planDesc: (lastB) => `跌破 10MA (${lastB.ma10 > 0 ? lastB.ma10.toFixed(2) : '--'}) 或買力 < 30% 出場`
+        },
+        {
+          id: 'S_MA20_P25',
+          name: '跌破 20MA 或買力 < 25%',
+          check: (i, pos) => (bars[i].ma20 > 0 && bars[i].close < bars[i].ma20) || buyPowers[i] < 0.25,
+          planDesc: (lastB) => `跌破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 或買力 < 25% 出場`
+        },
+        {
+          id: 'S_PEAK6_P32',
+          name: '最高點回落 6% 或買力 < 32%',
+          check: (i, pos) => (pos.maxHigh > 0 && bars[i].close <= pos.maxHigh * 0.94) || buyPowers[i] < 0.32,
+          planDesc: (lastB) => `波段高點回落 6% 或買力 < 32% 出場`
+        }
+      ];
+
+      let bestPlan = null;
+      buyRules.forEach(br => {
+        sellRules.forEach(sr => {
+          const trades = [];
+          let pos = null;
+          for (let i = 1; i < bars.length; i++) {
+            const b = bars[i];
+            if (!pos) {
+              if (br.check(i)) {
+                pos = {
+                  buyIdx: i,
+                  buyDate: b.date,
+                  buyPrice: b.close,
+                  buyPowerPct: Math.round(buyPowers[i] * 100),
+                  maxHigh: b.high
+                };
+              }
+            } else {
+              if (b.high > pos.maxHigh) pos.maxHigh = b.high;
+              const isHardStop = b.close <= pos.buyPrice * 0.93;
+              if (sr.check(i, pos) || isHardStop) {
+                const pts = Number((b.close - pos.buyPrice).toFixed(2));
+                trades.push({
+                  ...pos,
+                  sellIdx: i,
+                  sellDate: b.date,
+                  sellPrice: b.close,
+                  sellPowerPct: Math.round(buyPowers[i] * 100),
+                  profitPoints: pts,
+                  isClosed: true,
+                  exitTag: isHardStop ? '7%硬停損' : sr.name
+                });
+                pos = null;
+              }
+            }
+          }
+          if (pos) {
+            const lastB = bars[bars.length - 1];
+            const pts = Number((lastB.close - pos.buyPrice).toFixed(2));
+            trades.push({
+              ...pos,
+              sellIdx: bars.length - 1,
+              sellDate: lastB.date,
+              sellPrice: lastB.close,
+              sellPowerPct: Math.round(buyPowers[bars.length - 1] * 100),
+              profitPoints: pts,
+              isClosed: false,
+              exitTag: '續抱中'
+            });
+          }
+          if (trades.length === 0) return;
+          const totalPts = trades.reduce((acc, t) => acc + t.profitPoints, 0);
+          const wins = trades.filter(t => t.profitPoints > 0).length;
+          const winRate = Math.round((wins / trades.length) * 100);
+          const score = totalPts + (winRate >= 50 ? 0.5 : -2);
+          if (!bestPlan || score > bestPlan.score) {
+            bestPlan = {
+              buyRule: br,
+              sellRule: sr,
+              trades,
+              totalPts: Number(totalPts.toFixed(2)),
+              winRate,
+              score,
+              todayPowerPct: Math.round(buyPowers[bars.length - 1] * 100),
+              todayTrapReasons: checkAiBuyTrapReasons(bars, bars.length - 1, buyPowers),
+              todayTriggerBuy: br.check(bars.length - 1),
+              lastBar: bars[bars.length - 1]
+            };
+          }
+        });
+      });
+
+      stock._aiPowerPlanSig = sig;
+      stock._aiPowerPlanCache = bestPlan;
+      return bestPlan;
+    }
+
+    function runAiMarketPatternLearner(toggleDisplay = true) {
+      const box = document.getElementById("aiMarketLearnBox");
+      if (!box) return;
+      if (toggleDisplay && !box.classList.contains("hidden") && box.dataset.loaded === "1") {
+        box.classList.add("hidden");
+        return;
+      }
+      if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) {
+        box.innerHTML = `<div class="text-amber-300">⚠️ 尚未載入全市場股池資料，請先連線更新後再進行 AI 學習歸納。</div>`;
+        box.classList.remove("hidden");
+        return;
+      }
+
+      const stats = {
+        trap_blackK: { label: "🚫 買盤大卻「開高走低收黑K」(隔日沖倒貨)", n: 0, wins: 0, sumRet: 0 },
+        trap_upperShadow: { label: "🚫 爆量(≥2.5x)＋長上影線避雷針", n: 0, wins: 0, sumRet: 0 },
+        trap_megaVolNext: { label: "🚫 前日≥8倍超級天量隔天追價", n: 0, wins: 0, sumRet: 0 },
+        trap_overheated: { label: "🚫 20MA正乖離 > 18% 高檔過熱追高", n: 0, wins: 0, sumRet: 0 },
+        gold_solidHigh: { label: "✅ 無禁忌 ＋ 實體紅K且買力 ≥ 70%", n: 0, wins: 0, sumRet: 0 },
+        gold_modVolMa20: { label: "✅ 無禁忌 ＋ 溫和放量(1.5~4x)＋20MA向上", n: 0, wins: 0, sumRet: 0 },
+        gold_consec2: { label: "✅ 無禁忌 ＋ 連續2日紅K且買力 ≥ 60%", n: 0, wins: 0, sumRet: 0 },
+        gold_breakMa20: { label: "✅ 無禁忌 ＋ 帶量首日突破20MA收實紅", n: 0, wins: 0, sumRet: 0 }
+      };
+
+      const addStat = (k, fwdRet) => {
+        stats[k].n++;
+        if (fwdRet > 0) stats[k].wins++;
+        stats[k].sumRet += fwdRet;
+      };
+
+      for (let sIdx = 0; sIdx < rawAllLoadedStocks.length; sIdx++) {
+        const st = rawAllLoadedStocks[sIdx];
+        const bars = buildStockDailyBarsWithToday(st);
+        if (!bars || bars.length < 15) continue;
+        const buyPowers = bars.map(b => getBarBuyPowerRatio(b, st));
+        for (let i = 2; i < bars.length - 5; i++) {
+          const b = bars[i], prev = bars[i - 1], fwd = bars[i + 5];
+          if (!b.close || !fwd.close || b.ma5Vol <= 0) continue;
+          const vr = b.vol / b.ma5Vol;
+          const prevVr = prev.ma5Vol > 0 ? (prev.vol / prev.ma5Vol) : 1;
+          const bp = buyPowers[i];
+          if (vr < 1.2 && bp < 0.60) continue; // 只統計有明顯放量或高買力訊號的事件
+
+          const fwdRet = ((fwd.close - b.close) / b.close) * 100;
+          const body = Math.max(0.01, Math.abs(b.close - b.open));
+          const upperShadow = Math.max(0, b.high - Math.max(b.open, b.close));
+          const traps = checkAiBuyTrapReasons(bars, i, buyPowers);
+
+          if (b.close < b.open && bp >= 0.55) addStat("trap_blackK", fwdRet);
+          if (vr >= 2.5 && upperShadow > body * 1.1 && upperShadow > (b.high - b.low) * 0.35) addStat("trap_upperShadow", fwdRet);
+          if (prevVr >= 8.0 && (b.close <= prev.high || upperShadow > body * 0.8)) addStat("trap_megaVolNext", fwdRet);
+          if (b.ma20 > 0 && ((b.close - b.ma20) / b.ma20) * 100 > 18) addStat("trap_overheated", fwdRet);
+
+          if (traps.length === 0) {
+            if (bp >= 0.70 && b.close > b.open) addStat("gold_solidHigh", fwdRet);
+            if (vr >= 1.5 && vr <= 4.0 && b.ma20 > 0 && b.ma20 >= prev.ma20 && b.close > b.ma20) addStat("gold_modVolMa20", fwdRet);
+            if (prev.close >= prev.open && bp >= 0.60 && buyPowers[i - 1] >= 0.60 && b.close >= prev.close) addStat("gold_consec2", fwdRet);
+            if (prev.ma20 > 0 && prev.close <= prev.ma20 && b.close > b.ma20 && b.close > b.open && vr >= 1.5) addStat("gold_breakMa20", fwdRet);
+          }
+        }
+      }
+
+      const fmtRow = (item, isTrap) => {
+        const wr = item.n > 0 ? ((item.wins / item.n) * 100).toFixed(1) : "0.0";
+        const avgR = item.n > 0 ? (item.sumRet / item.n).toFixed(2) : "0.00";
+        const rSign = parseFloat(avgR) >= 0 ? "+" : "";
+        const col = isTrap ? "text-rose-300" : "text-emerald-300";
+        return `<div class="flex flex-wrap items-center justify-between gap-2 py-0.5 border-b border-slate-800/70 last:border-0">
+          <span class="${col}">${item.label}</span>
+          <span class="text-slate-300">樣本 <b class="text-white">${item.n}</b> 筆 ｜ 5日後勝率 <b class="${col}">${wr}%</b> ｜ 平均報酬 <b class="${col}">${rSign}${avgR}%</b></span>
+        </div>`;
+      };
+
+      const trapRows = [stats.trap_blackK, stats.trap_upperShadow, stats.trap_megaVolNext, stats.trap_overheated].map(x => fmtRow(x, true)).join("");
+      const goldRows = [stats.gold_solidHigh, stats.gold_modVolMa20, stats.gold_consec2, stats.gold_breakMa20].map(x => fmtRow(x, false)).join("");
+
+      box.innerHTML = `
+        <div class="flex items-center justify-between gap-2 pb-1 border-b border-cyan-500/30">
+          <span class="font-bold text-cyan-300">📚 AI 全市場 ${rawAllLoadedStocks.length} 檔近60日實戰回測歸納（5日後績效驗證）</span>
+          <button type="button" onclick="document.getElementById('aiMarketLearnBox').classList.add('hidden')" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700">✕ 收合</button>
+        </div>
+        <div class="space-y-0.5">
+          <div class="text-[10.5px] font-bold text-rose-400">【AI 自動封鎖：不可以買進的 4 大出貨/套牢特徵】</div>
+          ${trapRows}
+        </div>
+        <div class="space-y-0.5 pt-1">
+          <div class="text-[10.5px] font-bold text-emerald-400">【AI 優先鎖定：一定要買進的 4 大高勝率起漲特徵】</div>
+          ${goldRows}
+        </div>
+      `;
+      box.dataset.loaded = "1";
+      box.classList.remove("hidden");
+    }
+
+    function renderAiPowerPlanBox(stock) {
+      const box = document.getElementById("aiPowerPlanBox");
+      if (!box) return;
+      const plan = computeAiBuySellPowerOptimalPlan(stock);
+      if (!plan) {
+        box.innerHTML = `<div class="text-slate-400">🧠 AI 買賣力道規劃：此股近 60 日尚無足夠買力與價差樣本</div>`;
+        return;
+      }
+      const ptsSign = plan.totalPts >= 0 ? "+" : "";
+      const ptsColor = plan.totalPts >= 0 ? "text-rose-300" : "text-emerald-300";
+      const lastB = plan.lastBar;
+      const openPos = plan.trades.find(t => !t.isClosed);
+      const buyStatusHtml = openPos
+        ? `<span class="text-cyan-300">目前於 ${formatShortDateSlash(openPos.buyDate)} (${openPos.buyPrice.toFixed(2)}) 買進續抱中 (今日買力 ${plan.todayPowerPct}%)</span>`
+        : (plan.todayTriggerBuy
+            ? `<span class="text-rose-300 font-bold">🔥 今日買力 ${plan.todayPowerPct}% 已觸發最佳買入條件！參考進場價：${lastB.close.toFixed(2)} 元</span>`
+            : `<span class="text-amber-300">今日買力 ${plan.todayPowerPct}%（待達「${plan.buyRule.name}」即規劃買入）</span>`);
+      const exitPlanStr = plan.sellRule.planDesc(lastB);
+      const hardStopRef = openPos ? ` ｜ 保護停損：${(openPos.buyPrice * 0.93).toFixed(2)}` : "";
+      const trapWarnHtml = (plan.todayTrapReasons && plan.todayTrapReasons.length > 0)
+        ? `<div class="text-rose-300 font-bold">🚫 今日觸發 AI 禁買禁忌：${plan.todayTrapReasons.join("、")}（即使買力數字高也不追買）</div>`
+        : "";
+      box.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="font-bold text-cyan-300">🧠 AI 買賣力道最佳價差規劃（已加入防出貨禁忌過濾）</span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 ${ptsColor} font-bold">
+              共 ${plan.trades.length} 筆 ｜ 最大價差合計：${ptsSign}${plan.totalPts.toFixed(2)} 點 (${ptsSign}$${Math.round(plan.totalPts * 1000).toLocaleString()}) ｜ 勝率 ${plan.winRate}%
+            </span>
+            <button type="button" onclick="runAiMarketPatternLearner(true)" class="px-2 py-0.5 rounded bg-cyan-700/80 hover:bg-cyan-600 text-white font-bold text-[10.5px] transition shadow-sm">
+              📚 AI 全市場回測歸納「必買/禁買理由」
+            </button>
+          </div>
+        </div>
+        ${trapWarnHtml}
+        <div class="text-slate-200">
+          <span class="text-purple-300 font-bold">● 最佳買入點位：</span>${plan.buyRule.name} → ${buyStatusHtml}
+        </div>
+        <div class="text-slate-200">
+          <span class="text-amber-300 font-bold">● 最佳出場規劃：</span>${exitPlanStr}${hardStopRef}
+        </div>
+      `;
+    }
+
     async function fetchIntradayTickPower(code) {
       if (!code || !apiUrl) return;
       try {
@@ -6275,6 +6618,7 @@
           const target = rawAllLoadedStocks.find(s => s.code === code) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === code ? window._lastCustomInspectedStock : null);
           if (target) target.tickPower = tp;
           if (selectedStockCode === code) {
+            if (target) renderAiPowerPlanBox(target);
             renderCanvasChart();
             if (chartState.bars.length > 0) {
               updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
@@ -6704,6 +7048,7 @@
         badge.textContent = stock.todayPrice >= todayMa20 ? "📊 20MA之上運行" : "📉 20MA之下整理";
       }
 
+      renderAiPowerPlanBox(stock);
       fetchIntradayTickPower(stock.code);
       if (chartState.timeframe === '5m') {
         load5mKlineData(stock.code, resetView);
@@ -6978,7 +7323,8 @@
       ctx.fillStyle = "#080c14";
       ctx.fillRect(0, 0, width, height);
 
-      const stock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+      const rawStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode ? window._lastCustomInspectedStock : null);
+      const stock = resolveSimulatedStockForPreview(rawStock);
       const bars = chartState.bars;
       if (!stock || bars.length === 0) return;
 
@@ -7421,6 +7767,90 @@
         });
       }
 
+      const showAiPowerMarkers = document.getElementById("chkShowAiPowerMarkers")?.checked ?? true;
+      if (!is5mTf && showAiPowerMarkers && stock) {
+        const aiPlan = computeAiBuySellPowerOptimalPlan(stock);
+        if (aiPlan && Array.isArray(aiPlan.trades)) {
+          const visEndIdx = startIdx + visibleBars.length - 1;
+          aiPlan.trades.forEach(tr => {
+            if (tr.sellIdx < startIdx || tr.buyIdx > visEndIdx) return;
+            const xB = tr.buyIdx < startIdx ? padLeft : (padLeft + stepX * (tr.buyIdx - startIdx) + stepX / 2);
+            const xS = tr.sellIdx > visEndIdx ? (width - padRight) : (padLeft + stepX * (tr.sellIdx - startIdx) + stepX / 2);
+            const yB = priceToY(tr.buyPrice);
+            const yS = priceToY(tr.sellPrice);
+
+            // 連接 AI 買點與 AI 賣點的價差虛線
+            ctx.save();
+            ctx.strokeStyle = tr.profitPoints >= 0 ? "rgba(192, 132, 252, 0.80)" : "rgba(45, 212, 191, 0.70)";
+            ctx.lineWidth = 1.6;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(xB, yB);
+            ctx.lineTo(xS, yS);
+            ctx.stroke();
+            ctx.restore();
+
+            if (tr.buyIdx >= startIdx && tr.buyIdx <= visEndIdx) {
+              const visBarB = visibleBars[tr.buyIdx - startIdx];
+              const yLowB = priceToY(visBarB.low);
+              // 紅色腦圖示黏在 K 棒正下方
+              const brainY = Math.min(volPlotTop - 22, yLowB + 8);
+              ctx.save();
+              ctx.fillStyle = "#f472b6";
+              ctx.beginPath();
+              ctx.arc(xB, brainY, 7.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "#fbcfe8";
+              ctx.lineWidth = 1;
+              ctx.stroke();
+              ctx.font = "10px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🧠", xB, brainY + 0.5);
+              ctx.restore();
+              // 文字放在紅色腦的正下方
+              drawNonOverlappingLabel(`AI買 ${tr.buyPrice.toFixed(1)}(${tr.buyPowerPct}%)`, xB, brainY + 18, 1, "#fda4af", "bold 9.5px sans-serif");
+            }
+            if (tr.isClosed && tr.sellIdx >= startIdx && tr.sellIdx <= visEndIdx) {
+              const visBarS = visibleBars[tr.sellIdx - startIdx];
+              const yHighS = priceToY(visBarS.high);
+              const sSign = tr.profitPoints >= 0 ? "+" : "";
+              const sCol = tr.profitPoints >= 0 ? "#fde047" : "#5eead4";
+              // 旗子圖示黏在 K 線正上方
+              const flagY = Math.max(padTop + 20, yHighS - 8);
+              ctx.save();
+              ctx.font = "12px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("🏁", xS, flagY);
+              ctx.restore();
+              // 文字放在旗子圖示的正上方
+              drawNonOverlappingLabel(`AI賣 ${tr.sellPrice.toFixed(1)} (${sSign}${tr.profitPoints.toFixed(1)}點)`, xS, flagY - 13, -1, sCol, "bold 9.5px sans-serif");
+            }
+          });
+          // K線圖左上角顯示 AI 買進與賣出整合總獲利膠囊
+          if (aiPlan.trades.length > 0) {
+            const totSign = aiPlan.totalPts >= 0 ? "+" : "";
+            const totTxt = `🧠 AI買賣總獲利：${totSign}${aiPlan.totalPts.toFixed(2)}點 (${totSign}$${Math.round(aiPlan.totalPts * 1000).toLocaleString()}) ｜ ${aiPlan.trades.length}筆 勝率${aiPlan.winRate}%`;
+            ctx.save();
+            ctx.font = "bold 10.5px monospace";
+            const tw = ctx.measureText(totTxt).width + 14;
+            ctx.fillStyle = aiPlan.totalPts >= 0 ? "rgba(190, 18, 60, 0.85)" : "rgba(6, 95, 70, 0.85)";
+            ctx.beginPath();
+            ctx.roundRect(padLeft + 4, padTop + 4, tw, 18, 4);
+            ctx.fill();
+            ctx.strokeStyle = aiPlan.totalPts >= 0 ? "rgba(253, 164, 175, 0.7)" : "rgba(110, 231, 183, 0.7)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(totTxt, padLeft + 11, padTop + 13);
+            ctx.restore();
+          }
+        }
+      }
+
       if (showBubbles) {
         visibleBars.forEach((b, idx) => {
           if (!b.showBubble) return;
@@ -7651,7 +8081,8 @@
       }
 
       let maHtml = "";
-      const hudStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
+      const _rawHudStock = rawAllLoadedStocks.find(s => s.code === selectedStockCode) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode ? window._lastCustomInspectedStock : null);
+      const hudStock = resolveSimulatedStockForPreview(_rawHudStock);
       const hudTrack = hudStock ? (hudStock.trackingInfo || hudStock.closedBreakdownInfo) : null;
       const hudCfg = getExitStrategyConfig();
       let hudShortMa = 0;
@@ -7674,16 +8105,41 @@
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
       }
 
+      const showFlowHud = document.getElementById("chkShowOrderFlow")?.checked ?? true;
+      const showAiHud = document.getElementById("chkShowAiPowerMarkers")?.checked ?? true;
       const tp = (hudStock && hudStock.tickPower && hudStock.tickPower.source === 'FubonTrades') ? hudStock.tickPower : null;
       let flowHudHtml = "";
-      if (bar.isToday && tp) {
-        const netS = tp.netOuterLots >= 0 ? "+" : "";
-        const vwapPos = tp.vwap > 0 ? (bar.close >= tp.vwap ? `<span class="text-rose-300">VWAP:${tp.vwap.toFixed(2)}(站上)</span>` : `<span class="text-emerald-300">VWAP:${tp.vwap.toFixed(2)}(跌破)</span>`) : "";
-        flowHudHtml = `<div class="text-[10.5px] font-mono text-cyan-200 mt-0.5">🔥 富邦逐筆：外盤買 <b class="text-rose-300">${tp.outerPct}%</b>(${tp.outerLots}張) ｜ 內盤賣 ${tp.innerLots}張 ｜ 淨外盤 <b class="${tp.netOuterLots >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${netS}${tp.netOuterLots}張</b> ｜ ⚡大單敲外盤 <b class="text-amber-300">${tp.bigOuterCount}筆(${tp.bigOuterLots}張)</b> ｜ ${vwapPos}</div>`;
-      } else {
-        const rng = bar.high - bar.low;
-        const estBuyPct = rng > 0 ? Math.round(Math.max(12, Math.min(88, ((bar.close - bar.low) / rng) * 100))) : (bar.close >= bar.open ? 65 : 35);
-        flowHudHtml = `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
+      if (showFlowHud) {
+        if (bar.isToday && tp) {
+          const netS = tp.netOuterLots >= 0 ? "+" : "";
+          let vwapPos = "";
+          if (tp.vwap > 0) {
+            const vDiff = bar.close - tp.vwap;
+            const vPct = (vDiff / tp.vwap) * 100;
+            const vSign = vDiff >= 0 ? "+" : "";
+            vwapPos = bar.close >= tp.vwap
+              ? `<span class="text-rose-300">VWAP:${tp.vwap.toFixed(2)}(站上 ${vSign}${vDiff.toFixed(2)}點/${vSign}${vPct.toFixed(2)}%)</span>`
+              : `<span class="text-emerald-300">VWAP:${tp.vwap.toFixed(2)}(低於 ${vDiff.toFixed(2)}點/${vPct.toFixed(2)}%)</span>`;
+          }
+          flowHudHtml += `<div class="text-[10.5px] font-mono text-cyan-200 mt-0.5">🔥 富邦逐筆：外盤買 <b class="text-rose-300">${tp.outerPct}%</b>(${tp.outerLots}張) ｜ 內盤賣 ${tp.innerLots}張 ｜ 淨外盤 <b class="${tp.netOuterLots >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${netS}${tp.netOuterLots}張</b> ｜ ⚡大單敲外盤 <b class="text-amber-300">${tp.bigOuterCount}筆(${tp.bigOuterLots}張)</b> ｜ ${vwapPos}</div>`;
+        } else {
+          const rng = bar.high - bar.low;
+          const estBuyPct = rng > 0 ? Math.round(Math.max(12, Math.min(88, ((bar.close - bar.low) / rng) * 100))) : (bar.close >= bar.open ? 65 : 35);
+          flowHudHtml += `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
+        }
+      }
+      if ((showFlowHud || showAiHud) && hudStock) {
+        const aiHudPlan = computeAiBuySellPowerOptimalPlan(hudStock);
+        if (aiHudPlan && aiHudPlan.trades.length > 0) {
+          const pSign = aiHudPlan.totalPts >= 0 ? "+" : "";
+          const pCol = aiHudPlan.totalPts >= 0 ? "text-rose-300" : "text-emerald-300";
+          const moneyStr = `${pSign}$${Math.round(aiHudPlan.totalPts * 1000).toLocaleString()}`;
+          const matchedTr = aiHudPlan.trades.find(tr => bar.date >= tr.buyDate && bar.date <= tr.sellDate);
+          const trNote = matchedTr
+            ? ` ｜ 當前波段(${matchedTr.buyDate.slice(5)}買 ${matchedTr.buyPrice.toFixed(1)} → ${matchedTr.isClosed ? matchedTr.sellDate.slice(5)+'賣 '+matchedTr.sellPrice.toFixed(1) : '續抱'}：<b class="${matchedTr.profitPoints >= 0 ? 'text-amber-300' : 'text-emerald-300'}">${matchedTr.profitPoints >= 0 ? '+' : ''}${matchedTr.profitPoints.toFixed(2)}點</b>)`
+            : "";
+          flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
+        }
       }
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
       const amtStr = formatAmountWan(bar.amountWan);
