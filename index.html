@@ -77,20 +77,57 @@
       animation: tickFlashDown 1.6s ease-out !important;
     }
     #klineCanvas { touch-action: none; }
-    #chartContainer.chart-fullscreen {
+    #detailPanelSection.chart-fullscreen {
       position: fixed !important;
       inset: 0 !important;
       z-index: 9999 !important;
       width: 100vw !important;
       height: 100vh !important;
       height: 100dvh !important;
+      margin: 0 !important;
+      padding: 6px 10px !important;
       border-radius: 0 !important;
       border: none !important;
-      background: #080c14 !important;
+      background: #0b111d !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
     }
-    #chartContainer.chart-fullscreen #klineCanvas {
+    #detailPanelSection.chart-fullscreen .fs-hide {
+      display: none !important;
+    }
+    #detailPanelSection.chart-fullscreen #chartContainer {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      height: 100% !important;
+    }
+    #detailPanelSection.chart-fullscreen #klineCanvas {
       width: 100% !important;
       height: 100% !important;
+    }
+    @media (max-height: 540px) {
+      #detailPanelSection.chart-fullscreen {
+        padding: 4px 8px !important;
+      }
+      #detailPanelSection.chart-fullscreen #detailHeaderRow {
+        margin-bottom: 4px !important;
+      }
+      #detailPanelSection.chart-fullscreen #detailTitle {
+        font-size: 1rem !important;
+      }
+      #detailPanelSection.chart-fullscreen #detailLivePriceBadge {
+        font-size: 1.05rem !important;
+        padding: 1px 6px !important;
+      }
+      #detailPanelSection.chart-fullscreen #chartToolbarBox {
+        padding: 4px 8px !important;
+        gap: 4px !important;
+      }
+      #detailPanelSection.chart-fullscreen #chartToolbarRow {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        scrollbar-width: none;
+      }
     }
   </style>
 </head>
@@ -1042,7 +1079,7 @@
     <div id="detailPanelSection" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
 
       <!-- K線圖頂部「任意股票查詢與階段診斷」搜尋列 (輸入欄位 5，附帶 ✕ 清空鍵) -->
-      <div class="bg-slate-900/95 border border-indigo-500/40 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
+      <div class="fs-hide bg-slate-900/95 border border-indigo-500/40 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
             <span>🔍 K線任意股票階段查詢</span>
@@ -1073,7 +1110,7 @@
         </div>
       </div>
 
-      <div class="flex items-start justify-between gap-2 mb-3">
+      <div id="detailHeaderRow" class="flex items-start justify-between gap-2 mb-3">
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="backToStockPool()" title="返回剛剛查看的股票池該檔股票位置"
@@ -1106,7 +1143,7 @@
       </div>
 
       <!-- 🤖 AI 個股最佳出場點位建議面板（做法一：量化秒算 ＋ 做法二：Gemini AI 深度顧問點評） -->
-      <div id="aiExitAdviceBanner" class="bg-gradient-to-r from-violet-950/60 via-slate-900/95 to-indigo-950/60 border border-violet-500/45 rounded-lg px-3 py-2 mb-3 text-xs space-y-1.5">
+      <div id="aiExitAdviceBanner" class="fs-hide bg-gradient-to-r from-violet-950/60 via-slate-900/95 to-indigo-950/60 border border-violet-500/45 rounded-lg px-3 py-2 mb-3 text-xs space-y-1.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span id="aiAdviceHeader" class="font-bold text-violet-300">🤖 AI 個股最佳出場點位建議：分析中...</span>
           <div class="flex flex-wrap items-center gap-1.5">
@@ -1298,7 +1335,7 @@
         <canvas id="klineCanvas" class="w-full h-[460px] block"></canvas>
       </div>
 
-      <div class="mt-2 flex justify-between items-center text-[11px] text-slate-500">
+      <div class="fs-hide mt-2 flex justify-between items-center text-[11px] text-slate-500">
         <span>💡 系統自動依個股歷史活躍K棒算出「本股大戶內定值」，超越內定值達拉桿倍數即顯示泡泡（倍數愈大泡泡愈大）</span>
         <span id="dataRangeInfo">--</span>
       </div>
@@ -7470,21 +7507,25 @@
     }
 
     function toggleChartFullscreen() {
-      const container = document.getElementById("chartContainer");
+      const panel = document.getElementById("detailPanelSection");
       const btn = document.getElementById("btnChartFullscreen");
-      if (!container) return;
-      const isFull = container.classList.toggle("chart-fullscreen");
+      if (!panel) return;
+      const isFull = panel.classList.toggle("chart-fullscreen");
       document.body.style.overflow = isFull ? "hidden" : "";
       if (btn) btn.textContent = isFull ? "🗗 回復" : "⛶ 放大";
       requestAnimationFrame(() => renderCanvasChart());
+      setTimeout(() => renderCanvasChart(), 120);
     }
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        const container = document.getElementById("chartContainer");
-        if (container && container.classList.contains("chart-fullscreen")) {
+        const panel = document.getElementById("detailPanelSection");
+        if (panel && panel.classList.contains("chart-fullscreen")) {
           toggleChartFullscreen();
         }
       }
+    });
+    window.addEventListener("orientationchange", () => {
+      setTimeout(() => renderCanvasChart(), 180);
     });
 
     function initCanvasEvents() {
@@ -7542,17 +7583,32 @@
 
       let pinchStartDist = 0;
       let pinchStartVisCount = 22;
+      let isPriceAxisTouch = false;
+      let priceTouchStartY = 0;
+      let priceTouchStartScale = 1.0;
       const getTouchDist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
 
       canvas.addEventListener("touchstart", (e) => {
         if (e.touches.length === 2) {
           chartState.isDragging = false;
+          isPriceAxisTouch = false;
           pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
           pinchStartVisCount = chartState.visibleCount;
           return;
         }
         if (e.touches.length !== 1) return;
         const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const localX = touch.clientX - rect.left;
+        if (localX >= rect.width - 80) {
+          // 手指在最右邊價格軸滑動：往上滑放大價格、往下滑壓縮價格
+          isPriceAxisTouch = true;
+          chartState.isDragging = false;
+          priceTouchStartY = touch.clientY;
+          priceTouchStartScale = chartState.priceZoomScale || 1.0;
+          return;
+        }
+        isPriceAxisTouch = false;
         chartState.isDragging = true;
         chartState.dragStartX = touch.clientX;
         chartState.dragStartY = touch.clientY;
@@ -7565,10 +7621,17 @@
           e.preventDefault();
           const curDist = getTouchDist(e.touches[0], e.touches[1]);
           const scale = curDist / pinchStartDist;
-          // 兩指往外拉(scale > 1) -> 放大K線(顯示較少根)；兩指往內縮(scale < 1) -> 縮小K線(顯示較多根)
+          // 兩指往外拉（含上指往上、下指往下）-> 放大K棒；兩指往內縮 -> 縮小K棒
           const maxAllow = Math.max(22, chartState.bars.length);
           chartState.visibleCount = Math.max(5, Math.min(maxAllow, Math.round(pinchStartVisCount / scale)));
           clampRightOffset();
+          renderCanvasChart();
+          return;
+        }
+        if (isPriceAxisTouch && e.touches.length === 1) {
+          e.preventDefault();
+          const dy = e.touches[0].clientY - priceTouchStartY;
+          chartState.priceZoomScale = Math.max(0.25, Math.min(5.0, priceTouchStartScale * Math.exp(-dy / 140)));
           renderCanvasChart();
           return;
         }
@@ -7592,7 +7655,10 @@
 
       canvas.addEventListener("touchend", (e) => {
         if (e.touches.length < 2) pinchStartDist = 0;
-        if (e.touches.length === 0) chartState.isDragging = false;
+        if (e.touches.length === 0) {
+          chartState.isDragging = false;
+          isPriceAxisTouch = false;
+        }
       });
 
       canvas.addEventListener("mouseleave", () => {
