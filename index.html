@@ -2384,7 +2384,7 @@
       const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
       const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
       const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
-      const fCacheKey = `${strategyKey}|v3|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(baseCfg)}`;
+      const fCacheKey = `${strategyKey}|v4-coarsefine|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(baseCfg)}`;
       if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
 
       const exitPatchesMap = {
@@ -2493,8 +2493,10 @@
       const candList = [
         [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
       ];
-      const gainOpts = [[0, 10.5], [1.0, 10.5], [2.0, 10.5], [3.5, 10.5], [5.0, 10.5], [7.0, 10.5]];
-      const volOpts = [0, 70, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+      // 兩階段搜尋：第一階段粗篩 6 x 6 x 2 x 2 = 144 組；第二階段只在最佳點附近測試 3 x 3 = 9 組。
+      // 漲幅範圍固定 0~10.5%，粗篩每 2%；成交量 0~500%，粗篩每 100%。
+      const gainOpts = [0, 2, 4, 6, 8, 10].map(v => [v, 10.5]);
+      const volOpts = [0, 100, 200, 300, 400, 500];
       const seenKey = new Set([candList[0].join("|")]);
 
       for (const reqMa of [true, false]) {
@@ -2519,17 +2521,21 @@
           best = { ...res, score: res.totalProfitNtd };
         }
       }
+
+      // 第二階段：鎖定粗篩勝出的 MA/紅K 條件，只微調漲幅 ±1% 與成交量 ±50%，最多 9 組。
       if (best) {
-        const fineVols = [-40, -30, -20, -10, 0, 10, 20, 30, 40].map(d => Math.max(0, Math.min(1000, best.minV + d)));
-        for (const fv of fineVols) {
-          for (const fRed of [true, false]) {
-            const k = `${best.reqMaUp}|${fRed}|${best.minG}|${best.maxG}|${fv}`;
-            if (!seenKey.has(k)) {
-              seenKey.add(k);
-              const res = evalFast(best.reqMaUp, fRed, best.minG, best.maxG, fv);
-              if (res.cnt > 0 && res.totalProfitNtd > best.totalProfitNtd) {
-                best = { ...res, score: res.totalProfitNtd };
-              }
+        const fineGains = [...new Set([best.minG - 1, best.minG, best.minG + 1]
+          .map(v => Math.max(0, Math.min(10, Number(v.toFixed(1))))))];
+        const fineVols = [...new Set([best.minV - 50, best.minV, best.minV + 50]
+          .map(v => Math.max(0, Math.min(500, v))))];
+        for (const fg of fineGains) {
+          for (const fv of fineVols) {
+            const k = `${best.reqMaUp}|${best.reqRed}|${fg}|${best.maxG}|${fv}`;
+            if (seenKey.has(k)) continue;
+            seenKey.add(k);
+            const res = evalFast(best.reqMaUp, best.reqRed, fg, best.maxG, fv);
+            if (res.cnt > 0 && res.totalProfitNtd > best.totalProfitNtd) {
+              best = { ...res, score: res.totalProfitNtd };
             }
           }
         }
@@ -4688,7 +4694,7 @@
       };
     }
 
-    function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null) {
+    async function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
@@ -4711,9 +4717,23 @@
       const sourceStocks = (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
         ? overrideFilterOpts._prefilteredPool
         : rawAllLoadedStocks;
-      sourceStocks.forEach(s => {
-        if (!matchesSimSectorFilter(s, sectorMode)) return;
-        const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
+      const lifecycleFilterKey = JSON.stringify({
+        requireMa20Up: !!filterOpts.requireMa20Up, requireSolidRedK: !!filterOpts.requireSolidRedK,
+        useGainRange: !!filterOpts.useGainRange, minGain: filterOpts.minGain, maxGain: filterOpts.maxGain,
+        volOp: filterOpts.volOp, validVolThreshold: filterOpts.validVolThreshold
+      });
+      const lifecycleCfgKey = JSON.stringify(cfg || {});
+      for (let stockIdx = 0; stockIdx < sourceStocks.length; stockIdx++) {
+        const s = sourceStocks[stockIdx];
+        if (!matchesSimSectorFilter(s, sectorMode)) continue;
+        const stockSig = `${s.code}|${s.todayPrice}|${s.todayVol}|${s.latestTradeDate}`;
+        const lifecycleKey = `${stockSig}|${lifecycleFilterKey}|${lifecycleCfgKey}`;
+        let lc = _aiCapitalLifecycleCache.get(lifecycleKey);
+        if (!lc) {
+          lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
+          if (_aiCapitalLifecycleCache.size > 50000) _aiCapitalLifecycleCache.clear();
+          _aiCapitalLifecycleCache.set(lifecycleKey, lc);
+        }
         const list = [];
         if (lc.activeOrTodayExit && Array.isArray(lc.activeOrTodayExit.closedTradesHistory)) {
           list.push(...lc.activeOrTodayExit.closedTradesHistory);
@@ -4745,7 +4765,9 @@
             yestGainPct: s.yestGainPct || 0
           });
         });
-      });
+        // 每 20 檔讓出主執行緒，避免長時間凍結畫面。
+        if (stockIdx % 20 === 19) await new Promise(resolve => setTimeout(resolve, 0));
+      }
 
       const trimN = getTrimTopWinnersCount();
       const trimRes = applyOutlierTrimToEvents(events, trimN, includeFees);
@@ -4758,33 +4780,39 @@
 
       let availableCash = initCapital, lockedVault = 0;
       const boughtTrades = [];
-      sortedDates.forEach(d => {
-        boughtTrades.forEach(bt => {
-          if (bt.isClosed && bt.sellDate === d && !bt.settled) {
-            bt.settled = true;
-            const grossSell = bt.exitOrNowPrice * 1000 * bt.lots;
-            const netProceeds = grossSell - (Math.round(grossSell * feeRate) + Math.round(grossSell * taxRate));
-            const netProfit = netProceeds - bt.totalCost;
-            bt.netProfit = netProfit;
-            if (netProfit > 0) {
-              let toVault = 0;
-              if (profitRule === "NO_REINVEST") toVault = netProfit;
-              else if (profitRule === "WITHDRAW_PCT") toVault = Math.round(netProfit * Math.min(100, Math.max(0, withdrawParam)) / 100);
-              else if (profitRule === "WITHDRAW_AMOUNT") toVault = Math.min(netProfit, Math.max(0, withdrawParam - lockedVault));
-              lockedVault += toVault;
-              availableCash += (netProceeds - toVault);
-            } else {
-              availableCash += netProceeds;
-            }
-          }
-        });
-        const dayBuys = effEvents.filter(e => e.buyDate === d).sort((a, b) => {
+      // 依日期預先分組，避免每個交易日都掃描全部持倉及全部事件（原本近似 O(日期×交易筆數)）。
+      const sellByDate = new Map();
+      const buyByDate = new Map();
+      for (const ev of effEvents) {
+        if (!buyByDate.has(ev.buyDate)) buyByDate.set(ev.buyDate, []);
+        buyByDate.get(ev.buyDate).push(ev);
+      }
+      for (let dateIdx = 0; dateIdx < sortedDates.length; dateIdx++) {
+        const d = sortedDates[dateIdx];
+        const dueSells = sellByDate.get(d) || [];
+        for (const bt of dueSells) {
+          if (!bt.isClosed || bt.settled) continue;
+          bt.settled = true;
+          const grossSell = bt.exitOrNowPrice * 1000 * bt.lots;
+          const netProceeds = grossSell - (Math.round(grossSell * feeRate) + Math.round(grossSell * taxRate));
+          const netProfit = netProceeds - bt.totalCost;
+          bt.netProfit = netProfit;
+          if (netProfit > 0) {
+            let toVault = 0;
+            if (profitRule === "NO_REINVEST") toVault = netProfit;
+            else if (profitRule === "WITHDRAW_PCT") toVault = Math.round(netProfit * Math.min(100, Math.max(0, withdrawParam)) / 100);
+            else if (profitRule === "WITHDRAW_AMOUNT") toVault = Math.min(netProfit, Math.max(0, withdrawParam - lockedVault));
+            lockedVault += toVault;
+            availableCash += (netProceeds - toVault);
+          } else availableCash += netProceeds;
+        }
+        const dayBuys = (buyByDate.get(d) || []).sort((a, b) => {
           if (priorityMode === "HIGH_PRICE") return (b.buyPrice - a.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "LOW_PRICE") return (a.buyPrice - b.buyPrice) || ((b.volRatio || 0) - (a.volRatio || 0));
           if (priorityMode === "GAIN_PCT") return ((b.yestGainPct || 0) - (a.yestGainPct || 0)) || (b.buyPrice - a.buyPrice);
           return ((b.volRatio || 0) - (a.volRatio || 0)) || (b.buyPrice - a.buyPrice);
         });
-        dayBuys.forEach(ev => {
+        for (const ev of dayBuys) {
           const oneLotCost = ev.buyPrice * 1000 + Math.round(ev.buyPrice * 1000 * feeRate);
           let lots = 1;
           if (lotMode === "BUDGET_CAP") lots = Math.max(1, Math.floor(perStockBudget / oneLotCost));
@@ -4794,10 +4822,17 @@
             availableCash -= totalCost;
             const curGross = ev.exitOrNowPrice * 1000 * lots;
             const curProfit = (curGross - (Math.round(curGross * feeRate) + Math.round(curGross * taxRate))) - totalCost;
-            boughtTrades.push({ ...ev, lots, totalCost, netProfit: curProfit, settled: false });
+            const bought = { ...ev, lots, totalCost, netProfit: curProfit, settled: false };
+            boughtTrades.push(bought);
+            if (bought.isClosed && bought.sellDate) {
+              if (!sellByDate.has(bought.sellDate)) sellByDate.set(bought.sellDate, []);
+              sellByDate.get(bought.sellDate).push(bought);
+            }
           }
-        });
-      });
+        }
+        // 日期很多時也分段讓出主執行緒。
+        if (dateIdx % 25 === 24) await new Promise(resolve => setTimeout(resolve, 0));
+      }
 
       let realizedProfit = 0, unrealizedProfit = 0, holdingMarketValue = 0, winCnt = 0;
       let topTrade = null;
@@ -4824,6 +4859,9 @@
 
     let _aiCapitalBestParamsMap = {};
     let _aiCapitalBestStep1Map = {};
+    // AI 資金尋優專用生命週期快取：相同股票、進場篩選及出場參數只計算一次。
+    let _aiCapitalLifecycleCache = new Map();
+    let _aiCapitalOptimizerRunId = 0;
 
     function toggleAiCapitalStrategyOptimizer() {
       const chk = document.getElementById("chkAiCapitalOpt");
@@ -5009,7 +5047,7 @@
       });
     }
 
-    function runAiCapitalStrategyOptimizer(autoSwitch = false) {
+    async function runAiCapitalStrategyOptimizer(autoSwitch = false) {
       const box = document.getElementById("simAiStrategyCompareBox");
       const grid = document.getElementById("simAiStrategyCompareGrid");
       const summary = document.getElementById("simAiWinnerSummary");
@@ -5073,30 +5111,34 @@
 
       _aiCapitalBestParamsMap = {};
       _aiCapitalBestStep1Map = {};
+      _aiCapitalLifecycleCache = new Map();
+      const optimizerRunId = ++_aiCapitalOptimizerRunId;
+      const progressEl = document.getElementById("simAiWinnerSummary");
+      if (progressEl) progressEl.textContent = "AI 正在建立共用股票資料快取並進行七大策略尋優…";
       const _prefilteredPool = getPoolStocksWithCrossovers();
       const curPriority = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
-      const results = defs.map(d => {
+      const results = [];
+      for (let defIdx = 0; defIdx < defs.length; defIdx++) {
+        if (optimizerRunId !== _aiCapitalOptimizerRunId) return;
+        const d = defs[defIdx];
+        if (progressEl) progressEl.textContent = `AI 尋優中：${d.label}（${defIdx + 1}/7）`;
+        await new Promise(resolve => setTimeout(resolve, 0));
         const s1Full = computeAiBestFullStep1ForStrategy(d.key);
         const s1Candidates = [];
         if (s1Full) s1Candidates.push(s1Full);
         const curS1 = getCurrentFilterOptions();
         [
-          { reqMaUp: curS1.requireMa20Up, reqRed: curS1.requireSolidRedK, minG: curS1.useGainRange ? curS1.minGain : 0, maxG: curS1.useGainRange ? curS1.maxGain : 10.5, minV: curS1.volOp === 'GTE' ? curS1.validVolThreshold : 0 },
           { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 0 },
-          { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 70 },
           { reqMaUp: true, reqRed: false, minG: 0, maxG: 10.5, minV: 100 },
-          { reqMaUp: true, reqRed: true, minG: 0, maxG: 10.5, minV: 150 },
-          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 300 },
-          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 500 },
-          { reqMaUp: true, reqRed: false, minG: 2, maxG: 10.5, minV: 700 },
-          { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 1000 }
+          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 150 },
+          { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 300 }
         ].forEach(sc => {
           if (!s1Candidates.some(x => x.reqMaUp === sc.reqMaUp && x.reqRed === sc.reqRed && x.minG === sc.minG && x.minV === sc.minV)) {
             s1Candidates.push(sc);
           }
         });
         const baseCfg = getExitStrategyConfig(d.key);
-        const cands = [...(baseCands[d.key] || [{ tag: '預設', patch: {} }])];
+        const cands = [...(baseCands[d.key] || [{ tag: '預設', patch: {} }]).slice(0, 3)];
         if (s1Full && s1Full.exitPatch) {
           cands.unshift({ tag: s1Full.exitTag || '全條件最佳', patch: { ...s1Full.exitPatch } });
         }
@@ -5106,17 +5148,18 @@
         let bestPriority = curPriority;
         const makeOpts = (sc) => ({ requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV, _prefilteredPool });
 
-        cands.forEach(c => {
+        for (const c of cands) {
           const testCfg = { ...baseCfg, ...c.patch };
-          s1Candidates.forEach(sc => {
-            const simRes = simulateCapitalForStrategy(d.key, testCfg, makeOpts(sc), bestPriority);
+          for (const sc of s1Candidates) {
+            const simRes = await simulateCapitalForStrategy(d.key, testCfg, makeOpts(sc), bestPriority);
             if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
               bestRes = simRes;
               bestPatch = { ...c.patch };
               bestS1 = { ...sc };
             }
-          });
-        });
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
 
         // 座標下降微調：測試所有上方參數（初始停損%、進場漲停守低、時間停損、確認K、策略專屬參數、STEP1 細部參數、同日買進優先順序）
         if (bestRes) {
@@ -5124,7 +5167,7 @@
           for (const axis of axes) {
             for (const val of axis.values) {
               const candPatch = { ...bestPatch, ...val };
-              const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...candPatch }, makeOpts(bestS1), bestPriority);
+              const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...candPatch }, makeOpts(bestS1), bestPriority);
               if (simRes.totalNetProfit > bestRes.totalNetProfit) {
                 bestRes = simRes;
                 bestPatch = candPatch;
@@ -5134,26 +5177,26 @@
           // 微調 STEP 1 單一條件 (20MA向上 / 實體紅K / 漲幅下限 / 成交量%)
           for (const maUp of [true, false]) {
             const candS1 = { ...bestS1, reqMaUp: maUp };
-            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
           }
           for (const redK of [true, false]) {
             const candS1 = { ...bestS1, reqRed: redK };
-            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
           }
           for (const minG of [0, 1.0, 2.0, 3.5, 5.0, 7.0]) {
             const candS1 = { ...bestS1, minG, maxG: 10.5 };
-            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
           }
           for (const minV of [0, 70, 100, 150, 200, 300, 400, 500, 700, 1000]) {
             const candS1 = { ...bestS1, minV };
-            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
           }
           for (const prio of ['HIGH_PRICE', 'VOL_RATIO', 'GAIN_PCT', 'LOW_PRICE']) {
-            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(bestS1), prio);
+            const simRes = await simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(bestS1), prio);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestPriority = prio; }
           }
         }
@@ -5163,8 +5206,10 @@
           _aiCapitalBestStep1Map[d.key] = { ...bestS1, exitPatch: { ...bestPatch }, exitTag: bestTag };
         }
         _aiCapitalBestParamsMap[d.key] = { ...bestPatch, priorityMode: bestPriority };
-        return { ...d, ...bestRes, bestTag, bestPriority, s1Best: bestS1 };
-      });
+        results.push({ ...d, ...(bestRes || { totalNetProfit: -Infinity }), bestTag, bestPriority, s1Best: bestS1 });
+        if (progressEl) progressEl.textContent = `AI 尋優中：已完成 ${defIdx + 1}/7 個策略`;
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
 
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
 
@@ -5197,6 +5242,7 @@
       }
 
       _lastAiCapitalResultsCache = results;
+      if (progressEl) progressEl.textContent = "AI 七大策略尋優完成";
       renderAiCapitalCompareCardsOnly();
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
       if (autoSwitch && winner) {
