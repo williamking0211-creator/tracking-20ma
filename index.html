@@ -96,6 +96,29 @@
     #detailPanelSection.chart-fullscreen .fs-hide {
       display: none !important;
     }
+    #detailPanelSection.chart-fullscreen #klineLookupContainer {
+      margin-bottom: 8px !important;
+      padding: 8px 12px !important;
+    }
+    #detailPanelSection.chart-fullscreen #klineLookupInput {
+      font-size: 1.5rem !important;
+      line-height: 2rem !important;
+      padding: 6px 8px !important;
+    }
+    #detailPanelSection.chart-fullscreen #klineLookupInputWrap {
+      padding: 6px 14px !important;
+      min-width: 320px !important;
+    }
+    #detailPanelSection.chart-fullscreen #klineLookupBtn {
+      font-size: 1.35rem !important;
+      line-height: 1.85rem !important;
+      padding: 10px 20px !important;
+    }
+    #detailPanelSection.chart-fullscreen #klineLookupClearBtn {
+      width: 28px !important;
+      height: 28px !important;
+      font-size: 16px !important;
+    }
     #detailPanelSection.chart-fullscreen #chartContainer {
       flex: 1 1 auto !important;
       min-height: 0 !important;
@@ -496,12 +519,12 @@
               </label>
             </div>
             <button type="button" onclick="toggleStrategyCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 hover:bg-indigo-500/35 transition">
-              📊 顯示/隱藏 6大策略總績效對比
+              📊 顯示/隱藏 7大策略總績效對比
             </button>
           </div>
 
-          <!-- 5 種出場策略按鈕 -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+          <!-- 7 種出場策略按鈕 -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
             <button type="button" onclick="setExitStrategy('DEFAULT_20MA')" id="exitBtn-DEFAULT_20MA"
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/40 text-white transition">
               <div class="font-bold text-[11px]">A. 原版 20MA 破線確認</div>
@@ -531,6 +554,11 @@
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-violet-500/50 text-slate-300 transition">
               <div class="font-bold text-[11px]">F. 🤖 AI 個股自適應</div>
               <div class="text-[10px] text-slate-400">依個股ATR股性自動選優</div>
+            </button>
+            <button type="button" onclick="setExitStrategy('AI_POWER_90D')" id="exitBtn-AI_POWER_90D"
+                    class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-fuchsia-500/50 text-slate-300 transition">
+              <div class="font-bold text-[11px]">G. 🧠 AI最佳買賣(90天)</div>
+              <div class="text-[10px] text-slate-400">每90天回測調整進出場</div>
             </button>
           </div>
 
@@ -645,13 +673,30 @@
             </span>
           </div>
 
+          <div id="exitParams-AI_POWER_90D" class="exit-params-box hidden bg-slate-900/80 border border-fuchsia-500/40 rounded px-2.5 py-2 space-y-1.5 text-[11px]">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-fuchsia-200">
+                🧠 <b>策略 G・AI最佳買賣點滾動策略</b>：採用「買賣力道＋防出貨禁忌」自動挑選最佳進出場規則，並定期回測過去歷史資料決定是否調整條件。
+              </span>
+              <label class="inline-flex items-center gap-1.5 bg-slate-950 border border-fuchsia-500/40 rounded px-2 py-0.5">
+                <span class="text-fuchsia-300 font-semibold">滾動回測週期：每</span>
+                <input type="number" id="aiPowerReevalDaysInput" value="90" min="15" max="180" step="15" oninput="onExitStrategyChanged()"
+                       class="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
+                <span class="text-fuchsia-300 font-semibold">天調整一次</span>
+              </label>
+            </div>
+            <div id="aiPower90dStatusText" class="text-[10.5px] font-mono text-slate-300 bg-slate-950/75 rounded px-2 py-1 border border-slate-800">
+              等待選取個股顯示每 90 天 AI 調整紀錄...
+            </div>
+          </div>
+
           <!-- 4大策略全體總結算對比列 (續抱 + 已平倉) -->
           <div id="strategyCompareBox" class="bg-slate-900/95 border border-slate-800 rounded-lg p-2 space-y-1.5">
             <div class="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400">
-              <span>📊 <b class="text-slate-200">六大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
+              <span>📊 <b class="text-slate-200">七大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
               <span id="strategyCompareNote" class="font-mono text-indigo-300"></span>
             </div>
-            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono">
+            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 text-[11px] font-mono">
             </div>
           </div>
         </div>
@@ -834,12 +879,12 @@
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬六大策略收益對比</span>
+                  <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬七大策略收益對比</span>
                   <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span>
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
-              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[10.5px]"></div>
+              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 text-[10.5px]"></div>
             </div>
 
             <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
@@ -1065,39 +1110,7 @@
     <!-- 右側真實歷史 K 線與成交量面板 (佔 6 欄) -->
     <div id="detailPanelSection" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-4 flex flex-col">
 
-      <!-- K線圖頂部「任意股票查詢與階段診斷」搜尋列 (輸入欄位 5，附帶 ✕ 清空鍵) -->
-      <div class="fs-hide bg-slate-900/95 border border-indigo-500/40 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
-            <span>🔍 K線任意股票階段查詢</span>
-            <span class="text-[10px] font-normal text-slate-400">(可輸入全市場任一代號或名稱，依目前設定條件診斷所處階段)</span>
-          </div>
-          <div class="flex items-center gap-1.5 w-full sm:w-auto">
-            <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-indigo-400 rounded-lg px-2.5 py-1 flex-1 sm:w-52">
-              <input type="text" id="klineLookupInput" onkeydown="if(event.key==='Enter') lookupAnyStockInKline()"
-                     placeholder="輸入代號或名稱 (如 1303)..."
-                     class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-1.5" />
-              <button type="button" onclick="clearInputField('klineLookupInput', false, 'KLINE_LOOKUP')" title="清空查詢欄" class="clear-input-btn">✕</button>
-            </div>
-            <button onclick="lookupAnyStockInKline()" id="klineLookupBtn"
-                    class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition whitespace-nowrap">
-              查詢階段
-            </button>
-          </div>
-          <label class="inline-flex items-center gap-1.5 cursor-pointer select-none bg-purple-950/50 border border-purple-500/45 rounded-md px-2 py-1 text-[11px] text-purple-200 hover:bg-purple-900/50 transition w-full sm:w-auto" title="勾選後，若該股未通過STEP1量價條件但仍突破20MA關鍵K高點買進，將於右側試算其初始停損價與後續出場走勢（不影響左側股池與資金試算）">
-            <input type="checkbox" id="chkSimulateRawBreakoutEntry" onchange="onSimulateRawBreakoutToggle()" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
-            <span>🧪 未達條件仍模擬「過關鍵K高買進」看停損價</span>
-          </label>
-        </div>
-
-        <!-- 任意股階段診斷結果顯示條 -->
-        <div id="stageDiagnosisBanner" class="bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
-          <span id="stageDiagnosisTitle" class="font-bold text-slate-300">目前診斷階段：請點選左側股票或於上方輸入任一股票代號查詢</span>
-          <span id="stageDiagnosisDetail" class="text-[11px] text-slate-400 font-mono"></span>
-        </div>
-      </div>
-
-      <div id="detailHeaderRow" class="flex items-start justify-between gap-2 mb-3">
+      <div id="detailHeaderRow" class="flex items-start justify-between gap-2 mb-2">
         <div>
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="backToStockPool()" title="返回剛剛查看的股票池該檔股票位置"
@@ -1116,6 +1129,38 @@
         </div>
         <div id="detailDecisionBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300">
           等待選取
+        </div>
+      </div>
+
+      <!-- K線圖「任意股票查詢與階段診斷」搜尋列（位於股票名稱下方，全螢幕放大時自動放大 2 倍） -->
+      <div id="klineLookupContainer" class="bg-slate-900/95 border border-indigo-500/40 rounded-xl p-2.5 mb-3 flex flex-col gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="fs-hide flex items-center gap-1.5 text-xs font-bold text-indigo-300">
+            <span>🔍 K線任意股票階段查詢</span>
+            <span class="text-[10px] font-normal text-slate-400">(可輸入全市場任一代號或名稱，依目前設定條件診斷所處階段)</span>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div id="klineLookupInputWrap" class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-indigo-400 rounded-lg px-2.5 py-1 flex-1 sm:w-56">
+              <input type="text" id="klineLookupInput" onkeydown="if(event.key==='Enter') lookupAnyStockInKline()"
+                     placeholder="輸入代號或名稱 (如 1303)..."
+                     class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full pr-1.5" />
+              <button type="button" id="klineLookupClearBtn" onclick="clearInputField('klineLookupInput', false, 'KLINE_LOOKUP')" title="清空查詢欄" class="clear-input-btn">✕</button>
+            </div>
+            <button onclick="lookupAnyStockInKline()" id="klineLookupBtn"
+                    class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition whitespace-nowrap">
+              查詢階段
+            </button>
+          </div>
+          <label class="fs-hide inline-flex items-center gap-1.5 cursor-pointer select-none bg-purple-950/50 border border-purple-500/45 rounded-md px-2 py-1 text-[11px] text-purple-200 hover:bg-purple-900/50 transition w-full sm:w-auto" title="勾選後，若該股未通過STEP1量價條件但仍突破20MA關鍵K高點買進，將於右側試算其初始停損價與後續出場走勢（不影響左側股池與資金試算）">
+            <input type="checkbox" id="chkSimulateRawBreakoutEntry" onchange="onSimulateRawBreakoutToggle()" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
+            <span>🧪 未達條件仍模擬「過關鍵K高買進」看停損價</span>
+          </label>
+        </div>
+
+        <!-- 任意股階段診斷結果顯示條 -->
+        <div id="stageDiagnosisBanner" class="fs-hide bg-slate-950/90 border border-slate-800 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2">
+          <span id="stageDiagnosisTitle" class="font-bold text-slate-300">目前診斷階段：請點選左側股票或於上方輸入任一股票代號查詢</span>
+          <span id="stageDiagnosisDetail" class="text-[11px] text-slate-400 font-mono"></span>
         </div>
       </div>
 
@@ -1241,7 +1286,7 @@
               <span>🔥 內外盤/大單/VWAP</span>
             </label>
             <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-purple-300 bg-purple-500/15 border border-purple-500/35 px-2 py-0.5 rounded" title="在 K 線圖上直接標出 AI 依買賣力道算出「價差最大」的最佳買入 K 與最佳出場 K">
-              <input type="checkbox" id="chkShowAiPowerMarkers" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
+              <input type="checkbox" id="chkShowAiPowerMarkers" checked onchange="syncAiPowerMarkersToggle(this.checked)" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
               <span>🧠 AI最佳買賣點</span>
             </label>
           </div>
@@ -1283,7 +1328,11 @@
             ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
           </div>
         </div>
-        <div id="chartFloatingControls" class="shrink-0 flex items-center gap-1 bg-slate-900/95 border border-slate-700/80 rounded-lg p-1 shadow">
+        <div id="chartFloatingControls" class="shrink-0 flex flex-wrap items-center gap-1 bg-slate-900/95 border border-slate-700/80 rounded-lg p-1 shadow">
+          <label class="inline-flex items-center gap-1 cursor-pointer select-none px-2 py-1 rounded bg-purple-500/20 hover:bg-purple-500/35 border border-purple-400/50 text-purple-200 text-[11px] font-bold leading-none" title="在 K 線圖上直接標出 AI 最佳買賣點">
+            <input type="checkbox" id="chkShowAiPowerMarkersHud" checked onchange="syncAiPowerMarkersToggle(this.checked)" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0 w-3 h-3" />
+            <span>🧠 AI最佳買賣點</span>
+          </label>
           <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
                   class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
           <button type="button" onclick="zoomChart(3)" title="縮小 K 線（顯示較多根）"
@@ -1535,7 +1584,9 @@
         rrTier2Action: document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN",
         rrLockRatio: document.getElementById("rrLockRatioInput")?.value || "2.0",
         rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "5",
-        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K"
+        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K",
+        aiPowerReevalDays: document.getElementById("aiPowerReevalDaysInput")?.value || "90",
+        chkShowAiPowerMarkers: document.getElementById("chkShowAiPowerMarkers")?.checked ?? true
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
       safeSetStorage("whale_bubble_mult_threshold", String(bubbleMultThreshold));
@@ -1641,7 +1692,16 @@
         if (s.simTrimTopWinners !== undefined && document.getElementById("simTrimTopWinnersSelect")) {
           document.getElementById("simTrimTopWinnersSelect").value = s.simTrimTopWinners;
         }
-        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'].includes(s.exitStrategy)) {
+        if (s.aiPowerReevalDays !== undefined && document.getElementById("aiPowerReevalDaysInput")) {
+          document.getElementById("aiPowerReevalDaysInput").value = s.aiPowerReevalDays;
+        }
+        if (typeof s.chkShowAiPowerMarkers === "boolean") {
+          const c1 = document.getElementById("chkShowAiPowerMarkers");
+          const c2 = document.getElementById("chkShowAiPowerMarkersHud");
+          if (c1) c1.checked = s.chkShowAiPowerMarkers;
+          if (c2) c2.checked = s.chkShowAiPowerMarkers;
+        }
+        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'].includes(s.exitStrategy)) {
           currentExitStrategy = s.exitStrategy;
         }
         if (s.currentFilter && ['ALL', 'BREAKOUT', 'CONSOLIDATE', 'TRACKING', 'BREAKDOWN'].includes(s.currentFilter)) {
@@ -1679,6 +1739,18 @@
           customS.closedBreakdownInfo = lc.closedBreakdown;
           updateDetailPanel(customS, false);
         }
+      }
+    }
+
+    function syncAiPowerMarkersToggle(checked) {
+      const c1 = document.getElementById("chkShowAiPowerMarkers");
+      const c2 = document.getElementById("chkShowAiPowerMarkersHud");
+      if (c1) c1.checked = !!checked;
+      if (c2) c2.checked = !!checked;
+      saveUserSettingsToStorage(false);
+      renderCanvasChart();
+      if (chartState.bars.length > 0) {
+        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
       }
     }
 
@@ -2135,11 +2207,13 @@
       const rawInitStop = parseFloat(document.getElementById("initStopBufferPctInput")?.value ?? "2.0");
       const initStopBufferPct = isNaN(rawInitStop) ? 2.0 : Math.min(15, Math.max(0, rawInitStop));
       const entryLimitUpStopAtLow = document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true;
+      const aiPowerReevalDays = Math.max(15, Math.min(180, parseInt(document.getElementById("aiPowerReevalDaysInput")?.value || "90", 10) || 90));
       return {
         strategy,
         globalConfirmMode,
         initStopBufferPct,
         entryLimitUpStopAtLow,
+        aiPowerReevalDays,
         useTimeStop,
         timeStopDays,
         shortMaTriggerPct,
@@ -2162,7 +2236,7 @@
 
     function updateExitStrategyUI() {
       syncStrategyEDescText();
-      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'];
+      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
       strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
         const box = document.getElementById(`exitParams-${st}`);
@@ -2384,7 +2458,7 @@
     }
 
     function applyAiStep1AllStrategiesAndPickBest(autoSelectBestStrategy = false) {
-      const keys = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE'];
+      const keys = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
       _aiFullStep1PerStrategyMap = {};
       let globalWinnerKey = currentExitStrategy;
       let globalBestProfit = -Infinity;
@@ -2450,7 +2524,8 @@
         'WHALE_SELL_EXIT': '策略 D (高檔爆量賣出)',
         'PEAK_TRAILING': '策略 C (高點回落移動)',
         'RR_LADDER': '策略 E (1:1保本階梯)',
-        'AI_ADAPTIVE': '策略 F (AI動態偵測)'
+        'AI_ADAPTIVE': '策略 F (AI動態偵測)',
+        'AI_POWER_90D': '策略 G (AI最佳買賣90天)'
       };
       const sTitle = stratNames[currentExitStrategy] || currentExitStrategy;
       const avgSign = best.avgProfitNtd >= 0 ? "+" : "";
@@ -2570,7 +2645,8 @@
         { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
         { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
         { key: 'RR_LADDER', label: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}` },
-        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' }
+        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' },
+        { key: 'AI_POWER_90D', label: 'G. 🧠AI買賣90天' }
       ];
 
       const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
@@ -2585,7 +2661,7 @@
 
       const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
       let results;
-      if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 6) {
+      if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
       } else {
       results = list.map(item => {
@@ -2604,8 +2680,7 @@
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        const _simPool = (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool)) ? overrideFilterOpts._prefilteredPool : rawAllLoadedStocks;
-      _simPool.forEach(s => {
+        rawAllLoadedStocks.forEach(s => {
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
@@ -2669,7 +2744,7 @@
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
             </div>
-            <div class="${netColor} font-bold text-xs mt-0.5">合計 ${formatMoneyDisplay(r.net)}</div>
+            <div class="${netColor} font-bold text-xs mt-0.5">${r.aiS1 ? 'AI最高 ' : '合計 '}${formatMoneyDisplay(r.net)}</div>
             <div class="text-[9.5px] mt-0.5 space-y-0.5 border-t border-slate-800/80 pt-0.5">
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
@@ -4610,34 +4685,93 @@
       }
     }
 
+    function getStrategyDisplayName(strategyKey) {
+      const m = {
+        'DEFAULT_20MA': 'A. 原版20MA破線',
+        'SHORT_MA_TRAIL': 'B. 賺達標守短均',
+        'PEAK_TRAILING': 'C. 高點回落停利',
+        'WHALE_SELL_EXIT': 'D. 高檔爆量賣出',
+        'RR_LADDER': 'E. 風報比階梯',
+        'AI_ADAPTIVE': 'F. 🤖AI自適應',
+        'AI_POWER_90D': 'G. 🧠AI買賣90天'
+      };
+      return m[strategyKey] || strategyKey;
+    }
+
     function applyBestParamsToStrategyUI(strategyKey, bestParamObj) {
       if (!bestParamObj) return;
+      // 1. 套用共用參數 (時間停損 / 出場確認K / 初始停損% / 進場漲停守低)
+      if (typeof bestParamObj.useTimeStop === "boolean" && document.getElementById("chkTimeStop")) {
+        document.getElementById("chkTimeStop").checked = bestParamObj.useTimeStop;
+      }
+      if (bestParamObj.timeStopDays !== undefined && document.getElementById("timeStopDaysInput")) {
+        document.getElementById("timeStopDaysInput").value = String(bestParamObj.timeStopDays);
+      }
+      if (bestParamObj.globalConfirmMode && document.getElementById("globalExitConfirmMode")) {
+        document.getElementById("globalExitConfirmMode").value = String(bestParamObj.globalConfirmMode);
+      }
+      if (bestParamObj.initStopBufferPct !== undefined && document.getElementById("initStopBufferPctInput")) {
+        document.getElementById("initStopBufferPctInput").value = String(bestParamObj.initStopBufferPct);
+      }
+      if (typeof bestParamObj.entryLimitUpStopAtLow === "boolean" && document.getElementById("chkEntryLimitUpStopAtLow")) {
+        document.getElementById("chkEntryLimitUpStopAtLow").checked = bestParamObj.entryLimitUpStopAtLow;
+      }
+
+      // 2. 套用各策略專屬參數
       if (strategyKey === 'SHORT_MA_TRAIL') {
         if (bestParamObj.shortMaPeriod && document.getElementById("shortMaPeriodSelect")) {
           document.getElementById("shortMaPeriodSelect").value = String(bestParamObj.shortMaPeriod);
         }
-        if (bestParamObj.shortMaTriggerPct && document.getElementById("shortMaTriggerPctInput")) {
+        if (bestParamObj.shortMaTriggerPct !== undefined && document.getElementById("shortMaTriggerPctInput")) {
           document.getElementById("shortMaTriggerPctInput").value = String(bestParamObj.shortMaTriggerPct);
         }
+        if (bestParamObj.shortMaMode && document.getElementById("shortMaModeSelect")) {
+          document.getElementById("shortMaModeSelect").value = String(bestParamObj.shortMaMode);
+        }
       } else if (strategyKey === 'PEAK_TRAILING') {
-        if (bestParamObj.peakDrawdownPct && document.getElementById("peakDrawdownPctInput")) {
+        if (bestParamObj.breakevenTriggerPct !== undefined && document.getElementById("breakevenTriggerPctInput")) {
+          document.getElementById("breakevenTriggerPctInput").value = String(bestParamObj.breakevenTriggerPct);
+        }
+        if (bestParamObj.peakTrailTriggerPct !== undefined && document.getElementById("peakTrailTriggerPctInput")) {
+          document.getElementById("peakTrailTriggerPctInput").value = String(bestParamObj.peakTrailTriggerPct);
+        }
+        if (bestParamObj.peakDrawdownPct !== undefined && document.getElementById("peakDrawdownPctInput")) {
           document.getElementById("peakDrawdownPctInput").value = String(bestParamObj.peakDrawdownPct);
         }
       } else if (strategyKey === 'WHALE_SELL_EXIT') {
         if (bestParamObj.whaleTriggerPct !== undefined && document.getElementById("whaleTriggerPctInput")) {
           document.getElementById("whaleTriggerPctInput").value = String(bestParamObj.whaleTriggerPct);
         }
-        if (bestParamObj.whaleSellMult && document.getElementById("whaleSellMultInput")) {
+        if (bestParamObj.whaleSellMult !== undefined && document.getElementById("whaleSellMultInput")) {
           document.getElementById("whaleSellMultInput").value = String(bestParamObj.whaleSellMult);
         }
       } else if (strategyKey === 'RR_LADDER') {
-        if (bestParamObj.rrBreakevenRatio && document.getElementById("rrBreakevenRatioInput")) {
+        if (bestParamObj.rrBreakevenRatio !== undefined && document.getElementById("rrBreakevenRatioInput")) {
           document.getElementById("rrBreakevenRatioInput").value = String(bestParamObj.rrBreakevenRatio);
         }
-        if (bestParamObj.rrTier2Ratio && document.getElementById("rrTier2RatioInput")) {
+        if (bestParamObj.rrBreakevenBufferPct !== undefined && document.getElementById("rrBreakevenBufferPctInput")) {
+          document.getElementById("rrBreakevenBufferPctInput").value = String(bestParamObj.rrBreakevenBufferPct);
+        }
+        if (bestParamObj.rrTier2Ratio !== undefined && document.getElementById("rrTier2RatioInput")) {
           document.getElementById("rrTier2RatioInput").value = String(bestParamObj.rrTier2Ratio);
         }
+        if (bestParamObj.rrTier2Action && document.getElementById("rrTier2ActionSelect")) {
+          document.getElementById("rrTier2ActionSelect").value = String(bestParamObj.rrTier2Action);
+        }
+        if (bestParamObj.rrLockRatio !== undefined && document.getElementById("rrLockRatioInput")) {
+          document.getElementById("rrLockRatioInput").value = String(bestParamObj.rrLockRatio);
+        }
+        if (bestParamObj.rrTrailMa && document.getElementById("rrTrailMaSelect")) {
+          document.getElementById("rrTrailMaSelect").value = String(bestParamObj.rrTrailMa);
+        }
+        if (bestParamObj.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
+          document.getElementById("rrMaConfirmModeSelect").value = String(bestParamObj.rrMaConfirmMode);
+        }
         syncStrategyEDescText();
+      } else if (strategyKey === 'AI_POWER_90D') {
+        if (bestParamObj.aiPowerReevalDays !== undefined && document.getElementById("aiPowerReevalDaysInput")) {
+          document.getElementById("aiPowerReevalDaysInput").value = String(bestParamObj.aiPowerReevalDays);
+        }
       }
     }
 
@@ -4709,32 +4843,48 @@
       box.classList.remove("hidden");
 
       const baseCands = {
-        'DEFAULT_20MA': [{ tag: '原版20MA', patch: {} }],
+        'DEFAULT_20MA': [
+          { tag: '原版20MA(停損2%/無時損)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO', initStopBufferPct: 2.0 } },
+          { tag: '原版20MA+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO', initStopBufferPct: 2.0 } },
+          { tag: '原版20MA(跌破即出)', patch: { useTimeStop: false, globalConfirmMode: 'FORCE_DIRECT', initStopBufferPct: 2.0 } }
+        ],
         'SHORT_MA_TRAIL': [
-          { tag: '5MA/達3%', patch: { shortMaPeriod: 5, shortMaTriggerPct: 3 } },
-          { tag: '5MA/達6%', patch: { shortMaPeriod: 5, shortMaTriggerPct: 6 } },
-          { tag: '10MA/達3%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 3 } },
-          { tag: '10MA/達6%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 6 } },
-          { tag: '10MA/達10%', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10 } }
+          { tag: '5MA/達6%/即出', patch: { shortMaPeriod: 5, shortMaTriggerPct: 6, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '5MA/達10%/即出', patch: { shortMaPeriod: 5, shortMaTriggerPct: 10, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達6%/即出', patch: { shortMaPeriod: 10, shortMaTriggerPct: 6, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達10%/即出', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達10%/確認K', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10, shortMaMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達15%/即出', patch: { shortMaPeriod: 10, shortMaTriggerPct: 15, shortMaMode: 'DIRECT', useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
         ],
         'PEAK_TRAILING': [
-          { tag: '回落5%', patch: { peakDrawdownPct: 5 } },
-          { tag: '回落8%', patch: { peakDrawdownPct: 8 } },
-          { tag: '回落10%', patch: { peakDrawdownPct: 10 } },
-          { tag: '回落12%', patch: { peakDrawdownPct: 12 } }
+          { tag: '保本10%/達15%/回落5%', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '保本10%/達15%/回落8%', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 8, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '保本8%/達12%/回落8%', patch: { breakevenTriggerPct: 8, peakTrailTriggerPct: 12, peakDrawdownPct: 8, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '保本10%/達15%/回落10%', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 10, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '保本10%/達15%/回落5%+時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
         ],
         'WHALE_SELL_EXIT': [
-          { tag: '賺6%/1.5x', patch: { whaleTriggerPct: 6, whaleSellMult: 1.5 } },
-          { tag: '賺10%/2.0x', patch: { whaleTriggerPct: 10, whaleSellMult: 2.0 } },
-          { tag: '賺12%/2.0x', patch: { whaleTriggerPct: 12, whaleSellMult: 2.0 } },
-          { tag: '賺15%/2.5x', patch: { whaleTriggerPct: 15, whaleSellMult: 2.5 } }
+          { tag: '賺6%/1.5x量黑K', patch: { whaleTriggerPct: 6, whaleSellMult: 1.5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺10%/2.0x量黑K', patch: { whaleTriggerPct: 10, whaleSellMult: 2.0, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺12%/2.0x量黑K', patch: { whaleTriggerPct: 12, whaleSellMult: 2.0, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺15%/2.5x量黑K', patch: { whaleTriggerPct: 15, whaleSellMult: 2.5, useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ],
         'RR_LADDER': [
-          { tag: '1:1/1:2', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 2.0 } },
-          { tag: '1:1/1:3', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 3.0 } },
-          { tag: '1:1.5/1:3', patch: { rrBreakevenRatio: 1.5, rrTier2Ratio: 3.0 } }
+          { tag: '1:1/1:2階梯+5MA即出', patch: { rrBreakevenRatio: 1.0, rrBreakevenBufferPct: 0.5, rrTier2Ratio: 2.0, rrTier2Action: 'STEP_LADDER', rrLockRatio: 2.0, rrTrailMa: 5, rrMaConfirmMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '1:1/1:3鎖2R+5MA確認K', patch: { rrBreakevenRatio: 1.0, rrBreakevenBufferPct: 0.5, rrTier2Ratio: 3.0, rrTier2Action: 'LOCK_R_AND_RUN', rrLockRatio: 2.0, rrTrailMa: 5, rrMaConfirmMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '1:1/1:3階梯+10MA即出', patch: { rrBreakevenRatio: 1.0, rrBreakevenBufferPct: 0.5, rrTier2Ratio: 3.0, rrTier2Action: 'STEP_LADDER', rrLockRatio: 2.0, rrTrailMa: 10, rrMaConfirmMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '1:1.5/1:3達標直出', patch: { rrBreakevenRatio: 1.5, rrBreakevenBufferPct: 0.5, rrTier2Ratio: 3.0, rrTier2Action: 'FIXED_TP', rrLockRatio: 2.0, rrTrailMa: 5, rrMaConfirmMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ],
-        'AI_ADAPTIVE': [{ tag: 'AI動態偵測', patch: {} }]
+        'AI_ADAPTIVE': [
+          { tag: 'AI動態(自動確認)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO', initStopBufferPct: 2.0 } },
+          { tag: 'AI動態(一律確認K)', patch: { useTimeStop: false, globalConfirmMode: 'FORCE_KEY_K', initStopBufferPct: 2.0 } },
+          { tag: 'AI動態(跌破即出)', patch: { useTimeStop: false, globalConfirmMode: 'FORCE_DIRECT', initStopBufferPct: 2.0 } },
+          { tag: 'AI動態+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO', initStopBufferPct: 2.0 } }
+        ],
+        'AI_POWER_90D': [
+          { tag: 'AI買賣點(每90天調整)', patch: { aiPowerReevalDays: 90, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: 'AI買賣點(每60天調整)', patch: { aiPowerReevalDays: 60, useTimeStop: false, globalConfirmMode: 'AUTO' } }
+        ]
       };
 
       const defs = [
@@ -4743,7 +4893,8 @@
         { key: 'PEAK_TRAILING', label: 'C. 高點回落停利' },
         { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
         { key: 'RR_LADDER', label: 'E. 風報比階梯' },
-        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' }
+        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' },
+        { key: 'AI_POWER_90D', label: 'G. 🧠AI買賣90天' }
       ];
 
       _aiCapitalBestParamsMap = {};
@@ -4753,7 +4904,10 @@
         const s1Full = computeAiBestFullStep1ForStrategy(d.key);
         const s1Candidates = [];
         if (s1Full) s1Candidates.push(s1Full);
+        const curS1 = getCurrentFilterOptions();
         [
+          { reqMaUp: curS1.requireMa20Up, reqRed: curS1.requireSolidRedK, minG: curS1.useGainRange ? curS1.minGain : 0, maxG: curS1.useGainRange ? curS1.maxGain : 10.5, minV: curS1.volOp === 'GTE' ? curS1.validVolThreshold : 0 },
+          { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 70 },
           { reqMaUp: true, reqRed: true, minG: 0, maxG: 10.5, minV: 150 },
           { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 300 },
           { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 500 },
@@ -5118,7 +5272,8 @@
         PEAK_TRAILING: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%`,
         WHALE_SELL_EXIT: 'D. 高檔爆量賣出',
         RR_LADDER: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}`,
-        AI_ADAPTIVE: 'F. 🤖AI自適應'
+        AI_ADAPTIVE: 'F. 🤖AI自適應',
+        AI_POWER_90D: `G. 🧠AI買賣(${document.getElementById("aiPowerReevalDaysInput")?.value || 90}天)`
       };
       const stratBadge = document.getElementById("simActiveStrategyBadge");
       if (stratBadge) stratBadge.textContent = `目前套用：${stratLabelMap[currentExitStrategy] || currentExitStrategy}`;
@@ -5401,10 +5556,15 @@
       const bars = overrideBars ? overrideBars.map(b => ({ ...b })) : buildStockDailyBarsWithToday(stock);
       if (bars.length < 21) return { activeOrTodayExit: null, closedBreakdown: null };
 
+      if (cfg.strategy === 'AI_POWER_90D') {
+        return evaluateAiPower90dStrategy(stock, bars, cfg);
+      }
+
       const lastIdx = bars.length - 1;
       let activePos = null;
       let latestFinishedPos = null;
       const closedTradesHistory = [];
+      const keyKBreakdownHistory = [];
       let pendingKeyK = null;
 
       for (let i = 1; i < bars.length; i++) {
@@ -5959,7 +6119,19 @@
               };
               pendingKeyK = null;
               continue;
-            } else if (curBar.close < pendingKeyK.keyKLow || waitDays >= 10) {
+            } else if (curBar.close < pendingKeyK.keyKLow) {
+              keyKBreakdownHistory.push({
+                keyKIdx: pendingKeyK.keyKIdx,
+                keyKDate: pendingKeyK.keyKDate,
+                keyKHigh: pendingKeyK.keyKHigh,
+                keyKLow: pendingKeyK.keyKLow,
+                sellIdx: i,
+                sellDate: curBar.date,
+                sellPrice: curBar.close,
+                exitReason: `跌破${formatShortDateSlash(pendingKeyK.keyKDate)}關鍵K低點(${pendingKeyK.keyKLow.toFixed(2)})平倉`
+              });
+              pendingKeyK = null;
+            } else if (waitDays >= 10) {
               pendingKeyK = null;
             }
           }
@@ -6032,6 +6204,7 @@
           activeOrTodayExit: {
             ...activePos,
             closedTradesHistory,
+            keyKBreakdownHistory,
             currentPrice: latestClose,
             currentMa5: bars[lastIdx].ma5 || latestClose,
             currentMa10: bars[lastIdx].ma10 || latestClose,
@@ -6052,6 +6225,7 @@
         const closedRecord = {
           ...latestFinishedPos,
           closedTradesHistory,
+          keyKBreakdownHistory,
           currentPrice: latestClose,
           currentMa5: bars[lastIdx].ma5 || latestClose,
           currentMa10: bars[lastIdx].ma10 || latestClose,
@@ -6502,6 +6676,35 @@
         }
         bars[scanIdx].isKeyK = true;
         if (cIdx === -1) {
+          let bkIdx = -1;
+          for (let c = scanIdx + 1; c < bars.length; c++) {
+            if (bars[c].close < pkBar.low) { bkIdx = c; break; }
+          }
+          if (bkIdx !== -1) {
+            bars[bkIdx].isTrackSellK = true;
+            bars[bkIdx].closedHoldingDays = bkIdx - scanIdx + 1;
+            bars[bkIdx].closedExitLabel = "跌破關鍵K低平倉";
+            bars[bkIdx].closedExitReason = `跌破${formatShortDateSlash(pkBar.date)}關鍵K低點(${pkBar.low.toFixed(2)})`;
+            if (!Array.isArray(bars._extraKeyKBreakdowns)) bars._extraKeyKBreakdowns = [];
+            bars._extraKeyKBreakdowns.push({
+              keyKDate: pkBar.date,
+              keyKHigh: pkBar.high,
+              keyKLow: pkBar.low,
+              sellDate: bars[bkIdx].date,
+              sellPrice: bars[bkIdx].close,
+              exitReason: `收盤(${bars[bkIdx].close.toFixed(2)})跌破${formatShortDateSlash(pkBar.date)}關鍵K低點(${pkBar.low.toFixed(2)})平倉`
+            });
+            let nextKey = -1;
+            for (let nk = bkIdx + 1; nk < bars.length; nk++) {
+              const npB = bars[nk - 1], nkB = bars[nk];
+              if (npB.ma20 > 0 && nkB.ma20 > 0 && npB.close <= npB.ma20 && nkB.close > nkB.ma20 && nkB.close > npB.close) {
+                nextKey = nk;
+                break;
+              }
+            }
+            scanIdx = nextKey;
+            continue;
+          }
           if (!brokeKey) {
             lastActiveRef = { buyPrice: 0, stopLossPrice: pkStop, keyHigh: pkBar.high, keyLow: pkBar.low, ma20Armed: false };
           }
@@ -6978,19 +7181,10 @@
       return reasons;
     }
 
-    function computeAiBuySellPowerOptimalPlan(stock) {
-      if (!stock) return null;
-      const bars = buildStockDailyBarsWithToday(stock);
-      if (!bars || bars.length < 10) return null;
-
-      const sig = `${stock.code}|v3_profit_opt|${bars.length}|${bars[bars.length - 1].close}|${stock.tickPower ? stock.tickPower.outerPct : -1}`;
-      if (stock._aiPowerPlanSig === sig && stock._aiPowerPlanCache) return stock._aiPowerPlanCache;
-
-      const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
+    function getAiPowerRuleSets(bars, buyPowers) {
       const isCleanBuyBar = (i) => checkAiBuyTrapReasons(bars, i, buyPowers).length === 0;
       const isMa20TrendingUp = (i) => i >= 1 && bars[i].ma20 > 0 && bars[i - 1].ma20 > 0 && bars[i].ma20 >= bars[i - 1].ma20 * 0.999;
 
-      // 8 大「獲利導向」高勝率買入條件（均已排除 5 大出貨禁忌）
       const buyRules = [
         {
           id: 'OPT_MA_ALIGN_58',
@@ -7085,6 +7279,215 @@
           planDesc: (lastB) => `趨勢抱牢：收盤未破 20MA (${lastB.ma20 > 0 ? lastB.ma20.toFixed(2) : '--'}) 不賣`
         }
       ];
+      return { buyRules, sellRules };
+    }
+
+    function evaluateAiPower90dStrategy(stock, bars, cfg) {
+      if (!bars || bars.length < 15) return { activeOrTodayExit: null, closedBreakdown: null };
+      const reevalDays = Math.max(15, cfg.aiPowerReevalDays || 90);
+      const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
+      const { buyRules, sellRules } = getAiPowerRuleSets(bars, buyPowers);
+      const lastIdx = bars.length - 1;
+
+      const pickBestRulesUpTo = (endBarIdx) => {
+        let bestBr = buyRules[0], bestSr = sellRules[0], bestScore = -Infinity;
+        if (endBarIdx < 5) return { br: bestBr, sr: bestSr };
+        for (const br of buyRules) {
+          for (const sr of sellRules) {
+            const trs = [];
+            let p = null;
+            for (let k = 1; k <= endBarIdx; k++) {
+              const bk = bars[k];
+              if (!p) {
+                if (br.check(k)) {
+                  const swLow = Math.min(bk.low, bars[k - 1].low || bk.low);
+                  p = { buyPrice: bk.close, maxHigh: bk.high, initStop: Math.max(bk.close * 0.94, swLow * 0.985) };
+                }
+              } else {
+                if (bk.high > p.maxHigh) p.maxHigh = bk.high;
+                if (sr.check(k, p) || bk.close <= p.initStop) {
+                  trs.push(bk.close - p.buyPrice);
+                  p = null;
+                }
+              }
+            }
+            if (p) trs.push(bars[endBarIdx].close - p.buyPrice);
+            if (trs.length === 0) continue;
+            const tot = trs.reduce((a, v) => a + v, 0);
+            const wr = Math.round((trs.filter(v => v > 0).length / trs.length) * 100);
+            const sc = tot + (wr >= 55 ? 2 : 0) - (trs.length > 6 ? (trs.length - 6) * 0.5 : 0);
+            if (sc > bestScore) { bestScore = sc; bestBr = br; bestSr = sr; }
+          }
+        }
+        return { br: bestBr, sr: bestSr };
+      };
+
+      const startScan = Math.min(15, Math.max(1, Math.floor(bars.length / 4)));
+      let activeRules = pickBestRulesUpTo(startScan);
+      let lastReevalDate = bars[startScan].date;
+      const ai90dAdjustments = [{
+        date: lastReevalDate,
+        changed: true,
+        buyName: activeRules.br.name,
+        sellName: activeRules.sr.name,
+        note: `初始回測採用`
+      }];
+
+      let activePos = null;
+      let latestFinishedPos = null;
+      const closedTradesHistory = [];
+      const initStopFactor = 1 - ((cfg.initStopBufferPct ?? 2.0) / 100);
+
+      for (let i = startScan; i < bars.length; i++) {
+        const curBar = bars[i];
+        const prevBar = bars[i - 1];
+        const daysSinceReeval = (new Date(curBar.date + "T00:00:00") - new Date(lastReevalDate + "T00:00:00")) / 86400000;
+        if (daysSinceReeval >= reevalDays && i > startScan + 5) {
+          const nextRules = pickBestRulesUpTo(i - 1);
+          const isChanged = (nextRules.br.id !== activeRules.br.id || nextRules.sr.id !== activeRules.sr.id);
+          ai90dAdjustments.push({
+            date: curBar.date,
+            changed: isChanged,
+            buyName: nextRules.br.name,
+            sellName: nextRules.sr.name,
+            note: isChanged ? `滿${reevalDays}天回測後調整條件` : `滿${reevalDays}天回測維持原條件`
+          });
+          activeRules = nextRules;
+          lastReevalDate = curBar.date;
+        }
+
+        if (activePos) {
+          activePos.maxCloseSinceEntry = Math.max(activePos.maxCloseSinceEntry, curBar.close);
+          activePos.maxHighSinceEntry = Math.max(activePos.maxHighSinceEntry, curBar.high);
+          activePos.maxHigh = activePos.maxHighSinceEntry;
+          if (!activePos.ma20ControlArmed && curBar.ma20 > activePos.buyPrice) {
+            activePos.ma20ControlArmed = true;
+            activePos.ma20ArmedDate = curBar.date;
+          }
+          const isHardStop = curBar.close <= activePos.stopLossPrice;
+          const isRuleExit = activeRules.sr.check(i, activePos);
+          if (isHardStop || isRuleExit) {
+            activePos.isClosed = true;
+            activePos.sellIdx = i;
+            activePos.sellDate = curBar.date;
+            activePos.sellPrice = curBar.close;
+            activePos.exitReason = isHardStop
+              ? `策略G動態停損(${activePos.stopLossPrice.toFixed(2)})`
+              : `策略G(${reevalDays}天AI)：${activeRules.sr.name}`;
+            if (activePos.sellPrice > activePos.buyPrice) {
+              activePos.exitReason = activePos.exitReason.replace(/停損/g, "停利");
+            }
+            latestFinishedPos = { ...activePos };
+            closedTradesHistory.push({ ...activePos, holdingDays: i - activePos.buyIdx + 1 });
+            activePos = null;
+          }
+        } else {
+          if (activeRules.br.check(i)) {
+            const swingLow = Math.min(curBar.low, prevBar ? prevBar.low : curBar.low);
+            const stopP = Number(Math.max(curBar.close * 0.94, swingLow * initStopFactor).toFixed(2));
+            activePos = {
+              keyKIdx: i,
+              keyKDate: curBar.date,
+              keyKHigh: curBar.high,
+              keyKLow: curBar.low,
+              prev2Low: prevBar ? prevBar.low : curBar.low,
+              stopLossPrice: stopP,
+              stopRefDesc: `策略G初始停損(${stopP.toFixed(2)})`,
+              buyIdx: i,
+              buyDate: curBar.date,
+              buyPrice: curBar.close,
+              riskR: Math.max(0.01, Number((curBar.close - stopP).toFixed(2))),
+              rrStopFloor: stopP,
+              rrStage: 0,
+              dynamicStopPrice: 0,
+              dynamicStopLabel: "",
+              maxCloseSinceEntry: curBar.close,
+              maxHighSinceEntry: curBar.high,
+              maxHigh: curBar.high,
+              shortMaArmed: false,
+              activeControlMa: 20,
+              shortBdIdx: -1,
+              shortBdLow: 0,
+              shortBdHigh: 0,
+              ma20ControlArmed: curBar.ma20 > curBar.close,
+              ma20ArmedDate: curBar.ma20 > curBar.close ? curBar.date : null,
+              breakdownIdx: -1,
+              breakdownDate: null,
+              breakdownLow: 0,
+              breakdownHigh: 0,
+              lastBreakdownEvent: null,
+              isClosed: false,
+              sellIdx: -1,
+              sellDate: null,
+              sellPrice: 0,
+              exitReason: "",
+              daysSinceExit: 0,
+              ai90dAdjustments
+            };
+          }
+        }
+      }
+
+      const latestClose = bars[lastIdx].close;
+      const latestMa20 = bars[lastIdx].ma20 || stock.yestMa20;
+      if (activePos && !activePos.isClosed) {
+        const profitPoints = Number((latestClose - activePos.buyPrice).toFixed(2));
+        const profitPct = activePos.buyPrice > 0 ? Number((((latestClose - activePos.buyPrice) / activePos.buyPrice) * 100).toFixed(2)) : 0;
+        return {
+          activeOrTodayExit: {
+            ...activePos,
+            closedTradesHistory,
+            keyKBreakdownHistory: [],
+            ai90dAdjustments,
+            currentPrice: latestClose,
+            currentMa5: bars[lastIdx].ma5 || latestClose,
+            currentMa10: bars[lastIdx].ma10 || latestClose,
+            currentMa20: latestMa20,
+            profitPoints,
+            profitPct,
+            holdingDays: lastIdx - activePos.buyIdx + 1,
+            trackStatus: 'HOLDING'
+          },
+          closedBreakdown: null
+        };
+      }
+      if (latestFinishedPos && latestFinishedPos.isClosed) {
+        const daysSinceExit = lastIdx - latestFinishedPos.sellIdx;
+        const profitPoints = Number((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice).toFixed(2));
+        const profitPct = latestFinishedPos.buyPrice > 0 ? Number((((latestFinishedPos.sellPrice - latestFinishedPos.buyPrice) / latestFinishedPos.buyPrice) * 100).toFixed(2)) : 0;
+        const closedRec = {
+          ...latestFinishedPos,
+          closedTradesHistory,
+          keyKBreakdownHistory: [],
+          ai90dAdjustments,
+          currentPrice: latestClose,
+          currentMa5: bars[lastIdx].ma5 || latestClose,
+          currentMa10: bars[lastIdx].ma10 || latestClose,
+          currentMa20: latestMa20,
+          profitPoints,
+          profitPct,
+          holdingDays: latestFinishedPos.sellIdx - latestFinishedPos.buyIdx + 1,
+          daysSinceExit,
+          trackStatus: 'EXITED_BREAKDOWN'
+        };
+        return {
+          activeOrTodayExit: daysSinceExit === 0 ? closedRec : null,
+          closedBreakdown: closedRec
+        };
+      }
+      return { activeOrTodayExit: null, closedBreakdown: null };
+    }
+
+    function computeAiBuySellPowerOptimalPlan(stock) {
+      if (!stock) return null;
+      const bars = buildStockDailyBarsWithToday(stock);
+      if (!bars || bars.length < 10) return null;
+
+      const sig = `${stock.code}|v3_profit_opt|${bars.length}|${bars[bars.length - 1].close}|${stock.tickPower ? stock.tickPower.outerPct : -1}`;
+      if (stock._aiPowerPlanSig === sig && stock._aiPowerPlanCache) return stock._aiPowerPlanCache;
+
+      const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
+      const { buyRules, sellRules } = getAiPowerRuleSets(bars, buyPowers);
 
       let bestPlan = null;
       buyRules.forEach(br => {
@@ -7453,22 +7856,32 @@
 
         const buyTagTitle = t.isDirectKeyBreakdown ? `關鍵K基準(${buyDateSlash}收)` : `確認K買入(${buyDateSlash}收)`;
         let multiHistHtml = "";
+        const extraHistLines = [];
         if (Array.isArray(t.closedTradesHistory) && t.closedTradesHistory.length > 0) {
-          const allHist = t.isClosed ? t.closedTradesHistory : [...t.closedTradesHistory];
-          const extraHist = allHist.filter(ht => !(ht.buyDate === t.buyDate && ht.sellDate === t.sellDate));
-          if (extraHist.length > 0) {
-            multiHistHtml = `<div class="w-full mt-1 pt-1 border-t border-slate-700/60 text-[10.5px] text-slate-300 space-y-0.5">` +
-              extraHist.map(ht => {
-                const hBuyD = formatShortDateSlash(ht.buyDate);
-                const hSellD = formatShortDateSlash(ht.sellDate);
-                const hPts = (ht.sellPrice - ht.buyPrice);
-                const hMoney = Math.round(hPts * 1000);
-                const hCol = hPts >= 0 ? "text-rose-300" : "text-emerald-300";
-                const hSign = hPts >= 0 ? "+" : "";
-                return `<div>📌 符合條件波段：🎯 <b>${hBuyD}買(${ht.buyPrice.toFixed(2)})</b> ｜ 🛑 初始停損 <b class="text-yellow-300">${(ht.stopLossPrice || 0).toFixed(2)}</b> ｜ ❄️ <b>${hSellD}平倉(${ht.sellPrice.toFixed(2)}｜${ht.holdingDays}天)</b> ｜ ${ht.exitReason || ''} <b class="${hCol}">${hSign}${hPts.toFixed(2)}點 (${formatMoneyDisplay(hMoney)})</b></div>`;
-              }).join("") +
-            `</div>`;
-          }
+          const extraHist = t.closedTradesHistory.filter(ht => !(ht.buyDate === t.buyDate && ht.sellDate === t.sellDate));
+          extraHist.forEach(ht => {
+            const hBuyD = formatShortDateSlash(ht.buyDate);
+            const hSellD = formatShortDateSlash(ht.sellDate);
+            const hPts = (ht.sellPrice - ht.buyPrice);
+            const hMoney = Math.round(hPts * 1000);
+            const hCol = hPts >= 0 ? "text-rose-300" : "text-emerald-300";
+            const hSign = hPts >= 0 ? "+" : "";
+            extraHistLines.push(`<div>📌 歷史波段紀錄：🎯 <b>${hBuyD}買(${ht.buyPrice.toFixed(2)})</b> ｜ 🛑 初始停損 <b class="text-yellow-300">${(ht.stopLossPrice || 0).toFixed(2)}</b> ｜ ❄️ <b>${hSellD}平倉(${ht.sellPrice.toFixed(2)}｜${ht.holdingDays}天)</b> ｜ ${ht.exitReason || ''} <b class="${hCol}">${hSign}${hPts.toFixed(2)}點 (${formatMoneyDisplay(hMoney)})</b></div>`);
+          });
+        }
+        const combinedKeyBreakdowns = [
+          ...(Array.isArray(t.keyKBreakdownHistory) ? t.keyKBreakdownHistory : []),
+          ...(trackingBarsPreview && Array.isArray(trackingBarsPreview._extraKeyKBreakdowns) ? trackingBarsPreview._extraKeyKBreakdowns : [])
+        ];
+        const seenKdKey = new Set();
+        combinedKeyBreakdowns.forEach(kd => {
+          const uKey = `${kd.keyKDate}_${kd.sellDate}`;
+          if (seenKdKey.has(uKey)) return;
+          seenKdKey.add(uKey);
+          extraHistLines.push(`<div>📌 歷史關鍵K平倉紀錄：★ <b>${formatShortDateSlash(kd.keyKDate)}關鍵K(高:${kd.keyKHigh.toFixed(2)}/低:${kd.keyKLow.toFixed(2)})</b> → ❄️ <b>${formatShortDateSlash(kd.sellDate)}平倉(${kd.sellPrice.toFixed(2)})</b> ｜ 原因：<b class="text-emerald-300">${kd.exitReason}</b></div>`);
+        });
+        if (extraHistLines.length > 0) {
+          multiHistHtml = `<div class="w-full mt-1 pt-1 border-t border-slate-700/60 text-[10.5px] text-slate-300 space-y-0.5">${extraHistLines.join("")}</div>`;
         }
         trackLeft.innerHTML = `
           <span>🎯 ${buyTagTitle}：<b class="text-sky-300">${t.buyPrice.toFixed(2)}</b></span>
@@ -7711,6 +8124,18 @@
             if (rhb) rhb.isTrackConfirmHoldK = true;
           }
         }
+        if (Array.isArray(t.keyKBreakdownHistory)) {
+          t.keyKBreakdownHistory.forEach(kd => {
+            const kb = _findBar(kd.keyKDate, kd.keyKIdx);
+            if (kb) kb.isKeyK = true;
+            const sb = _findBar(kd.sellDate, kd.sellIdx);
+            if (sb) {
+              sb.isTrackSellK = true;
+              sb.closedExitLabel = "跌破關鍵K低平倉";
+              sb.closedExitReason = kd.exitReason;
+            }
+          });
+        }
         if (t.isClosed) {
           const tsb = _findBar(t.sellDate, t.sellIdx);
           const tsbIdx = tsb ? bars.indexOf(tsb) : t.sellIdx;
@@ -7756,6 +8181,15 @@
 
       chartState.dailyBars = bars;
       updateAiExitAdviceBanner(stock, bars, activeOrClosedTrack);
+      const p90El = document.getElementById("aiPower90dStatusText");
+      if (p90El) {
+        const adjList = activeOrClosedTrack && Array.isArray(activeOrClosedTrack.ai90dAdjustments) ? activeOrClosedTrack.ai90dAdjustments : [];
+        if (adjList.length > 0) {
+          p90El.innerHTML = adjList.map(a => `<span class="${a.changed ? 'text-amber-300' : 'text-cyan-300'}">[${formatShortDateSlash(a.date)} ${a.note}] 買：${a.buyName} ｜ 賣：${a.sellName}</span>`).join(" <br/> ");
+        } else {
+          p90El.textContent = `${stock.code} ${stock.name}：目前區間未達進場門檻或尚無調整紀錄。`;
+        }
+      }
 
       // 更新「目前所處階段診斷」橫幅與右上角徽章
       const diag = diagnoseStockStage(stock);
@@ -8377,7 +8811,21 @@
         }
 
         if (shouldShowYellowStop && yellowStopVal > 0) {
-          drawHorizontalRefLine(ctx, yellowStopVal, priceToY(yellowStopVal), "#facc15", "停損", padLeft, width - padRight, [6, 4], 1.6, placedRightLabelYs);
+          let stopStartIdx = -1;
+          if (postRef && typeof postRef.buyIdx === 'number' && postRef.buyIdx >= 0) {
+            stopStartIdx = postRef.buyIdx;
+          } else if (isActiveOpenTrack && tInfo) {
+            stopStartIdx = (typeof tInfo.buyIdx === 'number' && tInfo.buyIdx >= 0) ? tInfo.buyIdx : tInfo.keyKIdx;
+          } else if (!tInfo && hasCandKey) {
+            stopStartIdx = is5mTf ? (candInfo ? candInfo.keyKIdx : -1) : (typeof stock.keyKIdx === 'number' ? stock.keyKIdx : -1);
+          }
+          const visEndIdxStop = startIdx + visibleBars.length - 1;
+          if (stopStartIdx === -1 || stopStartIdx <= visEndIdxStop) {
+            const stopStartX = (stopStartIdx >= startIdx && stopStartIdx <= visEndIdxStop)
+              ? (padLeft + stepX * (stopStartIdx - startIdx) + stepX / 2)
+              : padLeft;
+            drawHorizontalRefLine(ctx, yellowStopVal, priceToY(yellowStopVal), "#facc15", "停損", stopStartX, width - padRight, [6, 4], 1.6, placedRightLabelYs);
+          }
         }
         if (isActiveOpenTrack && tInfo.dynamicStopPrice > 0) {
           drawHorizontalRefLine(ctx, tInfo.dynamicStopPrice, priceToY(tInfo.dynamicStopPrice), "#4ade80", tInfo.dynamicStopLabel || "移動停利", padLeft, width - padRight, [5, 3], 1.6, placedRightLabelYs);
@@ -8522,7 +8970,8 @@
             ctx.stroke();
             ctx.restore();
             const holdDaysText = b.closedHoldingDays ? `｜持倉${b.closedHoldingDays}天` : "";
-            drawNonOverlappingLabel(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText})`, cx, yLow + 14, 1, "#c084fc", "bold 10px sans-serif");
+            const reasonNote = b.closedExitReason ? `｜${b.closedExitReason}` : "";
+            drawNonOverlappingLabel(`🏁${b.closedExitLabel || '破線確認K平倉'}(收:${b.close.toFixed(2)}${holdDaysText}${reasonNote})`, cx, yLow + 14, 1, "#c084fc", "bold 10px sans-serif");
           }
         }
 
@@ -9157,7 +9606,7 @@
         } else {
           const rng = bar.high - bar.low;
           const estBuyPct = rng > 0 ? Math.round(Math.max(12, Math.min(88, ((bar.close - bar.low) / rng) * 100))) : (bar.close >= bar.open ? 65 : 35);
-          flowHudHtml += `<div class="text-[10px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
+          flowHudHtml += `<div class="text-[10.5px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
         }
       }
       if ((showFlowHud || showAiHud) && hudStock) {
