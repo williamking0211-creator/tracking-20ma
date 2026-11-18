@@ -880,7 +880,7 @@
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬七大策略收益對比</span>
-                  <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span><div id="capitalAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div id="capitalAiProgressText"></div><progress id="capitalAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
+                  <div id="v8CapitalQuickCards" class="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1"></div><span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span><div id="capitalAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div id="capitalAiProgressText"></div><progress id="capitalAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
@@ -2297,6 +2297,23 @@
     }
 
     const _fullStep1Cache = new Map();
+    const AI_KEYS_V8 = ['DEFAULT_20MA','SHORT_MA_TRAIL','PEAK_TRAILING','WHALE_SELL_EXIT','RR_LADDER','AI_ADAPTIVE','AI_POWER_90D'];
+    let fullV8Key = '', capitalV8Key = '';
+    function aiV8Key(capital=false) {
+      let h=2166136261, h2=5381;
+      const add=v=>{const t=JSON.stringify(v) || ''; for(let i=0;i<t.length;i++){h=Math.imul(h^t.charCodeAt(i),16777619);h2=Math.imul(h2,33)^t.charCodeAt(i);}};
+      const ids=['pnlStartDateInput','pnlEndDateInput','pnlDateBasisSelect','searchInput'];
+      if(capital) ids.push('simInitCapitalInput','simStartDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
+      add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
+      add(getSelectedSimSectors());
+      if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
+      for(const st of rawAllLoadedStocks){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.yestMa20,st.volRatio,st.yestGainPct,st.status,st.isFirstDayBreak20Ma,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
+      return `v8-fast-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
+    }
+    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v8-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v8-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
+
     function getPoolStocksWithCrossovers() {
       const activeSectors = getSelectedSimSectors();
       const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
@@ -2394,7 +2411,8 @@
       const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
       const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
       const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
-      const fCacheKey = `${strategyKey}|v7-coarsefine|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(baseCfg)}`;
+      const fCacheKey = `${strategyKey}|${fullV8Key}`;
+      if (_aiFullStep1PerStrategyMap[strategyKey]) return _aiFullStep1PerStrategyMap[strategyKey];
       if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
 
       const exitPatchesMap = {
@@ -2620,7 +2638,7 @@
 
     async function applyAiStep1AllStrategiesAndPickBest(autoSelectBestStrategy = false) {
       const keys = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
-      _aiFullStep1PerStrategyMap = {};
+      aiV8RefreshFull(aiV8Key());
       let globalWinnerKey = currentExitStrategy;
       let globalBestProfit = -Infinity;
       for (const [i,k] of keys.entries()) {
@@ -2634,6 +2652,8 @@
           }
         }
       }
+      if(fullV8Key!==aiV8Key()){_aiFullStep1PerStrategyMap={};throw new Error("資料已更新，請重新尋優");}
+      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);
       _aiFullStep1ModeActive = true;
       if (autoSelectBestStrategy && globalWinnerKey) {
         currentExitStrategy = globalWinnerKey;
@@ -2688,8 +2708,7 @@
     async function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
       if (fullAiBusy || capitalAiBusy) return null;
       fullAiBusy = true;
-      _fullStep1Cache.clear();
-      _lastCmpResultsCache = null;
+      aiV8RefreshFull(aiV8Key());
       showAiProgress('full', 0, '準備尋優');
       try { await aiYield();
       const adviceEl = document.getElementById("aiFullStep1AdviceText");
@@ -2739,6 +2758,7 @@
       updateExitStrategyUI();
       const chkFull = document.getElementById("chkAiAutoFullStep1");
       const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive;
+      if(useFullOpt && !capitalSelection) aiV8RefreshFull(aiV8Key());
       const cached = _aiFullStep1PerStrategyMap[strategyName];
       if (!capitalSelection && useFullOpt && cached) {
         applyStep1ParamsToUI(cached);
@@ -2898,7 +2918,7 @@
           else if (money < 0) { lossSum += money; }
         });
 
-        const net = winSum + lossSum;
+        const net = aiS1 ? aiS1.totalProfitNtd : winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
         let dynLabel = item.label;
@@ -5026,6 +5046,8 @@
       if (summary && winner) {
         summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
       }
+      const quick=document.getElementById('v8CapitalQuickCards');
+      if(quick)quick.innerHTML=results.map(r=>`<button onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="border rounded p-1 text-xs ${r.strategyKey===currentExitStrategy?'border-indigo-400 bg-indigo-950':'border-slate-700'}"><div>${r.label}</div><b class="${r.totalNetProfit>=0?'text-rose-300':'text-emerald-300'}">${fmtMoney(r.totalNetProfit)}</b></button>`).join('');
       grid.innerHTML = results.map(r => {
         const isWin = winner && r.strategyKey === winner.strategyKey;
         const isCur = r.strategyKey === currentExitStrategy;
@@ -5052,6 +5074,8 @@
     }
 
     function selectAiOptimizedCapitalStrategy(strategyKey) {
+      if(fullAiBusy || capitalAiBusy)return;
+      if(capitalV8Key!==aiV8Key(true)){runAiCapitalStrategyOptimizer(true);return;}
       currentExitStrategy = strategyKey;
       updateExitStrategyUI();
       const bestS1 = _aiCapitalBestStep1Map[strategyKey];
@@ -5086,12 +5110,18 @@
       if (!box || !grid || rawAllLoadedStocks.length === 0) return;
       if (fullAiBusy || capitalAiBusy) return;
       capitalAiBusy = true;
-      _fullStep1Cache.clear();
-      _lastCmpResultsCache = null;
+      const runKey=aiV8Key(true);
+      aiV8RefreshFull(aiV8Key());
+      const stored=capitalV8Key===runKey && _lastAiCapitalResultsCache ? {results:_lastAiCapitalResultsCache,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map}:aiV8Read('capital',runKey);
       showAiProgress("capital",0,"準備七大策略");
       try {
       box.classList.remove("hidden");
-
+      if(stored?.results?.length===7){
+        capitalV8Key=runKey; _lastAiCapitalResultsCache=stored.results;_aiCapitalBestParamsMap=stored.params;_aiCapitalBestStep1Map=stored.step1;
+        renderAiCapitalCompareCardsOnly(); showAiProgress('capital',100,'已讀取快取 · 快速尋優');
+        if(autoSwitch){const win=stored.results.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a); capitalAiBusy=false;selectAiOptimizedCapitalStrategy(win.strategyKey);}
+        return;
+      }
       const baseCands = {
         'DEFAULT_20MA': [
           { tag: '原版20MA(停損2%/無時損)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO', initStopBufferPct: 2.0 } },
@@ -5161,8 +5191,9 @@
         const d = defs[defIdx];
         if (progressEl) progressEl.textContent = `AI 尋優中：${d.label}（${defIdx + 1}/7）`;
         await new Promise(resolve => setTimeout(resolve, 0));
-        const capReport = (f,label) => showAiProgress("capital",98*(defIdx+f)/defs.length, `${d.label} (${defIdx+1}/7) · ${label}`);
+        const capReport = (f,label) => showAiProgress("capital",85*(defIdx+f)/defs.length, `${d.label} (${defIdx+1}/7) · ${label}`);
         const s1Full = await computeAiBestFullStep1ForStrategy(d.key,(pct,label)=>capReport(pct/200,label));
+        if(s1Full) _aiFullStep1PerStrategyMap[d.key]=s1Full;
         const s1Candidates = [];
         if (s1Full) s1Candidates.push(s1Full);
         const curS1 = getCurrentFilterOptions();
@@ -5177,7 +5208,7 @@
           }
         });
         const baseCfg = getExitStrategyConfig(d.key);
-        const cands = [...(baseCands[d.key] || [{ tag: '預設', patch: {} }]).slice(0, 3)];
+        const cands = [...(baseCands[d.key] || [{ tag: '預設', patch: {} }]).slice(0, 1)];
         if (s1Full && s1Full.exitPatch) {
           cands.unshift({ tag: s1Full.exitTag || '全條件最佳', patch: { ...s1Full.exitPatch } });
         }
@@ -5187,7 +5218,8 @@
         let bestPriority = curPriority;
         const makeOpts = (sc) => ({ requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV, _prefilteredPool });
 
-        let simDone=0; const simTotal=cands.length*s1Candidates.length+getExitParamAxesForStrategy(d.key).reduce((n,a)=>n+a.values.length,0)+25;
+        s1Candidates.splice(2);
+        let simDone=0; const simTotal=cands.length*s1Candidates.length+4;
         const simulateWithProgress = async (...args) => { const result=await simulateCapitalForStrategy(...args); capReport(0.5+0.5*(++simDone/Math.max(1,simTotal)),`資金回測 ${simDone}/${simTotal}`); await aiYield(); return result; };
         for (const c of cands) {
           const testCfg = { ...baseCfg, ...c.patch };
@@ -5204,38 +5236,6 @@
 
         // 座標下降微調：測試所有上方參數（初始停損%、進場漲停守低、時間停損、確認K、策略專屬參數、STEP1 細部參數、同日買進優先順序）
         if (bestRes) {
-          const axes = getExitParamAxesForStrategy(d.key);
-          for (const axis of axes) {
-            for (const val of axis.values) {
-              const candPatch = { ...bestPatch, ...val };
-              const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...candPatch }, makeOpts(bestS1), bestPriority);
-              if (simRes.totalNetProfit > bestRes.totalNetProfit) {
-                bestRes = simRes;
-                bestPatch = candPatch;
-              }
-            }
-          }
-          // 微調 STEP 1 單一條件 (20MA向上 / 實體紅K / 漲幅下限 / 成交量%)
-          for (const maUp of [true, false]) {
-            const candS1 = { ...bestS1, reqMaUp: maUp };
-            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
-            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
-          }
-          for (const redK of [true, false]) {
-            const candS1 = { ...bestS1, reqRed: redK };
-            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
-            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
-          }
-          for (const minG of [4, 5, 6, 7, 8, 9, 10]) {
-            const candS1 = { ...bestS1, minG, maxG: 10.5 };
-            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
-            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
-          }
-          for (const minV of [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]) {
-            const candS1 = { ...bestS1, minV };
-            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
-            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
-          }
           for (const prio of ['HIGH_PRICE', 'VOL_RATIO', 'GAIN_PCT', 'LOW_PRICE']) {
             const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...bestPatch }, makeOpts(bestS1), prio);
             if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestPriority = prio; }
@@ -5246,13 +5246,28 @@
         if (bestS1) {
           _aiCapitalBestStep1Map[d.key] = { ...bestS1, exitPatch: { ...baseCfg, ...bestPatch }, exitTag: bestTag };
         }
-        _aiCapitalBestParamsMap[d.key] = { ...bestPatch, priorityMode: bestPriority };
+        _aiCapitalBestParamsMap[d.key] = { ...baseCfg, ...bestPatch, priorityMode: bestPriority };
         capReport(1,"策略完成");
         results.push({ ...d, ...(bestRes || { totalNetProfit: -Infinity }), bestTag, bestPriority, s1Best: bestS1 });
         if (progressEl) progressEl.textContent = `AI 尋優中：已完成 ${defIdx + 1}/7 個策略`;
         await new Promise(resolve => setTimeout(resolve, 0));
       }
 
+      // 深入微調初步收益前三名；其他策略保留已實測最佳候選。
+      const finalists=[...results].sort((a,b)=>b.totalNetProfit-a.totalNetProfit).slice(0,3);
+      for(const [i,row] of finalists.entries()){
+        const k=row.strategyKey; let sc=_aiCapitalBestStep1Map[k], patch={...sc.exitPatch}, prio=row.bestPriority;
+        const tryOne=async(nextS,nextP)=>{const res=await simulateCapitalForStrategy(k,nextP,{requireMa20Up:nextS.reqMaUp,requireSolidRedK:nextS.reqRed,useGainRange:true,minGain:nextS.minG,maxGain:nextS.maxG,volOp:'GTE',validVolThreshold:nextS.minV,_prefilteredPool},prio);if(res.totalNetProfit>row.totalNetProfit){Object.assign(row,res);sc=nextS;patch=nextP;}await aiYield();};
+        for(const g of [sc.minG-1,sc.minG+1].filter(x=>x>=4&&x<=10))await tryOne({...sc,minG:g},patch);
+        for(const v of [sc.minV-50,sc.minV+50].filter(x=>x>=50&&x<=500))await tryOne({...sc,minV:v},patch);
+        for(const axis of getExitParamAxesForStrategy(k))for(const val of axis.values)await tryOne(sc,{...patch,...val});
+        row.bestTag=buildExitParamTag(k,patch);row.s1Best=sc;_aiCapitalBestStep1Map[k]={...sc,exitPatch:patch,exitTag:row.bestTag};_aiCapitalBestParamsMap[k]={...patch,priorityMode:prio};
+        showAiProgress('capital',85+14*(i+1)/3,`前三名精調 ${i+1}/3`);
+      }
+      if(runKey!==aiV8Key(true)){showAiProgress('capital',0,'資料已更新，請重新尋優');return;}
+      aiV8Save('full',fullV8Key,_aiFullStep1PerStrategyMap);
+      capitalV8Key=runKey;
+      aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
 
       if (autoSwitch && winner) {
@@ -5279,7 +5294,7 @@
       }
 
       _lastAiCapitalResultsCache = results;
-      if (progressEl) progressEl.textContent = "AI 七大策略尋優完成";
+      if (progressEl) progressEl.textContent = "AI 七大策略快速尋優完成";
       renderAiCapitalCompareCardsOnly();
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
       if (autoSwitch && winner) {
@@ -5606,7 +5621,7 @@
         if (window._skipNextAiCapOptInSim) {
           window._skipNextAiCapOptInSim = false;
         } else {
-          if (!Object.keys(_aiCapitalBestStep1Map).length) runAiCapitalStrategyOptimizer(false);
+          if (!capitalAiBusy && !fullAiBusy && capitalV8Key!==aiV8Key(true)) runAiCapitalStrategyOptimizer(false);
         }
       }
 
