@@ -880,10 +880,12 @@
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬七大策略收益對比</span>
-                  <div id="v8CapitalQuickCards" class="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1"></div><span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span><div id="capitalAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div id="capitalAiProgressText"></div><progress id="capitalAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
+                  <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span><div id="capitalAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div id="capitalAiProgressText"></div><progress id="capitalAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
+              <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新尋優／讀取快取</button>
+              <div id="v8CapitalQuickCards" class="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1"></div>
               <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-[10.5px]"></div>
             </div>
 
@@ -2307,11 +2309,11 @@
       add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
       add(getSelectedSimSectors());
       if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
-      for(const st of rawAllLoadedStocks){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.yestMa20,st.volRatio,st.yestGainPct,st.status,st.isFirstDayBreak20Ma,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
-      return `v8-fast-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
+      for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
+      return `v9-fast-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
-    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v8-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
-    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v8-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v9-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v9-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
     function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
 
     function getPoolStocksWithCrossovers() {
@@ -2652,7 +2654,7 @@
           }
         }
       }
-      if(fullV8Key!==aiV8Key()){_aiFullStep1PerStrategyMap={};throw new Error("資料已更新，請重新尋優");}
+      if(fullV8Key!==aiV8Key()){throw new Error("尋優期間條件已變更，請重新尋優");}
       aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);
       _aiFullStep1ModeActive = true;
       if (autoSelectBestStrategy && globalWinnerKey) {
@@ -3675,6 +3677,7 @@
     let isAllQuotesPolling = false;
 
     async function pollAllLiveQuotes() {
+      if (fullAiBusy || capitalAiBusy) return;
       if (isAllQuotesPolling || rawAllLoadedStocks.length === 0) return;
       if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
       const curCb = document.getElementById("autoSyncCheckbox");
@@ -3692,6 +3695,7 @@
         });
         if (!res.ok) return;
         const rows = await res.json();
+        if (fullAiBusy || capitalAiBusy) return;
         if (!Array.isArray(rows) || rows.length === 0) return;
 
         const qMap = new Map();
@@ -3741,6 +3745,7 @@
     }
 
     async function pollFocusedStockLivePrice() {
+      if (fullAiBusy || capitalAiBusy) return;
       if (!selectedStockCode || isFocusedPolling) return;
       if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
       const curCb = document.getElementById("autoSyncCheckbox");
@@ -3753,6 +3758,7 @@
         });
         if (!sRes.ok) return;
         const sRaw = await sRes.json();
+        if (fullAiBusy || capitalAiBusy) return;
         const sNorm = normalizeStockItem(sRaw);
         const filterOpts = getCurrentFilterOptions();
         const candUnfiltered = resolveCandidateKeyKForToday(sNorm, null);
@@ -3931,6 +3937,7 @@
     }
 
     async function fetchStocksData(isSilent = false) {
+      if (fullAiBusy || capitalAiBusy) return;
       const statusDot = document.getElementById("apiStatusDot");
       const statusText = document.getElementById("apiStatusText");
 
@@ -3979,6 +3986,7 @@
             throw primaryErr;
           }
         }
+        if (fullAiBusy || capitalAiBusy) return;
         const list = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
         const prevPriceMap = new Map();
@@ -4013,6 +4021,7 @@
             });
             if (sRes.ok) {
               const sRaw = await sRes.json();
+              if (fullAiBusy || capitalAiBusy) return;
               const sNorm = normalizeStockItem(sRaw);
               const idx = rawAllLoadedStocks.findIndex(x => x.code === sNorm.code);
               if (idx >= 0) {
@@ -5264,11 +5273,18 @@
         row.bestTag=buildExitParamTag(k,patch);row.s1Best=sc;_aiCapitalBestStep1Map[k]={...sc,exitPatch:patch,exitTag:row.bestTag};_aiCapitalBestParamsMap[k]={...patch,priorityMode:prio};
         showAiProgress('capital',85+14*(i+1)/3,`前三名精調 ${i+1}/3`);
       }
-      if(runKey!==aiV8Key(true)){showAiProgress('capital',0,'資料已更新，請重新尋優');return;}
+      _lastAiCapitalResultsCache = results;
+      capitalV8Key=runKey;
+      if(runKey!==aiV8Key(true)){
+        renderAiCapitalCompareCardsOnly();
+        showAiProgress('capital',100,'已完成 · 舊資料結果，點擊重新尋優更新');
+        return;
+      }
       aiV8Save('full',fullV8Key,_aiFullStep1PerStrategyMap);
       capitalV8Key=runKey;
       aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
+      renderAiCapitalCompareCardsOnly();
 
       if (autoSwitch && winner) {
         // 同步所有七大策略的最佳參數至對比字卡快取，讓下方七大策略字卡全部顯示各自最高收益
@@ -5621,7 +5637,9 @@
         if (window._skipNextAiCapOptInSim) {
           window._skipNextAiCapOptInSim = false;
         } else {
-          if (!capitalAiBusy && !fullAiBusy && capitalV8Key!==aiV8Key(true)) runAiCapitalStrategyOptimizer(false);
+          if (!capitalAiBusy && !fullAiBusy && capitalV8Key!==aiV8Key(true)) {
+            if (_lastAiCapitalResultsCache?.length) showAiProgress('capital',100,'行情或條件已更新 · 點擊重新尋優更新');
+          }
         }
       }
 
