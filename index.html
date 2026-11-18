@@ -2455,7 +2455,9 @@
             if (crossCount >= 2) break;
           }
         }
-        if (crossCount === 1 && firstCrossIdx >= 1) {
+        if (strategyKey === "AI_POWER_90D" && crossCount >= 1) {
+          multiCrossStocks.push(s);
+        } else if (crossCount === 1 && firstCrossIdx >= 1) {
           const lc = evaluateStockTrackingLifecycle(s, baseOpts, cfg);
           const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
           const uniqueRec = (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) ? lc.activeOrTodayExit : (p5Rec || lc.activeOrTodayExit || null);
@@ -2559,8 +2561,9 @@
         }
       }
         exIndex++; report(80 * exIndex / exitCands.length, "完成一組出場候選"); await aiYield();
-        if (best && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
-          overallBest = { ...best, exitPatch: { ...exCand.patch }, exitTag: exCand.tag };
+        if (best) best = evaluateFullStep1ComboExact(poolStocks, cfg, best.reqMaUp, best.reqRed, best.minG, best.maxG, best.minV);
+        if (best && best.cnt > 0 && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
+          overallBest = { ...best, exitPatch: { ...cfg }, exitTag: exCand.tag };
         }
       }
       // 二次微調：針對全域與該策略專屬參數做座標下降尋優，確保抓出真正最高收益
@@ -2674,6 +2677,8 @@
     async function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
       if (fullAiBusy || capitalAiBusy) return null;
       fullAiBusy = true;
+      _fullStep1Cache.clear();
+      _lastCmpResultsCache = null;
       showAiProgress('full', 0, '準備尋優');
       try { await aiYield();
       const adviceEl = document.getElementById("aiFullStep1AdviceText");
@@ -2839,6 +2844,7 @@
       if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
       } else {
+      const aiCardPool = useAiFullCards ? getPoolStocksWithCrossovers() : rawAllLoadedStocks;
       results = list.map(item => {
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || null) : null;
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
@@ -2856,7 +2862,7 @@
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        rawAllLoadedStocks.forEach(s => {
+        (aiS1 ? aiCardPool : rawAllLoadedStocks).forEach(s => {
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
@@ -2872,7 +2878,7 @@
           let p5Rec = null;
           if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
             p5Rec = lc.closedBreakdown;
-          } else if (allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
+          } else if (!aiS1 && allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
             p5Rec = s.directBreakdownInfo;
           }
           if (p5Rec && checkStockMatchesPnlDateRange(s, p5Rec)) {
@@ -2913,6 +2919,7 @@
 
       }
       _lastCmpResultsCache = results;
+      if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜同一突破股池、日期區間及去重損益口徑";
       const bestNet = Math.max(...results.map(r => r.net));
 
       grid.innerHTML = results.map(r => {
@@ -5084,6 +5091,8 @@
       if (!box || !grid || rawAllLoadedStocks.length === 0) return;
       if (fullAiBusy || capitalAiBusy) return;
       capitalAiBusy = true;
+      _fullStep1Cache.clear();
+      _lastCmpResultsCache = null;
       showAiProgress("capital",0,"準備七大策略");
       try {
       box.classList.remove("hidden");
@@ -5240,7 +5249,7 @@
 
         const bestTag = buildExitParamTag(d.key, bestPatch);
         if (bestS1) {
-          _aiCapitalBestStep1Map[d.key] = { ...bestS1, exitPatch: { ...bestPatch }, exitTag: bestTag };
+          _aiCapitalBestStep1Map[d.key] = { ...bestS1, exitPatch: { ...baseCfg, ...bestPatch }, exitTag: bestTag };
         }
         _aiCapitalBestParamsMap[d.key] = { ...bestPatch, priorityMode: bestPriority };
         capReport(1,"策略完成");
@@ -5925,7 +5934,7 @@
           }
 
           // (2) 策略 B：獲利達標切換短均線 (5MA / 10MA) 移動停利
-          if (!closedThisBar && cfg.strategy === 'SHORT_MA_TRAIL' && peakProfitPct >= cfg.shortMaTriggerPct) {
+          if (!closedThisBar && activePos && cfg.strategy === 'SHORT_MA_TRAIL' && peakProfitPct >= cfg.shortMaTriggerPct) {
             activePos.shortMaArmed = true;
             activePos.activeControlMa = cfg.shortMaPeriod;
             const targetMa = cfg.shortMaPeriod === 5 ? curBar.ma5 : curBar.ma10;
@@ -5974,7 +5983,7 @@
           }
 
           // (3) 策略 C：最高點回落移動停利 ＋ 保本防線
-          if (!closedThisBar && cfg.strategy === 'PEAK_TRAILING') {
+          if (!closedThisBar && activePos && cfg.strategy === 'PEAK_TRAILING') {
             if (peakProfitPct >= cfg.peakTrailTriggerPct && activePos.maxCloseSinceEntry > 0) {
               activePos.dynamicStopPrice = Number((activePos.maxCloseSinceEntry * (1 - cfg.peakDrawdownPct / 100)).toFixed(2));
               activePos.dynamicStopLabel = `回落${cfg.peakDrawdownPct}%停利`;
@@ -5999,7 +6008,7 @@
                 closedThisBar = true;
               }
             }
-            if (!closedThisBar && peakProfitPct >= cfg.breakevenTriggerPct && curBar.close < activePos.buyPrice) {
+            if (!closedThisBar && activePos && peakProfitPct >= cfg.breakevenTriggerPct && curBar.close < activePos.buyPrice) {
               activePos.isClosed = true;
               activePos.sellIdx = i;
               activePos.sellDate = curBar.date;
@@ -6016,7 +6025,7 @@
           }
 
           // (4) 策略 D：高檔獲利後出現爆量收黑K出貨訊號
-          if (!closedThisBar && cfg.strategy === 'WHALE_SELL_EXIT' && peakProfitPct >= cfg.whaleTriggerPct) {
+          if (!closedThisBar && activePos && cfg.strategy === 'WHALE_SELL_EXIT' && peakProfitPct >= cfg.whaleTriggerPct) {
             const volMult = curBar.ma5Vol > 0 ? (curBar.vol / curBar.ma5Vol) : 1;
             if (curBar.close < curBar.open && volMult >= cfg.whaleSellMult) {
               activePos.isClosed = true;
@@ -6035,7 +6044,7 @@
           }
 
           // (4.5) 策略 E：風險報酬比階梯移動停利 (1:1保本 -> 1:3鎖定2R + 20/10/5MA+確認K奔跑)
-          if (!closedThisBar && cfg.strategy === 'RR_LADDER') {
+          if (!closedThisBar && activePos && cfg.strategy === 'RR_LADDER') {
             const riskR = activePos.riskR > 0 ? activePos.riskR : Math.max(0.01, activePos.buyPrice * 0.03);
             const curR = (curBar.close - activePos.buyPrice) / riskR;
             const peakR = (activePos.maxCloseSinceEntry - activePos.buyPrice) / riskR;
@@ -6082,11 +6091,12 @@
               }
             }
 
-            if (activePos.rrStage === 2) {
+            // FIX: FIXED_TP may have closed and cleared activePos above.
+            if (!closedThisBar && activePos && activePos.rrStage === 2) {
               const effLockedR = activePos.rrLockedR || cfg.rrLockRatio;
               activePos.dynamicStopPrice = activePos.rrStopFloor;
               activePos.dynamicStopLabel = cfg.rrTier2Action === 'STEP_LADDER' ? `階梯鎖利${effLockedR}R` : `鎖利${effLockedR}R`;
-            } else if (activePos.rrStage === 1) {
+            } else if (!closedThisBar && activePos && activePos.rrStage === 1) {
               activePos.dynamicStopPrice = activePos.rrStopFloor;
               activePos.dynamicStopLabel = `保本1:${cfg.rrBreakevenRatio}`;
             }
@@ -6161,7 +6171,7 @@
           }
 
           // (4.6) 策略 F：AI 個股自適應最佳出場（依 ATR 波動度選擇均線，並依洗盤次數自動判定「需確認K」或「跌破即出」）
-          if (!closedThisBar && cfg.strategy === 'AI_ADAPTIVE') {
+          if (!closedThisBar && activePos && cfg.strategy === 'AI_ADAPTIVE') {
             const atr = activePos.aiAtrPct || 3.0;
             const needConfirm = cfg.globalConfirmMode === 'FORCE_KEY_K' ? true : (cfg.globalConfirmMode === 'FORCE_DIRECT' ? false : !!activePos.aiNeedConfirmK);
             const riskR = activePos.riskR > 0 ? activePos.riskR : Math.max(0.01, activePos.buyPrice * 0.03);
@@ -6231,7 +6241,7 @@
                   closedThisBar = true;
                 }
               }
-              if (!closedThisBar && peakProfitPct >= 12) {
+              if (!closedThisBar && activePos && peakProfitPct >= 12) {
                 activePos.shortMaArmed = true;
                 activePos.activeControlMa = 5;
                 if (runShortMaCheck(curBar.ma5, "5MA")) closedThisBar = true;
@@ -6257,7 +6267,7 @@
                   closedThisBar = true;
                 }
               }
-              if (!closedThisBar && peakProfitPct >= 14) {
+              if (!closedThisBar && activePos && peakProfitPct >= 14) {
                 activePos.shortMaArmed = true;
                 activePos.activeControlMa = 10;
                 if (runShortMaCheck(curBar.ma10, "10MA")) closedThisBar = true;
@@ -6273,7 +6283,7 @@
                 if (lockP > activePos.rrStopFloor) activePos.rrStopFloor = lockP;
                 activePos.rrStage = 2;
               }
-              if (activePos.rrStage >= 1) {
+              if (activePos && activePos.rrStage >= 1) {
                 activePos.dynamicStopPrice = activePos.rrStopFloor;
                 activePos.dynamicStopLabel = activePos.rrStage === 2 ? "AI鎖利2R" : "AI保本1:1";
                 if (curBar.close < activePos.rrStopFloor) {
@@ -6294,7 +6304,7 @@
                 }
               }
               // 低波動股若 AI 判定不需確認K，跌破 20MA 且已啟動 20MA 控盤時可直接出場
-              if (!closedThisBar && !needConfirm && activePos && activePos.ma20ControlArmed && curBar.ma20 > 0 && curBar.close < curBar.ma20) {
+              if (!closedThisBar && activePos && !needConfirm && activePos && activePos.ma20ControlArmed && curBar.ma20 > 0 && curBar.close < curBar.ma20) {
                 activePos.isClosed = true;
                 activePos.sellIdx = i;
                 activePos.sellDate = curBar.date;
