@@ -871,7 +871,10 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span id="simTrimmedInfoBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-200"></span>
                 <span id="simStatusNote" class="font-mono text-slate-300"></span>
-              </div>
+              </div><div class="my-2 p-2 rounded border border-emerald-700 bg-slate-900 text-xs flex flex-wrap gap-3 items-center" id="lineNotifyPanel">
+<b class="text-emerald-300">LINE 交易通知</b><label><input type="checkbox" id="lineEnabled" checked> 啟用</label>
+<label><input type="checkbox" id="lineBUY" checked> 買進</label><label><input type="checkbox" id="linePROFIT" checked> 停利</label><label><input type="checkbox" id="lineLOSS" checked> 停損／保本</label><label><input type="checkbox" id="lineKEY" checked> 關鍵K</label><label><input type="checkbox" id="lineREPORT" checked> 14:00報告</label>
+<button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待首次行情同步（需保持網頁開啟）</span></div>
             </div>
 
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
@@ -4061,6 +4064,7 @@
           } catch (e) {}
         }
         applyFiltersAndRender();
+        void lineProcessV14();
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
         statusText.textContent = rawAllLoadedStocks.length > 0
@@ -5406,6 +5410,35 @@
       } catch(e) { showAiProgress("capital",0,"尋優失敗："+e.message); console.error(e); } finally { capitalAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
     }
 
+
+    let lineV14Snapshot=null, lineV14Busy=false;
+    const lineV14Day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const lineV14Status=t=>{const e=document.getElementById('lineStatus');if(e)e.textContent=t;};
+    async function lineV14Post(payload){
+      const r=await fetch('http://localhost:3000/line-notify-v14',{method:'POST',headers:{'Content-Type':'application/json','X-W-Trading':'v14'},body:JSON.stringify(payload)});
+      if(!r.ok)throw Error('LINE HTTP '+r.status);return r.json();
+    }
+    async function lineTestV14(){try{await lineV14Post({test:true});lineV14Status('測試通知已送出');}catch(e){lineV14Status(e.message);}}
+    async function lineProcessV14(){
+      if(lineV14Busy||fullAiBusy||capitalAiBusy||!lineV14Snapshot)return;
+      const snap=lineV14Snapshot, day=lineV14Day();
+      if(!document.getElementById('lineEnabled')?.checked){localStorage.removeItem('lineV14Baseline');return;}
+      if(snap.dataDate!==day){lineV14Status('等待當日新行情');return;}
+      lineV14Busy=true;
+      try{
+        let prev=null;try{prev=JSON.parse(localStorage.getItem('lineV14Baseline')||'null');}catch(e){}
+        const ids=[], events=[];
+        const add=(type,id,date,text)=>{const k=type+':'+id+':'+date;ids.push(k);if(date===day&&prev?.config===snap.config&&!prev.ids.includes(k)&&document.getElementById('line'+type)?.checked)events.push({id:k,text});};
+        for(const t of snap.trades){const label=t.code+' '+t.name+'｜'+snap.strategy;add('BUY',t.uid,t.buyDate,'🔴 模擬買進訊號\n'+label+'\n價格 '+t.buyPrice+' 元｜'+t.lots+' 張');if(t.isClosed&&!t.isManualClosed)add(t.exitOrNowPrice>t.buyPrice?'PROFIT':'LOSS',t.uid,t.sellDate,(t.exitOrNowPrice>t.buyPrice?'💰 停利':'🟢 停損／保本')+' 模擬平倉\n'+label+'\n買 '+t.buyPrice+' → 賣 '+t.exitOrNowPrice+'｜'+t.lots+' 張\n估算淨損益 NT$'+Math.round(t.netProfit));}
+        for(const k of snap.keys)add('KEY',k.code,k.date,'🔥 關鍵K\n'+k.code+' '+k.name+'｜'+k.date+'\n收盤 '+k.price);
+        const hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+        if(hm>='14:00'&&document.getElementById('lineREPORT')?.checked){const r=snap.report;events.push({id:'REPORT:'+day,text:'📊 實戰模擬每日報告 '+day+'\n'+snap.strategy+'\n今日買進 '+snap.trades.filter(t=>t.buyDate===day).length+' 筆｜平倉 '+snap.trades.filter(t=>t.isClosed&&t.sellDate===day).length+' 筆\n起始資金 '+r.initCapital+'\n總權益 '+Math.round(r.equity)+'\n已實現 '+Math.round(r.realizedProfit)+'\n未實現（估算） '+Math.round(r.unrealizedProfit)+'\n累計報酬 '+r.totalRoiPct.toFixed(2)+'%\n剩餘現金 '+Math.round(r.availableCash)+'\n持倉 '+r.holdingCnt+' 筆'});}
+        if(events.length)await lineV14Post({events});
+        localStorage.setItem('lineV14Baseline',JSON.stringify({config:snap.config,ids:[...new Set([...(prev?.config===snap.config?prev.ids:[]),...ids])]}));
+        lineV14Status(!prev||prev.config!==snap.config?'已建立基準，歷史訊號不推播':'監控中 · '+hm);
+      }catch(e){lineV14Status('通知失敗：'+e.message);}finally{lineV14Busy=false;}
+    }
+
     function runPortfolioCapitalSimulation() {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
@@ -5718,6 +5751,7 @@
       if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
       lastSimTradesSnapshot = boughtTrades;
+      lineV14Snapshot = { trades: boughtTrades.map(t=>({...t})), keys: allStocks.map(t=>({code:t.code,name:t.name,date:t.keyKDate,price:t.yestClose})), strategy: stratLabelMap[currentExitStrategy] || currentExitStrategy, config: JSON.stringify([getExitStrategyConfig(),getCurrentFilterOptions(),startDate,initCapital,lotMode,perStockBudget,withdrawParam,profitRule,includeFees,sectorMode,trimN,document.getElementById("simPrioritySelect")?.value,simManualCloseMap]), dataDate: rawAllLoadedStocks.reduce((d,t)=>String(t.latestTradeDate||'')>d?String(t.latestTradeDate):d,''), report: {initCapital,totalNetProfit,totalRoiPct,realizedProfit,unrealizedProfit,availableCash,holdingCnt, equity:availableCash+lockedVault+holdingMarketValue} };
       const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
       if (aiCmpBox && !aiCmpBox.classList.contains("hidden")) {
         if (window._skipNextAiCapOptInSim) {
