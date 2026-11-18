@@ -765,7 +765,7 @@
 
               <label class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
                 <span class="text-[10px] text-slate-400">開始投入買股日期</span>
-                <input type="date" id="simStartDateInput" onchange="runPortfolioCapitalSimulation()"
+                <input type="date" id="simStartDateInput" onchange="onCapitalStartDateChanged()"
                        class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sky-300 font-mono font-bold focus:outline-none focus:border-sky-500" />
               </label>
 
@@ -878,19 +878,19 @@
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-purple-200">🤖 AI 實戰資金模擬七大策略收益對比</span>
+                <div class="flex flex-wrap items-center gap-2 w-full min-w-0">
+                  <span class="font-bold text-purple-200 w-full">🤖 AI 實戰資金模擬七大策略收益對比</span>
                   <span id="simAiWinnerSummary" class="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold"></span><div id="capitalAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div id="capitalAiProgressText"></div><progress id="capitalAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
               <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新尋優／讀取快取</button>
-              <div id="v8CapitalQuickCards" class="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1"></div>
-              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-[10.5px]"></div>
+              <div id="v8CapitalQuickCards" class="w-full gap-2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))"></div>
+              <div id="simAiStrategyCompareGrid" class="w-full gap-2 text-[11px]" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"></div>
             </div>
 
             <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[11px] font-mono">
+            <div class="w-full gap-2 text-[11px] font-mono" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))">
               <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
                 <div class="text-[10px] text-slate-400">總淨獲利 (合計)</div>
                 <div id="simTotalProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
@@ -4924,6 +4924,29 @@
     let _aiCapitalLifecycleCache = new Map();
     let _aiCapitalOptimizerRunId = 0;
 
+    let pendingCapitalDateRefresh = false;
+    let capitalDateRefreshTimer = null;
+    function requestCapitalDateRefresh() {
+      clearTimeout(capitalDateRefreshTimer);
+      if (!document.getElementById("chkAiCapitalOpt")?.checked) { pendingCapitalDateRefresh=false; return; }
+      if (fullAiBusy || capitalAiBusy) {
+        pendingCapitalDateRefresh=true;
+        capitalDateRefreshTimer=setTimeout(requestCapitalDateRefresh, 250);
+        return;
+      }
+      pendingCapitalDateRefresh=false;
+      runAiCapitalStrategyOptimizer(true);
+    }
+    function onCapitalStartDateChanged() {
+      runPortfolioCapitalSimulation();
+      saveUserSettingsToStorage(false);
+      if (document.getElementById("chkAiCapitalOpt")?.checked) {
+        const box=document.getElementById("simAiStrategyCompareBox");
+        if(box) box.classList.remove("hidden");
+        showAiProgress("capital",0,"投入日期已變更，等待重新尋優");
+        requestCapitalDateRefresh();
+      }
+    }
     function toggleAiCapitalStrategyOptimizer() {
       const chk = document.getElementById("chkAiCapitalOpt");
       const txt = document.getElementById("txtAiCapitalOpt");
@@ -4937,8 +4960,11 @@
           : "inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm";
       }
       if (isOn) {
-        runAiCapitalStrategyOptimizer(true);
+        if(box) box.classList.remove("hidden");
+        requestCapitalDateRefresh();
       } else if (box) {
+        clearTimeout(capitalDateRefreshTimer);
+        pendingCapitalDateRefresh=false;
         box.classList.add("hidden");
       }
     }
@@ -5056,23 +5082,23 @@
         summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
       }
       const quick=document.getElementById('v8CapitalQuickCards');
-      if(quick)quick.innerHTML=results.map(r=>`<button onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="border rounded p-1 text-xs ${r.strategyKey===currentExitStrategy?'border-indigo-400 bg-indigo-950':'border-slate-700'}"><div>${r.label}</div><b class="${r.totalNetProfit>=0?'text-rose-300':'text-emerald-300'}">${fmtMoney(r.totalNetProfit)}</b></button>`).join('');
+      if(quick)quick.innerHTML=results.map(r=>`<button onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="border rounded p-2 text-xs min-w-0 text-left ${r.strategyKey===currentExitStrategy?'border-indigo-400 bg-indigo-950':'border-slate-700'}"><div class="break-words">${r.label}</div><b class="block text-sm break-words ${r.totalNetProfit>=0?'text-rose-300':'text-emerald-300'}">${fmtMoney(r.totalNetProfit)}</b></button>`).join('');
       grid.innerHTML = results.map(r => {
         const isWin = winner && r.strategyKey === winner.strategyKey;
         const isCur = r.strategyKey === currentExitStrategy;
         const pCls = r.totalNetProfit >= 0 ? "text-rose-400" : "text-emerald-400";
         const topStr = r.topTrade
-          ? `<div class="text-[9.5px] text-amber-300 mt-1 truncate" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
+          ? `<div class="text-[9.5px] text-amber-300 mt-1 break-words" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
           : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
         return `
-          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer rounded-lg p-2 border transition ${isCur ? 'bg-purple-900/55 border-purple-400 ring-2 ring-purple-400/70' : (isWin ? 'bg-purple-900/35 border-amber-400/80 ring-1 ring-amber-400/50' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
-            <div class="flex items-center justify-between gap-1 font-bold text-slate-200">
-              <span class="truncate">${r.label}</span>
+          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer min-w-0 rounded-lg p-3 border transition ${isCur ? 'bg-purple-900/55 border-purple-400 ring-2 ring-purple-400/70' : (isWin ? 'bg-purple-900/35 border-amber-400/80 ring-1 ring-amber-400/50' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
+            <div class="flex flex-wrap items-center justify-between gap-1 font-bold text-slate-200">
+              <span class="break-words">${r.label}</span>
               ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
             </div>
-            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 truncate">最佳出場：${r.bestTag}</div>
-            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono truncate">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
-            <div class="${pCls} font-extrabold text-xs mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
+            <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 break-words">最佳出場：${r.bestTag}</div>
+            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono break-words">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
+            <div class="${pCls} font-extrabold text-sm break-words mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
             <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
             <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
             ${topStr}
@@ -5116,7 +5142,9 @@
       const box = document.getElementById("simAiStrategyCompareBox");
       const grid = document.getElementById("simAiStrategyCompareGrid");
       const summary = document.getElementById("simAiWinnerSummary");
-      if (!box || !grid || rawAllLoadedStocks.length === 0) return;
+      if (!box || !grid) return;
+      box.classList.remove("hidden");
+      if (rawAllLoadedStocks.length === 0) { showAiProgress("capital",0,"尚未載入股票資料，請先同步行情"); return; }
       if (fullAiBusy || capitalAiBusy) return;
       capitalAiBusy = true;
       const runKey=aiV8Key(true);
