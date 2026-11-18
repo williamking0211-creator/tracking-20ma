@@ -1401,7 +1401,7 @@
       </p>
       <!-- 輸入欄位 6：API 網址輸入框 (附帶 ✕ 清空鍵) -->
       <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-lg px-3 py-1.5 mb-3 gap-2">
-        <input type="text" id="apiUrlInput" placeholder="https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" 
+        <input type="text" id="apiUrlInput" placeholder="https://preservation-staffing-meeting-become.trycloudflare.com/stocks" 
                class="w-full bg-transparent text-xs text-white focus:outline-none" />
         <button type="button" onclick="clearInputField('apiUrlInput', false)" title="清空網址欄" class="clear-input-btn">✕</button>
       </div>
@@ -1457,7 +1457,7 @@
   </div>
 
   <script>
-    const DEFAULT_API_URL = "https://dual-contacted-floyd-dosage.trycloudflare.com/stocks";
+    const DEFAULT_API_URL = "https://preservation-staffing-meeting-become.trycloudflare.com/stocks";
     const USER_SETTINGS_STORAGE_KEY = "ma20_dashboard_user_settings_v2";
 
     function safeGetStorage(key, fallback = "") {
@@ -1494,7 +1494,7 @@
     }
 
     let savedUrl = safeGetStorage("custom_stock_api_url", DEFAULT_API_URL);
-    if (!savedUrl || savedUrl.includes("ngrok-free.dev") || !savedUrl.endsWith("/stocks")) {
+    if (!savedUrl || savedUrl === "https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" || savedUrl.includes("ngrok-free.dev") || !savedUrl.endsWith("/stocks")) {
       savedUrl = DEFAULT_API_URL;
       safeSetStorage("custom_stock_api_url", savedUrl);
     }
@@ -4000,7 +4000,7 @@
           );
         } catch (primaryErr) {
           // 若遠端通道 (如 trycloudflare) 失效且本機正在跑 localhost:3000，自動切換備援連線
-          const localFallbackUrl = "https://preservation-staffing-meeting-become.trycloudflare.com/stocks";
+          const localFallbackUrl = "http://localhost:3000/stocks";
           if (apiUrl !== localFallbackUrl && /Failed to fetch|NetworkError|Load failed/i.test(primaryErr.message || "")) {
             try {
               rawData = await fetchWithTimeoutRetry(`${localFallbackUrl}?_t=${Date.now()}`, 5000, 0);
@@ -4068,7 +4068,7 @@
       } catch (err) {
         statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
         statusText.textContent = rawAllLoadedStocks.length > 0
-          ? `同步逾時(目前顯示快取)：${err.message}`
+          ? `同步失敗(目前顯示快取或已載入資料)：${err.message}`
           : `連線失敗: ${err.message}`;
         if (!isSilent && rawAllLoadedStocks.length === 0) {
           document.getElementById("stockTableBody").innerHTML = `<tr><td colspan="7" class="py-10 text-center text-rose-400">無法連線至 API (${apiUrl})，錯誤：${err.message}（請確認後端與 ngrok 正常運行後點擊右上角「刷新報價」）</td></tr>`;
@@ -9258,6 +9258,10 @@
       ctx.rect(0, 0, width, volPlotTop - 6);
       ctx.clip();
 
+      const slotCount = Math.max(visibleBars.length + blankRightSlots, Math.min(chartState.visibleCount, 10));
+      const stepX = plotW / slotCount;
+      const candleW = Math.max(4, Math.min(34, stepX * 0.62));
+
       const placedRightLabelYs = [];
       ctx.font = "11px monospace";
       ctx.textAlign = "left";
@@ -9324,9 +9328,6 @@
         }
       }
 
-      const slotCount = Math.max(visibleBars.length + blankRightSlots, Math.min(chartState.visibleCount, 10));
-      const stepX = plotW / slotCount;
-      const candleW = Math.max(4, Math.min(34, stepX * 0.62));
 
       let hoveredBar = null, hoveredPrevBar = null, hoveredCx = -1;
       visibleBars.forEach((b, idx) => {
