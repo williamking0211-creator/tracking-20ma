@@ -696,7 +696,7 @@
               <span>📊 <b class="text-slate-200">七大出場策略全體結算對比</b>（合併「續抱中＋已平倉」總淨利，點擊可一鍵切換測試）</span>
               <span id="strategyCompareNote" class="font-mono text-indigo-300"></span>
             </div>
-            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 text-[11px] font-mono">
+            <div id="strategyCompareGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[11px] font-mono">
             </div>
           </div>
         </div>
@@ -884,7 +884,7 @@
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
-              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 text-[10.5px]"></div>
+              <div id="simAiStrategyCompareGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-[10.5px]"></div>
             </div>
 
             <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
@@ -2316,12 +2316,51 @@
       const poolStocks = getPoolStocksWithCrossovers();
       if (poolStocks.length === 0) return null;
 
-      const cfg = getExitStrategyConfig(strategyKey);
+      const baseCfg = getExitStrategyConfig(strategyKey);
       const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
       const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
       const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
-      const fCacheKey = `${strategyKey}|v2|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(cfg)}`;
+      const fCacheKey = `${strategyKey}|v3|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(baseCfg)}`;
       if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
+
+      const exitPatchesMap = {
+        'DEFAULT_20MA': [
+          { tag: '20MA破線(無時損)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '20MA破線+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } },
+          { tag: '20MA跌破即出', patch: { useTimeStop: false, globalConfirmMode: 'FORCE_DIRECT' } }
+        ],
+        'SHORT_MA_TRAIL': [
+          { tag: '5MA/達6%/即出', patch: { shortMaPeriod: 5, shortMaTriggerPct: 6, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達10%/即出', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達15%/確認K', patch: { shortMaPeriod: 10, shortMaTriggerPct: 15, shortMaMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } }
+        ],
+        'PEAK_TRAILING': [
+          { tag: '回落5%/無時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '回落8%/無時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 8, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '回落5%+15天時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
+        ],
+        'WHALE_SELL_EXIT': [
+          { tag: '賺6%/1.5x量黑K', patch: { whaleTriggerPct: 6, whaleSellMult: 1.5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺12%/2.0x量黑K', patch: { whaleTriggerPct: 12, whaleSellMult: 2.0, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺15%/2.5x量黑K', patch: { whaleTriggerPct: 15, whaleSellMult: 2.5, useTimeStop: false, globalConfirmMode: 'AUTO' } }
+        ],
+        'RR_LADDER': [
+          { tag: '1:1/1:2階梯+5MA即出', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 2.0, rrTier2Action: 'STEP_LADDER', rrTrailMa: 5, rrMaConfirmMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '1:1/1:3鎖2R+5MA確認K', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 3.0, rrTier2Action: 'LOCK_R_AND_RUN', rrTrailMa: 5, rrMaConfirmMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } }
+        ],
+        'AI_ADAPTIVE': [
+          { tag: 'AI動態(自動)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: 'AI動態+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
+        ],
+        'AI_POWER_90D': [
+          { tag: 'AI買賣點(90天調整)', patch: { aiPowerReevalDays: 90, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: 'AI買賣點(60天調整)', patch: { aiPowerReevalDays: 60, useTimeStop: false, globalConfirmMode: 'AUTO' } }
+        ]
+      };
+      const exitCands = exitPatchesMap[strategyKey] || [{ tag: '預設', patch: {} }];
+      let overallBest = null;
+      for (const exCand of exitCands) {
+        const cfg = { ...baseCfg, ...exCand.patch };
 
       // 加速核心：先把「全區間只有 1 次突破20MA」的股票預先算好單次結果，網格尋優時只需 O(1) 數值比較；僅對「>=2 次突破」的股票重跑狀態機
       const baseOpts = { requireMa20Up: false, requireSolidRedK: false, useGainRange: false, minGain: 0, maxGain: 10.5, volOp: "GTE", validVolThreshold: 0 };
@@ -2431,8 +2470,12 @@
           }
         }
       }
-      if (best) _fullStep1Cache.set(fCacheKey, best);
-      return best;
+        if (best && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
+          overallBest = { ...best, exitPatch: exCand.patch, exitTag: exCand.tag };
+        }
+      }
+      if (overallBest) _fullStep1Cache.set(fCacheKey, overallBest);
+      return overallBest;
     }
 
     let _aiFullStep1PerStrategyMap = {};
@@ -2480,6 +2523,7 @@
       const targetBest = _aiFullStep1PerStrategyMap[currentExitStrategy];
       if (targetBest) {
         applyStep1ParamsToUI(targetBest);
+        if (targetBest.exitPatch) applyBestParamsToStrategyUI(currentExitStrategy, targetBest.exitPatch);
       }
       return { bestForCurrent: targetBest, globalWinnerKey, globalBestProfit };
     }
@@ -2497,6 +2541,9 @@
         }
         if (_aiFullStep1PerStrategyMap[strategyKey]) {
           applyStep1ParamsToUI(_aiFullStep1PerStrategyMap[strategyKey]);
+          if (_aiFullStep1PerStrategyMap[strategyKey].exitPatch) {
+            applyBestParamsToStrategyUI(strategyKey, _aiFullStep1PerStrategyMap[strategyKey].exitPatch);
+          }
         }
       }
       requestAnimationFrame(() => {
@@ -2548,6 +2595,7 @@
 
       if (applyToControls) {
         applyStep1ParamsToUI(best);
+        if (best.exitPatch) applyBestParamsToStrategyUI(currentExitStrategy, best.exitPatch);
         saveUserSettingsToStorage(false);
         if (runFilterRender) {
           applyFiltersAndRender();
@@ -2665,9 +2713,10 @@
         results = _lastCmpResultsCache;
       } else {
       results = list.map(item => {
-        const cfg = getExitStrategyConfig(item.key);
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || computeAiBestFullStep1ForStrategy(item.key)) : null;
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
+        const baseItemCfg = getExitStrategyConfig(item.key);
+        const cfg = (useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
         const effOpts = (useAiFullCards && aiS1)
           ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: "GTE", validVolThreshold: aiS1.minV }
           : filterOpts;
@@ -2745,14 +2794,14 @@
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
             </div>
             <div class="${netColor} font-bold text-xs mt-0.5">${r.aiS1 ? 'AI最高 ' : '合計 '}${formatMoneyDisplay(r.net)}</div>
-            <div class="text-[9.5px] mt-0.5 space-y-0.5 border-t border-slate-800/80 pt-0.5">
+            <div class="text-[10px] mt-1 space-y-0.5 border-t border-slate-800/80 pt-1 whitespace-nowrap">
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
             </div>
-            <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60">
+            <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60 whitespace-nowrap">
               勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
             </div>
-            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳STEP1">🤖 20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 漲${r.aiS1.minG}~${r.aiS1.maxG}% 量≥${r.aiS1.minV}%</div>` : ''}
+            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + '｜' : ''}20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 量≥${r.aiS1.minV}%</div>` : ''}
           </div>
         `;
       }).join("");
@@ -7290,8 +7339,8 @@
       const lastIdx = bars.length - 1;
 
       const pickBestRulesUpTo = (endBarIdx) => {
-        let bestBr = buyRules[0], bestSr = sellRules[0], bestScore = -Infinity;
-        if (endBarIdx < 5) return { br: bestBr, sr: bestSr };
+        let bestBr = null, bestSr = null, bestScore = -Infinity;
+        if (endBarIdx < 12) return { br: null, sr: null };
         for (const br of buyRules) {
           for (const sr of sellRules) {
             const trs = [];
@@ -7316,22 +7365,22 @@
             const tot = trs.reduce((a, v) => a + v, 0);
             const wr = Math.round((trs.filter(v => v > 0).length / trs.length) * 100);
             const sc = tot + (wr >= 55 ? 2 : 0) - (trs.length > 6 ? (trs.length - 6) * 0.5 : 0);
-            if (sc > bestScore) { bestScore = sc; bestBr = br; bestSr = sr; }
+            if (tot > 0 && sc > bestScore) { bestScore = sc; bestBr = br; bestSr = sr; }
           }
         }
         return { br: bestBr, sr: bestSr };
       };
 
-      const startScan = Math.min(15, Math.max(1, Math.floor(bars.length / 4)));
+      const startScan = Math.min(25, Math.max(12, Math.floor(bars.length / 3)));
       let activeRules = pickBestRulesUpTo(startScan);
       let lastReevalDate = bars[startScan].date;
-      const ai90dAdjustments = [{
+      const ai90dAdjustments = activeRules.br ? [{
         date: lastReevalDate,
         changed: true,
         buyName: activeRules.br.name,
         sellName: activeRules.sr.name,
         note: `初始回測採用`
-      }];
+      }] : [];
 
       let activePos = null;
       let latestFinishedPos = null;
@@ -7344,15 +7393,17 @@
         const daysSinceReeval = (new Date(curBar.date + "T00:00:00") - new Date(lastReevalDate + "T00:00:00")) / 86400000;
         if (daysSinceReeval >= reevalDays && i > startScan + 5) {
           const nextRules = pickBestRulesUpTo(i - 1);
-          const isChanged = (nextRules.br.id !== activeRules.br.id || nextRules.sr.id !== activeRules.sr.id);
-          ai90dAdjustments.push({
-            date: curBar.date,
-            changed: isChanged,
-            buyName: nextRules.br.name,
-            sellName: nextRules.sr.name,
-            note: isChanged ? `滿${reevalDays}天回測後調整條件` : `滿${reevalDays}天回測維持原條件`
-          });
-          activeRules = nextRules;
+          if (nextRules.br && nextRules.sr) {
+            const isChanged = (!activeRules.br || nextRules.br.id !== activeRules.br.id || nextRules.sr.id !== activeRules.sr.id);
+            ai90dAdjustments.push({
+              date: curBar.date,
+              changed: isChanged,
+              buyName: nextRules.br.name,
+              sellName: nextRules.sr.name,
+              note: isChanged ? `滿${reevalDays}天回測後調整條件` : `滿${reevalDays}天回測維持原條件`
+            });
+            activeRules = nextRules;
+          }
           lastReevalDate = curBar.date;
         }
 
@@ -7365,7 +7416,7 @@
             activePos.ma20ArmedDate = curBar.date;
           }
           const isHardStop = curBar.close <= activePos.stopLossPrice;
-          const isRuleExit = activeRules.sr.check(i, activePos);
+          const isRuleExit = activeRules.sr ? activeRules.sr.check(i, activePos) : false;
           if (isHardStop || isRuleExit) {
             activePos.isClosed = true;
             activePos.sellIdx = i;
@@ -7382,7 +7433,7 @@
             activePos = null;
           }
         } else {
-          if (activeRules.br.check(i)) {
+          if (activeRules.br && activeRules.br.check(i)) {
             const swingLow = Math.min(curBar.low, prevBar ? prevBar.low : curBar.low);
             const stopP = Number(Math.max(curBar.close * 0.94, swingLow * initStopFactor).toFixed(2));
             activePos = {
