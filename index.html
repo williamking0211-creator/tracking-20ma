@@ -895,6 +895,7 @@
 <button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待首次行情同步（需保持網頁開啟）</span></div>
             </div>
 
+<div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（目前參數）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -5045,6 +5046,7 @@
         clearTimeout(capitalDateRefreshTimer);
         pendingCapitalDateRefresh=false;
         box.classList.add("hidden");
+        scheduleManualCapitalCards();
       }
     }
 
@@ -5464,7 +5466,51 @@
       }catch(e){lineV14Status('通知失敗：'+e.message);}finally{lineV14Busy=false;}
     }
 
+    let manualCapitalTimer = null, manualCapitalGeneration = 0, manualCapitalKey = '', manualCapitalRows = {};
+    function paintManualCapitalCards() {
+      document.querySelectorAll('#manualCapitalGrid button').forEach(b=>{
+        const k=b.dataset.strategy, r=manualCapitalRows[k], active=k===currentExitStrategy;
+        b.classList.toggle('ring-2',active); b.classList.toggle('ring-indigo-400',active);
+        b.setAttribute('aria-pressed',String(active));
+        const el=b.querySelector('[data-return]');
+        el.textContent=r ? (r.totalNetProfit>=0?'+':'-')+'$'+Math.abs(r.totalNetProfit).toLocaleString() : '等待試算';
+        el.style.color=r?(r.totalNetProfit>=0?'#fda4af':'#6ee7b7'):'';
+      });
+    }
+    async function chooseManualCapitalStrategy(k) {
+      await selectComparisonStrategyCard(k);
+      paintManualCapitalCards();
+    }
+    function scheduleManualCapitalCards() {
+      paintManualCapitalCards();
+      clearTimeout(manualCapitalTimer);
+      const generation=++manualCapitalGeneration;
+      manualCapitalTimer=setTimeout(async()=>{
+        const panel=document.getElementById('manualCapitalStrategies'), status=document.getElementById('manualCapitalStatus');
+        if(!panel || !status)return;
+        if(document.getElementById('chkAiCapitalOpt')?.checked || !rawAllLoadedStocks.length || !panel.getClientRects().length)return;
+        if(fullAiBusy || capitalAiBusy){scheduleManualCapitalCards();return;}
+        const keys=Array.from(document.querySelectorAll('#manualCapitalGrid button'), b=>b.dataset.strategy);
+        const opts=getCurrentFilterOptions();
+        const configs=keys.map(k=>getExitStrategyConfig(k));
+        const sig=JSON.stringify([aiV8Key(true),opts,configs,getTrimTopWinnersCount(),document.getElementById('simPrioritySelect')?.value]);
+        if(sig===manualCapitalKey){paintManualCapitalCards();return;}
+        manualCapitalRows={};paintManualCapitalCards();
+        try{
+          for(let i=0;i<keys.length;i++){
+            if(generation!==manualCapitalGeneration || fullAiBusy || capitalAiBusy || document.getElementById('chkAiCapitalOpt')?.checked)return;
+            status.textContent='一般資金試算 '+(i+1)+'/7（非 AI 尋優）';
+            await aiYield();
+            const r=await simulateCapitalForStrategy(keys[i],configs[i],opts);
+            if(generation!==manualCapitalGeneration)return;
+            manualCapitalRows[keys[i]]=r;paintManualCapitalCards();
+          }
+          manualCapitalKey=sig;status.textContent='目前參數試算完成（非 AI 尋優）';
+        }catch(e){status.textContent='一般試算失敗：'+e.message;}
+      },300);
+    }
     function runPortfolioCapitalSimulation() {
+      scheduleManualCapitalCards();
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
