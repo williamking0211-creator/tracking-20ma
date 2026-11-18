@@ -5429,7 +5429,14 @@
         let prev=null;try{prev=JSON.parse(localStorage.getItem('lineV14Baseline')||'null');}catch(e){}
         const ids=[], events=[];
         const add=(type,id,date,text)=>{const k=type+':'+id+':'+date;ids.push(k);if(date===day&&prev?.config===snap.config&&!prev.ids.includes(k)&&document.getElementById('line'+type)?.checked)events.push({id:k,text});};
-        for(const t of snap.trades){const label=t.code+' '+t.name+'｜'+snap.strategy;add('BUY',t.uid,t.buyDate,'🔴 模擬買進訊號\n'+label+'\n價格 '+t.buyPrice+' 元｜'+t.lots+' 張');if(t.isClosed&&!t.isManualClosed)add(t.exitOrNowPrice>t.buyPrice?'PROFIT':'LOSS',t.uid,t.sellDate,(t.exitOrNowPrice>t.buyPrice?'💰 停利':'🟢 停損／保本')+' 模擬平倉\n'+label+'\n買 '+t.buyPrice+' → 賣 '+t.exitOrNowPrice+'｜'+t.lots+' 張\n估算淨損益 NT$'+Math.round(t.netProfit));}
+        const money=v=>Number.isFinite(v)?'NT$'+Math.round(v).toLocaleString('en-US'):'未提供';
+        const px=v=>Number.isFinite(v)&&v>0?v.toFixed(2)+' 元':'未提供';
+        for(const t of snap.trades){
+          const label=t.code+' '+t.name+'｜'+snap.strategy;
+          const cash='\n目前剩餘可投入資金：'+money(snap.report.availableCash);
+          add('BUY',t.uid,t.buyDate,'🔴 模擬買進訊號\n'+label+'\n日期：'+t.buyDate+'\n買進價格：'+px(t.buyPrice)+'｜'+t.lots+' 張\n進場原因：'+t.entryReason+'\n初始停損：'+px(t.initialStopPrice)+cash);
+          if(t.isClosed&&!t.isManualClosed)add(t.exitOrNowPrice>t.buyPrice?'PROFIT':'LOSS',t.uid,t.sellDate,(t.exitOrNowPrice>t.buyPrice?'💰 停利':'🟢 停損／保本')+' 模擬平倉\n'+label+'\n日期：'+t.sellDate+'\n買進：'+px(t.buyPrice)+' → 賣出：'+px(t.exitOrNowPrice)+'｜'+t.lots+' 張\n出場原因：'+t.exitReason+'\n初始停損：'+px(t.initialStopPrice)+'\n持有時間：'+(Number.isFinite(t.holdingDays)?t.holdingDays+' 個交易日（含進出場日）':'未提供')+'\n估算淨損益：'+money(t.netProfit)+'\n報酬率：'+(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'未提供')+cash);
+        }
         for(const k of snap.keys)add('KEY',k.code,k.date,'🔥 關鍵K\n'+k.code+' '+k.name+'｜'+k.date+'\n收盤 '+k.price);
         const hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
         if(hm>='14:00'&&document.getElementById('lineREPORT')?.checked){const r=snap.report;events.push({id:'REPORT:'+day,text:'📊 實戰模擬每日報告 '+day+'\n'+snap.strategy+'\n今日買進 '+snap.trades.filter(t=>t.buyDate===day).length+' 筆｜平倉 '+snap.trades.filter(t=>t.isClosed&&t.sellDate===day).length+' 筆\n起始資金 '+r.initCapital+'\n總權益 '+Math.round(r.equity)+'\n已實現 '+Math.round(r.realizedProfit)+'\n未實現（估算） '+Math.round(r.unrealizedProfit)+'\n累計報酬 '+r.totalRoiPct.toFixed(2)+'%\n剩餘現金 '+Math.round(r.availableCash)+'\n持倉 '+r.holdingCnt+' 筆'});}
@@ -5508,6 +5515,10 @@
             isManualClosed: !!mc,
             sellDate: sellDateEff,
             exitOrNowPrice: exitPriceEff,
+            entryReason: tr.entryReason || (currentExitStrategy === 'AI_POWER_90D' ? '策略G獨立AI買入規則（明細未留存）' : '確認K收盤突破關鍵K高點'),
+            initialStopPrice: tr.stopLossPrice,
+            exitReason: tr.exitReason || '未提供',
+            holdingDays: tr.holdingDays,
             volRatio: s.volRatio || 100,
             yestGainPct: s.yestGainPct || 0
           });
@@ -7868,6 +7879,7 @@
               keyKLow: curBar.low,
               prev2Low: prevBar ? prevBar.low : curBar.low,
               stopLossPrice: stopP,
+              entryReason: activeRules.br.name,
               stopRefDesc: `策略G初始停損(${stopP.toFixed(2)})`,
               buyIdx: i,
               buyDate: curBar.date,
