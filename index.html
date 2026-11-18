@@ -2311,6 +2311,70 @@
       });
     }
 
+    function getExitParamAxesForStrategy(strategyKey) {
+      const commonAxes = [
+        { key: 'initStopBufferPct', values: [{ initStopBufferPct: 1.0 }, { initStopBufferPct: 2.0 }, { initStopBufferPct: 3.0 }, { initStopBufferPct: 5.0 }] },
+        { key: 'entryLimitUpStopAtLow', values: [{ entryLimitUpStopAtLow: true }, { entryLimitUpStopAtLow: false }] },
+        { key: 'useTimeStop', values: [{ useTimeStop: false }, { useTimeStop: true, timeStopDays: 10 }, { useTimeStop: true, timeStopDays: 15 }, { useTimeStop: true, timeStopDays: 20 }, { useTimeStop: true, timeStopDays: 30 }] },
+        { key: 'globalConfirmMode', values: [{ globalConfirmMode: 'AUTO' }, { globalConfirmMode: 'FORCE_KEY_K' }, { globalConfirmMode: 'FORCE_DIRECT' }] }
+      ];
+      if (strategyKey === 'SHORT_MA_TRAIL') {
+        return [
+          { key: 'shortMaPeriod', values: [{ shortMaPeriod: 5 }, { shortMaPeriod: 10 }] },
+          { key: 'shortMaTriggerPct', values: [{ shortMaTriggerPct: 5 }, { shortMaTriggerPct: 6 }, { shortMaTriggerPct: 10 }, { shortMaTriggerPct: 15 }, { shortMaTriggerPct: 20 }] },
+          { key: 'shortMaMode', values: [{ shortMaMode: 'DIRECT' }, { shortMaMode: 'KEY_K' }] },
+          ...commonAxes
+        ];
+      }
+      if (strategyKey === 'PEAK_TRAILING') {
+        return [
+          { key: 'breakevenTriggerPct', values: [{ breakevenTriggerPct: 5 }, { breakevenTriggerPct: 8 }, { breakevenTriggerPct: 10 }, { breakevenTriggerPct: 12 }] },
+          { key: 'peakTrailTriggerPct', values: [{ peakTrailTriggerPct: 10 }, { peakTrailTriggerPct: 12 }, { peakTrailTriggerPct: 15 }, { peakTrailTriggerPct: 20 }] },
+          { key: 'peakDrawdownPct', values: [{ peakDrawdownPct: 3 }, { peakDrawdownPct: 5 }, { peakDrawdownPct: 7 }, { peakDrawdownPct: 8 }, { peakDrawdownPct: 10 }] },
+          ...commonAxes
+        ];
+      }
+      if (strategyKey === 'WHALE_SELL_EXIT') {
+        return [
+          { key: 'whaleTriggerPct', values: [{ whaleTriggerPct: 6 }, { whaleTriggerPct: 10 }, { whaleTriggerPct: 12 }, { whaleTriggerPct: 15 }, { whaleTriggerPct: 20 }] },
+          { key: 'whaleSellMult', values: [{ whaleSellMult: 1.5 }, { whaleSellMult: 2.0 }, { whaleSellMult: 2.5 }, { whaleSellMult: 3.0 }] },
+          ...commonAxes
+        ];
+      }
+      if (strategyKey === 'RR_LADDER') {
+        return [
+          { key: 'rrBreakevenRatio', values: [{ rrBreakevenRatio: 0.5 }, { rrBreakevenRatio: 1.0 }, { rrBreakevenRatio: 1.5 }] },
+          { key: 'rrTier2Ratio', values: [{ rrTier2Ratio: 2.0 }, { rrTier2Ratio: 2.5 }, { rrTier2Ratio: 3.0 }, { rrTier2Ratio: 4.0 }] },
+          { key: 'rrTier2Action', values: [{ rrTier2Action: 'LOCK_R_AND_RUN' }, { rrTier2Action: 'STEP_LADDER' }, { rrTier2Action: 'FIXED_TP' }] },
+          { key: 'rrLockRatio', values: [{ rrLockRatio: 1.5 }, { rrLockRatio: 2.0 }, { rrLockRatio: 2.5 }] },
+          { key: 'rrTrailMa', values: [{ rrTrailMa: 5 }, { rrTrailMa: 10 }, { rrTrailMa: 20 }] },
+          { key: 'rrMaConfirmMode', values: [{ rrMaConfirmMode: 'DIRECT' }, { rrMaConfirmMode: 'KEY_K' }] },
+          ...commonAxes
+        ];
+      }
+      if (strategyKey === 'AI_POWER_90D') {
+        return [
+          { key: 'aiPowerReevalDays', values: [{ aiPowerReevalDays: 30 }, { aiPowerReevalDays: 60 }, { aiPowerReevalDays: 90 }, { aiPowerReevalDays: 120 }] },
+          ...commonAxes
+        ];
+      }
+      return commonAxes;
+    }
+
+    function buildExitParamTag(strategyKey, p = {}) {
+      const stopTxt = p.initStopBufferPct !== undefined ? `停損${p.initStopBufferPct}%` : '';
+      const tsTxt = p.useTimeStop ? `+${p.timeStopDays || 15}天時損` : '';
+      const cmTxt = p.globalConfirmMode === 'FORCE_DIRECT' ? '/即出' : (p.globalConfirmMode === 'FORCE_KEY_K' ? '/確認K' : '');
+      if (strategyKey === 'DEFAULT_20MA') return `原版20MA(${stopTxt || '2%'}${cmTxt}${tsTxt})`;
+      if (strategyKey === 'SHORT_MA_TRAIL') return `${p.shortMaPeriod || 10}MA/達${p.shortMaTriggerPct || 10}%/${p.shortMaMode === 'KEY_K' ? '確認K' : '即出'}${tsTxt}`;
+      if (strategyKey === 'PEAK_TRAILING') return `保本${p.breakevenTriggerPct || 10}%/達${p.peakTrailTriggerPct || 15}%/回落${p.peakDrawdownPct || 8}%${tsTxt}`;
+      if (strategyKey === 'WHALE_SELL_EXIT') return `賺${p.whaleTriggerPct || 12}%/${p.whaleSellMult || 2.0}x黑K${tsTxt}`;
+      if (strategyKey === 'RR_LADDER') return `1:${p.rrBreakevenRatio || 1}/1:${p.rrTier2Ratio || 3}${p.rrTier2Action === 'STEP_LADDER' ? '階梯' : (p.rrTier2Action === 'FIXED_TP' ? '直出' : '鎖R')}+${p.rrTrailMa || 5}MA${tsTxt}`;
+      if (strategyKey === 'AI_ADAPTIVE') return `AI動態(${stopTxt || '2%'}${cmTxt}${tsTxt})`;
+      if (strategyKey === 'AI_POWER_90D') return `AI買賣${p.aiPowerReevalDays || 90}天(${stopTxt || '2%'}${tsTxt})`;
+      return 'AI最佳化';
+    }
+
     function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy) {
       if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
       const poolStocks = getPoolStocksWithCrossovers();
@@ -2471,8 +2535,35 @@
         }
       }
         if (best && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
-          overallBest = { ...best, exitPatch: exCand.patch, exitTag: exCand.tag };
+          overallBest = { ...best, exitPatch: { ...exCand.patch }, exitTag: exCand.tag };
         }
+      }
+      // 二次微調：針對全域與該策略專屬參數做座標下降尋優，確保抓出真正最高收益
+      if (overallBest) {
+        let curPatch = { ...overallBest.exitPatch };
+        let curStep1 = { reqMaUp: overallBest.reqMaUp, reqRed: overallBest.reqRed, minG: overallBest.minG, maxG: overallBest.maxG, minV: overallBest.minV };
+        let curBestRes = overallBest;
+        const evalFullExact = (patch, s1) => {
+          const testCfg = { ...baseCfg, ...patch };
+          const r = evaluateFullStep1ComboExact(poolStocks, testCfg, s1.reqMaUp, s1.reqRed, s1.minG, s1.maxG, s1.minV);
+          return r;
+        };
+        const refineAxes = getExitParamAxesForStrategy(strategyKey);
+        for (const axis of refineAxes) {
+          let bestVal = curPatch[axis.key];
+          let improved = false;
+          for (const val of axis.values) {
+            const candPatch = { ...curPatch, ...val };
+            const r = evalFullExact(candPatch, curStep1);
+            if (r.cnt > 0 && r.totalProfitNtd > curBestRes.totalProfitNtd) {
+              curBestRes = { ...r, exitPatch: candPatch, exitTag: buildExitParamTag(strategyKey, candPatch) };
+              bestVal = candPatch;
+              improved = true;
+            }
+          }
+          if (improved && bestVal) curPatch = { ...bestVal };
+        }
+        overallBest = { ...curBestRes, exitPatch: curPatch, exitTag: buildExitParamTag(strategyKey, curPatch) };
       }
       if (overallBest) _fullStep1Cache.set(fCacheKey, overallBest);
       return overallBest;
@@ -2773,7 +2864,15 @@
         const net = winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
-        return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
+        let dynLabel = item.label;
+        if (useAiFullCards && aiS1 && aiS1.exitPatch) {
+          const ep = aiS1.exitPatch;
+          if (item.key === 'SHORT_MA_TRAIL' && ep.shortMaPeriod) dynLabel = `B. 賺達標守${ep.shortMaPeriod}MA`;
+          else if (item.key === 'PEAK_TRAILING' && ep.peakDrawdownPct) dynLabel = `C. 高點回落${ep.peakDrawdownPct}%`;
+          else if (item.key === 'RR_LADDER' && (ep.rrBreakevenRatio || ep.rrTier2Ratio)) dynLabel = `E. 風報比1:${ep.rrBreakevenRatio || 1}/1:${ep.rrTier2Ratio || 3}`;
+          else if (item.key === 'AI_POWER_90D' && ep.aiPowerReevalDays) dynLabel = `G. 🧠AI買賣${ep.aiPowerReevalDays}天`;
+        }
+        return { ...item, label: dynLabel, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
       });
 
       }
@@ -4571,7 +4670,7 @@
       };
     }
 
-    function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null) {
+    function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
@@ -4579,7 +4678,7 @@
       const profitRule = document.getElementById("simProfitRuleSelect")?.value || "REINVEST_ALL";
       const withdrawInput = document.getElementById("simWithdrawValInput");
       const includeFees = document.getElementById("simIncludeFeesChk")?.checked ?? true;
-      const priorityMode = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
+      const priorityMode = overridePriorityMode || document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
 
       const initCapital = Math.max(10000, parseFloat(capInput?.value || "1000000") || 1000000);
       const perStockBudget = Math.max(10000, parseFloat(budgetInput?.value || "250000") || 250000);
@@ -4591,7 +4690,10 @@
 
       const events = [];
       const seenKey = new Set();
-      rawAllLoadedStocks.forEach(s => {
+      const sourceStocks = (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
+        ? overrideFilterOpts._prefilteredPool
+        : rawAllLoadedStocks;
+      sourceStocks.forEach(s => {
         if (!matchesSimSectorFilter(s, sectorMode)) return;
         const lc = evaluateStockTrackingLifecycle(s, filterOpts, cfg);
         const list = [];
@@ -4874,7 +4976,12 @@
         }
       }
       const bestP = _aiCapitalBestParamsMap[strategyKey];
-      if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
+      if (bestP) {
+        applyBestParamsToStrategyUI(strategyKey, bestP);
+        if (bestP.priorityMode && document.getElementById("simPrioritySelect")) {
+          document.getElementById("simPrioritySelect").value = bestP.priorityMode;
+        }
+      }
       renderAiCapitalCompareCardsOnly();
       window._skipNextAiCapOptInSim = true;
       requestAnimationFrame(() => {
@@ -4949,6 +5056,7 @@
       _aiCapitalBestParamsMap = {};
       _aiCapitalBestStep1Map = {};
       const _prefilteredPool = getPoolStocksWithCrossovers();
+      const curPriority = document.getElementById("simPrioritySelect")?.value || "HIGH_PRICE";
       const results = defs.map(d => {
         const s1Full = computeAiBestFullStep1ForStrategy(d.key);
         const s1Candidates = [];
@@ -4956,7 +5064,9 @@
         const curS1 = getCurrentFilterOptions();
         [
           { reqMaUp: curS1.requireMa20Up, reqRed: curS1.requireSolidRedK, minG: curS1.useGainRange ? curS1.minGain : 0, maxG: curS1.useGainRange ? curS1.maxGain : 10.5, minV: curS1.volOp === 'GTE' ? curS1.validVolThreshold : 0 },
+          { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 0 },
           { reqMaUp: false, reqRed: false, minG: 0, maxG: 10.5, minV: 70 },
+          { reqMaUp: true, reqRed: false, minG: 0, maxG: 10.5, minV: 100 },
           { reqMaUp: true, reqRed: true, minG: 0, maxG: 10.5, minV: 150 },
           { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 300 },
           { reqMaUp: true, reqRed: true, minG: 2, maxG: 10.5, minV: 500 },
@@ -4968,37 +5078,95 @@
           }
         });
         const baseCfg = getExitStrategyConfig(d.key);
-        const cands = baseCands[d.key] || [{ tag: '預設', patch: {} }];
+        const cands = [...(baseCands[d.key] || [{ tag: '預設', patch: {} }])];
+        if (s1Full && s1Full.exitPatch) {
+          cands.unshift({ tag: s1Full.exitTag || '全條件最佳', patch: { ...s1Full.exitPatch } });
+        }
         let bestRes = null;
-        let bestTag = '';
         let bestPatch = {};
-        let bestS1 = s1Full;
+        let bestS1 = s1Full || s1Candidates[0];
+        let bestPriority = curPriority;
+        const makeOpts = (sc) => ({ requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV, _prefilteredPool });
+
         cands.forEach(c => {
           const testCfg = { ...baseCfg, ...c.patch };
           s1Candidates.forEach(sc => {
-            const s1Opts = { requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV, _prefilteredPool };
-            const simRes = simulateCapitalForStrategy(d.key, testCfg, s1Opts);
+            const simRes = simulateCapitalForStrategy(d.key, testCfg, makeOpts(sc), bestPriority);
             if (!bestRes || simRes.totalNetProfit > bestRes.totalNetProfit) {
               bestRes = simRes;
-              bestTag = c.tag;
-              bestPatch = c.patch;
-              bestS1 = sc;
+              bestPatch = { ...c.patch };
+              bestS1 = { ...sc };
             }
           });
         });
-        if (bestS1) _aiCapitalBestStep1Map[d.key] = bestS1;
-        _aiCapitalBestParamsMap[d.key] = bestPatch;
-        return { ...d, ...bestRes, bestTag, s1Best: bestS1 };
+
+        // 座標下降微調：測試所有上方參數（初始停損%、進場漲停守低、時間停損、確認K、策略專屬參數、STEP1 細部參數、同日買進優先順序）
+        if (bestRes) {
+          const axes = getExitParamAxesForStrategy(d.key);
+          for (const axis of axes) {
+            for (const val of axis.values) {
+              const candPatch = { ...bestPatch, ...val };
+              const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...candPatch }, makeOpts(bestS1), bestPriority);
+              if (simRes.totalNetProfit > bestRes.totalNetProfit) {
+                bestRes = simRes;
+                bestPatch = candPatch;
+              }
+            }
+          }
+          // 微調 STEP 1 單一條件 (20MA向上 / 實體紅K / 漲幅下限 / 成交量%)
+          for (const maUp of [true, false]) {
+            const candS1 = { ...bestS1, reqMaUp: maUp };
+            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
+          }
+          for (const redK of [true, false]) {
+            const candS1 = { ...bestS1, reqRed: redK };
+            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
+          }
+          for (const minG of [0, 1.0, 2.0, 3.5, 5.0, 7.0]) {
+            const candS1 = { ...bestS1, minG, maxG: 10.5 };
+            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
+          }
+          for (const minV of [0, 70, 100, 150, 200, 300, 400, 500, 700, 1000]) {
+            const candS1 = { ...bestS1, minV };
+            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(candS1), bestPriority);
+            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestS1 = candS1; }
+          }
+          for (const prio of ['HIGH_PRICE', 'VOL_RATIO', 'GAIN_PCT', 'LOW_PRICE']) {
+            const simRes = simulateCapitalForStrategy(d.key, { ...baseCfg, ...bestPatch }, makeOpts(bestS1), prio);
+            if (simRes.totalNetProfit > bestRes.totalNetProfit) { bestRes = simRes; bestPriority = prio; }
+          }
+        }
+
+        const bestTag = buildExitParamTag(d.key, bestPatch);
+        if (bestS1) {
+          _aiCapitalBestStep1Map[d.key] = { ...bestS1, exitPatch: { ...bestPatch }, exitTag: bestTag };
+        }
+        _aiCapitalBestParamsMap[d.key] = { ...bestPatch, priorityMode: bestPriority };
+        return { ...d, ...bestRes, bestTag, bestPriority, s1Best: bestS1 };
       });
 
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
 
       if (autoSwitch && winner) {
+        // 同步所有七大策略的最佳參數至對比字卡快取，讓下方七大策略字卡全部顯示各自最高收益
+        _aiFullStep1ModeActive = true;
+        const chkFull = document.getElementById("chkAiAutoFullStep1");
+        if (chkFull) chkFull.checked = true;
+        defs.forEach(d => {
+          if (_aiCapitalBestStep1Map[d.key]) {
+            _aiFullStep1PerStrategyMap[d.key] = _aiCapitalBestStep1Map[d.key];
+          }
+        });
         if (_aiCapitalBestStep1Map[winner.strategyKey]) {
-          _aiFullStep1PerStrategyMap[winner.strategyKey] = _aiCapitalBestStep1Map[winner.strategyKey];
           applyStep1ParamsToUI(_aiCapitalBestStep1Map[winner.strategyKey]);
         }
         applyBestParamsToStrategyUI(winner.strategyKey, _aiCapitalBestParamsMap[winner.strategyKey]);
+        if (winner.bestPriority && document.getElementById("simPrioritySelect")) {
+          document.getElementById("simPrioritySelect").value = winner.bestPriority;
+        }
         if (winner.strategyKey !== currentExitStrategy) {
           currentExitStrategy = winner.strategyKey;
         }
