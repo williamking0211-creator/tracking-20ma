@@ -152,6 +152,20 @@
         scrollbar-width: none;
       }
     }
+    @media (max-width: 767px) {
+      main, #stockPoolPanel, #trackingPoolSummaryBanner, #capitalSimBody { min-width: 0; max-width: 100%; }
+      #trackingPoolSummaryBanner.hidden { display: block !important; }
+      #trackingPoolSummaryBanner.hidden > .pool-specific-summary { display: none !important; }
+      #strategyCompareGrid, #simResultCardsMobile { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+      #strategyCompareGrid > *, #simResultCardsMobile > * { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+      #trackingPoolSummaryBanner select, #trackingPoolSummaryBanner input { max-width: 100%; }
+      #trackingPoolSummaryBanner .flex > * { min-width: 0; }
+      #trackingPoolSummaryBanner table { min-width: 540px; }
+      #lineNotifyPanel { overflow-wrap: anywhere; }
+    }
+    @media (max-width: 350px) {
+      #strategyCompareGrid, #simResultCardsMobile { grid-template-columns: minmax(0,1fr) !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
@@ -485,6 +499,10 @@
       <!-- 股池四（確認K決策追蹤）與 股池五（破底K／破線出場）共用：出場策略切換器 + 日期區間損益篩選 + 4 大損益統計看板 -->
       <div id="trackingPoolSummaryBanner" class="hidden bg-slate-900/90 border-b border-slate-800 p-3 space-y-2.5">
 
+        <div class="md:hidden flex flex-wrap gap-2 text-xs">
+          <button type="button" onclick="setFilter('TRACKING')" class="px-3 py-2 rounded border border-cyan-600 text-cyan-200">股池四・續抱損益</button>
+          <button type="button" onclick="setFilter('BREAKDOWN')" class="px-3 py-2 rounded border border-emerald-600 text-emerald-200">股池五・平倉損益</button>
+        </div>
         <!-- 出場策略切換器與可調參數 -->
         <div class="bg-slate-950/95 border border-indigo-500/40 rounded-lg p-2.5 space-y-2 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -892,7 +910,7 @@
             </div>
 
             <!-- 試算結果 5 大卡片 (獨立顯示：總淨獲利 / 已實現金額 / 未實現金額 / 剩餘現金 / 金庫與買進數) -->
-            <div class="w-full gap-2 text-[11px] font-mono" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))">
+            <div id="simResultCardsMobile" class="w-full gap-2 text-[11px] font-mono" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))">
               <div class="bg-slate-900/95 border border-slate-700 rounded-lg p-2">
                 <div class="text-[10px] text-slate-400">總淨獲利 (合計)</div>
                 <div id="simTotalProfitEl" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
@@ -1028,7 +1046,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+        <div class="pool-specific-summary grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
           <!-- 1. 賺錢卡片（點擊篩選賺錢股） -->
           <div id="subTab-WIN" onclick="setTrackingSubFilter('WIN')" title="點擊只列出賺錢的股票（再點一次顯示全部）"
                class="cursor-pointer select-none bg-rose-950/35 hover:bg-rose-950/55 border border-rose-500/40 rounded-lg p-2.5 flex flex-col justify-between transition">
@@ -1076,7 +1094,7 @@
 
         <!-- 4. 今日平倉/破K股票結算資訊條（點擊只篩選今日平倉/破K股票） -->
         <div id="subTab-TODAY_EXIT" onclick="setTrackingSubFilter('TODAY_EXIT')" title="點擊只列出今天平倉/破K的股票（再點一次顯示全部）"
-             class="cursor-pointer select-none bg-purple-950/35 hover:bg-purple-950/60 border border-purple-500/40 rounded-lg px-3 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition">
+             class="pool-specific-summary cursor-pointer select-none bg-purple-950/35 hover:bg-purple-950/60 border border-purple-500/40 rounded-lg px-3 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition">
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span class="font-bold text-purple-300 flex items-center gap-1">
               <span id="todayExitBannerTitle">🏁 今日平倉/破K股票</span> <span class="text-[10px] text-purple-400">(點擊篩選)</span>：<b id="todayExitTotalCount" class="text-white font-mono">共 0 檔</b>
@@ -2863,7 +2881,7 @@
     function renderStrategyComparisonSummary(filterOpts, fastHighlightOnly = false) {
       const grid = document.getElementById("strategyCompareGrid");
       const note = document.getElementById("strategyCompareNote");
-      if (!grid || !isPnlPoolActive() || rawAllLoadedStocks.length === 0) return;
+      if (!grid || (!isPnlPoolActive() && !window.matchMedia("(max-width: 767px)").matches) || rawAllLoadedStocks.length === 0) return;
 
       const list = [
         { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
@@ -6999,6 +7017,12 @@
 
       if (!isPnlPoolActive()) {
         bannerEl.classList.add("hidden");
+        const badge = document.getElementById("pnlDateRangeBadge");
+        if (badge) {
+          const start = document.getElementById("pnlStartDateInput")?.value;
+          const end = document.getElementById("pnlEndDateInput")?.value;
+          badge.textContent = start || end ? `策略統計：${start || '不限起日'} ～ ${end || '不限迄日'}` : '策略統計：全部期間';
+        }
         return;
       }
       bannerEl.classList.remove("hidden");
@@ -7296,7 +7320,7 @@
       });
 
       updateTrackingPoolSummary(baseList);
-      if (isPnlPoolActive()) {
+      if (isPnlPoolActive() || window.matchMedia("(max-width: 767px)").matches) {
         const cmpOpts = getCurrentFilterOptions();
         clearTimeout(window.__strategyCmpTimer);
         if (window._skipNextCmpTimer) {
