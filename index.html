@@ -210,7 +210,7 @@
   <section id="step123Section" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
     <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-        <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)</span>
+        <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)</span><span id="gIndependentNotice" class="hidden text-fuchsia-300 text-xs">策略 G：STEP 1 不適用</span>
         <div class="flex items-center gap-1">
           <button onclick="applyPresetMode('RELAXED')" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition">
             放寬模式
@@ -2238,6 +2238,10 @@
 
     function updateExitStrategyUI() {
       syncStrategyEDescText();
+      const independent = currentExitStrategy === 'AI_POWER_90D';
+      const marker = document.getElementById('gIndependentNotice');
+      if (marker) marker.classList.toggle('hidden', !independent);
+      for (const id of ['chkMa20Up','chkSolidRedK','chkGainRange','minGainInput','maxGainInput','volOperatorSelect','volThresholdInput']) { const el=document.getElementById(id); if(el) el.disabled=independent; }
       const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
       strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
@@ -2310,18 +2314,19 @@
       add(getSelectedSimSectors());
       if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
       for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
-      return `v9-fast-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
+      return `v11-independent-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
-    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v9-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
-    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v9-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v11-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v11-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
     function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
 
-    function getPoolStocksWithCrossovers() {
+    function getPoolStocksWithCrossovers(independent = false) {
       const activeSectors = getSelectedSimSectors();
       const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
       return rawAllLoadedStocks.filter(s => {
         if (activeSectors.length > 0 && !matchesSimSectorFilter(s, activeSectors)) return false;
         if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return false;
+        if (independent) return true;
         const bars = buildStockDailyBarsWithToday(s);
         for (let i = 1; i < bars.length; i++) {
           if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) return true;
@@ -2374,7 +2379,7 @@
       if (strategyKey === 'AI_POWER_90D') {
         return [
           { key: 'aiPowerReevalDays', values: [{ aiPowerReevalDays: 30 }, { aiPowerReevalDays: 60 }, { aiPowerReevalDays: 90 }, { aiPowerReevalDays: 120 }] },
-          ...commonAxes
+          commonAxes[0]
         ];
       }
       return commonAxes;
@@ -2406,7 +2411,7 @@
     let fullAiBusy = false, capitalAiBusy = false;
     async function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy, report = () => {}) {
       if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
-      const poolStocks = getPoolStocksWithCrossovers();
+      const poolStocks = getPoolStocksWithCrossovers(strategyKey === "AI_POWER_90D");
       if (poolStocks.length === 0) return null;
 
       const baseCfg = getExitStrategyConfig(strategyKey);
@@ -2417,6 +2422,18 @@
       if (_aiFullStep1PerStrategyMap[strategyKey]) return _aiFullStep1PerStrategyMap[strategyKey];
       if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
 
+      if (strategyKey === 'AI_POWER_90D') {
+        let best = null, n = 0;
+        for (const days of [30,60,90,120]) for (const stop of [1,2,3,5]) {
+          const cfg = {...baseCfg, aiPowerReevalDays:days, initStopBufferPct:stop};
+          const res = evaluateFullStep1ComboExact(poolStocks,cfg,false,false,0,10.5,0);
+          const candidate = {...res, independent:true, exitPatch:cfg, exitTag:buildExitParamTag(strategyKey,cfg)};
+          if (!best || candidate.totalProfitNtd > best.totalProfitNtd) best=candidate;
+          report(++n/16*100, `策略G獨立參數 ${n}/16`); await aiYield();
+        }
+        if (best) _fullStep1Cache.set(fCacheKey,best);
+        return best;
+      }
       const exitPatchesMap = {
         'DEFAULT_20MA': [
           { tag: '20MA破線(無時損)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO' } },
@@ -2620,7 +2637,7 @@
     let _aiFullStep1ModeActive = false;
 
     function applyStep1ParamsToUI(p) {
-      if (!p) return;
+      if (!p || p.independent) return;
       const chkMa = document.getElementById("chkMa20Up");
       const chkRed = document.getElementById("chkSolidRedK");
       const chkGain = document.getElementById("chkGainRange");
@@ -2694,10 +2711,10 @@
       if (adviceEl) {
         adviceEl.innerHTML = `
           <div>🤖 依【<b class="text-indigo-300">${sTitle}</b>】AI 建議最佳條件：
-            <b class="text-white">20MA向上(${best.reqMaUp ? '✔' : '不限'})</b> ｜
+            ${best.independent ? "STEP 1 不適用｜" + best.exitTag : `<b class="text-white">20MA向上(${best.reqMaUp ? '✔' : '不限'})</b> ｜
             <b class="text-white">實體紅K(${best.reqRed ? '✔' : '不限'})</b> ｜
             <b class="text-rose-300">漲幅 ${best.minG.toFixed(1)}% ~ ${best.maxG.toFixed(1)}%</b> ｜
-            <b class="text-amber-300">成交量 ≥ ${best.minV}%</b>
+            <b class="text-amber-300">成交量 ≥ ${best.minV}%</b>`}
           </div>
           <div class="text-slate-300">
             📊 聯合回測預估：共 <b class="text-white">${best.cnt}</b> 檔 ｜ 勝率 <b class="text-cyan-300">${best.winRate}%</b> ｜ 單檔均賺 <b class="${avgCol}">${avgSign}$${best.avgProfitNtd.toLocaleString()}</b> ｜ 合計淨利 <b class="${avgCol}">${totSign}$${best.totalProfitNtd.toLocaleString()}</b>
@@ -2879,7 +2896,7 @@
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        (aiS1 ? aiCardPool : rawAllLoadedStocks).forEach(s => {
+        (item.key === "AI_POWER_90D" ? rawAllLoadedStocks : aiS1 ? aiCardPool : rawAllLoadedStocks).forEach(s => {
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
@@ -2936,7 +2953,7 @@
 
       }
       _lastCmpResultsCache = results;
-      if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜同一突破股池、日期區間及去重損益口徑";
+      if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜A～F 突破股池；G 獨立股池｜相同日期與去重損益口徑";
       const bestNet = Math.max(...results.map(r => r.net));
 
       grid.innerHTML = results.map(r => {
@@ -2960,7 +2977,7 @@
             <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60 whitespace-nowrap">
               勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
             </div>
-            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + '｜' : ''}20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 量≥${r.aiS1.minV}%</div>` : ''}
+            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + '｜' : ''}${r.aiS1.independent ? "STEP 1 不適用" : `20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 量≥${r.aiS1.minV}%`}</div>` : ''}
           </div>
         `;
       }).join("");
@@ -4775,7 +4792,7 @@
 
       const events = [];
       const seenKey = new Set();
-      const sourceStocks = (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
+      const sourceStocks = strategyKey === "AI_POWER_90D" ? getPoolStocksWithCrossovers(true) : (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
         ? overrideFilterOpts._prefilteredPool
         : rawAllLoadedStocks;
       const lifecycleFilterKey = JSON.stringify({
@@ -5097,7 +5114,7 @@
               ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
             </div>
             <div class="text-[9.5px] text-cyan-300 font-mono mt-0.5 break-words">最佳出場：${r.bestTag}</div>
-            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono break-words">STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%</div>` : ''}
+            ${r.s1Best ? `<div class="text-[9px] text-indigo-300 font-mono break-words">${r.s1Best.independent ? "STEP 1 不適用" : `STEP1：20MA(${r.s1Best.reqMaUp ? '✔' : '不限'}) 漲${r.s1Best.minG}~${r.s1Best.maxG}% 量≥${r.s1Best.minV}%`}</div>` : ''}
             <div class="${pCls} font-extrabold text-sm break-words mt-0.5 font-mono">${fmtMoney(r.totalNetProfit)} (${r.totalRoiPct >= 0 ? '+' : ''}${r.totalRoiPct.toFixed(1)}%)</div>
             <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
             <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
@@ -5119,7 +5136,7 @@
         applyStep1ParamsToUI(bestS1);
         const fullBanner = document.getElementById("aiFullStep1AdviceText");
         if (fullBanner) {
-          fullBanner.innerHTML = `依【${getStrategyDisplayName(strategyKey)}】實戰資金最佳 STEP 1：<b>20MA向上(${bestS1.reqMaUp ? '✔' : '不限'})</b> ｜ <b>實體紅K(${bestS1.reqRed ? '✔' : '不限'})</b> ｜ <b>漲幅 ${bestS1.minG}%~${bestS1.maxG}%</b> ｜ <b>成交量 ≥ ${bestS1.minV}%</b>`;
+          fullBanner.innerHTML = bestS1.independent ? "策略 G：STEP 1 不適用，採獨立 AI 買賣規則" : `依【${getStrategyDisplayName(strategyKey)}】實戰資金最佳 STEP 1：<b>20MA向上(${bestS1.reqMaUp ? '✔' : '不限'})</b> ｜ <b>實體紅K(${bestS1.reqRed ? '✔' : '不限'})</b> ｜ <b>漲幅 ${bestS1.minG}%~${bestS1.maxG}%</b> ｜ <b>成交量 ≥ ${bestS1.minV}%</b>`;
         }
       }
       const bestP = _aiCapitalBestParamsMap[strategyKey];
@@ -5233,6 +5250,7 @@
         if(s1Full) _aiFullStep1PerStrategyMap[d.key]=s1Full;
         const s1Candidates = [];
         if (s1Full) s1Candidates.push(s1Full);
+        else if(d.key === "AI_POWER_90D") s1Candidates.push({independent:true,reqMaUp:false,reqRed:false,minG:0,maxG:10.5,minV:0});
         const curS1 = getCurrentFilterOptions();
         [
           { reqMaUp: false, reqRed: false, minG: 4, maxG: 10.5, minV: 50 },
@@ -5255,7 +5273,7 @@
         let bestPriority = curPriority;
         const makeOpts = (sc) => ({ requireMa20Up: sc.reqMaUp, requireSolidRedK: sc.reqRed, useGainRange: true, minGain: sc.minG, maxGain: sc.maxG, volOp: "GTE", validVolThreshold: sc.minV, _prefilteredPool });
 
-        s1Candidates.splice(2);
+        s1Candidates.splice(d.key === "AI_POWER_90D" ? 1 : 2);
         let simDone=0; const simTotal=cands.length*s1Candidates.length+4;
         const simulateWithProgress = async (...args) => { const result=await simulateCapitalForStrategy(...args); capReport(0.5+0.5*(++simDone/Math.max(1,simTotal)),`資金回測 ${simDone}/${simTotal}`); await aiYield(); return result; };
         for (const c of cands) {
@@ -5295,8 +5313,8 @@
       for(const [i,row] of finalists.entries()){
         const k=row.strategyKey; let sc=_aiCapitalBestStep1Map[k], patch={...sc.exitPatch}, prio=row.bestPriority;
         const tryOne=async(nextS,nextP)=>{const res=await simulateCapitalForStrategy(k,nextP,{requireMa20Up:nextS.reqMaUp,requireSolidRedK:nextS.reqRed,useGainRange:true,minGain:nextS.minG,maxGain:nextS.maxG,volOp:'GTE',validVolThreshold:nextS.minV,_prefilteredPool},prio);if(res.totalNetProfit>row.totalNetProfit){Object.assign(row,res);sc=nextS;patch=nextP;}await aiYield();};
-        for(const g of [sc.minG-1,sc.minG+1].filter(x=>x>=4&&x<=10))await tryOne({...sc,minG:g},patch);
-        for(const v of [sc.minV-50,sc.minV+50].filter(x=>x>=50&&x<=500))await tryOne({...sc,minV:v},patch);
+        if(k !== "AI_POWER_90D") for(const g of [sc.minG-1,sc.minG+1].filter(x=>x>=4&&x<=10))await tryOne({...sc,minG:g},patch);
+        if(k !== "AI_POWER_90D") for(const v of [sc.minV-50,sc.minV+50].filter(x=>x>=50&&x<=500))await tryOne({...sc,minV:v},patch);
         for(const axis of getExitParamAxesForStrategy(k))for(const val of axis.values)await tryOne(sc,{...patch,...val});
         row.bestTag=buildExitParamTag(k,patch);row.s1Best=sc;_aiCapitalBestStep1Map[k]={...sc,exitPatch:patch,exitTag:row.bestTag};_aiCapitalBestParamsMap[k]={...patch,priorityMode:prio};
         showAiProgress('capital',85+14*(i+1)/3,`前三名精調 ${i+1}/3`);
