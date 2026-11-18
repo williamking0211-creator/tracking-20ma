@@ -493,8 +493,8 @@
               <label class="inline-flex items-center gap-1 cursor-pointer select-none bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-amber-300" title="買進超過設定天數且 20MA 仍未過買價、帳面虧損時提前停損">
                 <input type="checkbox" id="chkTimeStop" onchange="onExitStrategyChanged()" class="rounded bg-slate-800 border-slate-600 text-amber-500 focus:ring-0" />
                 <span>疊加時間停損</span>
-                <input type="number" id="timeStopDaysInput" value="15" min="3" max="45" step="1" onclick="event.stopPropagation()" oninput="onExitStrategyChanged()"
-                       class="w-8 bg-slate-950 border border-slate-700 rounded px-1 text-center text-amber-300 font-mono font-bold text-[11px]" />
+                <input type="number" id="timeStopDaysInput" value="15" min="3" max="45" step="1" onclick="event.stopPropagation()" onchange="onExitStrategyChanged()"
+                       class="w-14 bg-slate-950 border border-slate-700 rounded px-1 text-center text-amber-300 font-mono font-bold text-[11px]" />
                 <span>天</span>
               </label>
               <label class="inline-flex items-center gap-1 select-none bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[11px] text-cyan-300">
@@ -508,8 +508,7 @@
               </label>
               <label class="inline-flex items-center gap-1 select-none bg-slate-900 border border-yellow-500/40 px-2 py-0.5 rounded text-[11px] text-yellow-200">
                 <span>🛑 初始停損：前低 -</span>
-                <input type="number" id="initStopBufferPctInput" value="2.0" min="0" max="15" step="0.5"
-                       oninput="onExitStrategyChanged()" onchange="onExitStrategyChanged()"
+                <input type="number" id="initStopBufferPctInput" value="2.0" min="0" max="15" step="0.5" onchange="onExitStrategyChanged()"
                        class="w-11 bg-slate-950 border border-slate-700 rounded px-1 text-right text-yellow-300 font-mono font-bold text-[11px]" />
                 <span>%</span>
               </label>
@@ -524,7 +523,7 @@
           </div>
 
           <!-- 7 種出場策略按鈕 -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+          <div style="display:none" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
             <button type="button" onclick="setExitStrategy('DEFAULT_20MA')" id="exitBtn-DEFAULT_20MA"
                     class="exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/40 text-white transition">
               <div class="font-bold text-[11px]">A. 原版 20MA 破線確認</div>
@@ -570,7 +569,7 @@
           <div id="exitParams-SHORT_MA_TRAIL" class="exit-params-box hidden bg-slate-900/80 border border-sky-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
             <label class="inline-flex items-center gap-1.5">
               <span class="text-sky-300 font-semibold">獲利觸發門檻 ≥</span>
-              <input type="number" id="shortMaTriggerPctInput" value="15" min="3" max="100" step="1" oninput="onExitStrategyChanged()"
+              <input type="number" id="shortMaTriggerPctInput" value="15" min="3" max="100" step="1" onchange="onExitStrategyChanged()"
                      class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-sky-300 font-mono font-bold" />
               <span>% 後切換</span>
             </label>
@@ -593,19 +592,19 @@
           <div id="exitParams-PEAK_TRAILING" class="exit-params-box hidden bg-slate-900/80 border border-amber-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
             <label class="inline-flex items-center gap-1.5">
               <span class="text-emerald-300 font-semibold">曾賺 ≥</span>
-              <input type="number" id="breakevenTriggerPctInput" value="10" min="2" max="50" step="1" oninput="onExitStrategyChanged()"
+              <input type="number" id="breakevenTriggerPctInput" value="10" min="2" max="50" step="1" onchange="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-emerald-300 font-mono font-bold" />
               <span>% 啟動保本(不賠)</span>
             </label>
             <label class="inline-flex items-center gap-1.5">
               <span class="text-amber-300 font-semibold">曾賺 ≥</span>
-              <input type="number" id="peakTrailTriggerPctInput" value="15" min="5" max="100" step="1" oninput="onExitStrategyChanged()"
+              <input type="number" id="peakTrailTriggerPctInput" value="15" min="5" max="100" step="1" onchange="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-amber-300 font-mono font-bold" />
               <span>% 啟動移動停利</span>
             </label>
             <label class="inline-flex items-center gap-1.5">
               <span class="text-rose-300 font-semibold">從最高點回落 ≥</span>
-              <input type="number" id="peakDrawdownPctInput" value="8" min="2" max="30" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="peakDrawdownPctInput" value="8" min="2" max="30" step="0.5" onchange="onExitStrategyChanged()"
                      class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-rose-300 font-mono font-bold" />
               <span>% 即平倉</span>
             </label>
@@ -614,13 +613,13 @@
           <div id="exitParams-WHALE_SELL_EXIT" class="exit-params-box hidden bg-slate-900/80 border border-pink-500/30 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
             <label class="inline-flex items-center gap-1.5">
               <span class="text-pink-300 font-semibold">獲利 ≥</span>
-              <input type="number" id="whaleTriggerPctInput" value="12" min="3" max="100" step="1" oninput="onExitStrategyChanged()"
+              <input type="number" id="whaleTriggerPctInput" value="12" min="3" max="100" step="1" onchange="onExitStrategyChanged()"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-pink-300 font-mono font-bold" />
               <span>% 後偵測出貨</span>
             </label>
             <label class="inline-flex items-center gap-1.5">
               <span class="text-amber-300 font-semibold">收黑K且量 ≥ 5均量 ×</span>
-              <input type="number" id="whaleSellMultInput" value="2.0" min="1.0" max="5.0" step="0.2" oninput="onExitStrategyChanged()"
+              <input type="number" id="whaleSellMultInput" value="2.0" min="1.0" max="5.0" step="0.2" onchange="onExitStrategyChanged()"
                      class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-right text-amber-300 font-mono font-bold" />
               <span>倍即平倉</span>
             </label>
@@ -629,16 +628,16 @@
           <div id="exitParams-RR_LADDER" class="exit-params-box hidden bg-slate-900/80 border border-emerald-500/35 rounded px-2.5 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]">
             <label class="inline-flex items-center gap-1">
               <span class="text-emerald-300 font-semibold">第一階 1:</span>
-              <input type="number" id="rrBreakevenRatioInput" onchange="onExitStrategyChanged()" value="1.0" min="0.5" max="5.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrBreakevenRatioInput" onchange="onExitStrategyChanged()" value="1.0" min="0.5" max="5.0" step="0.5"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-300 font-mono font-bold" />
               <span>保本，停損拉至進場價 +</span>
-              <input type="number" id="rrBreakevenBufferPctInput" onchange="onExitStrategyChanged()" value="0.5" min="0" max="5.0" step="0.1" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrBreakevenBufferPctInput" onchange="onExitStrategyChanged()" value="0.5" min="0" max="5.0" step="0.1"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-emerald-200 font-mono font-bold" />
               <span>%</span>
             </label>
             <label class="inline-flex items-center gap-1">
               <span class="text-amber-300 font-semibold">第二階 1:</span>
-              <input type="number" id="rrTier2RatioInput" onchange="onExitStrategyChanged()" value="3.0" min="1.5" max="15.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrTier2RatioInput" onchange="onExitStrategyChanged()" value="3.0" min="1.5" max="15.0" step="0.5"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
               <span>後：</span>
               <select id="rrTier2ActionSelect" onchange="onExitStrategyChanged()" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-amber-200 font-bold">
@@ -649,7 +648,7 @@
             </label>
             <label class="inline-flex items-center gap-1">
               <span class="text-rose-300 font-semibold">停損拉至</span>
-              <input type="number" id="rrLockRatioInput" onchange="onExitStrategyChanged()" value="2.0" min="0.5" max="10.0" step="0.5" oninput="onExitStrategyChanged()"
+              <input type="number" id="rrLockRatioInput" onchange="onExitStrategyChanged()" value="2.0" min="0.5" max="10.0" step="0.5"
                      class="w-11 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-right text-rose-300 font-mono font-bold" />
               <span>倍R</span>
             </label>
@@ -680,7 +679,7 @@
               </span>
               <label class="inline-flex items-center gap-1.5 bg-slate-950 border border-fuchsia-500/40 rounded px-2 py-0.5">
                 <span class="text-fuchsia-300 font-semibold">滾動回測週期：每</span>
-                <input type="number" id="aiPowerReevalDaysInput" value="90" min="15" max="180" step="15" oninput="onExitStrategyChanged()"
+                <input type="number" id="aiPowerReevalDaysInput" value="90" min="15" max="180" step="15" onchange="onExitStrategyChanged()"
                        class="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
                 <span class="text-fuchsia-300 font-semibold">天調整一次</span>
               </label>
@@ -885,7 +884,7 @@
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
               <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新尋優／讀取快取</button>
-              <div id="v8CapitalQuickCards" class="w-full gap-2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))"></div>
+              <div id="v8CapitalQuickCards" class="w-full gap-2" style="display:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))"></div>
               <div id="simAiStrategyCompareGrid" class="w-full gap-2 text-[11px]" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"></div>
             </div>
 
@@ -2312,12 +2311,12 @@
       if(capital) ids.push('simInitCapitalInput','simStartDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
       add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
       add(getSelectedSimSectors());
-      if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
+      if(capital){add(simManualCloseMap);}
       for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
-      return `v11-independent-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
+      return `v13-events-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
-    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v11-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
-    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v11-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v13-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v13-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
     function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
 
     function getPoolStocksWithCrossovers(independent = false) {
@@ -2688,6 +2687,7 @@
 
     async function selectComparisonStrategyCard(strategyKey) {
       if (fullAiBusy || capitalAiBusy) return;
+      if (capitalV8Key===aiV8Key(true) && _aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { selectAiOptimizedCapitalStrategy(strategyKey); return; }
       await setExitStrategy(strategyKey);
     }
 
@@ -2825,10 +2825,19 @@
       if (fullAiBusy || capitalAiBusy) return;
       syncStrategyEDescText();
       updateExitStrategyUI();
+      // Manual exit changes must not be replaced by cached AI parameters.
       const chkFullChg = document.getElementById("chkAiAutoFullStep1");
-      if (chkFullChg && chkFullChg.checked) await runAiFullStep1Optimizer(true, true);
+      if (chkFullChg) chkFullChg.checked = false;
+      _aiFullStep1ModeActive = false;
+      _lastCmpResultsCache = null;
+      showAiProgress('full', 0, '手動調整參數 · 點擊 AI 尋優可重新套用最佳參數');
+      window._skipNextAiCapOptInSim = true;
+      const manualCapChk = document.getElementById('chkAiCapitalOpt');
+      if (manualCapChk && manualCapChk.checked) { manualCapChk.checked = false; toggleAiCapitalStrategyOptimizer(); }
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
+      renderStrategyComparisonSummary(getCurrentFilterOptions());
+      runPortfolioCapitalSimulation();
       if (selectedStockCode) {
         const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (cur) updateDetailPanel(cur, false);
@@ -4742,13 +4751,41 @@
       return Math.max(0, parseInt(document.getElementById("simTrimTopWinnersSelect")?.value || "0", 10) || 0);
     }
 
-    function onTrimTopWinnersChanged() {
+    async function onTrimTopWinnersChanged() {
       saveUserSettingsToStorage(false);
-      applyFiltersAndRender();
+      if (capitalAiBusy || fullAiBusy) { pendingTrimRefresh = true; return; }
+      if (await rerankCachedCapital()) return;
+      window._skipNextAiCapOptInSim = true;
+      runPortfolioCapitalSimulation();
+      showAiProgress('capital',0,'尚無有效交易快取，請先尋優');
+    }
+    let pendingTrimRefresh = false;
+    async function rerankCachedCapital() {
+      if (capitalAiBusy || fullAiBusy || capitalV8Key !== aiV8Key(true) || !_lastAiCapitalResultsCache?.every(r=>Array.isArray(r.cachedEvents)) || _lastAiCapitalResultsCache.length!==7) return false;
+      capitalAiBusy=true;
+      const key=capitalV8Key;
+      const trim=getTrimTopWinnersCount();
+      try {
+        const rows=[];
+        for (const r of _lastAiCapitalResultsCache) {
+          const result=await simulateCapitalForStrategy(r.strategyKey,_aiCapitalBestParamsMap[r.strategyKey],{},r.bestPriority,r.cachedEvents);
+          rows.push({...r,...result});
+          showAiProgress('capital',Math.round(rows.length/7*99),'快取資金重算 '+rows.length+'/7');
+          await aiYield();
+        }
+        if(key!==aiV8Key(true)||trim!==getTrimTopWinnersCount()){pendingTrimRefresh=true;return true;}
+        _lastAiCapitalResultsCache=rows;
+        aiV8Save('capital',key,{results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim});
+        renderAiCapitalCompareCardsOnly();
+        showAiProgress('capital',100,'已剔除獲利王並重新排名（快取）');
+        window._skipNextAiCapOptInSim=true;
+        runPortfolioCapitalSimulation();
+        return true;
+      } finally {capitalAiBusy=false;if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);}}
     }
 
     function applyOutlierTrimToEvents(events, trimN, includeFees) {
-      if (!trimN || trimN <= 0 || events.length <= trimN) {
+      if (!trimN || trimN <= 0 || events.length === 0) {
         return { filteredEvents: events, trimmedItems: [] };
       }
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
@@ -4759,20 +4796,22 @@
         const sellNet = sellGross - (Math.round(sellGross * feeRate) + Math.round(sellGross * taxRate));
         return { ev, estNet1Lot: sellNet - buyCost };
       });
-      const positiveSorted = scored.filter(x => x.estNet1Lot > 0).sort((a, b) => b.estNet1Lot - a.estNet1Lot);
-      const toRemoveUids = new Set(positiveSorted.slice(0, trimN).map(x => x.ev.uid));
+      const byCode=new Map();
+      for(const x of scored){const prev=byCode.get(x.ev.code);if(prev)prev.estNet1Lot+=x.estNet1Lot;else byCode.set(x.ev.code,{...x});}
+      const positiveSorted = [...byCode.values()].filter(x => x.estNet1Lot > 0).sort((a, b) => b.estNet1Lot - a.estNet1Lot);
+      const toRemoveUids = new Set(positiveSorted.slice(0, trimN).map(x => x.ev.code));
       const trimmedItems = positiveSorted.slice(0, trimN).map(x => ({
         code: x.ev.code,
         name: x.ev.name,
         estNet1Lot: Math.round(x.estNet1Lot)
       }));
       return {
-        filteredEvents: events.filter(ev => !toRemoveUids.has(ev.uid)),
+        filteredEvents: events.filter(ev => !toRemoveUids.has(ev.code)),
         trimmedItems
       };
     }
 
-    async function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null) {
+    async function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null, cachedEvents = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
       const lotMode = document.getElementById("simLotModeSelect")?.value || "ONE_LOT";
@@ -4790,9 +4829,9 @@
       const filterOpts = overrideFilterOpts || getCurrentFilterOptions();
       const cfg = overrideCfg || getExitStrategyConfig(strategyKey);
 
-      const events = [];
+      const events = cachedEvents ? cachedEvents.slice() : [];
       const seenKey = new Set();
-      const sourceStocks = strategyKey === "AI_POWER_90D" ? getPoolStocksWithCrossovers(true) : (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
+      const sourceStocks = cachedEvents ? [] : strategyKey === "AI_POWER_90D" ? getPoolStocksWithCrossovers(true) : (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
         ? overrideFilterOpts._prefilteredPool
         : rawAllLoadedStocks;
       const lifecycleFilterKey = JSON.stringify({
@@ -4801,7 +4840,7 @@
         volOp: filterOpts.volOp, validVolThreshold: filterOpts.validVolThreshold
       });
       const lifecycleCfgKey = JSON.stringify(cfg || {});
-      for (let stockIdx = 0; stockIdx < sourceStocks.length; stockIdx++) {
+      for (let stockIdx = 0; !cachedEvents && stockIdx < sourceStocks.length; stockIdx++) {
         const s = sourceStocks[stockIdx];
         if (!matchesSimSectorFilter(s, sectorMode)) continue;
         const stockSig = `${s.code}|${s.todayPrice}|${s.todayVol}|${s.latestTradeDate}`;
@@ -4926,6 +4965,7 @@
       const winRate = boughtTrades.length > 0 ? Math.round((winCnt / boughtTrades.length) * 100) : 0;
       return {
         strategyKey,
+        cachedEvents: events,
         totalNetProfit: Math.round(totalNetProfit),
         totalRoiPct,
         finalEquity: Math.round(finalEquity),
@@ -5099,7 +5139,7 @@
         summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
       }
       const quick=document.getElementById('v8CapitalQuickCards');
-      if(quick)quick.innerHTML=results.map(r=>`<button onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="border rounded p-2 text-xs min-w-0 text-left ${r.strategyKey===currentExitStrategy?'border-indigo-400 bg-indigo-950':'border-slate-700'}"><div class="break-words">${r.label}</div><b class="block text-sm break-words ${r.totalNetProfit>=0?'text-rose-300':'text-emerald-300'}">${fmtMoney(r.totalNetProfit)}</b></button>`).join('');
+      if(false && quick)quick.innerHTML=results.map(r=>`<button onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="border rounded p-2 text-xs min-w-0 text-left ${r.strategyKey===currentExitStrategy?'border-indigo-400 bg-indigo-950':'border-slate-700'}"><div class="break-words">${r.label}</div><b class="block text-sm break-words ${r.totalNetProfit>=0?'text-rose-300':'text-emerald-300'}">${fmtMoney(r.totalNetProfit)}</b></button>`).join('');
       grid.innerHTML = results.map(r => {
         const isWin = winner && r.strategyKey === winner.strategyKey;
         const isCur = r.strategyKey === currentExitStrategy;
@@ -5172,8 +5212,8 @@
       box.classList.remove("hidden");
       if(stored?.results?.length===7){
         capitalV8Key=runKey; _lastAiCapitalResultsCache=stored.results;_aiCapitalBestParamsMap=stored.params;_aiCapitalBestStep1Map=stored.step1;
-        renderAiCapitalCompareCardsOnly(); showAiProgress('capital',100,'已讀取快取 · 快速尋優');
-        if(autoSwitch){const win=stored.results.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a); capitalAiBusy=false;selectAiOptimizedCapitalStrategy(win.strategyKey);}
+        capitalAiBusy=false; await rerankCachedCapital(); capitalAiBusy=true; renderAiCapitalCompareCardsOnly(); showAiProgress('capital',100,'已讀取快取 · 快速尋優');
+        if(autoSwitch){const win=_lastAiCapitalResultsCache.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a); capitalAiBusy=false;selectAiOptimizedCapitalStrategy(win.strategyKey);}
         return;
       }
       const baseCands = {
@@ -5363,7 +5403,7 @@
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
       showAiProgress("capital",100,"七大策略尋優完成");
-      } catch(e) { showAiProgress("capital",0,"尋優失敗："+e.message); console.error(e); } finally { capitalAiBusy=false; }
+      } catch(e) { showAiProgress("capital",0,"尋優失敗："+e.message); console.error(e); } finally { capitalAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
     }
 
     function runPortfolioCapitalSimulation() {
