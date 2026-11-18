@@ -190,8 +190,8 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <span id="savedSettingsBadge" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center gap-1.5" title="所有篩選條件、拉桿參數與日期區間均會自動儲存於瀏覽器，下次開啟自動還原">
-        💾 參數自動記憶中
+      <button type="button" onclick="save151()" class="px-3 py-2 rounded bg-indigo-700 text-white">💾 儲存目前策略</button><button type="button" onclick="document.getElementById('dev15Panel').style.display=''" class="px-2 py-1 rounded text-xs text-slate-400">開發者入口</button><span id="savedSettingsBadge" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center gap-1.5" title="所有篩選條件、拉桿參數與日期區間均會自動儲存於瀏覽器，下次開啟自動還原">
+        💾 尚未手動儲存
       </span>
 
       <button onclick="openApiModal()" id="apiStatusBtn" class="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center gap-2 hover:bg-emerald-500/25 transition">
@@ -224,7 +224,7 @@
   <section id="step123Section" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
     <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-3.5">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-        <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)</span><span id="gIndependentNotice" class="hidden text-fuchsia-300 text-xs">策略 G：STEP 1 不適用</span>
+        <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數可手動儲存・支援跨日確認K)</span><span id="gIndependentNotice" class="hidden text-fuchsia-300 text-xs">策略 G：STEP 1 不適用</span>
         <div class="flex items-center gap-1">
           <button onclick="applyPresetMode('RELAXED')" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition">
             放寬模式
@@ -232,7 +232,7 @@
           <button onclick="applyPresetMode('STRICT')" class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition">
             嚴格飆股
           </button>
-          <button onclick="saveUserSettingsToStorage(true)" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/40 transition font-semibold" title="立即儲存目前所有篩選參數">
+          <button onclick="save151()" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/40 transition font-semibold" title="立即儲存目前所有篩選參數">
             💾 儲存設定
           </button>
         </div>
@@ -889,7 +889,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <span id="simTrimmedInfoBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-200"></span>
                 <span id="simStatusNote" class="font-mono text-slate-300"></span>
-              </div><div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel"><b class="text-indigo-300">開發者遠端控制 V15</b><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div><div class="my-2 p-2 rounded border border-emerald-700 bg-slate-900 text-xs flex flex-wrap gap-3 items-center" id="lineNotifyPanel">
+              </div><div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V15.1</b><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="dev151Actions" style="display:none" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div><div class="my-2 p-2 rounded border border-emerald-700 bg-slate-900 text-xs flex flex-wrap gap-3 items-center" id="lineNotifyPanel" style="display:none">
 <b class="text-emerald-300">LINE 交易通知</b><label><input type="checkbox" id="lineEnabled" checked> 啟用</label>
 <label><input type="checkbox" id="lineBUY" checked> 買進</label><label><input type="checkbox" id="linePROFIT" checked> 停利</label><label><input type="checkbox" id="lineLOSS" checked> 停損／保本</label><label><input type="checkbox" id="lineKEY" checked> 關鍵K</label><label><input type="checkbox" id="lineREPORT" checked> 14:00報告</label>
 <button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待首次行情同步（需保持網頁開啟）</span></div>
@@ -1570,6 +1570,7 @@
 
     // 自動儲存與載入使用者所有篩選參數與設定
     function saveUserSettingsToStorage(showNotification = false) {
+      if(saved151Exists()) return;
       const settings = {
         chkMa20Up: document.getElementById("chkMa20Up")?.checked || false,
         chkSolidRedK: document.getElementById("chkSolidRedK")?.checked || false,
@@ -1786,6 +1787,7 @@
       document.getElementById("apiUrlInput").value = apiUrl;
       loadUserSettingsFromStorage();
       loadUserPortfolioFromStorage();
+      restore151();
       const slider = document.getElementById("bubbleMultSlider");
       if (slider) {
         slider.value = bubbleMultThreshold;
@@ -3888,7 +3890,7 @@
         document.getElementById("volThresholdInput").value = "100";
       }
       syncStep1ControlsUI();
-      saveUserSettingsToStorage(true);
+      saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
 
@@ -5434,13 +5436,22 @@
 
 const dev15Ids=["chkMa20Up", "chkSolidRedK", "chkGainRange", "minGainInput", "maxGainInput", "volOperatorSelect", "volThresholdInput", "chkTimeStop", "timeStopDaysInput", "globalExitConfirmMode", "initStopBufferPctInput", "chkEntryLimitUpStopAtLow", "shortMaTriggerPctInput", "shortMaPeriodSelect", "shortMaModeSelect", "breakevenTriggerPctInput", "peakTrailTriggerPctInput", "peakDrawdownPctInput", "whaleTriggerPctInput", "whaleSellMultInput", "rrBreakevenRatioInput", "rrBreakevenBufferPctInput", "rrTier2RatioInput", "rrTier2ActionSelect", "rrLockRatioInput", "rrTrailMaSelect", "rrMaConfirmModeSelect", "aiPowerReevalDaysInput", "simInitCapitalInput", "simStartDateInput", "simLotModeSelect", "simPerStockBudgetInput", "simProfitRuleSelect", "simWithdrawValInput", "simIncludeFeesChk", "simPrioritySelect", "simTrimTopWinnersSelect", "lineEnabled", "lineBUY", "linePROFIT", "lineLOSS", "lineKEY", "lineREPORT"]; const dev15Keys=["DEFAULT_20MA", "SHORT_MA_TRAIL", "PEAK_TRAILING", "WHALE_SELL_EXIT", "RR_LADDER", "AI_ADAPTIVE", "AI_POWER_90D"];
 let dev15Token='',dev15Base='',dev15Monitor=false,dev15Rev=0,dev15Profile=null;
+
+const key151='w-personal-strategy-v151';
+function saved151Exists(){try{return !!localStorage.getItem(key151);}catch(e){return false;}}
+function freeze151(){for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;} _aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;}
+function save151(){if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 尋優完成','warn');return;}const a=dev15Capture();for(const k of Object.keys(a.fields))if(k.startsWith('line'))delete a.fields[k];for(const id of ['chkShowBubbles','chkShowDeduct','autoSyncCheckbox','pnlDateBasisSelect','pnlStartDateInput','pnlEndDateInput','chkShowAiPowerMarkers']){const e=document.getElementById(id);if(e)a.fields[id]=e.type==='checkbox'?e.checked:e.value;}a.filter=currentFilter;a.bubble=bubbleMultThreshold;a.savedAt=Date.now();try{localStorage.setItem(key151,JSON.stringify(a));}catch(e){showToast('儲存失敗：瀏覽器空間不足或禁止儲存','error');return;}freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');applyFiltersAndRender();showToast('個人策略已儲存；不會變更正式 LINE 策略');}
+function restore151(){try{const a=JSON.parse(localStorage.getItem(key151)||'null');if(!a||!dev15Keys.includes(a.strategy))return;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields||{})){if(id.startsWith('line'))continue;const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=(a.sectors||[]).includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};if(['ALL','BREAKOUT','CONSOLIDATE','TRACKING','BREAKDOWN'].includes(a.filter)){currentFilter=a.filter;document.querySelectorAll('.filter-card').forEach(e=>{const active=e.id==='tab-'+currentFilter;e.classList.toggle('border-2',active);e.classList.toggle('border-blue-500',active);e.classList.toggle('border',!active);e.classList.toggle('border-slate-800',!active);});}if(Number.isFinite(a.bubble))bubbleMultThreshold=a.bubble;freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');}catch(e){console.warn('個人設定還原失敗',e);}}
+function visibility151(ok){for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.display=ok?'':'none';}
+async function change151(){const ids=['dev151NewUser','dev151Old','dev151New','dev151Confirm'];const [user,oldPassword,password,confirmPassword]=ids.map(id=>document.getElementById(id).value);if(password!==confirmPassword||password.length<12){dev15Status('新密碼至少12字且兩次必須相同');return;}try{await dev15Req('credentials',{user,oldPassword,password});ids.forEach(id=>document.getElementById(id).value='');await dev15Logout();document.getElementById('dev15Panel').style.display='';dev15Status('帳密已更新，所有裝置請重新登入（本機需重新開啟監控）');}catch(e){dev15Status('修改失敗：'+e.message);}}
+
 const dev15Status=t=>document.getElementById('dev15Status').textContent=t;
 function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
 async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-async function dev15Login(local){try{dev15Base=local?'http://localhost:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=await dev15Req('login',{user:document.getElementById('dev15User').value,password:pass.value,monitor:local});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；請發布策略或讀取正式策略');}catch(e){dev15Status('登入失敗：'+e.message);}}
+async function dev15Login(local){try{dev15Base=local?'http://localhost:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=await dev15Req('login',{user:document.getElementById('dev15User').value,password:pass.value,monitor:local});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；請發布策略或讀取正式策略');}catch(e){dev15Status('登入失敗：'+e.message);}}
 async function dev15Publish(){try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy)throw Error('請等待 AI 完成');if(!confirm('將目前策略與參數設定為正式 LINE 監控條件？切換後舊訊號不補發。'))return;const r=await dev15Req('profile',dev15Capture());dev15Rev=0;await dev15Pull(false);dev15Status('已發布 '+getStrategyDisplayName(r.profile.strategy)+' · 版本 '+r.rev);}catch(e){dev15Status('發布失敗：'+e.message);}}
 async function dev15Pull(force){if(!dev15Token)return;try{const r=await dev15Req('profile');if(!r.profile){dev15Status('尚無正式策略，請先發布');return;}if(fullAiBusy||capitalAiBusy)return;const changed=r.rev!==dev15Rev;dev15Profile=r.profile;if(force||dev15Monitor&&(changed||JSON.stringify(dev15Capture())!==JSON.stringify(r.profile))){const a=r.profile;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields)){const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=a.sectors.includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;}_aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;syncStep1ControlsUI();updateExitStrategyUI();applyFiltersAndRender();}dev15Rev=r.rev;dev15Status((dev15Monitor?'本機監控':'遠端控制')+'｜正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+r.rev);}catch(e){dev15Profile=null;dev15Status('正式策略連線失敗：'+e.message);}}
-async function dev15Logout(){try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;dev15Status('已登出');}
+async function dev15Logout(){try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
 setInterval(()=>{if(dev15Monitor&&!lineV14Busy)void dev15Pull(false);},5000);
 
     let lineV14Snapshot=null, lineV14Busy=false;
