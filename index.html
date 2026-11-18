@@ -1,15 +1,15 @@
-&lt;!DOCTYPE html&gt;
-&lt;html lang=&quot;zh-TW&quot;&gt;
-&lt;head&gt;
-  &lt;meta charset=&quot;UTF-8&quot; /&gt;
-  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
-  &lt;title&gt;關鍵K・突破20MA實戰決策與尾盤監控儀表板&lt;/title&gt;
-  &lt;script src=&quot;https://cdn.tailwindcss.com/3.4.17&quot;&gt;&lt;/script&gt;
-  &lt;style&gt;
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
     body {
       background-color: #0b0f19;
       color: #e2e8f0;
-      font-family: &quot;Inter&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #111827; }
@@ -20,17 +20,17 @@
     .sortable-th { cursor: pointer; user-select: none; transition: color 0.15s, background-color 0.15s; }
     .sortable-th:hover { color: #ffffff; background-color: rgba(30, 41, 59, 0.85); }
     #floatingLegend { cursor: move; user-select: none; -webkit-user-select: none; touch-action: none; }
-    input[type=&quot;range&quot;].range-pink { accent-color: #f472b6; }
-    input[type=&quot;range&quot;].range-rose { accent-color: #fb7185; }
-    input[type=&quot;range&quot;].range-amber { accent-color: #fbbf24; }
+    input[type="range"].range-pink { accent-color: #f472b6; }
+    input[type="range"].range-rose { accent-color: #fb7185; }
+    input[type="range"].range-amber { accent-color: #fbbf24; }
     /* 隱藏數字輸入框預設上下箭頭，避免與 ✕ 清空鍵擁擠 */
-    input[type=&quot;number&quot;]::-webkit-inner-spin-button,
-    input[type=&quot;number&quot;]::-webkit-outer-spin-button {
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-    input[type=&quot;number&quot;] { -moz-appearance: textfield; }
-    input[type=&quot;date&quot;]::-webkit-calendar-picker-indicator {
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
       filter: invert(0.8);
       cursor: pointer;
     }
@@ -152,28 +152,28 @@
         scrollbar-width: none;
       }
     }
-  &lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;min-h-screen p-3 md:p-5&quot;&gt;
+  </style>
+</head>
+<body class="min-h-screen p-3 md:p-5">
 
-  &lt;!-- 頂部通知 Toast --&gt;
-  &lt;div id=&quot;toastBanner&quot; class=&quot;fixed top-4 right-4 z-50 hidden max-w-sm rounded-xl border px-4 py-2.5 text-xs font-medium shadow-2xl transition-all&quot;&gt;&lt;/div&gt;
+  <!-- 頂部通知 Toast -->
+  <div id="toastBanner" class="fixed top-4 right-4 z-50 hidden max-w-sm rounded-xl border px-4 py-2.5 text-xs font-medium shadow-2xl transition-all"></div>
 
-  &lt;!-- 頂部標題列 --&gt;
-  &lt;header class=&quot;max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4&quot;&gt;
-    &lt;div class=&quot;flex items-center gap-3&quot;&gt;
-      &lt;div class=&quot;w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-lg&quot;&gt;
+  <!-- 頂部標題列 -->
+  <header class="max-w-[1440px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold text-lg">
         20
-      &lt;/div&gt;
-      &lt;div&gt;
-        &lt;h1 class=&quot;text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2&quot;&gt;
+      </div>
+      <div>
+        <h1 class="text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2">
           關鍵K・突破20MA實戰儀表板
-        &lt;/h1&gt;
-        &lt;p class=&quot;text-xs text-slate-400&quot;&gt;
-          首日穿越20MA＝&lt;span class=&quot;text-amber-400 font-semibold&quot;&gt;關鍵K&lt;/span&gt; ｜ 1~10日內未破低且收盤站上關鍵K高＝&lt;span class=&quot;text-rose-400 font-semibold&quot;&gt;確認K買進(含跨日確認)&lt;/span&gt; ｜ &lt;span class=&quot;text-pink-400 font-semibold&quot;&gt;大戶泡泡&lt;/span&gt;＝本股內定值 × 拉桿倍數
-        &lt;/p&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+        </h1>
+        <p class="text-xs text-slate-400">
+          首日穿越20MA＝<span class="text-amber-400 font-semibold">關鍵K</span> ｜ 1~10日內未破低且收盤站上關鍵K高＝<span class="text-rose-400 font-semibold">確認K買進(含跨日確認)</span> ｜ <span class="text-pink-400 font-semibold">大戶泡泡</span>＝本股內定值 × 拉桿倍數
+        </p>
+      </div>
+    </div>
 
     <div class="flex flex-wrap items-center gap-2">
       <span id="savedSettingsBadge" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center gap-1.5" title="所有篩選條件、拉桿參數與日期區間均會自動儲存於瀏覽器，下次開啟自動還原">
@@ -194,35 +194,35 @@
         🔄 刷新報價
       </button>
     </div>
-  &lt;/header&gt;
+  </header>
 
-  &lt;!-- 策略說明三步驟卡片 (可一鍵收合/展開) --&gt;
-  &lt;div class=&quot;max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2&quot;&gt;
-    &lt;div class=&quot;flex items-center gap-2 text-xs&quot;&gt;
-      &lt;span class=&quot;font-bold text-amber-400&quot;&gt;⚙️ STEP 1～3・關鍵K篩選 / 大戶內定值 / 進出場規則&lt;/span&gt;
-      &lt;span id=&quot;step123CollapsedHint&quot; class=&quot;hidden text-[10px] text-slate-400&quot;&gt;(已收合，參數仍持續生效)&lt;/span&gt;
-    &lt;/div&gt;
-    &lt;button type=&quot;button&quot; onclick=&quot;toggleStep123Panel()&quot; id=&quot;btnToggleStep123&quot;
-            class=&quot;text-[11px] px-2.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition&quot;&gt;
+  <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
+  <div class="max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2">
+    <div class="flex items-center gap-2 text-xs">
+      <span class="font-bold text-amber-400">⚙️ STEP 1～3・關鍵K篩選 / 大戶內定值 / 進出場規則</span>
+      <span id="step123CollapsedHint" class="hidden text-[10px] text-slate-400">(已收合，參數仍持續生效)</span>
+    </div>
+    <button type="button" onclick="toggleStep123Panel()" id="btnToggleStep123"
+            class="text-[11px] px-2.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition">
       🔼 收合面板
-    &lt;/button&gt;
-  &lt;/div&gt;
-  &lt;section id=&quot;step123Section&quot; class=&quot;max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4&quot;&gt;
-    &lt;div class=&quot;lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-3.5&quot;&gt;
-      &lt;div class=&quot;flex flex-wrap justify-between items-center gap-2 mb-2&quot;&gt;
-        &lt;span class=&quot;text-xs font-bold text-amber-400&quot;&gt;STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)&lt;/span&gt;
-        &lt;div class=&quot;flex items-center gap-1&quot;&gt;
-          &lt;button onclick=&quot;applyPresetMode(&#39;RELAXED&#39;)&quot; class=&quot;text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition&quot;&gt;
+    </button>
+  </div>
+  <section id="step123Section" class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3 mb-4">
+    <div class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl p-3.5">
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+        <span class="text-xs font-bold text-amber-400">STEP 1・突破20MA「關鍵K」篩選 (參數自動儲存・支援跨日確認K)</span>
+        <div class="flex items-center gap-1">
+          <button onclick="applyPresetMode('RELAXED')" class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-sky-300 hover:bg-sky-500/30 transition">
             放寬模式
-          &lt;/button&gt;
-          &lt;button onclick=&quot;applyPresetMode(&#39;STRICT&#39;)&quot; class=&quot;text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition&quot;&gt;
+          </button>
+          <button onclick="applyPresetMode('STRICT')" class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 transition">
             嚴格飆股
-          &lt;/button&gt;
-          &lt;button onclick=&quot;saveUserSettingsToStorage(true)&quot; class=&quot;text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/40 transition font-semibold&quot; title=&quot;立即儲存目前所有篩選參數&quot;&gt;
+          </button>
+          <button onclick="saveUserSettingsToStorage(true)" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/50 text-indigo-200 hover:bg-indigo-500/40 transition font-semibold" title="立即儲存目前所有篩選參數">
             💾 儲存設定
-          &lt;/button&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
+          </button>
+        </div>
+      </div>
 
       <div class="text-xs text-slate-300 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-lg px-2.5 py-1.5">
@@ -410,17 +410,17 @@
         <li>• <span class="text-cyan-300 font-semibold">20MA高於買價後</span>：改以 <span class="text-white font-semibold">20MA 控盤</span>，跌破20MA首根為關鍵K，後續收盤跌破該關鍵K低點即確認平倉並移入<span class="text-emerald-400 font-semibold">破底K股池統計損益</span></li>
       </ul>
     </div>
-  &lt;/section&gt;
+  </section>
 
-  &lt;!-- 5 大股票池統計篩選器卡片 --&gt;
-  &lt;section id=&quot;stockPoolsSection&quot; class=&quot;max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-2.5 mb-4&quot;&gt;
-    &lt;button onclick=&quot;setFilter(&#39;ALL&#39;)&quot; id=&quot;tab-ALL&quot; class=&quot;filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition&quot;&gt;
-      &lt;div class=&quot;text-[11px] text-slate-400 mb-1&quot;&gt;1. 符合「突破20MA關鍵K」&lt;/div&gt;
-      &lt;div class=&quot;flex items-baseline gap-1.5&quot;&gt;
-        &lt;span id=&quot;count-ALL&quot; class=&quot;text-2xl font-bold text-white&quot;&gt;0&lt;/span&gt;
-        &lt;span class=&quot;text-[11px] text-slate-400&quot;&gt;檔進入確認池&lt;/span&gt;
-      &lt;/div&gt;
-    &lt;/button&gt;
+  <!-- 5 大股票池統計篩選器卡片 -->
+  <section id="stockPoolsSection" class="max-w-[1440px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-2.5 mb-4">
+    <button onclick="setFilter('ALL')" id="tab-ALL" class="filter-card text-left bg-[#111827] border-2 border-blue-500 rounded-xl p-3 transition">
+      <div class="text-[11px] text-slate-400 mb-1">1. 符合「突破20MA關鍵K」</div>
+      <div class="flex items-baseline gap-1.5">
+        <span id="count-ALL" class="text-2xl font-bold text-white">0</span>
+        <span class="text-[11px] text-slate-400">檔進入確認池</span>
+      </div>
+    </button>
 
     <button onclick="setFilter('BREAKOUT')" id="tab-BREAKOUT" class="filter-card text-left bg-[#111827] border border-slate-800 hover:border-rose-500/50 rounded-xl p-3 transition">
       <div class="text-[11px] text-rose-300 mb-1">2. 🔥 確認K：高於關鍵K高 (買進)</div>
@@ -453,10 +453,10 @@
         <span class="text-[11px] text-slate-400">檔破K出場損益統計</span>
       </div>
     </button>
-  &lt;/section&gt;
+  </section>
 
-  &lt;!-- 主內容區：左側清單 + 右側真實互動K線與成交量圖 --&gt;
-  &lt;main class=&quot;max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4&quot;&gt;
+  <!-- 主內容區：左側清單 + 右側真實互動K線與成交量圖 -->
+  <main class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
     
     <!-- 左側股票清單 (佔 6 欄) -->
     <div id="stockPoolPanel" class="lg:col-span-6 bg-[#111827] border border-slate-800 rounded-xl flex flex-col overflow-hidden">
@@ -1383,24 +1383,24 @@
         <span id="dataRangeInfo">--</span>
       </div>
     </div>
-  &lt;/main&gt;
+  </main>
 
-  &lt;!-- API 設定彈窗 --&gt;
-  &lt;div id=&quot;apiModal&quot; class=&quot;fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4&quot;&gt;
-    &lt;div class=&quot;bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl&quot;&gt;
-      &lt;div class=&quot;flex justify-between items-center mb-3&quot;&gt;
-        &lt;h3 class=&quot;text-base font-bold text-white&quot;&gt;🔌 API 串接設定&lt;/h3&gt;
-        &lt;button onclick=&quot;closeApiModal()&quot; class=&quot;text-slate-400 hover:text-white text-lg&quot;&gt;✕&lt;/button&gt;
-      &lt;/div&gt;
-      &lt;p class=&quot;text-xs text-slate-400 mb-3&quot;&gt;
-        請輸入後端資料來源網址（Cloudflare 網址或本機網址加上 &lt;code class=&quot;text-sky-400&quot;&gt;/stocks&lt;/code&gt;）：
-      &lt;/p&gt;
-      &lt;!-- 輸入欄位 6：API 網址輸入框 (附帶 ✕ 清空鍵) --&gt;
-      &lt;div class=&quot;flex items-center bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-lg px-3 py-1.5 mb-3 gap-2&quot;&gt;
-        &lt;input type=&quot;text&quot; id=&quot;apiUrlInput&quot; placeholder=&quot;https://dual-contacted-floyd-dosage.trycloudflare.com/stocks&quot; 
-               class=&quot;w-full bg-transparent text-xs text-white focus:outline-none&quot; /&gt;
-        &lt;button type=&quot;button&quot; onclick=&quot;clearInputField(&#39;apiUrlInput&#39;, false)&quot; title=&quot;清空網址欄&quot; class=&quot;clear-input-btn&quot;&gt;✕&lt;/button&gt;
-      &lt;/div&gt;
+  <!-- API 設定彈窗 -->
+  <div id="apiModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white">🔌 API 串接設定</h3>
+        <button onclick="closeApiModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3">
+        請輸入後端資料來源網址（Cloudflare 網址或本機網址加上 <code class="text-sky-400">/stocks</code>）：
+      </p>
+      <!-- 輸入欄位 6：API 網址輸入框 (附帶 ✕ 清空鍵) -->
+      <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-blue-500 rounded-lg px-3 py-1.5 mb-3 gap-2">
+        <input type="text" id="apiUrlInput" placeholder="https://dual-contacted-floyd-dosage.trycloudflare.com/stocks" 
+               class="w-full bg-transparent text-xs text-white focus:outline-none" />
+        <button type="button" onclick="clearInputField('apiUrlInput', false)" title="清空網址欄" class="clear-input-btn">✕</button>
+      </div>
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
         <input type="checkbox" id="autoSyncCheckbox" checked onchange="saveUserSettingsToStorage(false)" class="rounded bg-slate-800 border-slate-600 text-blue-500" />
@@ -1416,47 +1416,47 @@
         </button>
       </div>
     </div>
-  &lt;/div&gt;
+  </div>
 
-  &lt;!-- Gemini API Key 設定彈窗 --&gt;
-  &lt;div id=&quot;geminiKeyModal&quot; class=&quot;fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4&quot;&gt;
-    &lt;div class=&quot;bg-[#111827] border border-violet-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl&quot;&gt;
-      &lt;div class=&quot;flex justify-between items-center mb-3&quot;&gt;
-        &lt;h3 class=&quot;text-base font-bold text-white&quot;&gt;🔑 Gemini AI 深度診斷設定&lt;/h3&gt;
-        &lt;button onclick=&quot;closeGeminiKeyModal()&quot; class=&quot;text-slate-400 hover:text-white text-lg&quot;&gt;✕&lt;/button&gt;
-      &lt;/div&gt;
-      &lt;p class=&quot;text-xs text-slate-400 mb-3 leading-relaxed&quot;&gt;
-        請輸入你的 Google Gemini API Key（僅儲存在你本機瀏覽器的 &lt;code class=&quot;text-violet-300&quot;&gt;localStorage&lt;/code&gt; 中，不會上傳至其他伺服器），即可針對單檔股票即時進行 K 線型態與出場點位深度診斷。
-      &lt;/p&gt;
-      &lt;div class=&quot;flex items-center bg-slate-950 border border-slate-700 focus-within:border-violet-500 rounded-lg px-3 py-1.5 mb-3 gap-2&quot;&gt;
-        &lt;input type=&quot;password&quot; id=&quot;geminiApiKeyInput&quot; placeholder=&quot;貼上 AIzaSy... 開頭的 Gemini API Key&quot;
-               class=&quot;w-full bg-transparent text-xs text-white focus:outline-none&quot; /&gt;
-        &lt;button type=&quot;button&quot; onclick=&quot;clearInputField(&#39;geminiApiKeyInput&#39;, false)&quot; title=&quot;清空 Key&quot; class=&quot;clear-input-btn&quot;&gt;✕&lt;/button&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;mb-4 flex items-center justify-between gap-2 text-xs&quot;&gt;
-        &lt;span class=&quot;text-slate-300&quot;&gt;使用模型：&lt;/span&gt;
-        &lt;select id=&quot;geminiModelSelect&quot; class=&quot;bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-violet-300 font-semibold focus:outline-none&quot;&gt;
-          &lt;option value=&quot;gemini-3.8-flash&quot; selected&gt;gemini-3.8-flash (最新快速・推薦)&lt;/option&gt;
-          &lt;option value=&quot;gemini-3.8-flash-lite&quot;&gt;gemini-3.8-flash-lite (極速不易塞車)&lt;/option&gt;
-          &lt;option value=&quot;gemini-3.8-pro&quot;&gt;gemini-3.8-pro (深度推理)&lt;/option&gt;
-        &lt;/select&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;flex justify-end gap-2&quot;&gt;
-        &lt;button onclick=&quot;closeGeminiKeyModal()&quot; class=&quot;px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700&quot;&gt;
+  <!-- Gemini API Key 設定彈窗 -->
+  <div id="geminiKeyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#111827] border border-violet-500/50 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-base font-bold text-white">🔑 Gemini AI 深度診斷設定</h3>
+        <button onclick="closeGeminiKeyModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+        請輸入你的 Google Gemini API Key（僅儲存在你本機瀏覽器的 <code class="text-violet-300">localStorage</code> 中，不會上傳至其他伺服器），即可針對單檔股票即時進行 K 線型態與出場點位深度診斷。
+      </p>
+      <div class="flex items-center bg-slate-950 border border-slate-700 focus-within:border-violet-500 rounded-lg px-3 py-1.5 mb-3 gap-2">
+        <input type="password" id="geminiApiKeyInput" placeholder="貼上 AIzaSy... 開頭的 Gemini API Key"
+               class="w-full bg-transparent text-xs text-white focus:outline-none" />
+        <button type="button" onclick="clearInputField('geminiApiKeyInput', false)" title="清空 Key" class="clear-input-btn">✕</button>
+      </div>
+      <div class="mb-4 flex items-center justify-between gap-2 text-xs">
+        <span class="text-slate-300">使用模型：</span>
+        <select id="geminiModelSelect" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-violet-300 font-semibold focus:outline-none">
+          <option value="gemini-3.8-flash" selected>gemini-3.8-flash (最新快速・推薦)</option>
+          <option value="gemini-3.8-flash-lite">gemini-3.8-flash-lite (極速不易塞車)</option>
+          <option value="gemini-3.8-pro">gemini-3.8-pro (深度推理)</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeGeminiKeyModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">
           取消
-        &lt;/button&gt;
-        &lt;button onclick=&quot;saveGeminiKeySettings()&quot; class=&quot;px-4 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-500&quot;&gt;
+        </button>
+        <button onclick="saveGeminiKeySettings()" class="px-4 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-500">
           儲存設定
-        &lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
+        </button>
+      </div>
+    </div>
+  </div>
 
-  &lt;script&gt;
-    const DEFAULT_API_URL = &quot;https://dual-contacted-floyd-dosage.trycloudflare.com/stocks&quot;;
-    const USER_SETTINGS_STORAGE_KEY = &quot;ma20_dashboard_user_settings_v2&quot;;
+  <script>
+    const DEFAULT_API_URL = "https://dual-contacted-floyd-dosage.trycloudflare.com/stocks";
+    const USER_SETTINGS_STORAGE_KEY = "ma20_dashboard_user_settings_v2";
 
-    function safeGetStorage(key, fallback = &quot;&quot;) {
+    function safeGetStorage(key, fallback = "") {
       try {
         const val = localStorage.getItem(key);
         return val !== null ? val : fallback;
@@ -1472,32 +1472,32 @@
     }
 
     let toastTimer = null;
-    function showToast(message, type = &quot;info&quot;) {
-      const el = document.getElementById(&quot;toastBanner&quot;);
+    function showToast(message, type = "info") {
+      const el = document.getElementById("toastBanner");
       if (!el) return;
       if (toastTimer) clearTimeout(toastTimer);
       const styleMap = {
-        error: &quot;bg-rose-950/95 border-rose-500/60 text-rose-200&quot;,
-        warn: &quot;bg-amber-950/95 border-amber-500/60 text-amber-200&quot;,
-        info: &quot;bg-slate-900/95 border-blue-500/60 text-blue-200&quot;
+        error: "bg-rose-950/95 border-rose-500/60 text-rose-200",
+        warn: "bg-amber-950/95 border-amber-500/60 text-amber-200",
+        info: "bg-slate-900/95 border-blue-500/60 text-blue-200"
       };
       el.className = `fixed top-4 right-4 z-50 max-w-sm rounded-xl border px-4 py-2.5 text-xs font-medium shadow-2xl transition-all ${styleMap[type] || styleMap.info}`;
       el.textContent = message;
-      el.classList.remove(&quot;hidden&quot;);
-      toastTimer = setTimeout(() =&gt; {
-        el.classList.add(&quot;hidden&quot;);
+      el.classList.remove("hidden");
+      toastTimer = setTimeout(() => {
+        el.classList.add("hidden");
       }, 3600);
     }
 
-    let savedUrl = safeGetStorage(&quot;custom_stock_api_url&quot;, DEFAULT_API_URL);
-    if (!savedUrl || savedUrl.includes(&quot;ngrok-free.dev&quot;) || !savedUrl.endsWith(&quot;/stocks&quot;)) {
+    let savedUrl = safeGetStorage("custom_stock_api_url", DEFAULT_API_URL);
+    if (!savedUrl || savedUrl.includes("ngrok-free.dev") || !savedUrl.endsWith("/stocks")) {
       savedUrl = DEFAULT_API_URL;
-      safeSetStorage(&quot;custom_stock_api_url&quot;, savedUrl);
+      safeSetStorage("custom_stock_api_url", savedUrl);
     }
     let apiUrl = savedUrl;
 
-    let bubbleMultThreshold = parseFloat(safeGetStorage(&quot;whale_bubble_mult_threshold&quot;, &quot;2.0&quot;));
-    if (isNaN(bubbleMultThreshold) || bubbleMultThreshold &lt; 1.0 || bubbleMultThreshold &gt; 8.0) {
+    let bubbleMultThreshold = parseFloat(safeGetStorage("whale_bubble_mult_threshold", "2.0"));
+    if (isNaN(bubbleMultThreshold) || bubbleMultThreshold < 1.0 || bubbleMultThreshold > 8.0) {
       bubbleMultThreshold = 2.0;
     }
 
@@ -1506,15 +1506,15 @@
     let trackingStocks = [];
     let breakdownPoolStocks = [];
     let filteredStocks = [];
-    let currentFilter = &quot;ALL&quot;;
-    let currentExitStrategy = &quot;DEFAULT_20MA&quot;;
-    let trackingSubFilter = &quot;ALL&quot;; // &#39;ALL&#39; | &#39;WIN&#39; | &#39;LOSS&#39; | &#39;TODAY_EXIT&#39;
+    let currentFilter = "ALL";
+    let currentExitStrategy = "DEFAULT_20MA";
+    let trackingSubFilter = "ALL"; // 'ALL' | 'WIN' | 'LOSS' | 'TODAY_EXIT'
     let selectedStockCode = null;
     let syncTimer = null;
     let sortState = { field: null, dir: null };
 
     const chartState = {
-      timeframe: &#39;1d&#39;,
+      timeframe: '1d',
       dailyBars: [],
       bars5m: [],
       bars: [],
@@ -1533,13 +1533,13 @@
 
     // 判斷目前是否為支援損益看板與 7 欄損益表的股池 (股池四 TRACKING 與 股池五 BREAKDOWN)
     function isPnlPoolActive() {
-      return currentFilter === &quot;TRACKING&quot; || currentFilter === &quot;BREAKDOWN&quot;;
+      return currentFilter === "TRACKING" || currentFilter === "BREAKDOWN";
     }
 
     // 取得該股在目前股池對應的損益追蹤紀錄 (股池四取 trackingInfo；股池五取 closedBreakdownInfo 或 directBreakdownInfo)
     function getPoolTrackInfo(stock) {
       if (!stock) return null;
-      if (currentFilter === &quot;BREAKDOWN&quot;) {
+      if (currentFilter === "BREAKDOWN") {
         return stock.closedBreakdownInfo || stock.directBreakdownInfo || stock.trackingInfo || null;
       }
       return stock.trackingInfo || null;
@@ -1548,172 +1548,172 @@
     // 自動儲存與載入使用者所有篩選參數與設定
     function saveUserSettingsToStorage(showNotification = false) {
       const settings = {
-        chkMa20Up: document.getElementById(&quot;chkMa20Up&quot;)?.checked || false,
-        chkSolidRedK: document.getElementById(&quot;chkSolidRedK&quot;)?.checked || false,
-        chkGainRange: document.getElementById(&quot;chkGainRange&quot;)?.checked ?? true,
-        minGain: document.getElementById(&quot;minGainInput&quot;)?.value ?? &quot;0&quot;,
-        maxGain: document.getElementById(&quot;maxGainInput&quot;)?.value ?? &quot;10.5&quot;,
-        volOp: document.getElementById(&quot;volOperatorSelect&quot;)?.value || &quot;GTE&quot;,
-        volThreshold: document.getElementById(&quot;volThresholdInput&quot;)?.value ?? &quot;70&quot;,
-        chkShowBubbles: document.getElementById(&quot;chkShowBubbles&quot;)?.checked ?? true,
+        chkMa20Up: document.getElementById("chkMa20Up")?.checked || false,
+        chkSolidRedK: document.getElementById("chkSolidRedK")?.checked || false,
+        chkGainRange: document.getElementById("chkGainRange")?.checked ?? true,
+        minGain: document.getElementById("minGainInput")?.value ?? "0",
+        maxGain: document.getElementById("maxGainInput")?.value ?? "10.5",
+        volOp: document.getElementById("volOperatorSelect")?.value || "GTE",
+        volThreshold: document.getElementById("volThresholdInput")?.value ?? "70",
+        chkShowBubbles: document.getElementById("chkShowBubbles")?.checked ?? true,
         bubbleMult: bubbleMultThreshold,
-        chkShowDeduct: document.getElementById(&quot;chkShowDeduct&quot;)?.checked ?? true,
-        autoSync: document.getElementById(&quot;autoSyncCheckbox&quot;)?.checked ?? true,
+        chkShowDeduct: document.getElementById("chkShowDeduct")?.checked ?? true,
+        autoSync: document.getElementById("autoSyncCheckbox")?.checked ?? true,
         currentFilter,
-        pnlDateBasis: document.getElementById(&quot;pnlDateBasisSelect&quot;)?.value || &quot;AUTO&quot;,
-        pnlStartDate: document.getElementById(&quot;pnlStartDateInput&quot;)?.value || &quot;&quot;,
-        pnlEndDate: document.getElementById(&quot;pnlEndDateInput&quot;)?.value || &quot;&quot;,
+        pnlDateBasis: document.getElementById("pnlDateBasisSelect")?.value || "AUTO",
+        pnlStartDate: document.getElementById("pnlStartDateInput")?.value || "",
+        pnlEndDate: document.getElementById("pnlEndDateInput")?.value || "",
         exitStrategy: currentExitStrategy,
-        simTrimTopWinners: document.getElementById(&quot;simTrimTopWinnersSelect&quot;)?.value || &quot;0&quot;,
-        initStopBufferPct: document.getElementById(&quot;initStopBufferPctInput&quot;)?.value || &quot;2.0&quot;,
-        entryLimitUpStopAtLow: document.getElementById(&quot;chkEntryLimitUpStopAtLow&quot;)?.checked ?? true,
-        chkTimeStop: document.getElementById(&quot;chkTimeStop&quot;)?.checked || false,
-        globalExitConfirmMode: document.getElementById(&quot;globalExitConfirmMode&quot;)?.value || &quot;AUTO&quot;,
-        timeStopDays: document.getElementById(&quot;timeStopDaysInput&quot;)?.value || &quot;15&quot;,
-        shortMaTriggerPct: document.getElementById(&quot;shortMaTriggerPctInput&quot;)?.value || &quot;15&quot;,
-        shortMaPeriod: document.getElementById(&quot;shortMaPeriodSelect&quot;)?.value || &quot;10&quot;,
-        shortMaMode: document.getElementById(&quot;shortMaModeSelect&quot;)?.value || &quot;DIRECT&quot;,
-        breakevenTriggerPct: document.getElementById(&quot;breakevenTriggerPctInput&quot;)?.value || &quot;10&quot;,
-        peakTrailTriggerPct: document.getElementById(&quot;peakTrailTriggerPctInput&quot;)?.value || &quot;15&quot;,
-        peakDrawdownPct: document.getElementById(&quot;peakDrawdownPctInput&quot;)?.value || &quot;8&quot;,
-        whaleTriggerPct: document.getElementById(&quot;whaleTriggerPctInput&quot;)?.value || &quot;12&quot;,
-        whaleSellMult: document.getElementById(&quot;whaleSellMultInput&quot;)?.value || &quot;2.0&quot;,
-        rrBreakevenRatio: document.getElementById(&quot;rrBreakevenRatioInput&quot;)?.value || &quot;1.0&quot;,
-        rrBreakevenBufferPct: document.getElementById(&quot;rrBreakevenBufferPctInput&quot;)?.value || &quot;0.5&quot;,
-        rrTier2Ratio: document.getElementById(&quot;rrTier2RatioInput&quot;)?.value || &quot;3.0&quot;,
-        rrTier2Action: document.getElementById(&quot;rrTier2ActionSelect&quot;)?.value || &quot;LOCK_R_AND_RUN&quot;,
-        rrLockRatio: document.getElementById(&quot;rrLockRatioInput&quot;)?.value || &quot;2.0&quot;,
-        rrTrailMa: document.getElementById(&quot;rrTrailMaSelect&quot;)?.value || &quot;5&quot;,
-        rrMaConfirmMode: document.getElementById(&quot;rrMaConfirmModeSelect&quot;)?.value || &quot;KEY_K&quot;,
-        aiPowerReevalDays: document.getElementById(&quot;aiPowerReevalDaysInput&quot;)?.value || &quot;90&quot;,
-        chkShowAiPowerMarkers: document.getElementById(&quot;chkShowAiPowerMarkers&quot;)?.checked ?? true
+        simTrimTopWinners: document.getElementById("simTrimTopWinnersSelect")?.value || "0",
+        initStopBufferPct: document.getElementById("initStopBufferPctInput")?.value || "2.0",
+        entryLimitUpStopAtLow: document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true,
+        chkTimeStop: document.getElementById("chkTimeStop")?.checked || false,
+        globalExitConfirmMode: document.getElementById("globalExitConfirmMode")?.value || "AUTO",
+        timeStopDays: document.getElementById("timeStopDaysInput")?.value || "15",
+        shortMaTriggerPct: document.getElementById("shortMaTriggerPctInput")?.value || "15",
+        shortMaPeriod: document.getElementById("shortMaPeriodSelect")?.value || "10",
+        shortMaMode: document.getElementById("shortMaModeSelect")?.value || "DIRECT",
+        breakevenTriggerPct: document.getElementById("breakevenTriggerPctInput")?.value || "10",
+        peakTrailTriggerPct: document.getElementById("peakTrailTriggerPctInput")?.value || "15",
+        peakDrawdownPct: document.getElementById("peakDrawdownPctInput")?.value || "8",
+        whaleTriggerPct: document.getElementById("whaleTriggerPctInput")?.value || "12",
+        whaleSellMult: document.getElementById("whaleSellMultInput")?.value || "2.0",
+        rrBreakevenRatio: document.getElementById("rrBreakevenRatioInput")?.value || "1.0",
+        rrBreakevenBufferPct: document.getElementById("rrBreakevenBufferPctInput")?.value || "0.5",
+        rrTier2Ratio: document.getElementById("rrTier2RatioInput")?.value || "3.0",
+        rrTier2Action: document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN",
+        rrLockRatio: document.getElementById("rrLockRatioInput")?.value || "2.0",
+        rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "5",
+        rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K",
+        aiPowerReevalDays: document.getElementById("aiPowerReevalDaysInput")?.value || "90",
+        chkShowAiPowerMarkers: document.getElementById("chkShowAiPowerMarkers")?.checked ?? true
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-      safeSetStorage(&quot;whale_bubble_mult_threshold&quot;, String(bubbleMultThreshold));
+      safeSetStorage("whale_bubble_mult_threshold", String(bubbleMultThreshold));
 
-      const badge = document.getElementById(&quot;savedSettingsBadge&quot;);
+      const badge = document.getElementById("savedSettingsBadge");
       if (badge) {
-        const nowStr = new Date().toLocaleTimeString(&#39;zh-TW&#39;, { hour12: false, hour: &#39;2-digit&#39;, minute: &#39;2-digit&#39;, second: &#39;2-digit&#39; });
+        const nowStr = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
         badge.textContent = `💾 參數已儲存 (${nowStr})`;
       }
       if (showNotification) {
-        showToast(&quot;已儲存目前所有篩選參數與區間設定，下次開啟網頁將自動套用！&quot;, &quot;info&quot;);
+        showToast("已儲存目前所有篩選參數與區間設定，下次開啟網頁將自動套用！", "info");
       }
     }
 
     function loadUserSettingsFromStorage() {
-      const rawJson = safeGetStorage(USER_SETTINGS_STORAGE_KEY, &quot;&quot;);
+      const rawJson = safeGetStorage(USER_SETTINGS_STORAGE_KEY, "");
       if (!rawJson) return;
       try {
         const s = JSON.parse(rawJson);
-        if (!s || typeof s !== &quot;object&quot;) return;
-        if (typeof s.chkMa20Up === &quot;boolean&quot;) document.getElementById(&quot;chkMa20Up&quot;).checked = s.chkMa20Up;
-        if (typeof s.chkSolidRedK === &quot;boolean&quot;) document.getElementById(&quot;chkSolidRedK&quot;).checked = s.chkSolidRedK;
-        if (typeof s.chkGainRange === &quot;boolean&quot;) document.getElementById(&quot;chkGainRange&quot;).checked = s.chkGainRange;
-        if (s.minGain !== undefined) document.getElementById(&quot;minGainInput&quot;).value = s.minGain;
-        if (s.maxGain !== undefined) document.getElementById(&quot;maxGainInput&quot;).value = s.maxGain;
-        if (s.volOp) document.getElementById(&quot;volOperatorSelect&quot;).value = s.volOp;
-        if (s.volThreshold !== undefined) document.getElementById(&quot;volThresholdInput&quot;).value = s.volThreshold;
-        if (typeof s.chkShowBubbles === &quot;boolean&quot;) document.getElementById(&quot;chkShowBubbles&quot;).checked = s.chkShowBubbles;
-        if (typeof s.chkShowDeduct === &quot;boolean&quot;) document.getElementById(&quot;chkShowDeduct&quot;).checked = s.chkShowDeduct;
-        if (typeof s.autoSync === &quot;boolean&quot;) document.getElementById(&quot;autoSyncCheckbox&quot;).checked = s.autoSync;
-        if (typeof s.bubbleMult === &quot;number&quot; &amp;&amp; s.bubbleMult &gt;= 1.0 &amp;&amp; s.bubbleMult &lt;= 8.0) {
+        if (!s || typeof s !== "object") return;
+        if (typeof s.chkMa20Up === "boolean") document.getElementById("chkMa20Up").checked = s.chkMa20Up;
+        if (typeof s.chkSolidRedK === "boolean") document.getElementById("chkSolidRedK").checked = s.chkSolidRedK;
+        if (typeof s.chkGainRange === "boolean") document.getElementById("chkGainRange").checked = s.chkGainRange;
+        if (s.minGain !== undefined) document.getElementById("minGainInput").value = s.minGain;
+        if (s.maxGain !== undefined) document.getElementById("maxGainInput").value = s.maxGain;
+        if (s.volOp) document.getElementById("volOperatorSelect").value = s.volOp;
+        if (s.volThreshold !== undefined) document.getElementById("volThresholdInput").value = s.volThreshold;
+        if (typeof s.chkShowBubbles === "boolean") document.getElementById("chkShowBubbles").checked = s.chkShowBubbles;
+        if (typeof s.chkShowDeduct === "boolean") document.getElementById("chkShowDeduct").checked = s.chkShowDeduct;
+        if (typeof s.autoSync === "boolean") document.getElementById("autoSyncCheckbox").checked = s.autoSync;
+        if (typeof s.bubbleMult === "number" && s.bubbleMult >= 1.0 && s.bubbleMult <= 8.0) {
           bubbleMultThreshold = s.bubbleMult;
         }
-        if (s.pnlDateBasis &amp;&amp; document.getElementById(&quot;pnlDateBasisSelect&quot;)) {
-          document.getElementById(&quot;pnlDateBasisSelect&quot;).value = s.pnlDateBasis;
+        if (s.pnlDateBasis && document.getElementById("pnlDateBasisSelect")) {
+          document.getElementById("pnlDateBasisSelect").value = s.pnlDateBasis;
         }
-        if (typeof s.pnlStartDate === &quot;string&quot; &amp;&amp; document.getElementById(&quot;pnlStartDateInput&quot;)) {
-          document.getElementById(&quot;pnlStartDateInput&quot;).value = s.pnlStartDate;
+        if (typeof s.pnlStartDate === "string" && document.getElementById("pnlStartDateInput")) {
+          document.getElementById("pnlStartDateInput").value = s.pnlStartDate;
         }
-        if (typeof s.pnlEndDate === &quot;string&quot; &amp;&amp; document.getElementById(&quot;pnlEndDateInput&quot;)) {
-          document.getElementById(&quot;pnlEndDateInput&quot;).value = s.pnlEndDate;
+        if (typeof s.pnlEndDate === "string" && document.getElementById("pnlEndDateInput")) {
+          document.getElementById("pnlEndDateInput").value = s.pnlEndDate;
         }
-        if (typeof s.chkTimeStop === &quot;boolean&quot; &amp;&amp; document.getElementById(&quot;chkTimeStop&quot;)) {
-          document.getElementById(&quot;chkTimeStop&quot;).checked = s.chkTimeStop;
+        if (typeof s.chkTimeStop === "boolean" && document.getElementById("chkTimeStop")) {
+          document.getElementById("chkTimeStop").checked = s.chkTimeStop;
         }
-        if (s.globalExitConfirmMode &amp;&amp; document.getElementById(&quot;globalExitConfirmMode&quot;)) {
-          document.getElementById(&quot;globalExitConfirmMode&quot;).value = s.globalExitConfirmMode;
+        if (s.globalExitConfirmMode && document.getElementById("globalExitConfirmMode")) {
+          document.getElementById("globalExitConfirmMode").value = s.globalExitConfirmMode;
         }
-        if (s.timeStopDays !== undefined &amp;&amp; document.getElementById(&quot;timeStopDaysInput&quot;)) {
-          document.getElementById(&quot;timeStopDaysInput&quot;).value = s.timeStopDays;
+        if (s.timeStopDays !== undefined && document.getElementById("timeStopDaysInput")) {
+          document.getElementById("timeStopDaysInput").value = s.timeStopDays;
         }
-        if (s.shortMaTriggerPct !== undefined &amp;&amp; document.getElementById(&quot;shortMaTriggerPctInput&quot;)) {
-          document.getElementById(&quot;shortMaTriggerPctInput&quot;).value = s.shortMaTriggerPct;
+        if (s.shortMaTriggerPct !== undefined && document.getElementById("shortMaTriggerPctInput")) {
+          document.getElementById("shortMaTriggerPctInput").value = s.shortMaTriggerPct;
         }
-        if (s.shortMaPeriod &amp;&amp; document.getElementById(&quot;shortMaPeriodSelect&quot;)) {
-          document.getElementById(&quot;shortMaPeriodSelect&quot;).value = s.shortMaPeriod;
+        if (s.shortMaPeriod && document.getElementById("shortMaPeriodSelect")) {
+          document.getElementById("shortMaPeriodSelect").value = s.shortMaPeriod;
         }
-        if (s.shortMaMode &amp;&amp; document.getElementById(&quot;shortMaModeSelect&quot;)) {
-          document.getElementById(&quot;shortMaModeSelect&quot;).value = s.shortMaMode;
+        if (s.shortMaMode && document.getElementById("shortMaModeSelect")) {
+          document.getElementById("shortMaModeSelect").value = s.shortMaMode;
         }
-        if (s.breakevenTriggerPct !== undefined &amp;&amp; document.getElementById(&quot;breakevenTriggerPctInput&quot;)) {
-          document.getElementById(&quot;breakevenTriggerPctInput&quot;).value = s.breakevenTriggerPct;
+        if (s.breakevenTriggerPct !== undefined && document.getElementById("breakevenTriggerPctInput")) {
+          document.getElementById("breakevenTriggerPctInput").value = s.breakevenTriggerPct;
         }
-        if (s.peakTrailTriggerPct !== undefined &amp;&amp; document.getElementById(&quot;peakTrailTriggerPctInput&quot;)) {
-          document.getElementById(&quot;peakTrailTriggerPctInput&quot;).value = s.peakTrailTriggerPct;
+        if (s.peakTrailTriggerPct !== undefined && document.getElementById("peakTrailTriggerPctInput")) {
+          document.getElementById("peakTrailTriggerPctInput").value = s.peakTrailTriggerPct;
         }
-        if (s.peakDrawdownPct !== undefined &amp;&amp; document.getElementById(&quot;peakDrawdownPctInput&quot;)) {
-          document.getElementById(&quot;peakDrawdownPctInput&quot;).value = s.peakDrawdownPct;
+        if (s.peakDrawdownPct !== undefined && document.getElementById("peakDrawdownPctInput")) {
+          document.getElementById("peakDrawdownPctInput").value = s.peakDrawdownPct;
         }
-        if (s.whaleTriggerPct !== undefined &amp;&amp; document.getElementById(&quot;whaleTriggerPctInput&quot;)) {
-          document.getElementById(&quot;whaleTriggerPctInput&quot;).value = s.whaleTriggerPct;
+        if (s.whaleTriggerPct !== undefined && document.getElementById("whaleTriggerPctInput")) {
+          document.getElementById("whaleTriggerPctInput").value = s.whaleTriggerPct;
         }
-        if (s.whaleSellMult !== undefined &amp;&amp; document.getElementById(&quot;whaleSellMultInput&quot;)) {
-          document.getElementById(&quot;whaleSellMultInput&quot;).value = s.whaleSellMult;
+        if (s.whaleSellMult !== undefined && document.getElementById("whaleSellMultInput")) {
+          document.getElementById("whaleSellMultInput").value = s.whaleSellMult;
         }
-        if (s.rrBreakevenRatio !== undefined &amp;&amp; document.getElementById(&quot;rrBreakevenRatioInput&quot;)) {
-          document.getElementById(&quot;rrBreakevenRatioInput&quot;).value = s.rrBreakevenRatio;
+        if (s.rrBreakevenRatio !== undefined && document.getElementById("rrBreakevenRatioInput")) {
+          document.getElementById("rrBreakevenRatioInput").value = s.rrBreakevenRatio;
         }
-        if (s.rrBreakevenBufferPct !== undefined &amp;&amp; document.getElementById(&quot;rrBreakevenBufferPctInput&quot;)) {
-          document.getElementById(&quot;rrBreakevenBufferPctInput&quot;).value = s.rrBreakevenBufferPct;
+        if (s.rrBreakevenBufferPct !== undefined && document.getElementById("rrBreakevenBufferPctInput")) {
+          document.getElementById("rrBreakevenBufferPctInput").value = s.rrBreakevenBufferPct;
         }
-        if (s.rrTier2Ratio !== undefined &amp;&amp; document.getElementById(&quot;rrTier2RatioInput&quot;)) {
-          document.getElementById(&quot;rrTier2RatioInput&quot;).value = s.rrTier2Ratio;
+        if (s.rrTier2Ratio !== undefined && document.getElementById("rrTier2RatioInput")) {
+          document.getElementById("rrTier2RatioInput").value = s.rrTier2Ratio;
         }
-        if (s.rrTier2Action &amp;&amp; document.getElementById(&quot;rrTier2ActionSelect&quot;)) {
-          document.getElementById(&quot;rrTier2ActionSelect&quot;).value = s.rrTier2Action;
+        if (s.rrTier2Action && document.getElementById("rrTier2ActionSelect")) {
+          document.getElementById("rrTier2ActionSelect").value = s.rrTier2Action;
         }
-        if (s.rrLockRatio !== undefined &amp;&amp; document.getElementById(&quot;rrLockRatioInput&quot;)) {
-          document.getElementById(&quot;rrLockRatioInput&quot;).value = s.rrLockRatio;
+        if (s.rrLockRatio !== undefined && document.getElementById("rrLockRatioInput")) {
+          document.getElementById("rrLockRatioInput").value = s.rrLockRatio;
         }
-        if (s.rrTrailMa &amp;&amp; document.getElementById(&quot;rrTrailMaSelect&quot;)) {
-          document.getElementById(&quot;rrTrailMaSelect&quot;).value = s.rrTrailMa;
+        if (s.rrTrailMa && document.getElementById("rrTrailMaSelect")) {
+          document.getElementById("rrTrailMaSelect").value = s.rrTrailMa;
         }
-        if (s.rrMaConfirmMode &amp;&amp; document.getElementById(&quot;rrMaConfirmModeSelect&quot;)) {
-          document.getElementById(&quot;rrMaConfirmModeSelect&quot;).value = s.rrMaConfirmMode;
+        if (s.rrMaConfirmMode && document.getElementById("rrMaConfirmModeSelect")) {
+          document.getElementById("rrMaConfirmModeSelect").value = s.rrMaConfirmMode;
         }
-        if (s.initStopBufferPct !== undefined &amp;&amp; document.getElementById(&quot;initStopBufferPctInput&quot;)) {
-          document.getElementById(&quot;initStopBufferPctInput&quot;).value = s.initStopBufferPct;
+        if (s.initStopBufferPct !== undefined && document.getElementById("initStopBufferPctInput")) {
+          document.getElementById("initStopBufferPctInput").value = s.initStopBufferPct;
         }
-        if (s.entryLimitUpStopAtLow !== undefined &amp;&amp; document.getElementById(&quot;chkEntryLimitUpStopAtLow&quot;)) {
-          document.getElementById(&quot;chkEntryLimitUpStopAtLow&quot;).checked = !!s.entryLimitUpStopAtLow;
+        if (s.entryLimitUpStopAtLow !== undefined && document.getElementById("chkEntryLimitUpStopAtLow")) {
+          document.getElementById("chkEntryLimitUpStopAtLow").checked = !!s.entryLimitUpStopAtLow;
         }
-        if (s.simTrimTopWinners !== undefined &amp;&amp; document.getElementById(&quot;simTrimTopWinnersSelect&quot;)) {
-          document.getElementById(&quot;simTrimTopWinnersSelect&quot;).value = s.simTrimTopWinners;
+        if (s.simTrimTopWinners !== undefined && document.getElementById("simTrimTopWinnersSelect")) {
+          document.getElementById("simTrimTopWinnersSelect").value = s.simTrimTopWinners;
         }
-        if (s.aiPowerReevalDays !== undefined &amp;&amp; document.getElementById(&quot;aiPowerReevalDaysInput&quot;)) {
-          document.getElementById(&quot;aiPowerReevalDaysInput&quot;).value = s.aiPowerReevalDays;
+        if (s.aiPowerReevalDays !== undefined && document.getElementById("aiPowerReevalDaysInput")) {
+          document.getElementById("aiPowerReevalDaysInput").value = s.aiPowerReevalDays;
         }
-        if (typeof s.chkShowAiPowerMarkers === &quot;boolean&quot;) {
-          const c1 = document.getElementById(&quot;chkShowAiPowerMarkers&quot;);
-          const c2 = document.getElementById(&quot;chkShowAiPowerMarkersHud&quot;);
+        if (typeof s.chkShowAiPowerMarkers === "boolean") {
+          const c1 = document.getElementById("chkShowAiPowerMarkers");
+          const c2 = document.getElementById("chkShowAiPowerMarkersHud");
           if (c1) c1.checked = s.chkShowAiPowerMarkers;
           if (c2) c2.checked = s.chkShowAiPowerMarkers;
         }
-        if (s.exitStrategy &amp;&amp; [&#39;DEFAULT_20MA&#39;, &#39;SHORT_MA_TRAIL&#39;, &#39;PEAK_TRAILING&#39;, &#39;WHALE_SELL_EXIT&#39;, &#39;RR_LADDER&#39;, &#39;AI_ADAPTIVE&#39;, &#39;AI_POWER_90D&#39;].includes(s.exitStrategy)) {
+        if (s.exitStrategy && ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'].includes(s.exitStrategy)) {
           currentExitStrategy = s.exitStrategy;
         }
-        if (s.currentFilter &amp;&amp; [&#39;ALL&#39;, &#39;BREAKOUT&#39;, &#39;CONSOLIDATE&#39;, &#39;TRACKING&#39;, &#39;BREAKDOWN&#39;].includes(s.currentFilter)) {
+        if (s.currentFilter && ['ALL', 'BREAKOUT', 'CONSOLIDATE', 'TRACKING', 'BREAKDOWN'].includes(s.currentFilter)) {
           currentFilter = s.currentFilter;
-          document.querySelectorAll(&quot;.filter-card&quot;).forEach(btn =&gt; {
-            btn.classList.remove(&quot;border-2&quot;, &quot;border-blue-500&quot;);
-            btn.classList.add(&quot;border&quot;, &quot;border-slate-800&quot;);
+          document.querySelectorAll(".filter-card").forEach(btn => {
+            btn.classList.remove("border-2", "border-blue-500");
+            btn.classList.add("border", "border-slate-800");
           });
           const activeBtn = document.getElementById(`tab-${currentFilter}`);
           if (activeBtn) {
-            activeBtn.classList.remove(&quot;border&quot;, &quot;border-slate-800&quot;);
-            activeBtn.classList.add(&quot;border-2&quot;, &quot;border-blue-500&quot;);
+            activeBtn.classList.remove("border", "border-slate-800");
+            activeBtn.classList.add("border-2", "border-blue-500");
           }
         }
       } catch (e) {}
@@ -1725,14 +1725,14 @@
       applyFiltersAndRender();
       renderStrategyComparisonSummary(getCurrentFilterOptions());
       runPortfolioCapitalSimulation();
-      const chkAiCap = document.getElementById(&quot;chkAiCapitalOpt&quot;);
-      if (chkAiCap &amp;&amp; chkAiCap.checked) {
+      const chkAiCap = document.getElementById("chkAiCapitalOpt");
+      if (chkAiCap && chkAiCap.checked) {
         runAiCapitalStrategyOptimizer(false);
       }
       if (selectedStockCode) {
-        const cur = rawAllLoadedStocks.find(s =&gt; s.code === selectedStockCode);
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (cur) updateDetailPanel(cur, false);
-        else if (window._lastCustomInspectedStock &amp;&amp; window._lastCustomInspectedStock.code === selectedStockCode) {
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
           const customS = window._lastCustomInspectedStock;
           const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
           customS.trackingInfo = lc.activeOrTodayExit;
@@ -1743,14 +1743,14 @@
     }
 
     function syncAiPowerMarkersToggle(checked) {
-      const c1 = document.getElementById(&quot;chkShowAiPowerMarkers&quot;);
-      const c2 = document.getElementById(&quot;chkShowAiPowerMarkersHud&quot;);
+      const c1 = document.getElementById("chkShowAiPowerMarkers");
+      const c2 = document.getElementById("chkShowAiPowerMarkersHud");
       if (c1) c1.checked = !!checked;
       if (c2) c2.checked = !!checked;
       saveUserSettingsToStorage(false);
       renderCanvasChart();
-      if (chartState.bars.length &gt; 0) {
-        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length &gt;= 2 ? chartState.bars[chartState.bars.length - 2] : null);
+      if (chartState.bars.length > 0) {
+        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
       }
     }
 
@@ -1759,11 +1759,11 @@
       renderCanvasChart();
     }
 
-    window.addEventListener(&quot;DOMContentLoaded&quot;, () =&gt; {
-      document.getElementById(&quot;apiUrlInput&quot;).value = apiUrl;
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("apiUrlInput").value = apiUrl;
       loadUserSettingsFromStorage();
       loadUserPortfolioFromStorage();
-      const slider = document.getElementById(&quot;bubbleMultSlider&quot;);
+      const slider = document.getElementById("bubbleMultSlider");
       if (slider) {
         slider.value = bubbleMultThreshold;
         updateBubbleMultLabel(bubbleMultThreshold);
@@ -1777,16 +1777,16 @@
       startAutoSync();
     });
 
-    window.addEventListener(&quot;resize&quot;, () =&gt; renderCanvasChart());
+    window.addEventListener("resize", () => renderCanvasChart());
 
     // STEP 1 漲幅與成交量拉桿雙向同步控制
     function syncStep1ControlsUI() {
-      const minIn = document.getElementById(&quot;minGainInput&quot;);
-      const maxIn = document.getElementById(&quot;maxGainInput&quot;);
-      const minSl = document.getElementById(&quot;minGainSlider&quot;);
-      const maxSl = document.getElementById(&quot;maxGainSlider&quot;);
-      const minLb = document.getElementById(&quot;minGainSliderLabel&quot;);
-      const maxLb = document.getElementById(&quot;maxGainSliderLabel&quot;);
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
+      const minSl = document.getElementById("minGainSlider");
+      const maxSl = document.getElementById("maxGainSlider");
+      const minLb = document.getElementById("minGainSliderLabel");
+      const maxLb = document.getElementById("maxGainSliderLabel");
 
       const minVal = parseFloat(minIn.value);
       const maxVal = parseFloat(maxIn.value);
@@ -1798,9 +1798,9 @@
       if (minLb) minLb.textContent = `${cleanMin.toFixed(1)}%`;
       if (maxLb) maxLb.textContent = `${cleanMax.toFixed(1)}%`;
 
-      const volIn = document.getElementById(&quot;volThresholdInput&quot;);
-      const volSl = document.getElementById(&quot;volThresholdSlider&quot;);
-      const volBg = document.getElementById(&quot;volSliderBadge&quot;);
+      const volIn = document.getElementById("volThresholdInput");
+      const volSl = document.getElementById("volThresholdSlider");
+      const volBg = document.getElementById("volSliderBadge");
       const vVal = parseFloat(volIn.value);
       const cleanVol = isNaN(vVal) ? 70 : Math.max(0, Math.min(1000, Math.round(vVal)));
       if (volSl) volSl.value = cleanVol;
@@ -1810,72 +1810,72 @@
     function onGainSliderChange(which, val) {
       let num = parseFloat(val);
       if (isNaN(num)) num = 0;
-      const minIn = document.getElementById(&quot;minGainInput&quot;);
-      const maxIn = document.getElementById(&quot;maxGainInput&quot;);
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
       let curMin = parseFloat(minIn.value);
       let curMax = parseFloat(maxIn.value);
       if (isNaN(curMin)) curMin = 0;
       if (isNaN(curMax)) curMax = 10.5;
 
-      if (which === &#39;min&#39;) {
+      if (which === 'min') {
         curMin = num;
-        if (curMin &gt; curMax) {
+        if (curMin > curMax) {
           curMax = curMin;
           maxIn.value = curMax;
         }
         minIn.value = curMin;
       } else {
         curMax = num;
-        if (curMax &lt; curMin) {
+        if (curMax < curMin) {
           curMin = curMax;
           minIn.value = curMin;
         }
         maxIn.value = curMax;
       }
-      document.getElementById(&quot;chkGainRange&quot;).checked = true;
+      document.getElementById("chkGainRange").checked = true;
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
 
     function stepGainThreshold(which, delta) {
-      const minIn = document.getElementById(&quot;minGainInput&quot;);
-      const maxIn = document.getElementById(&quot;maxGainInput&quot;);
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
       let curMin = parseFloat(minIn.value);
       let curMax = parseFloat(maxIn.value);
       if (isNaN(curMin)) curMin = 0;
       if (isNaN(curMax)) curMax = 10.5;
 
-      if (which === &#39;min&#39;) {
+      if (which === 'min') {
         curMin = Number(Math.max(0, Math.min(10, curMin + delta)).toFixed(1));
-        if (curMin &gt; curMax) {
+        if (curMin > curMax) {
           curMax = curMin;
           maxIn.value = curMax;
         }
         minIn.value = curMin;
       } else {
         curMax = Number(Math.max(0, Math.min(10.5, curMax + delta)).toFixed(1));
-        if (curMax &lt; curMin) {
+        if (curMax < curMin) {
           curMin = curMax;
           minIn.value = curMin;
         }
         maxIn.value = curMax;
       }
-      document.getElementById(&quot;chkGainRange&quot;).checked = true;
+      document.getElementById("chkGainRange").checked = true;
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
     }
 
     function onGainInputChange(which) {
-      const minIn = document.getElementById(&quot;minGainInput&quot;);
-      const maxIn = document.getElementById(&quot;maxGainInput&quot;);
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
       let curMin = parseFloat(minIn.value);
       let curMax = parseFloat(maxIn.value);
-      if (!isNaN(curMin) &amp;&amp; !isNaN(curMax)) {
-        if (which === &#39;min&#39; &amp;&amp; curMin &gt; curMax) {
+      if (!isNaN(curMin) && !isNaN(curMax)) {
+        if (which === 'min' && curMin > curMax) {
           maxIn.value = curMin;
-        } else if (which === &#39;max&#39; &amp;&amp; curMax &lt; curMin) {
+        } else if (which === 'max' && curMax < curMin) {
           minIn.value = curMax;
         }
       }
@@ -1887,9 +1887,9 @@
     function onVolSliderChange(val) {
       let v = Math.round(parseFloat(val) || 0);
       v = Math.max(0, Math.min(1000, v));
-      document.getElementById(&quot;volThresholdInput&quot;).value = v;
-      if (document.getElementById(&quot;volOperatorSelect&quot;).value === &quot;ALL&quot;) {
-        document.getElementById(&quot;volOperatorSelect&quot;).value = &quot;GTE&quot;;
+      document.getElementById("volThresholdInput").value = v;
+      if (document.getElementById("volOperatorSelect").value === "ALL") {
+        document.getElementById("volOperatorSelect").value = "GTE";
       }
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
@@ -1899,12 +1899,12 @@
     function onVolInputChange(val) {
       let v = parseFloat(val);
       if (!isNaN(v)) {
-        if (v &gt; 1000) {
+        if (v > 1000) {
           v = 1000;
-          document.getElementById(&quot;volThresholdInput&quot;).value = 1000;
-        } else if (v &lt; 0) {
+          document.getElementById("volThresholdInput").value = 1000;
+        } else if (v < 0) {
           v = 0;
-          document.getElementById(&quot;volThresholdInput&quot;).value = 0;
+          document.getElementById("volThresholdInput").value = 0;
         }
       }
       syncStep1ControlsUI();
@@ -1913,13 +1913,13 @@
     }
 
     function stepVolThreshold(delta) {
-      const volIn = document.getElementById(&quot;volThresholdInput&quot;);
+      const volIn = document.getElementById("volThresholdInput");
       let cur = parseFloat(volIn.value);
       if (isNaN(cur)) cur = 70;
       const next = Math.max(0, Math.min(1000, Math.round(cur + delta)));
       volIn.value = next;
-      if (document.getElementById(&quot;volOperatorSelect&quot;).value === &quot;ALL&quot;) {
-        document.getElementById(&quot;volOperatorSelect&quot;).value = &quot;GTE&quot;;
+      if (document.getElementById("volOperatorSelect").value === "ALL") {
+        document.getElementById("volOperatorSelect").value = "GTE";
       }
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
@@ -1933,26 +1933,26 @@
     }
 
     function setQuickPnlDateRange(mode) {
-      const startEl = document.getElementById(&quot;pnlStartDateInput&quot;);
-      const endEl = document.getElementById(&quot;pnlEndDateInput&quot;);
+      const startEl = document.getElementById("pnlStartDateInput");
+      const endEl = document.getElementById("pnlEndDateInput");
       if (!startEl || !endEl) return;
 
-      const latestRef = (rawAllLoadedStocks.length &gt; 0 &amp;&amp; rawAllLoadedStocks[0].latestTradeDate)
+      const latestRef = (rawAllLoadedStocks.length > 0 && rawAllLoadedStocks[0].latestTradeDate)
         ? rawAllLoadedStocks[0].latestTradeDate
-        : new Date().toLocaleDateString(&#39;en-CA&#39;, { timeZone: &#39;Asia/Taipei&#39; });
+        : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
-      if (mode === &#39;ALL&#39;) {
-        startEl.value = &quot;&quot;;
-        endEl.value = &quot;&quot;;
-      } else if (mode === &#39;TODAY&#39;) {
+      if (mode === 'ALL') {
+        startEl.value = "";
+        endEl.value = "";
+      } else if (mode === 'TODAY') {
         startEl.value = latestRef;
         endEl.value = latestRef;
-      } else if (mode === &#39;THIS_MONTH&#39;) {
+      } else if (mode === 'THIS_MONTH') {
         startEl.value = `${latestRef.slice(0, 7)}-01`;
         endEl.value = latestRef;
       } else {
-        const days = mode === &#39;7D&#39; ? 7 : (mode === &#39;14D&#39; ? 14 : 30);
-        const d = new Date(latestRef + &quot;T00:00:00&quot;);
+        const days = mode === '7D' ? 7 : (mode === '14D' ? 14 : 30);
+        const d = new Date(latestRef + "T00:00:00");
         d.setDate(d.getDate() - (days - 1));
         const startStr = d.toISOString().slice(0, 10);
         startEl.value = startStr;
@@ -1964,82 +1964,82 @@
 
     function checkStockMatchesPnlDateRange(stock, t) {
       if (!t) return false;
-      const startStr = document.getElementById(&quot;pnlStartDateInput&quot;)?.value || &quot;&quot;;
-      const endStr = document.getElementById(&quot;pnlEndDateInput&quot;)?.value || &quot;&quot;;
-      const basis = document.getElementById(&quot;pnlDateBasisSelect&quot;)?.value || &quot;AUTO&quot;;
-      if (!startStr &amp;&amp; !endStr) return true;
+      const startStr = document.getElementById("pnlStartDateInput")?.value || "";
+      const endStr = document.getElementById("pnlEndDateInput")?.value || "";
+      const basis = document.getElementById("pnlDateBasisSelect")?.value || "AUTO";
+      if (!startStr && !endStr) return true;
 
-      const buyD = String(t.buyDate || stock.keyKDate || &quot;&quot;);
+      const buyD = String(t.buyDate || stock.keyKDate || "");
       const exitD = String(t.isClosed ? (t.sellDate || stock.latestTradeDate) : (stock.latestTradeDate || t.buyDate));
 
-      if (basis === &quot;OVERLAP&quot;) {
-        const afterStart = !startStr || exitD &gt;= startStr;
-        const beforeEnd = !endStr || buyD &lt;= endStr;
-        return afterStart &amp;&amp; beforeEnd;
+      if (basis === "OVERLAP") {
+        const afterStart = !startStr || exitD >= startStr;
+        const beforeEnd = !endStr || buyD <= endStr;
+        return afterStart && beforeEnd;
       }
 
       let targetDate = buyD;
-      if (basis === &quot;EXIT_DATE&quot;) {
+      if (basis === "EXIT_DATE") {
         targetDate = exitD;
-      } else if (basis === &quot;BUY_DATE&quot;) {
+      } else if (basis === "BUY_DATE") {
         targetDate = buyD;
       } else {
         // AUTO: 已平倉/破K出場依出場日篩選；續抱中依買入日篩選（跨股池切換完全一致）
         targetDate = t.isClosed ? exitD : buyD;
       }
 
-      if (startStr &amp;&amp; targetDate &lt; startStr) return false;
-      if (endStr &amp;&amp; targetDate &gt; endStr) return false;
+      if (startStr && targetDate < startStr) return false;
+      if (endStr && targetDate > endStr) return false;
       return true;
     }
 
     // 通用一鍵清空輸入欄功能 (按 ✕ 清空並自動聚焦)
-    function clearInputField(inputId, triggerFilterRender = false, specialMode = &#39;&#39;) {
+    function clearInputField(inputId, triggerFilterRender = false, specialMode = '') {
       const el = document.getElementById(inputId);
       if (!el) return;
-      if (inputId === &#39;minGainInput&#39;) {
-        el.value = &quot;0&quot;;
-      } else if (inputId === &#39;maxGainInput&#39;) {
-        el.value = &quot;10.5&quot;;
-      } else if (inputId === &#39;volThresholdInput&#39;) {
-        el.value = &quot;0&quot;;
+      if (inputId === 'minGainInput') {
+        el.value = "0";
+      } else if (inputId === 'maxGainInput') {
+        el.value = "10.5";
+      } else if (inputId === 'volThresholdInput') {
+        el.value = "0";
       } else {
-        el.value = &quot;&quot;;
+        el.value = "";
       }
       el.focus();
       syncStep1ControlsUI();
       saveUserSettingsToStorage(false);
       if (triggerFilterRender) {
         applyFiltersAndRender();
-      } else if (specialMode === &#39;POOL_SEARCH&#39;) {
+      } else if (specialMode === 'POOL_SEARCH') {
         renderTable();
       }
     }
 
     function formatShortDateSlash(dateStr) {
-      if (!dateStr) return &quot;--&quot;;
+      if (!dateStr) return "--";
       const s = String(dateStr);
-      return (s.length &gt;= 10 ? s.slice(5) : s).replace(&#39;-&#39;, &#39;/&#39;);
+      return (s.length >= 10 ? s.slice(5) : s).replace('-', '/');
     }
 
     function formatAmountWan(amtWan) {
-      if (!amtWan || amtWan &lt;= 0) return &quot;0萬&quot;;
-      if (amtWan &gt;= 10000) return `${(amtWan / 10000).toFixed(2)}億`;
-      if (amtWan &gt;= 100) return `${Math.round(amtWan).toLocaleString()}萬`;
+      if (!amtWan || amtWan <= 0) return "0萬";
+      if (amtWan >= 10000) return `${(amtWan / 10000).toFixed(2)}億`;
+      if (amtWan >= 100) return `${Math.round(amtWan).toLocaleString()}萬`;
       return `${amtWan.toFixed(0)}萬`;
     }
 
     function getTwTickSize(price) {
-      if (price &lt; 10) return 0.01;
-      if (price &lt; 50) return 0.05;
-      if (price &lt; 100) return 0.1;
-      if (price &lt; 500) return 0.5;
-      if (price &lt; 1000) return 1;
+      if (price < 10) return 0.01;
+      if (price < 50) return 0.05;
+      if (price < 100) return 0.1;
+      if (price < 500) return 0.5;
+      if (price < 1000) return 1;
       return 5;
     }
 
     function calcTwLimitPrices(refClose) {
-      if (!refClose || refClose &lt;= 0) return { limitUp: 999999, limitDown: 0 };
+      if (!refClose || refClose <= 0) return { limitUp: 999999, limitDown: 0 };
       const rawUp = refClose * 1.10;
       const tickUp = getTwTickSize(rawUp);
       const limitUp = Number((Math.floor((rawUp + 1e-7) / tickUp) * tickUp).toFixed(2));
@@ -2051,16 +2051,16 @@
     }
 
     function checkLimitUpDown(price, refClose) {
-      if (!price || !refClose || refClose &lt;= 0) return null;
+      if (!price || !refClose || refClose <= 0) return null;
       const { limitUp, limitDown } = calcTwLimitPrices(refClose);
       const pct = ((price - refClose) / refClose) * 100;
-      if (price &gt;= limitUp || pct &gt;= 9.85) return &#39;LIMIT_UP&#39;;
-      if (price &lt;= limitDown || pct &lt;= -9.85) return &#39;LIMIT_DOWN&#39;;
+      if (price >= limitUp || pct >= 9.85) return 'LIMIT_UP';
+      if (price <= limitDown || pct <= -9.85) return 'LIMIT_DOWN';
       return null;
     }
 
     function updateBubbleMultLabel(mult) {
-      const badge = document.getElementById(&quot;bubbleMultBadge&quot;);
+      const badge = document.getElementById("bubbleMultBadge");
       if (!badge) return;
       const extraPct = Math.round((mult - 1) * 100);
       badge.textContent = `${Number(mult).toFixed(1)}倍 (+${extraPct}%)`;
@@ -2071,35 +2071,35 @@
       saveUserSettingsToStorage(false);
       updateBubbleMultLabel(bubbleMultThreshold);
 
-      if (chartState.dailyBars.length &gt; 0) {
-        evaluateWhaleBubbleComparison(chartState.dailyBars, &#39;1d&#39;);
+      if (chartState.dailyBars.length > 0) {
+        evaluateWhaleBubbleComparison(chartState.dailyBars, '1d');
         enrichConsecutiveStreakAvg(chartState.dailyBars);
       }
-      if (chartState.bars5m.length &gt; 0) {
-        evaluateWhaleBubbleComparison(chartState.bars5m, &#39;5m&#39;);
+      if (chartState.bars5m.length > 0) {
+        evaluateWhaleBubbleComparison(chartState.bars5m, '5m');
         enrichConsecutiveStreakAvg(chartState.bars5m);
       }
       updateStockWhaleBaselineBanner();
-      if (chartState.bars.length &gt; 0) {
-        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length &gt;= 2 ? chartState.bars[chartState.bars.length - 2] : null);
+      if (chartState.bars.length > 0) {
+        updateHudDisplay(chartState.bars[chartState.bars.length - 1], chartState.bars.length >= 2 ? chartState.bars[chartState.bars.length - 2] : null);
       }
       renderCanvasChart();
     }
 
     // 方式三：依個股歷史活躍K棒自動計算「本股大戶常態內定值」
     function computeActiveBaselineFromWindow(windowBars, minFloorWan, minFloorLots) {
-      const valid = windowBars.filter(b =&gt; b.amountWan &gt; 0 &amp;&amp; b.vol &gt; 0);
+      const valid = windowBars.filter(b => b.amountWan > 0 && b.vol > 0);
       if (valid.length === 0) {
         return { baseWan: minFloorWan, baseLots: minFloorLots };
       }
 
-      const sortedByAmt = [...valid].sort((a, b) =&gt; a.amountWan - b.amountWan);
+      const sortedByAmt = [...valid].sort((a, b) => a.amountWan - b.amountWan);
       const startIdx = Math.floor(sortedByAmt.length * 0.50);
       const endIdx = Math.max(startIdx + 1, Math.ceil(sortedByAmt.length * 0.95));
       const activeSlice = sortedByAmt.slice(startIdx, endIdx);
 
-      const sumWan = activeSlice.reduce((acc, b) =&gt; acc + b.amountWan, 0);
-      const sumLots = activeSlice.reduce((acc, b) =&gt; acc + b.vol, 0);
+      const sumWan = activeSlice.reduce((acc, b) => acc + b.amountWan, 0);
+      const sumLots = activeSlice.reduce((acc, b) => acc + b.vol, 0);
 
       const rawBaseWan = sumWan / activeSlice.length;
       const rawBaseLots = sumLots / activeSlice.length;
@@ -2110,12 +2110,12 @@
       };
     }
 
-    function evaluateWhaleBubbleComparison(bars, timeframe = &#39;1d&#39;) {
+    function evaluateWhaleBubbleComparison(bars, timeframe = '1d') {
       if (!Array.isArray(bars) || bars.length === 0) return;
 
-      for (let i = 0; i &lt; bars.length; i++) {
+      for (let i = 0; i < bars.length; i++) {
         const b = bars[i];
-        const avgP = b.forceAvgPrice &gt; 0 ? b.forceAvgPrice : b.close;
+        const avgP = b.forceAvgPrice > 0 ? b.forceAvgPrice : b.close;
         const lots = b.vol || 0;
         b.amountWan = Number(((lots * avgP) / 10).toFixed(1));
         b.showBubble = false;
@@ -2125,17 +2125,17 @@
       }
 
       const latestP = bars[bars.length - 1].close || 50;
-      const minFloorWan = timeframe === &#39;5m&#39; ? 50 : 300;
-      const minFloorLots = timeframe === &#39;5m&#39;
-        ? (latestP &gt;= 500 ? 2 : (latestP &gt;= 100 ? 5 : 10))
-        : (latestP &gt;= 500 ? 10 : (latestP &gt;= 100 ? 25 : 50));
+      const minFloorWan = timeframe === '5m' ? 50 : 300;
+      const minFloorLots = timeframe === '5m'
+        ? (latestP >= 500 ? 2 : (latestP >= 100 ? 5 : 10))
+        : (latestP >= 500 ? 10 : (latestP >= 100 ? 25 : 50));
 
-      const lookbackWindowSize = timeframe === &#39;5m&#39; ? 270 : 20;
+      const lookbackWindowSize = timeframe === '5m' ? 270 : 20;
 
-      for (let i = 0; i &lt; bars.length; i++) {
+      for (let i = 0; i < bars.length; i++) {
         const b = bars[i];
         let windowBars = [];
-        if (i &gt;= 5) {
+        if (i >= 5) {
           const sIdx = Math.max(0, i - lookbackWindowSize);
           windowBars = bars.slice(sIdx, i);
         } else {
@@ -2146,13 +2146,13 @@
         b.baseAmountWan = baseWan;
         b.baseLots = baseLots;
 
-        if (b.amountWan &gt; 0 &amp;&amp; baseWan &gt; 0) {
+        if (b.amountWan > 0 && baseWan > 0) {
           const amtMult = b.amountWan / baseWan;
-          const volMult = baseLots &gt; 0 ? (b.vol / baseLots) : amtMult;
+          const volMult = baseLots > 0 ? (b.vol / baseLots) : amtMult;
           const finalMult = Number(Math.max(amtMult, volMult).toFixed(2));
           b.bubbleMult = finalMult;
 
-          if (b.amountWan &gt;= minFloorWan &amp;&amp; b.vol &gt;= minFloorLots &amp;&amp; finalMult &gt;= bubbleMultThreshold) {
+          if (b.amountWan >= minFloorWan && b.vol >= minFloorLots && finalMult >= bubbleMultThreshold) {
             b.showBubble = true;
           }
         }
@@ -2160,54 +2160,54 @@
     }
 
     function updateStockWhaleBaselineBanner() {
-      const baseTextEl = document.getElementById(&quot;stockWhaleBaseText&quot;);
-      const trigTextEl = document.getElementById(&quot;stockWhaleTriggerText&quot;);
+      const baseTextEl = document.getElementById("stockWhaleBaseText");
+      const trigTextEl = document.getElementById("stockWhaleTriggerText");
       if (!baseTextEl || !trigTextEl) return;
 
       const bars = chartState.bars;
       if (!bars || bars.length === 0) {
-        baseTextEl.textContent = &quot;📌 本股大戶常態內定值(1.0倍)：--&quot;;
-        trigTextEl.textContent = &quot;🎯 泡泡觸發門檻：--&quot;;
+        baseTextEl.textContent = "📌 本股大戶常態內定值(1.0倍)：--";
+        trigTextEl.textContent = "🎯 泡泡觸發門檻：--";
         return;
       }
 
       const lastBar = bars[bars.length - 1];
       const baseLots = lastBar.baseLots || 0;
       const baseWan = lastBar.baseAmountWan || 0;
-      const tfName = chartState.timeframe === &#39;5m&#39; ? &#39;5分K&#39; : &#39;日K&#39;;
+      const tfName = chartState.timeframe === '5m' ? '5分K' : '日K';
 
       const reqLots = Math.round(baseLots * bubbleMultThreshold);
       const reqWan = Number((baseWan * bubbleMultThreshold).toFixed(1));
 
-      baseTextEl.innerHTML = `📌 本股&lt;b class=&quot;text-white&quot;&gt;${tfName}&lt;/b&gt;大戶常態內定值(1.0倍)：&lt;b class=&quot;text-pink-300&quot;&gt;${baseLots.toLocaleString()}張 (${formatAmountWan(baseWan)})&lt;/b&gt;`;
-      trigTextEl.innerHTML = `🎯 泡泡觸發門檻(${bubbleMultThreshold.toFixed(1)}倍)：&lt;b class=&quot;text-amber-300&quot;&gt;≥ ${reqLots.toLocaleString()}張 (${formatAmountWan(reqWan)})&lt;/b&gt;`;
+      baseTextEl.innerHTML = `📌 本股<b class="text-white">${tfName}</b>大戶常態內定值(1.0倍)：<b class="text-pink-300">${baseLots.toLocaleString()}張 (${formatAmountWan(baseWan)})</b>`;
+      trigTextEl.innerHTML = `🎯 泡泡觸發門檻(${bubbleMultThreshold.toFixed(1)}倍)：<b class="text-amber-300">≥ ${reqLots.toLocaleString()}張 (${formatAmountWan(reqWan)})</b>`;
     }
 
     function getExitStrategyConfig(overrideStrategy = null) {
-      const strategy = overrideStrategy || currentExitStrategy || &quot;DEFAULT_20MA&quot;;
-      const useTimeStop = document.getElementById(&quot;chkTimeStop&quot;)?.checked || false;
-      const timeStopDays = Math.max(3, parseInt(document.getElementById(&quot;timeStopDaysInput&quot;)?.value || &quot;15&quot;, 10) || 15);
-      const shortMaTriggerPct = parseFloat(document.getElementById(&quot;shortMaTriggerPctInput&quot;)?.value || &quot;15&quot;) || 15;
-      const shortMaPeriod = parseInt(document.getElementById(&quot;shortMaPeriodSelect&quot;)?.value || &quot;10&quot;, 10) || 10;
-      const shortMaMode = document.getElementById(&quot;shortMaModeSelect&quot;)?.value || &quot;DIRECT&quot;;
-      const breakevenTriggerPct = parseFloat(document.getElementById(&quot;breakevenTriggerPctInput&quot;)?.value || &quot;10&quot;) || 10;
-      const peakTrailTriggerPct = parseFloat(document.getElementById(&quot;peakTrailTriggerPctInput&quot;)?.value || &quot;15&quot;) || 15;
-      const peakDrawdownPct = parseFloat(document.getElementById(&quot;peakDrawdownPctInput&quot;)?.value || &quot;8&quot;) || 8;
-      const whaleTriggerPct = parseFloat(document.getElementById(&quot;whaleTriggerPctInput&quot;)?.value || &quot;12&quot;) || 12;
-      const whaleSellMult = parseFloat(document.getElementById(&quot;whaleSellMultInput&quot;)?.value || &quot;2.0&quot;) || 2.0;
-      const rrBreakevenRatio = parseFloat(document.getElementById(&quot;rrBreakevenRatioInput&quot;)?.value || &quot;1.0&quot;) || 1.0;
-      const rrBreakevenBufferPct = parseFloat(document.getElementById(&quot;rrBreakevenBufferPctInput&quot;)?.value || &quot;0.5&quot;);
-      const rrTier2Ratio = parseFloat(document.getElementById(&quot;rrTier2RatioInput&quot;)?.value || &quot;3.0&quot;) || 3.0;
-      const rrTier2Action = document.getElementById(&quot;rrTier2ActionSelect&quot;)?.value || &quot;LOCK_R_AND_RUN&quot;;
-      const rrLockRatio = parseFloat(document.getElementById(&quot;rrLockRatioInput&quot;)?.value || &quot;2.0&quot;) || 2.0;
-      const rrTrailMa = parseInt(document.getElementById(&quot;rrTrailMaSelect&quot;)?.value || &quot;5&quot;, 10) || 5;
-      const rrMaConfirmMode = document.getElementById(&quot;rrMaConfirmModeSelect&quot;)?.value || &quot;KEY_K&quot;;
+      const strategy = overrideStrategy || currentExitStrategy || "DEFAULT_20MA";
+      const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
+      const timeStopDays = Math.max(3, parseInt(document.getElementById("timeStopDaysInput")?.value || "15", 10) || 15);
+      const shortMaTriggerPct = parseFloat(document.getElementById("shortMaTriggerPctInput")?.value || "15") || 15;
+      const shortMaPeriod = parseInt(document.getElementById("shortMaPeriodSelect")?.value || "10", 10) || 10;
+      const shortMaMode = document.getElementById("shortMaModeSelect")?.value || "DIRECT";
+      const breakevenTriggerPct = parseFloat(document.getElementById("breakevenTriggerPctInput")?.value || "10") || 10;
+      const peakTrailTriggerPct = parseFloat(document.getElementById("peakTrailTriggerPctInput")?.value || "15") || 15;
+      const peakDrawdownPct = parseFloat(document.getElementById("peakDrawdownPctInput")?.value || "8") || 8;
+      const whaleTriggerPct = parseFloat(document.getElementById("whaleTriggerPctInput")?.value || "12") || 12;
+      const whaleSellMult = parseFloat(document.getElementById("whaleSellMultInput")?.value || "2.0") || 2.0;
+      const rrBreakevenRatio = parseFloat(document.getElementById("rrBreakevenRatioInput")?.value || "1.0") || 1.0;
+      const rrBreakevenBufferPct = parseFloat(document.getElementById("rrBreakevenBufferPctInput")?.value || "0.5");
+      const rrTier2Ratio = parseFloat(document.getElementById("rrTier2RatioInput")?.value || "3.0") || 3.0;
+      const rrTier2Action = document.getElementById("rrTier2ActionSelect")?.value || "LOCK_R_AND_RUN";
+      const rrLockRatio = parseFloat(document.getElementById("rrLockRatioInput")?.value || "2.0") || 2.0;
+      const rrTrailMa = parseInt(document.getElementById("rrTrailMaSelect")?.value || "5", 10) || 5;
+      const rrMaConfirmMode = document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K";
 
-      const globalConfirmMode = document.getElementById(&quot;globalExitConfirmMode&quot;)?.value || &quot;AUTO&quot;;
-      const rawInitStop = parseFloat(document.getElementById(&quot;initStopBufferPctInput&quot;)?.value ?? &quot;2.0&quot;);
+      const globalConfirmMode = document.getElementById("globalExitConfirmMode")?.value || "AUTO";
+      const rawInitStop = parseFloat(document.getElementById("initStopBufferPctInput")?.value ?? "2.0");
       const initStopBufferPct = isNaN(rawInitStop) ? 2.0 : Math.min(15, Math.max(0, rawInitStop));
-      const entryLimitUpStopAtLow = document.getElementById(&quot;chkEntryLimitUpStopAtLow&quot;)?.checked ?? true;
-      const aiPowerReevalDays = Math.max(15, Math.min(180, parseInt(document.getElementById(&quot;aiPowerReevalDaysInput&quot;)?.value || &quot;90&quot;, 10) || 90));
+      const entryLimitUpStopAtLow = document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true;
+      const aiPowerReevalDays = Math.max(15, Math.min(180, parseInt(document.getElementById("aiPowerReevalDaysInput")?.value || "90", 10) || 90));
       return {
         strategy,
         globalConfirmMode,
@@ -2236,20 +2236,20 @@
 
     function updateExitStrategyUI() {
       syncStrategyEDescText();
-      const strategies = [&#39;DEFAULT_20MA&#39;, &#39;SHORT_MA_TRAIL&#39;, &#39;PEAK_TRAILING&#39;, &#39;WHALE_SELL_EXIT&#39;, &#39;RR_LADDER&#39;, &#39;AI_ADAPTIVE&#39;, &#39;AI_POWER_90D&#39;];
-      strategies.forEach(st =&gt; {
+      const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
+      strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
         const box = document.getElementById(`exitParams-${st}`);
         if (btn) {
           if (st === currentExitStrategy) {
-            btn.className = &quot;exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/50 text-white shadow transition&quot;;
+            btn.className = "exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border-2 border-indigo-500 bg-indigo-950/50 text-white shadow transition";
           } else {
-            btn.className = &quot;exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-slate-500 text-slate-300 transition&quot;;
+            btn.className = "exit-strat-btn text-left px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:border-slate-500 text-slate-300 transition";
           }
         }
         if (box) {
-          if (st === currentExitStrategy) box.classList.remove(&quot;hidden&quot;);
-          else box.classList.add(&quot;hidden&quot;);
+          if (st === currentExitStrategy) box.classList.remove("hidden");
+          else box.classList.add("hidden");
         }
       });
     }
@@ -2261,16 +2261,16 @@
         useGainRange: true,
         minGain: minG,
         maxGain: maxG,
-        volOp: &quot;GTE&quot;,
+        volOp: "GTE",
         validVolThreshold: minV
       };
       let totalNtd = 0, totalTrades = 0, wins = 0;
-      for (let i = 0; i &lt; poolStocks.length; i++) {
+      for (let i = 0; i < poolStocks.length; i++) {
         const s = poolStocks[i];
         const lc = evaluateStockTrackingLifecycle(s, testOpts, cfg);
-        const p5Rec = (lc.closedBreakdown &amp;&amp; !(s.isFirstDayBreak20Ma &amp;&amp; s.status === &quot;BREAKOUT&quot;)) ? lc.closedBreakdown : null;
+        const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
         let uniqueRec = null;
-        if (lc.activeOrTodayExit &amp;&amp; !lc.activeOrTodayExit.isClosed) {
+        if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
           uniqueRec = lc.activeOrTodayExit;
         } else if (p5Rec) {
           uniqueRec = p5Rec;
@@ -2281,7 +2281,7 @@
         const p = Math.round((uniqueRec.profitPoints || 0) * 1000);
         totalNtd += p;
         totalTrades++;
-        if (p &gt; 0) wins++;
+        if (p > 0) wins++;
       }
       return {
         reqMaUp,
@@ -2290,8 +2290,8 @@
         maxG,
         minV,
         cnt: totalTrades,
-        winRate: totalTrades &gt; 0 ? Math.round((wins / totalTrades) * 100) : 0,
-        avgProfitNtd: totalTrades &gt; 0 ? Math.round(totalNtd / totalTrades) : 0,
+        winRate: totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0,
+        avgProfitNtd: totalTrades > 0 ? Math.round(totalNtd / totalTrades) : 0,
         totalProfitNtd: Math.round(totalNtd)
       };
     }
@@ -2299,13 +2299,13 @@
     const _fullStep1Cache = new Map();
     function getPoolStocksWithCrossovers() {
       const activeSectors = getSelectedSimSectors();
-      const keyword = (document.getElementById(&quot;searchInput&quot;)?.value || &quot;&quot;).trim().toLowerCase();
-      return rawAllLoadedStocks.filter(s =&gt; {
-        if (activeSectors.length &gt; 0 &amp;&amp; !matchesSimSectorFilter(s, activeSectors)) return false;
-        if (keyword &amp;&amp; !s.code.toLowerCase().includes(keyword) &amp;&amp; !s.name.toLowerCase().includes(keyword)) return false;
+      const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
+      return rawAllLoadedStocks.filter(s => {
+        if (activeSectors.length > 0 && !matchesSimSectorFilter(s, activeSectors)) return false;
+        if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return false;
         const bars = buildStockDailyBarsWithToday(s);
-        for (let i = 1; i &lt; bars.length; i++) {
-          if (bars[i - 1].ma20 &gt; 0 &amp;&amp; bars[i].ma20 &gt; 0 &amp;&amp; bars[i - 1].close &lt;= bars[i - 1].ma20 &amp;&amp; bars[i].close &gt; bars[i].ma20) return true;
+        for (let i = 1; i < bars.length; i++) {
+          if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) return true;
         }
         return false;
       });
@@ -2317,100 +2317,100 @@
       if (poolStocks.length === 0) return null;
 
       const baseCfg = getExitStrategyConfig(strategyKey);
-      const pnlS = document.getElementById(&quot;pnlStartDateInput&quot;)?.value || &quot;&quot;;
-      const pnlE = document.getElementById(&quot;pnlEndDateInput&quot;)?.value || &quot;&quot;;
-      const pnlBasis = document.getElementById(&quot;pnlDateBasisSelect&quot;)?.value || &quot;&quot;;
+      const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
+      const pnlE = document.getElementById("pnlEndDateInput")?.value || "";
+      const pnlBasis = document.getElementById("pnlDateBasisSelect")?.value || "";
       const fCacheKey = `${strategyKey}|v3|${poolStocks.length}|${pnlBasis}|${pnlS}|${pnlE}|${JSON.stringify(baseCfg)}`;
       if (_fullStep1Cache.has(fCacheKey)) return _fullStep1Cache.get(fCacheKey);
 
       const exitPatchesMap = {
-        &#39;DEFAULT_20MA&#39;: [
-          { tag: &#39;20MA破線(無時損)&#39;, patch: { useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;20MA破線+15天時損&#39;, patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;20MA跌破即出&#39;, patch: { useTimeStop: false, globalConfirmMode: &#39;FORCE_DIRECT&#39; } }
+        'DEFAULT_20MA': [
+          { tag: '20MA破線(無時損)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '20MA破線+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } },
+          { tag: '20MA跌破即出', patch: { useTimeStop: false, globalConfirmMode: 'FORCE_DIRECT' } }
         ],
-        &#39;SHORT_MA_TRAIL&#39;: [
-          { tag: &#39;5MA/達6%/即出&#39;, patch: { shortMaPeriod: 5, shortMaTriggerPct: 6, shortMaMode: &#39;DIRECT&#39;, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;10MA/達10%/即出&#39;, patch: { shortMaPeriod: 10, shortMaTriggerPct: 10, shortMaMode: &#39;DIRECT&#39;, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;10MA/達15%/確認K&#39;, patch: { shortMaPeriod: 10, shortMaTriggerPct: 15, shortMaMode: &#39;KEY_K&#39;, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } }
+        'SHORT_MA_TRAIL': [
+          { tag: '5MA/達6%/即出', patch: { shortMaPeriod: 5, shortMaTriggerPct: 6, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達10%/即出', patch: { shortMaPeriod: 10, shortMaTriggerPct: 10, shortMaMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '10MA/達15%/確認K', patch: { shortMaPeriod: 10, shortMaTriggerPct: 15, shortMaMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ],
-        &#39;PEAK_TRAILING&#39;: [
-          { tag: &#39;回落5%/無時損&#39;, patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;回落8%/無時損&#39;, patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 8, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;回落5%+15天時損&#39;, patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: true, timeStopDays: 15, globalConfirmMode: &#39;AUTO&#39; } }
+        'PEAK_TRAILING': [
+          { tag: '回落5%/無時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '回落8%/無時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 8, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '回落5%+15天時損', patch: { breakevenTriggerPct: 10, peakTrailTriggerPct: 15, peakDrawdownPct: 5, useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
         ],
-        &#39;WHALE_SELL_EXIT&#39;: [
-          { tag: &#39;賺6%/1.5x量黑K&#39;, patch: { whaleTriggerPct: 6, whaleSellMult: 1.5, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;賺12%/2.0x量黑K&#39;, patch: { whaleTriggerPct: 12, whaleSellMult: 2.0, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;賺15%/2.5x量黑K&#39;, patch: { whaleTriggerPct: 15, whaleSellMult: 2.5, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } }
+        'WHALE_SELL_EXIT': [
+          { tag: '賺6%/1.5x量黑K', patch: { whaleTriggerPct: 6, whaleSellMult: 1.5, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺12%/2.0x量黑K', patch: { whaleTriggerPct: 12, whaleSellMult: 2.0, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '賺15%/2.5x量黑K', patch: { whaleTriggerPct: 15, whaleSellMult: 2.5, useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ],
-        &#39;RR_LADDER&#39;: [
-          { tag: &#39;1:1/1:2階梯+5MA即出&#39;, patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 2.0, rrTier2Action: &#39;STEP_LADDER&#39;, rrTrailMa: 5, rrMaConfirmMode: &#39;DIRECT&#39;, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;1:1/1:3鎖2R+5MA確認K&#39;, patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 3.0, rrTier2Action: &#39;LOCK_R_AND_RUN&#39;, rrTrailMa: 5, rrMaConfirmMode: &#39;KEY_K&#39;, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } }
+        'RR_LADDER': [
+          { tag: '1:1/1:2階梯+5MA即出', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 2.0, rrTier2Action: 'STEP_LADDER', rrTrailMa: 5, rrMaConfirmMode: 'DIRECT', useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: '1:1/1:3鎖2R+5MA確認K', patch: { rrBreakevenRatio: 1.0, rrTier2Ratio: 3.0, rrTier2Action: 'LOCK_R_AND_RUN', rrTrailMa: 5, rrMaConfirmMode: 'KEY_K', useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ],
-        &#39;AI_ADAPTIVE&#39;: [
-          { tag: &#39;AI動態(自動)&#39;, patch: { useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;AI動態+15天時損&#39;, patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: &#39;AUTO&#39; } }
+        'AI_ADAPTIVE': [
+          { tag: 'AI動態(自動)', patch: { useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: 'AI動態+15天時損', patch: { useTimeStop: true, timeStopDays: 15, globalConfirmMode: 'AUTO' } }
         ],
-        &#39;AI_POWER_90D&#39;: [
-          { tag: &#39;AI買賣點(90天調整)&#39;, patch: { aiPowerReevalDays: 90, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } },
-          { tag: &#39;AI買賣點(60天調整)&#39;, patch: { aiPowerReevalDays: 60, useTimeStop: false, globalConfirmMode: &#39;AUTO&#39; } }
+        'AI_POWER_90D': [
+          { tag: 'AI買賣點(90天調整)', patch: { aiPowerReevalDays: 90, useTimeStop: false, globalConfirmMode: 'AUTO' } },
+          { tag: 'AI買賣點(60天調整)', patch: { aiPowerReevalDays: 60, useTimeStop: false, globalConfirmMode: 'AUTO' } }
         ]
       };
-      const exitCands = exitPatchesMap[strategyKey] || [{ tag: &#39;預設&#39;, patch: {} }];
+      const exitCands = exitPatchesMap[strategyKey] || [{ tag: '預設', patch: {} }];
       let overallBest = null;
       for (const exCand of exitCands) {
         const cfg = { ...baseCfg, ...exCand.patch };
 
-      // 加速核心：先把「全區間只有 1 次突破20MA」的股票預先算好單次結果，網格尋優時只需 O(1) 數值比較；僅對「&gt;=2 次突破」的股票重跑狀態機
-      const baseOpts = { requireMa20Up: false, requireSolidRedK: false, useGainRange: false, minGain: 0, maxGain: 10.5, volOp: &quot;GTE&quot;, validVolThreshold: 0 };
+      // 加速核心：先把「全區間只有 1 次突破20MA」的股票預先算好單次結果，網格尋優時只需 O(1) 數值比較；僅對「>=2 次突破」的股票重跑狀態機
+      const baseOpts = { requireMa20Up: false, requireSolidRedK: false, useGainRange: false, minGain: 0, maxGain: 10.5, volOp: "GTE", validVolThreshold: 0 };
       const singleCrossItems = [];
       const multiCrossStocks = [];
-      for (let idx = 0; idx &lt; poolStocks.length; idx++) {
+      for (let idx = 0; idx < poolStocks.length; idx++) {
         const s = poolStocks[idx];
         const bars = buildStockDailyBarsWithToday(s);
         let crossCount = 0;
         let firstCrossIdx = -1;
-        for (let i = 1; i &lt; bars.length; i++) {
-          if (bars[i - 1].ma20 &gt; 0 &amp;&amp; bars[i].ma20 &gt; 0 &amp;&amp; bars[i - 1].close &lt;= bars[i - 1].ma20 &amp;&amp; bars[i].close &gt; bars[i].ma20) {
+        for (let i = 1; i < bars.length; i++) {
+          if (bars[i - 1].ma20 > 0 && bars[i].ma20 > 0 && bars[i - 1].close <= bars[i - 1].ma20 && bars[i].close > bars[i].ma20) {
             crossCount++;
             if (crossCount === 1) firstCrossIdx = i;
-            if (crossCount &gt;= 2) break;
+            if (crossCount >= 2) break;
           }
         }
-        if (crossCount === 1 &amp;&amp; firstCrossIdx &gt;= 1) {
+        if (crossCount === 1 && firstCrossIdx >= 1) {
           const lc = evaluateStockTrackingLifecycle(s, baseOpts, cfg);
-          const p5Rec = (lc.closedBreakdown &amp;&amp; !(s.isFirstDayBreak20Ma &amp;&amp; s.status === &quot;BREAKOUT&quot;)) ? lc.closedBreakdown : null;
-          const uniqueRec = (lc.activeOrTodayExit &amp;&amp; !lc.activeOrTodayExit.isClosed) ? lc.activeOrTodayExit : (p5Rec || lc.activeOrTodayExit || null);
-          if (uniqueRec &amp;&amp; checkStockMatchesPnlDateRange(s, uniqueRec)) {
+          const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
+          const uniqueRec = (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) ? lc.activeOrTodayExit : (p5Rec || lc.activeOrTodayExit || null);
+          if (uniqueRec && checkStockMatchesPnlDateRange(s, uniqueRec)) {
             const kb = bars[firstCrossIdx];
             const prevB = bars[firstCrossIdx - 1];
-            const prevC = prevB.close &gt; 0 ? prevB.close : kb.open;
-            const gainPct = prevC &gt; 0 ? ((kb.close - prevC) / prevC) * 100 : 0;
-            const isMa20Up = (kb.ma20 &gt; prevB.ma20);
-            const isSolidRed = (kb.close &gt; kb.open);
-            const volRatio = kb.ma5Vol &gt; 0 ? (kb.vol / kb.ma5Vol) * 100 : 0;
+            const prevC = prevB.close > 0 ? prevB.close : kb.open;
+            const gainPct = prevC > 0 ? ((kb.close - prevC) / prevC) * 100 : 0;
+            const isMa20Up = (kb.ma20 > prevB.ma20);
+            const isSolidRed = (kb.close > kb.open);
+            const volRatio = kb.ma5Vol > 0 ? (kb.vol / kb.ma5Vol) * 100 : 0;
             const p = Math.round((uniqueRec.profitPoints || 0) * 1000);
             singleCrossItems.push({ isMa20Up, isSolidRed, gainPct, volRatio, p });
           }
-        } else if (crossCount &gt;= 2) {
+        } else if (crossCount >= 2) {
           multiCrossStocks.push(s);
         }
       }
 
-      const evalFast = (reqMaUp, reqRed, minG, maxG, minV) =&gt; {
+      const evalFast = (reqMaUp, reqRed, minG, maxG, minV) => {
         let totalNtd = 0, totalTrades = 0, wins = 0;
-        for (let i = 0; i &lt; singleCrossItems.length; i++) {
+        for (let i = 0; i < singleCrossItems.length; i++) {
           const it = singleCrossItems[i];
-          if (reqMaUp &amp;&amp; !it.isMa20Up) continue;
-          if (reqRed &amp;&amp; !it.isSolidRed) continue;
-          if (it.gainPct &lt; minG || it.gainPct &gt; maxG) continue;
-          if (it.volRatio &lt; minV) continue;
+          if (reqMaUp && !it.isMa20Up) continue;
+          if (reqRed && !it.isSolidRed) continue;
+          if (it.gainPct < minG || it.gainPct > maxG) continue;
+          if (it.volRatio < minV) continue;
           totalNtd += it.p;
           totalTrades++;
-          if (it.p &gt; 0) wins++;
+          if (it.p > 0) wins++;
         }
-        if (multiCrossStocks.length &gt; 0) {
+        if (multiCrossStocks.length > 0) {
           const multiRes = evaluateFullStep1ComboExact(multiCrossStocks, cfg, reqMaUp, reqRed, minG, maxG, minV);
           totalNtd += multiRes.totalProfitNtd;
           totalTrades += multiRes.cnt;
@@ -2419,19 +2419,19 @@
         return {
           reqMaUp, reqRed, minG, maxG, minV,
           cnt: totalTrades,
-          winRate: totalTrades &gt; 0 ? Math.round((wins / totalTrades) * 100) : 0,
-          avgProfitNtd: totalTrades &gt; 0 ? Math.round(totalNtd / totalTrades) : 0,
+          winRate: totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0,
+          avgProfitNtd: totalTrades > 0 ? Math.round(totalNtd / totalTrades) : 0,
           totalProfitNtd: Math.round(totalNtd)
         };
       };
 
       const curOpts = getCurrentFilterOptions();
       const candList = [
-        [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === &#39;GTE&#39; ? curOpts.validVolThreshold : 0]
+        [curOpts.requireMa20Up, curOpts.requireSolidRedK, curOpts.useGainRange ? curOpts.minGain : 0, curOpts.useGainRange ? curOpts.maxGain : 10.5, curOpts.volOp === 'GTE' ? curOpts.validVolThreshold : 0]
       ];
       const gainOpts = [[0, 10.5], [1.0, 10.5], [2.0, 10.5], [3.5, 10.5], [5.0, 10.5], [7.0, 10.5]];
       const volOpts = [0, 70, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
-      const seenKey = new Set([candList[0].join(&quot;|&quot;)]);
+      const seenKey = new Set([candList[0].join("|")]);
 
       for (const reqMa of [true, false]) {
         for (const reqRed of [true, false]) {
@@ -2451,26 +2451,26 @@
       for (const [reqMa, reqRed, minG, maxG, minV] of candList) {
         const res = evalFast(reqMa, reqRed, minG, maxG, minV);
         if (res.cnt === 0) continue;
-        if (!best || res.totalProfitNtd &gt; best.totalProfitNtd) {
+        if (!best || res.totalProfitNtd > best.totalProfitNtd) {
           best = { ...res, score: res.totalProfitNtd };
         }
       }
       if (best) {
-        const fineVols = [-40, -30, -20, -10, 0, 10, 20, 30, 40].map(d =&gt; Math.max(0, Math.min(1000, best.minV + d)));
+        const fineVols = [-40, -30, -20, -10, 0, 10, 20, 30, 40].map(d => Math.max(0, Math.min(1000, best.minV + d)));
         for (const fv of fineVols) {
           for (const fRed of [true, false]) {
             const k = `${best.reqMaUp}|${fRed}|${best.minG}|${best.maxG}|${fv}`;
             if (!seenKey.has(k)) {
               seenKey.add(k);
               const res = evalFast(best.reqMaUp, fRed, best.minG, best.maxG, fv);
-              if (res.cnt &gt; 0 &amp;&amp; res.totalProfitNtd &gt; best.totalProfitNtd) {
+              if (res.cnt > 0 && res.totalProfitNtd > best.totalProfitNtd) {
                 best = { ...res, score: res.totalProfitNtd };
               }
             }
           }
         }
       }
-        if (best &amp;&amp; (!overallBest || best.totalProfitNtd &gt; overallBest.totalProfitNtd)) {
+        if (best && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
           overallBest = { ...best, exitPatch: exCand.patch, exitTag: exCand.tag };
         }
       }
@@ -2483,40 +2483,40 @@
 
     function applyStep1ParamsToUI(p) {
       if (!p) return;
-      const chkMa = document.getElementById(&quot;chkMa20Up&quot;);
-      const chkRed = document.getElementById(&quot;chkSolidRedK&quot;);
-      const chkGain = document.getElementById(&quot;chkGainRange&quot;);
-      const minIn = document.getElementById(&quot;minGainInput&quot;);
-      const maxIn = document.getElementById(&quot;maxGainInput&quot;);
-      const volOp = document.getElementById(&quot;volOperatorSelect&quot;);
-      const volIn = document.getElementById(&quot;volThresholdInput&quot;);
+      const chkMa = document.getElementById("chkMa20Up");
+      const chkRed = document.getElementById("chkSolidRedK");
+      const chkGain = document.getElementById("chkGainRange");
+      const minIn = document.getElementById("minGainInput");
+      const maxIn = document.getElementById("maxGainInput");
+      const volOp = document.getElementById("volOperatorSelect");
+      const volIn = document.getElementById("volThresholdInput");
       if (chkMa) chkMa.checked = Boolean(p.reqMaUp);
       if (chkRed) chkRed.checked = Boolean(p.reqRed);
       if (chkGain) chkGain.checked = true;
       if (minIn) minIn.value = p.minG;
       if (maxIn) maxIn.value = p.maxG;
-      if (volOp) volOp.value = &quot;GTE&quot;;
+      if (volOp) volOp.value = "GTE";
       if (volIn) volIn.value = p.minV;
       syncStep1ControlsUI();
     }
 
     function applyAiStep1AllStrategiesAndPickBest(autoSelectBestStrategy = false) {
-      const keys = [&#39;DEFAULT_20MA&#39;, &#39;SHORT_MA_TRAIL&#39;, &#39;PEAK_TRAILING&#39;, &#39;WHALE_SELL_EXIT&#39;, &#39;RR_LADDER&#39;, &#39;AI_ADAPTIVE&#39;, &#39;AI_POWER_90D&#39;];
+      const keys = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
       _aiFullStep1PerStrategyMap = {};
       let globalWinnerKey = currentExitStrategy;
       let globalBestProfit = -Infinity;
-      keys.forEach(k =&gt; {
+      keys.forEach(k => {
         const res = computeAiBestFullStep1ForStrategy(k);
         if (res) {
           _aiFullStep1PerStrategyMap[k] = res;
-          if (res.totalProfitNtd &gt; globalBestProfit) {
+          if (res.totalProfitNtd > globalBestProfit) {
             globalBestProfit = res.totalProfitNtd;
             globalWinnerKey = k;
           }
         }
       });
       _aiFullStep1ModeActive = true;
-      if (autoSelectBestStrategy &amp;&amp; globalWinnerKey) {
+      if (autoSelectBestStrategy && globalWinnerKey) {
         currentExitStrategy = globalWinnerKey;
         updateExitStrategyUI();
       }
@@ -2531,10 +2531,10 @@
     function selectComparisonStrategyCard(strategyKey) {
       currentExitStrategy = strategyKey;
       updateExitStrategyUI();
-      if (document.getElementById(&quot;strategyCompareGrid&quot;) &amp;&amp; Array.isArray(_lastCmpResultsCache)) {
+      if (document.getElementById("strategyCompareGrid") && Array.isArray(_lastCmpResultsCache)) {
         renderStrategyComparisonSummary(getCurrentFilterOptions(), true);
       }
-      const useAiStep1 = _aiFullStep1ModeActive || Boolean(document.getElementById(&quot;chkAiAutoFullStep1&quot;)?.checked);
+      const useAiStep1 = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
       if (useAiStep1) {
         if (!_aiFullStep1PerStrategyMap[strategyKey]) {
           _aiFullStep1PerStrategyMap[strategyKey] = computeAiBestFullStep1ForStrategy(strategyKey);
@@ -2546,15 +2546,15 @@
           }
         }
       }
-      requestAnimationFrame(() =&gt; {
+      requestAnimationFrame(() => {
         setExitStrategy(strategyKey);
       });
     }
 
     function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
-      const adviceEl = document.getElementById(&quot;aiFullStep1AdviceText&quot;);
+      const adviceEl = document.getElementById("aiFullStep1AdviceText");
       let best = null;
-      if (applyToControls &amp;&amp; runFilterRender) {
+      if (applyToControls && runFilterRender) {
         const allRes = applyAiStep1AllStrategiesAndPickBest(true);
         best = allRes.bestForCurrent;
       } else {
@@ -2562,34 +2562,34 @@
         if (best) _aiFullStep1PerStrategyMap[currentExitStrategy] = best;
       }
       if (!best) {
-        if (adviceEl) adviceEl.innerHTML = `&lt;span class=&quot;text-amber-300&quot;&gt;⚠️ 尚未載入足夠全市場樣本，請先更新股池資料後再試。&lt;/span&gt;`;
+        if (adviceEl) adviceEl.innerHTML = `<span class="text-amber-300">⚠️ 尚未載入足夠全市場樣本，請先更新股池資料後再試。</span>`;
         return null;
       }
       const stratNames = {
-        &#39;DEFAULT_20MA&#39;: &#39;策略 A (原版20MA破線)&#39;,
-        &#39;SHORT_MA_TRAIL&#39;: &#39;策略 B (達標短均線)&#39;,
-        &#39;WHALE_SELL_EXIT&#39;: &#39;策略 D (高檔爆量賣出)&#39;,
-        &#39;PEAK_TRAILING&#39;: &#39;策略 C (高點回落移動)&#39;,
-        &#39;RR_LADDER&#39;: &#39;策略 E (1:1保本階梯)&#39;,
-        &#39;AI_ADAPTIVE&#39;: &#39;策略 F (AI動態偵測)&#39;,
-        &#39;AI_POWER_90D&#39;: &#39;策略 G (AI最佳買賣90天)&#39;
+        'DEFAULT_20MA': '策略 A (原版20MA破線)',
+        'SHORT_MA_TRAIL': '策略 B (達標短均線)',
+        'WHALE_SELL_EXIT': '策略 D (高檔爆量賣出)',
+        'PEAK_TRAILING': '策略 C (高點回落移動)',
+        'RR_LADDER': '策略 E (1:1保本階梯)',
+        'AI_ADAPTIVE': '策略 F (AI動態偵測)',
+        'AI_POWER_90D': '策略 G (AI最佳買賣90天)'
       };
       const sTitle = stratNames[currentExitStrategy] || currentExitStrategy;
-      const avgSign = best.avgProfitNtd &gt;= 0 ? &quot;+&quot; : &quot;&quot;;
-      const totSign = best.totalProfitNtd &gt;= 0 ? &quot;+&quot; : &quot;&quot;;
-      const avgCol = best.avgProfitNtd &gt;= 0 ? &quot;text-rose-300&quot; : &quot;text-emerald-300&quot;;
+      const avgSign = best.avgProfitNtd >= 0 ? "+" : "";
+      const totSign = best.totalProfitNtd >= 0 ? "+" : "";
+      const avgCol = best.avgProfitNtd >= 0 ? "text-rose-300" : "text-emerald-300";
 
       if (adviceEl) {
         adviceEl.innerHTML = `
-          &lt;div&gt;🤖 依【&lt;b class=&quot;text-indigo-300&quot;&gt;${sTitle}&lt;/b&gt;】AI 建議最佳條件：
-            &lt;b class=&quot;text-white&quot;&gt;20MA向上(${best.reqMaUp ? &#39;✔&#39; : &#39;不限&#39;})&lt;/b&gt; ｜
-            &lt;b class=&quot;text-white&quot;&gt;實體紅K(${best.reqRed ? &#39;✔&#39; : &#39;不限&#39;})&lt;/b&gt; ｜
-            &lt;b class=&quot;text-rose-300&quot;&gt;漲幅 ${best.minG.toFixed(1)}% ~ ${best.maxG.toFixed(1)}%&lt;/b&gt; ｜
-            &lt;b class=&quot;text-amber-300&quot;&gt;成交量 ≥ ${best.minV}%&lt;/b&gt;
-          &lt;/div&gt;
-          &lt;div class=&quot;text-slate-300&quot;&gt;
-            📊 聯合回測預估：共 &lt;b class=&quot;text-white&quot;&gt;${best.cnt}&lt;/b&gt; 檔 ｜ 勝率 &lt;b class=&quot;text-cyan-300&quot;&gt;${best.winRate}%&lt;/b&gt; ｜ 單檔均賺 &lt;b class=&quot;${avgCol}&quot;&gt;${avgSign}$${best.avgProfitNtd.toLocaleString()}&lt;/b&gt; ｜ 合計淨利 &lt;b class=&quot;${avgCol}&quot;&gt;${totSign}$${best.totalProfitNtd.toLocaleString()}&lt;/b&gt;
-          &lt;/div&gt;
+          <div>🤖 依【<b class="text-indigo-300">${sTitle}</b>】AI 建議最佳條件：
+            <b class="text-white">20MA向上(${best.reqMaUp ? '✔' : '不限'})</b> ｜
+            <b class="text-white">實體紅K(${best.reqRed ? '✔' : '不限'})</b> ｜
+            <b class="text-rose-300">漲幅 ${best.minG.toFixed(1)}% ~ ${best.maxG.toFixed(1)}%</b> ｜
+            <b class="text-amber-300">成交量 ≥ ${best.minV}%</b>
+          </div>
+          <div class="text-slate-300">
+            📊 聯合回測預估：共 <b class="text-white">${best.cnt}</b> 檔 ｜ 勝率 <b class="text-cyan-300">${best.winRate}%</b> ｜ 單檔均賺 <b class="${avgCol}">${avgSign}$${best.avgProfitNtd.toLocaleString()}</b> ｜ 合計淨利 <b class="${avgCol}">${totSign}$${best.totalProfitNtd.toLocaleString()}</b>
+          </div>
         `;
       }
 
@@ -2607,8 +2607,8 @@
     }
 
     function onAiAutoFullStep1Toggle() {
-      const chk = document.getElementById(&quot;chkAiAutoFullStep1&quot;);
-      if (chk &amp;&amp; chk.checked) {
+      const chk = document.getElementById("chkAiAutoFullStep1");
+      if (chk && chk.checked) {
         _aiFullStep1ModeActive = true;
         runAiFullStep1Optimizer(true, true);
       } else {
@@ -2621,23 +2621,23 @@
     function setExitStrategy(strategyName) {
       currentExitStrategy = strategyName;
       updateExitStrategyUI();
-      const chkFull = document.getElementById(&quot;chkAiAutoFullStep1&quot;);
-      const useFullOpt = Boolean(chkFull &amp;&amp; chkFull.checked) || _aiFullStep1ModeActive;
+      const chkFull = document.getElementById("chkAiAutoFullStep1");
+      const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive;
       runAiFullStep1Optimizer(useFullOpt, false);
       saveUserSettingsToStorage(false);
       window._skipNextCmpTimer = true;
       applyFiltersAndRender();
-      if (document.getElementById(&quot;strategyCompareGrid&quot;)) {
+      if (document.getElementById("strategyCompareGrid")) {
         renderStrategyComparisonSummary(getCurrentFilterOptions(), true);
       }
-      const capContent = document.getElementById(&quot;capitalSimBody&quot;);
-      if (capContent &amp;&amp; !capContent.classList.contains(&quot;hidden&quot;)) {
+      const capContent = document.getElementById("capitalSimBody");
+      if (capContent && !capContent.classList.contains("hidden")) {
         runPortfolioCapitalSimulation();
       }
       if (selectedStockCode) {
-        const cur = rawAllLoadedStocks.find(s =&gt; s.code === selectedStockCode);
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (cur) updateDetailPanel(cur, false);
-        else if (window._lastCustomInspectedStock &amp;&amp; window._lastCustomInspectedStock.code === selectedStockCode) {
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
           const customS = window._lastCustomInspectedStock;
           const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
           customS.trackingInfo = lc.activeOrTodayExit;
@@ -2648,10 +2648,10 @@
     }
 
     function syncStrategyEDescText() {
-      const cfg = getExitStrategyConfig(&#39;RR_LADDER&#39;);
-      const subEl = document.getElementById(&quot;strategyECardSub&quot;);
+      const cfg = getExitStrategyConfig('RR_LADDER');
+      const subEl = document.getElementById("strategyECardSub");
       if (subEl) {
-        const actTxt = cfg.rrTier2Action === &#39;FIXED_TP&#39; ? &#39;直接停利&#39; : (cfg.rrTier2Action === &#39;STEP_LADDER&#39; ? `階梯+1R+${cfg.rrTrailMa}MA` : `鎖${cfg.rrLockRatio}R+${cfg.rrTrailMa}MA`);
+        const actTxt = cfg.rrTier2Action === 'FIXED_TP' ? '直接停利' : (cfg.rrTier2Action === 'STEP_LADDER' ? `階梯+1R+${cfg.rrTrailMa}MA` : `鎖${cfg.rrLockRatio}R+${cfg.rrTrailMa}MA`);
         subEl.textContent = `1:${cfg.rrBreakevenRatio}(+${cfg.rrBreakevenBufferPct}%) → 1:${cfg.rrTier2Ratio}${actTxt}`;
       }
     }
@@ -2659,14 +2659,14 @@
     function onExitStrategyChanged() {
       syncStrategyEDescText();
       updateExitStrategyUI();
-      const chkFullChg = document.getElementById(&quot;chkAiAutoFullStep1&quot;);
-      runAiFullStep1Optimizer(Boolean(chkFullChg &amp;&amp; chkFullChg.checked), false);
+      const chkFullChg = document.getElementById("chkAiAutoFullStep1");
+      runAiFullStep1Optimizer(Boolean(chkFullChg && chkFullChg.checked), false);
       saveUserSettingsToStorage(false);
       applyFiltersAndRender();
       if (selectedStockCode) {
-        const cur = rawAllLoadedStocks.find(s =&gt; s.code === selectedStockCode);
+        const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
         if (cur) updateDetailPanel(cur, false);
-        else if (window._lastCustomInspectedStock &amp;&amp; window._lastCustomInspectedStock.code === selectedStockCode) {
+        else if (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === selectedStockCode) {
           const customS = window._lastCustomInspectedStock;
           const lc = evaluateStockTrackingLifecycle(customS, getCurrentFilterOptions());
           customS.trackingInfo = lc.activeOrTodayExit;
@@ -2677,48 +2677,48 @@
     }
 
     function toggleStrategyCompareBox() {
-      const el = document.getElementById(&quot;strategyCompareBox&quot;);
-      if (el) el.classList.toggle(&quot;hidden&quot;);
+      const el = document.getElementById("strategyCompareBox");
+      if (el) el.classList.toggle("hidden");
     }
 
     let _lastCmpResultsCache = null;
     function renderStrategyComparisonSummary(filterOpts, fastHighlightOnly = false) {
-      const grid = document.getElementById(&quot;strategyCompareGrid&quot;);
-      const note = document.getElementById(&quot;strategyCompareNote&quot;);
+      const grid = document.getElementById("strategyCompareGrid");
+      const note = document.getElementById("strategyCompareNote");
       if (!grid || !isPnlPoolActive() || rawAllLoadedStocks.length === 0) return;
 
       const list = [
-        { key: &#39;DEFAULT_20MA&#39;, label: &#39;A. 原版20MA破線&#39; },
-        { key: &#39;SHORT_MA_TRAIL&#39;, label: `B. 賺達標守${document.getElementById(&quot;shortMaPeriodSelect&quot;)?.value || 10}MA` },
-        { key: &#39;PEAK_TRAILING&#39;, label: `C. 高點回落${document.getElementById(&quot;peakDrawdownPctInput&quot;)?.value || 8}%` },
-        { key: &#39;WHALE_SELL_EXIT&#39;, label: &#39;D. 高檔爆量賣出&#39; },
-        { key: &#39;RR_LADDER&#39;, label: `E. 風報比1:${document.getElementById(&quot;rrBreakevenRatioInput&quot;)?.value || 1}/1:${document.getElementById(&quot;rrTier2RatioInput&quot;)?.value || 3}` },
-        { key: &#39;AI_ADAPTIVE&#39;, label: &#39;F. 🤖AI自適應&#39; },
-        { key: &#39;AI_POWER_90D&#39;, label: &#39;G. 🧠AI買賣90天&#39; }
+        { key: 'DEFAULT_20MA', label: 'A. 原版20MA破線' },
+        { key: 'SHORT_MA_TRAIL', label: `B. 賺達標守${document.getElementById("shortMaPeriodSelect")?.value || 10}MA` },
+        { key: 'PEAK_TRAILING', label: `C. 高點回落${document.getElementById("peakDrawdownPctInput")?.value || 8}%` },
+        { key: 'WHALE_SELL_EXIT', label: 'D. 高檔爆量賣出' },
+        { key: 'RR_LADDER', label: `E. 風報比1:${document.getElementById("rrBreakevenRatioInput")?.value || 1}/1:${document.getElementById("rrTier2RatioInput")?.value || 3}` },
+        { key: 'AI_ADAPTIVE', label: 'F. 🤖AI自適應' },
+        { key: 'AI_POWER_90D', label: 'G. 🧠AI買賣90天' }
       ];
 
-      const useTimeStop = document.getElementById(&quot;chkTimeStop&quot;)?.checked || false;
+      const useTimeStop = document.getElementById("chkTimeStop")?.checked || false;
       if (note) {
         note.textContent = useTimeStop
-          ? `已疊加 ${document.getElementById(&quot;timeStopDaysInput&quot;)?.value || 15} 天時間停損`
-          : &quot;未疊加時間停損&quot;;
+          ? `已疊加 ${document.getElementById("timeStopDaysInput")?.value || 15} 天時間停損`
+          : "未疊加時間停損";
       }
 
-      const keyword = (document.getElementById(&quot;searchInput&quot;)?.value || &quot;&quot;).trim().toLowerCase();
+      const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
       const activeStep1Sectors = getSelectedSimSectors();
 
-      const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById(&quot;chkAiAutoFullStep1&quot;)?.checked);
+      const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
       let results;
-      if (fastHighlightOnly &amp;&amp; Array.isArray(_lastCmpResultsCache) &amp;&amp; _lastCmpResultsCache.length === 7) {
+      if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
       } else {
-      results = list.map(item =&gt; {
+      results = list.map(item => {
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || computeAiBestFullStep1ForStrategy(item.key)) : null;
-        if (useAiFullCards &amp;&amp; aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
+        if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
         const baseItemCfg = getExitStrategyConfig(item.key);
-        const cfg = (useAiFullCards &amp;&amp; aiS1 &amp;&amp; aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
-        const effOpts = (useAiFullCards &amp;&amp; aiS1)
-          ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: &quot;GTE&quot;, validVolThreshold: aiS1.minV }
+        const cfg = (useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
+        const effOpts = (useAiFullCards && aiS1)
+          ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: "GTE", validVolThreshold: aiS1.minV }
           : filterOpts;
         let totalTrades = 0;
         let winSum = 0;
@@ -2729,33 +2729,33 @@
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        rawAllLoadedStocks.forEach(s =&gt; {
-          if (activeStep1Sectors.length &gt; 0 &amp;&amp; !matchesSimSectorFilter(s, activeStep1Sectors)) return;
-          if (keyword &amp;&amp; !s.code.toLowerCase().includes(keyword) &amp;&amp; !s.name.toLowerCase().includes(keyword)) return;
+        rawAllLoadedStocks.forEach(s => {
+          if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
+          if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
           const lc = evaluateStockTrackingLifecycle(s, effOpts, cfg);
 
           // 股池四（續抱中 + 今日剛平倉）
-          if (lc.activeOrTodayExit &amp;&amp; checkStockMatchesPnlDateRange(s, lc.activeOrTodayExit)) {
+          if (lc.activeOrTodayExit && checkStockMatchesPnlDateRange(s, lc.activeOrTodayExit)) {
             pool4Cnt++;
             pool4Net += Math.round(lc.activeOrTodayExit.profitPoints * 1000);
           }
 
           // 股池五（破K出場 + 直接跌破關鍵低）
           let p5Rec = null;
-          if (lc.closedBreakdown &amp;&amp; !(s.isFirstDayBreak20Ma &amp;&amp; s.status === &quot;BREAKOUT&quot;)) {
+          if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) {
             p5Rec = lc.closedBreakdown;
-          } else if (allStocks.some(a =&gt; a.code === s.code &amp;&amp; a.status === &quot;BREAKDOWN&quot;) &amp;&amp; s.directBreakdownInfo) {
+          } else if (allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
             p5Rec = s.directBreakdownInfo;
           }
-          if (p5Rec &amp;&amp; checkStockMatchesPnlDateRange(s, p5Rec)) {
+          if (p5Rec && checkStockMatchesPnlDateRange(s, p5Rec)) {
             pool5Cnt++;
             pool5Net += Math.round(p5Rec.profitPoints * 1000);
           }
 
           // 全體去重合計（今日平倉不重複計算）
           let uniqueRec = null;
-          if (lc.activeOrTodayExit &amp;&amp; !lc.activeOrTodayExit.isClosed) {
+          if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
             uniqueRec = lc.activeOrTodayExit;
           } else if (p5Rec) {
             uniqueRec = p5Rec;
@@ -2766,55 +2766,55 @@
 
           const money = Math.round(uniqueRec.profitPoints * 1000);
           totalTrades++;
-          if (money &gt; 0) { winSum += money; winCnt++; }
-          else if (money &lt; 0) { lossSum += money; }
+          if (money > 0) { winSum += money; winCnt++; }
+          else if (money < 0) { lossSum += money; }
         });
 
         const net = winSum + lossSum;
-        const pf = Math.abs(lossSum) &gt; 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum &gt; 0 ? &quot;∞&quot; : &quot;0.00&quot;);
-        const winRate = totalTrades &gt; 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : &quot;0&quot;;
+        const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
+        const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
         return { ...item, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
       });
 
       }
       _lastCmpResultsCache = results;
-      const bestNet = Math.max(...results.map(r =&gt; r.net));
+      const bestNet = Math.max(...results.map(r => r.net));
 
-      grid.innerHTML = results.map(r =&gt; {
+      grid.innerHTML = results.map(r => {
         const isCur = r.key === currentExitStrategy;
-        const isBest = r.net === bestNet &amp;&amp; r.totalTrades &gt; 0;
-        const netColor = r.net &gt; 0 ? &quot;text-rose-400&quot; : (r.net &lt; 0 ? &quot;text-emerald-400&quot; : &quot;text-slate-300&quot;);
-        const p4Color = r.pool4Net &gt; 0 ? &quot;text-cyan-300&quot; : (r.pool4Net &lt; 0 ? &quot;text-emerald-400&quot; : &quot;text-slate-300&quot;);
-        const p5Color = r.pool5Net &gt; 0 ? &quot;text-rose-300&quot; : (r.pool5Net &lt; 0 ? &quot;text-emerald-400&quot; : &quot;text-slate-300&quot;);
-        const borderCls = isCur ? &quot;border-2 border-indigo-400 bg-indigo-950/40&quot; : &quot;border border-slate-800 bg-slate-950/80 hover:border-slate-600&quot;;
+        const isBest = r.net === bestNet && r.totalTrades > 0;
+        const netColor = r.net > 0 ? "text-rose-400" : (r.net < 0 ? "text-emerald-400" : "text-slate-300");
+        const p4Color = r.pool4Net > 0 ? "text-cyan-300" : (r.pool4Net < 0 ? "text-emerald-400" : "text-slate-300");
+        const p5Color = r.pool5Net > 0 ? "text-rose-300" : (r.pool5Net < 0 ? "text-emerald-400" : "text-slate-300");
+        const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
         return `
-          &lt;div onclick=&quot;selectComparisonStrategyCard(&#39;${r.key}&#39;)&quot; class=&quot;cursor-pointer rounded-md p-1.5 transition ${borderCls}&quot;&gt;
-            &lt;div class=&quot;flex items-center justify-between gap-1 text-[10px]&quot;&gt;
-              &lt;span class=&quot;font-bold text-slate-200 truncate&quot;&gt;${r.label}&lt;/span&gt;
-              ${isBest ? &#39;&lt;span class=&quot;px-1 rounded bg-amber-500/25 text-amber-300 font-bold&quot;&gt;最佳&lt;/span&gt;&#39; : &#39;&#39;}
-            &lt;/div&gt;
-            &lt;div class=&quot;${netColor} font-bold text-xs mt-0.5&quot;&gt;${r.aiS1 ? &#39;AI最高 &#39; : &#39;合計 &#39;}${formatMoneyDisplay(r.net)}&lt;/div&gt;
-            &lt;div class=&quot;text-[10px] mt-1 space-y-0.5 border-t border-slate-800/80 pt-1 whitespace-nowrap&quot;&gt;
-              &lt;div class=&quot;flex justify-between gap-1&quot;&gt;&lt;span class=&quot;text-slate-400&quot;&gt;股池四(${r.pool4Cnt}檔):&lt;/span&gt;&lt;b class=&quot;${p4Color}&quot;&gt;${formatMoneyDisplay(r.pool4Net)}&lt;/b&gt;&lt;/div&gt;
-              &lt;div class=&quot;flex justify-between gap-1&quot;&gt;&lt;span class=&quot;text-slate-400&quot;&gt;股池五(${r.pool5Cnt}檔):&lt;/span&gt;&lt;b class=&quot;${p5Color}&quot;&gt;${formatMoneyDisplay(r.pool5Net)}&lt;/b&gt;&lt;/div&gt;
-            &lt;/div&gt;
-            &lt;div class=&quot;text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60 whitespace-nowrap&quot;&gt;
+          <div onclick="selectComparisonStrategyCard('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
+            <div class="flex items-center justify-between gap-1 text-[10px]">
+              <span class="font-bold text-slate-200 truncate">${r.label}</span>
+              ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
+            </div>
+            <div class="${netColor} font-bold text-xs mt-0.5">${r.aiS1 ? 'AI最高 ' : '合計 '}${formatMoneyDisplay(r.net)}</div>
+            <div class="text-[10px] mt-1 space-y-0.5 border-t border-slate-800/80 pt-1 whitespace-nowrap">
+              <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
+              <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
+            </div>
+            <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60 whitespace-nowrap">
               勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
-            &lt;/div&gt;
-            ${r.aiS1 ? `&lt;div class=&quot;text-[9px] text-indigo-300 mt-0.5 truncate&quot; title=&quot;AI最佳條件&quot;&gt;🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + &#39;｜&#39; : &#39;&#39;}20MA(${r.aiS1.reqMaUp ? &#39;✔&#39; : &#39;不限&#39;}) 量≥${r.aiS1.minV}%&lt;/div&gt;` : &#39;&#39;}
-          &lt;/div&gt;
+            </div>
+            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + '｜' : ''}20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 量≥${r.aiS1.minV}%</div>` : ''}
+          </div>
         `;
-      }).join(&quot;&quot;);
+      }).join("");
     }
 
     function getCurrentFilterOptions() {
-      const requireMa20Up = document.getElementById(&quot;chkMa20Up&quot;).checked;
-      const requireSolidRedK = document.getElementById(&quot;chkSolidRedK&quot;).checked;
-      const useGainRange = document.getElementById(&quot;chkGainRange&quot;).checked;
-      const minGain = parseFloat(document.getElementById(&quot;minGainInput&quot;).value);
-      const maxGain = parseFloat(document.getElementById(&quot;maxGainInput&quot;).value);
-      const volOp = document.getElementById(&quot;volOperatorSelect&quot;).value;
-      const volThreshold = parseFloat(document.getElementById(&quot;volThresholdInput&quot;).value);
+      const requireMa20Up = document.getElementById("chkMa20Up").checked;
+      const requireSolidRedK = document.getElementById("chkSolidRedK").checked;
+      const useGainRange = document.getElementById("chkGainRange").checked;
+      const minGain = parseFloat(document.getElementById("minGainInput").value);
+      const maxGain = parseFloat(document.getElementById("maxGainInput").value);
+      const volOp = document.getElementById("volOperatorSelect").value;
+      const volThreshold = parseFloat(document.getElementById("volThresholdInput").value);
       const validVolThreshold = isNaN(volThreshold) ? 70 : Math.min(1000, Math.max(0, volThreshold));
 
       return {
@@ -2830,54 +2830,54 @@
 
     // 檢查單根 K 棒是否符合 STEP 1 使用者設定之附加篩選條件
     function checkBarPassesStep1Filter(bars, kIdx, filterOpts) {
-      if (kIdx &lt; 1 || kIdx &gt;= bars.length) return false;
+      if (kIdx < 1 || kIdx >= bars.length) return false;
       const prevB = bars[kIdx - 1];
       const keyB = bars[kIdx];
-      if (!(prevB.ma20 &gt; 0 &amp;&amp; keyB.ma20 &gt; 0 &amp;&amp; prevB.close &lt;= prevB.ma20 &amp;&amp; keyB.close &gt; keyB.ma20 &amp;&amp; keyB.close &gt; prevB.close)) {
+      if (!(prevB.ma20 > 0 && keyB.ma20 > 0 && prevB.close <= prevB.ma20 && keyB.close > keyB.ma20 && keyB.close > prevB.close)) {
         return false;
       }
-      if (filterOpts.requireMa20Up &amp;&amp; keyB.ma20 &lt; prevB.ma20) return false;
-      if (filterOpts.requireSolidRedK &amp;&amp; keyB.close &lt;= keyB.open) return false;
+      if (filterOpts.requireMa20Up && keyB.ma20 < prevB.ma20) return false;
+      if (filterOpts.requireSolidRedK && keyB.close <= keyB.open) return false;
 
-      const keyGainPct = prevB.close &gt; 0 ? ((keyB.close - prevB.close) / prevB.close) * 100 : 0;
-      if (filterOpts.useGainRange &amp;&amp; (keyGainPct &lt; filterOpts.minGain || keyGainPct &gt; filterOpts.maxGain)) return false;
+      const keyGainPct = prevB.close > 0 ? ((keyB.close - prevB.close) / prevB.close) * 100 : 0;
+      if (filterOpts.useGainRange && (keyGainPct < filterOpts.minGain || keyGainPct > filterOpts.maxGain)) return false;
 
       let avg5 = 1;
-      if (kIdx &gt;= 5) {
+      if (kIdx >= 5) {
         let s5 = 0;
-        for (let m = kIdx - 5; m &lt; kIdx; m++) s5 += (bars[m].vol || 0);
+        for (let m = kIdx - 5; m < kIdx; m++) s5 += (bars[m].vol || 0);
         avg5 = s5 / 5;
-      } else if (kIdx &gt;= 1) {
+      } else if (kIdx >= 1) {
         let s = 0;
-        for (let m = 0; m &lt; kIdx; m++) s += (bars[m].vol || 0);
+        for (let m = 0; m < kIdx; m++) s += (bars[m].vol || 0);
         avg5 = s / kIdx;
       }
-      const vRatio = avg5 &gt; 0 ? Math.round((keyB.vol / avg5) * 100) : 100;
-      if (filterOpts.volOp === &quot;GTE&quot; &amp;&amp; vRatio &lt; filterOpts.validVolThreshold) return false;
-      if (filterOpts.volOp === &quot;LTE&quot; &amp;&amp; vRatio &gt; filterOpts.validVolThreshold) return false;
+      const vRatio = avg5 > 0 ? Math.round((keyB.vol / avg5) * 100) : 100;
+      if (filterOpts.volOp === "GTE" && vRatio < filterOpts.validVolThreshold) return false;
+      if (filterOpts.volOp === "LTE" && vRatio > filterOpts.validVolThreshold) return false;
 
       return true;
     }
 
-    // 支援跨日確認K (如 4561 在 11/11 關鍵K -&gt; 11/12 區間整理 -&gt; 11/13 確認K突破)
+    // 支援跨日確認K (如 4561 在 11/11 關鍵K -> 11/12 區間整理 -> 11/13 確認K突破)
     // 尋找最近 10 個交易日內尚未破底、且在今日之前尚未被確認過的「有效突破20MA關鍵K」
     function resolveCandidateKeyKForToday(stock, filterOpts = null, overrideBars = null) {
-      const bars = overrideBars ? overrideBars.map(b =&gt; ({ ...b })) : buildStockDailyBarsWithToday(stock);
-      if (bars.length &lt; 3) return null;
+      const bars = overrideBars ? overrideBars.map(b => ({ ...b })) : buildStockDailyBarsWithToday(stock);
+      if (bars.length < 3) return null;
       const lastIdx = bars.length - 1;
       const startSearchIdx = Math.max(1, lastIdx - 10);
 
       let matchedKeyIdx = -1;
-      for (let k = startSearchIdx; k &lt;= lastIdx; k++) {
+      for (let k = startSearchIdx; k <= lastIdx; k++) {
         if (matchedKeyIdx !== -1) break;
         const prevB = bars[k - 1];
         const keyB = bars[k];
-        const isFirstBreak = prevB.ma20 &gt; 0 &amp;&amp; keyB.ma20 &gt; 0 &amp;&amp;
-                             prevB.close &lt;= prevB.ma20 &amp;&amp;
-                             keyB.close &gt; keyB.ma20 &amp;&amp;
-                             keyB.close &gt; prevB.close;
+        const isFirstBreak = prevB.ma20 > 0 && keyB.ma20 > 0 &&
+                             prevB.close <= prevB.ma20 &&
+                             keyB.close > keyB.ma20 &&
+                             keyB.close > prevB.close;
         if (!isFirstBreak) continue;
-        if (filterOpts &amp;&amp; !checkBarPassesStep1Filter(bars, k, filterOpts)) continue;
+        if (filterOpts && !checkBarPassesStep1Filter(bars, k, filterOpts)) continue;
 
         if (k === lastIdx) {
           matchedKeyIdx = k;
@@ -2885,8 +2885,8 @@
         }
 
         let brokenOrConfirmedBeforeToday = false;
-        for (let m = k + 1; m &lt; lastIdx; m++) {
-          if (bars[m].close &lt; keyB.low || bars[m].close &gt; keyB.high) {
+        for (let m = k + 1; m < lastIdx; m++) {
+          if (bars[m].close < keyB.low || bars[m].close > keyB.high) {
             brokenOrConfirmedBeforeToday = true;
             break;
           }
@@ -2902,33 +2902,33 @@
       const keyB = bars[matchedKeyIdx];
       const prevB = bars[matchedKeyIdx - 1];
       let avg5 = 1;
-      if (matchedKeyIdx &gt;= 5) {
+      if (matchedKeyIdx >= 5) {
         let s5 = 0;
-        for (let m = matchedKeyIdx - 5; m &lt; matchedKeyIdx; m++) s5 += (bars[m].vol || 0);
+        for (let m = matchedKeyIdx - 5; m < matchedKeyIdx; m++) s5 += (bars[m].vol || 0);
         avg5 = Math.round(s5 / 5);
-      } else if (matchedKeyIdx &gt;= 1) {
+      } else if (matchedKeyIdx >= 1) {
         let s = 0;
-        for (let m = 0; m &lt; matchedKeyIdx; m++) s += (bars[m].vol || 0);
+        for (let m = 0; m < matchedKeyIdx; m++) s += (bars[m].vol || 0);
         avg5 = Math.round(s / matchedKeyIdx);
       }
-      if (avg5 &lt;= 0) avg5 = 1;
+      if (avg5 <= 0) avg5 = 1;
 
       const volRatio = Math.round(((keyB.vol || 0) / avg5) * 100);
       const volExtraPct = Number(((((keyB.vol || 0) - avg5) / avg5) * 100).toFixed(1));
-      const gainPct = prevB.close &gt; 0 ? Number((((keyB.close - prevB.close) / prevB.close) * 100).toFixed(2)) : 0;
+      const gainPct = prevB.close > 0 ? Number((((keyB.close - prevB.close) / prevB.close) * 100).toFixed(2)) : 0;
       const baseLow = Math.min(prevB.low, keyB.low);
       const initStopFactor = 1 - (getExitStrategyConfig().initStopBufferPct / 100);
       const stopLossPrice = Number((baseLow * initStopFactor).toFixed(2));
       const todayClose = bars[lastIdx].close;
       const waitDays = lastIdx - matchedKeyIdx;
 
-      let status = &quot;CONSOLIDATE&quot;;
+      let status = "CONSOLIDATE";
       if (waitDays === 0) {
-        status = &quot;TODAY_KEY&quot;;
-      } else if (todayClose &gt; keyB.high) {
-        status = &quot;BREAKOUT&quot;;
-      } else if (todayClose &lt; keyB.low) {
-        status = &quot;BREAKDOWN&quot;;
+        status = "TODAY_KEY";
+      } else if (todayClose > keyB.high) {
+        status = "BREAKOUT";
+      } else if (todayClose < keyB.low) {
+        status = "BREAKDOWN";
       }
 
       return {
@@ -2948,9 +2948,9 @@
         volRatio,
         volExtraPct,
         gainPct,
-        isUpDay: keyB.close &gt; prevB.close,
-        isBullishRedK: keyB.close &gt; keyB.open,
-        isMa20SlopeUp: keyB.ma20 &gt;= prevB.ma20,
+        isUpDay: keyB.close > prevB.close,
+        isBullishRedK: keyB.close > keyB.open,
+        isMa20SlopeUp: keyB.ma20 >= prevB.ma20,
         stopLossPrice,
         status,
         keyLimitType: checkLimitUpDown(keyB.close, prevB.close)
@@ -2959,14 +2959,14 @@
 
     function buildStockDailyBarsWithToday(stock) {
       const cacheSig = `${stock.todayPrice}|${stock.todayOpen}|${stock.todayHigh}|${stock.todayLow}|${stock.todayVol}|${stock.latestTradeDate}|${(stock.realBars || []).length}`;
-      if (stock._barsCacheSig === cacheSig &amp;&amp; Array.isArray(stock._barsCache)) {
+      if (stock._barsCacheSig === cacheSig && Array.isArray(stock._barsCache)) {
         return stock._barsCache;
       }
-      const bars = stock.realBars ? stock.realBars.map(b =&gt; ({ ...b })) : [];
+      const bars = stock.realBars ? stock.realBars.map(b => ({ ...b })) : [];
       if (bars.length === 0) return bars;
-      const latestDate = stock.latestTradeDate || new Date().toLocaleDateString(&#39;en-CA&#39;, { timeZone: &#39;Asia/Taipei&#39; });
+      const latestDate = stock.latestTradeDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
       const lastBar = bars[bars.length - 1];
-      if (lastBar.date !== latestDate &amp;&amp; lastBar.date !== &quot;今日&quot; &amp;&amp; stock.todayPrice &gt; 0) {
+      if (lastBar.date !== latestDate && lastBar.date !== "今日" && stock.todayPrice > 0) {
         const todayMa20 = computeDynamicTodayMa20(bars, stock.todayPrice, stock.yestMa20);
         bars.push({
           date: latestDate,
@@ -2977,28 +2977,28 @@
           ma20: todayMa20,
           vol: stock.todayVol || 0
         });
-      } else if (lastBar.date === latestDate || lastBar.date === &quot;今日&quot;) {
-        lastBar.open = stock.todayOpen &gt; 0 ? stock.todayOpen : lastBar.open;
+      } else if (lastBar.date === latestDate || lastBar.date === "今日") {
+        lastBar.open = stock.todayOpen > 0 ? stock.todayOpen : lastBar.open;
         lastBar.close = stock.todayPrice;
         lastBar.high = Math.max(lastBar.high, stock.todayHigh, stock.todayPrice);
         lastBar.low = Math.min(lastBar.low, stock.todayLow, stock.todayPrice);
-        if (stock.todayVol &gt; 0) lastBar.vol = stock.todayVol;
+        if (stock.todayVol > 0) lastBar.vol = stock.todayVol;
         lastBar.ma20 = computeDynamicTodayMa20(bars.slice(0, -1), stock.todayPrice, stock.yestMa20);
       }
-      for (let i = 0; i &lt; bars.length; i++) {
+      for (let i = 0; i < bars.length; i++) {
         let sum5 = 0;
         const s5 = Math.max(0, i - 4);
-        for (let j = s5; j &lt;= i; j++) sum5 += bars[j].close;
+        for (let j = s5; j <= i; j++) sum5 += bars[j].close;
         bars[i].ma5 = Number((sum5 / (i - s5 + 1)).toFixed(2));
 
         let sum10 = 0;
         const s10 = Math.max(0, i - 9);
-        for (let j = s10; j &lt;= i; j++) sum10 += bars[j].close;
+        for (let j = s10; j <= i; j++) sum10 += bars[j].close;
         bars[i].ma10 = Number((sum10 / (i - s10 + 1)).toFixed(2));
 
         let vSum5 = 0;
         const vs5 = Math.max(0, i - 4);
-        for (let j = vs5; j &lt;= i; j++) vSum5 += (bars[j].vol || 0);
+        for (let j = vs5; j <= i; j++) vSum5 += (bars[j].vol || 0);
         bars[i].ma5Vol = vSum5 / (i - vs5 + 1);
       }
       stock._barsCacheSig = cacheSig;
@@ -3035,14 +3035,14 @@
 
     // 為「突破20MA關鍵K後未過高直接跌破關鍵K低點」之標的建立標準化損益結構，讓股池五所有股票皆可一致計算損益與篩選日期區間
     function buildDirectKeyBreakdownRecord(stock) {
-      if (!stock || !stock.isFirstDayBreak20Ma || stock.status !== &quot;BREAKDOWN&quot;) return null;
-      const bars = buildStockDailyBarsWithToday(stock).map(b =&gt; ({ ...b }));
+      if (!stock || !stock.isFirstDayBreak20Ma || stock.status !== "BREAKDOWN") return null;
+      const bars = buildStockDailyBarsWithToday(stock).map(b => ({ ...b }));
       const lastIdx = Math.max(0, bars.length - 1);
       const latestMa20 = bars[lastIdx]?.ma20 || stock.yestMa20;
       const buyPrice = stock.yestClose;
       const sellPrice = stock.todayPrice;
       const profitPoints = Number((sellPrice - buyPrice).toFixed(2));
-      const profitPct = buyPrice &gt; 0 ? Number((((sellPrice - buyPrice) / buyPrice) * 100).toFixed(2)) : 0;
+      const profitPct = buyPrice > 0 ? Number((((sellPrice - buyPrice) / buyPrice) * 100).toFixed(2)) : 0;
 
       return {
         keyKIdx: stock.keyKIdx,
@@ -3081,7 +3081,7 @@
         profitPoints,
         profitPct,
         holdingDays: stock.keyKWaitDays || 1,
-        trackStatus: &#39;DIRECT_KEY_BREAKDOWN&#39;,
+        trackStatus: 'DIRECT_KEY_BREAKDOWN',
         isDirectKeyBreakdown: true
       };
     }
@@ -3107,15 +3107,15 @@
 
     // K線圖任意股票查詢功能：先搜本地已載入股票，若不在候選池則向後端 `/stock?q=` 查詢全市場 1900+ 檔
     async function lookupAnyStockInKline() {
-      const q = document.getElementById(&quot;klineLookupInput&quot;).value.trim();
+      const q = document.getElementById("klineLookupInput").value.trim();
       if (!q) {
-        showToast(&quot;請先輸入欲查詢的股票代號或名稱（例如 1303 或 4561）&quot;, &quot;warn&quot;);
+        showToast("請先輸入欲查詢的股票代號或名稱（例如 1303 或 4561）", "warn");
         return;
       }
 
       const qLower = q.toLowerCase();
-      let found = rawAllLoadedStocks.find(s =&gt; s.code.toLowerCase() === qLower || s.name.toLowerCase() === qLower)
-               || rawAllLoadedStocks.find(s =&gt; s.code.toLowerCase().includes(qLower) || s.name.toLowerCase().includes(qLower));
+      let found = rawAllLoadedStocks.find(s => s.code.toLowerCase() === qLower || s.name.toLowerCase() === qLower)
+               || rawAllLoadedStocks.find(s => s.code.toLowerCase().includes(qLower) || s.name.toLowerCase().includes(qLower));
 
       if (found) {
         selectedStockCode = found.code;
@@ -3124,28 +3124,28 @@
         return;
       }
 
-      const btn = document.getElementById(&quot;klineLookupBtn&quot;);
+      const btn = document.getElementById("klineLookupBtn");
       const origText = btn.textContent;
-      btn.textContent = &quot;查詢中...&quot;;
+      btn.textContent = "查詢中...";
       btn.disabled = true;
 
       try {
-        const singleStockUrl = apiUrl.replace(/\/stocks(\?.*)?$/, &#39;/stock&#39;);
-        const res = await fetch(`${singleStockUrl}?q=${encodeURIComponent(q)}&amp;_t=${Date.now()}`);
+        const singleStockUrl = apiUrl.replace(/\/stocks(\?.*)?$/, '/stock');
+        const res = await fetch(`${singleStockUrl}?q=${encodeURIComponent(q)}&_t=${Date.now()}`);
         if (!res.ok) {
-          const errData = await res.json().catch(() =&gt; ({}));
+          const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error || `HTTP ${res.status} (請確認電腦端 index.js 已更新重啟)`);
         }
         const rawItem = await res.json();
         const normalized = normalizeStockItem(rawItem);
-        if (!rawAllLoadedStocks.some(s =&gt; s.code === normalized.code)) {
+        if (!rawAllLoadedStocks.some(s => s.code === normalized.code)) {
           rawAllLoadedStocks.push(normalized);
         }
         selectedStockCode = normalized.code;
         applyFiltersAndRender();
         updateDetailPanel(normalized, true);
       } catch (err) {
-        showToast(`查詢「${q}」失敗：${err.message}`, &quot;error&quot;);
+        showToast(`查詢「${q}」失敗：${err.message}`, "error");
       } finally {
         btn.textContent = origText;
         btn.disabled = false;
@@ -3157,67 +3157,67 @@
       const opts = getCurrentFilterOptions();
       const t = stock.trackingInfo;
       const cb = stock.closedBreakdownInfo;
-      const simPrefix = stock._isRelaxedPreviewSim ? &#39;&lt;span class=&quot;px-1.5 py-0.5 rounded bg-purple-600/80 text-white text-[10px] mr-1&quot;&gt;🧪 模擬過高買進試算&lt;/span&gt;&#39; : &#39;&#39;;
-      const bars = chartState.dailyBars.length &gt; 0 ? chartState.dailyBars : (stock.realBars || []);
-      const lastBar = bars.length &gt; 0 ? bars[bars.length - 1] : null;
-      const prevBar = bars.length &gt;= 2 ? bars[bars.length - 2] : null;
+      const simPrefix = stock._isRelaxedPreviewSim ? '<span class="px-1.5 py-0.5 rounded bg-purple-600/80 text-white text-[10px] mr-1">🧪 模擬過高買進試算</span>' : '';
+      const bars = chartState.dailyBars.length > 0 ? chartState.dailyBars : (stock.realBars || []);
+      const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
+      const prevBar = bars.length >= 2 ? bars[bars.length - 2] : null;
 
       // 1. 檢查關鍵K是否通過 STEP 1 各項細部條件
       const failedReasons = [];
-      if (!stock.isFirstDayBreak20Ma) failedReasons.push(&quot;近期無未決之突破20MA關鍵K&quot;);
-      if (!stock.isUpDay) failedReasons.push(&quot;關鍵K未上漲&quot;);
-      if (opts.requireMa20Up &amp;&amp; !stock.isMa20SlopeUp) failedReasons.push(&quot;關鍵K之20MA未向上&quot;);
-      if (opts.requireSolidRedK &amp;&amp; !stock.isBullishRedK) failedReasons.push(&quot;關鍵K非實體紅K&quot;);
-      if (opts.useGainRange &amp;&amp; (stock.yestGainPct &lt; opts.minGain || stock.yestGainPct &gt; opts.maxGain)) {
+      if (!stock.isFirstDayBreak20Ma) failedReasons.push("近期無未決之突破20MA關鍵K");
+      if (!stock.isUpDay) failedReasons.push("關鍵K未上漲");
+      if (opts.requireMa20Up && !stock.isMa20SlopeUp) failedReasons.push("關鍵K之20MA未向上");
+      if (opts.requireSolidRedK && !stock.isBullishRedK) failedReasons.push("關鍵K非實體紅K");
+      if (opts.useGainRange && (stock.yestGainPct < opts.minGain || stock.yestGainPct > opts.maxGain)) {
         failedReasons.push(`關鍵K漲幅(${stock.yestGainPct.toFixed(2)}%)未在設定區間`);
       }
-      if (opts.volOp === &quot;GTE&quot; &amp;&amp; stock.volRatio &lt; opts.validVolThreshold) {
+      if (opts.volOp === "GTE" && stock.volRatio < opts.validVolThreshold) {
         failedReasons.push(`關鍵K量比(${stock.volRatio}%)低於${opts.validVolThreshold}%`);
       }
-      if (opts.volOp === &quot;LTE&quot; &amp;&amp; stock.volRatio &gt; opts.validVolThreshold) {
+      if (opts.volOp === "LTE" && stock.volRatio > opts.validVolThreshold) {
         failedReasons.push(`關鍵K量比(${stock.volRatio}%)高於${opts.validVolThreshold}%`);
       }
       const passAllStep1 = failedReasons.length === 0;
-      const keyDateTag = stock.keyKDate ? formatShortDateSlash(stock.keyKDate) : &quot;昨日&quot;;
+      const keyDateTag = stock.keyKDate ? formatShortDateSlash(stock.keyKDate) : "昨日";
 
-      // 優先檢查：若該股先前在 20MA 控盤或停損追蹤中，已跌破關鍵K並出現確認K平倉出場 (如 1303 南亞 10/30破20MA關鍵K -&gt; 11/03確認K平倉)，且之後並無更新的突破20MA關鍵K
-      if (cb &amp;&amp; !(passAllStep1 &amp;&amp; (stock.status === &quot;BREAKOUT&quot; || stock.status === &quot;TODAY_KEY&quot; || stock.keyKIdx &gt; cb.sellIdx))) {
+      // 優先檢查：若該股先前在 20MA 控盤或停損追蹤中，已跌破關鍵K並出現確認K平倉出場 (如 1303 南亞 10/30破20MA關鍵K -> 11/03確認K平倉)，且之後並無更新的突破20MA關鍵K
+      if (cb && !(passAllStep1 && (stock.status === "BREAKOUT" || stock.status === "TODAY_KEY" || stock.keyKIdx > cb.sellIdx))) {
         const bDate = formatShortDateSlash(cb.buyDate);
         const sDate = formatShortDateSlash(cb.sellDate);
         const bdDate = cb.breakdownDate ? formatShortDateSlash(cb.breakdownDate) : sDate;
-        const pSign = cb.profitPoints &gt; 0 ? &quot;+&quot; : &quot;&quot;;
+        const pSign = cb.profitPoints > 0 ? "+" : "";
         return {
-          bannerClass: &quot;bg-emerald-950/55 border border-emerald-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-          titleHtml: `${simPrefix}&lt;span class=&quot;text-emerald-300 font-bold&quot;&gt;❄️ 目前階段：【20MA控盤破線確認K出場（已歸入破底K股池）】${bDate}買入後，於 ${bdDate} 跌破20MA出現關鍵K，${sDate} 出現確認K跌破低點平倉！&lt;/span&gt;`,
-          detailHtml: `&lt;span class=&quot;text-emerald-200&quot;&gt;${cb.exitReason} ｜ 波段結算：${pSign}${cb.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(cb.profitPoints * 1000))})&lt;/span&gt;`
+          bannerClass: "bg-emerald-950/55 border border-emerald-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `${simPrefix}<span class="text-emerald-300 font-bold">❄️ 目前階段：【20MA控盤破線確認K出場（已歸入破底K股池）】${bDate}買入後，於 ${bdDate} 跌破20MA出現關鍵K，${sDate} 出現確認K跌破低點平倉！</span>`,
+          detailHtml: `<span class="text-emerald-200">${cb.exitReason} ｜ 波段結算：${pSign}${cb.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(cb.profitPoints * 1000))})</span>`
         };
       }
 
-      // 階段 A：今日剛完成「確認K買進」（含跨日確認K，例如 4561 11/11關鍵K -&gt; 11/13確認K）
-      if (passAllStep1 &amp;&amp; stock.status === &quot;BREAKOUT&quot;) {
-        const crossNote = stock.keyKWaitDays &gt; 1 ? `(跨${stock.keyKWaitDays}日確認)` : &quot;(隔日確認)&quot;;
+      // 階段 A：今日剛完成「確認K買進」（含跨日確認K，例如 4561 11/11關鍵K -> 11/13確認K）
+      if (passAllStep1 && stock.status === "BREAKOUT") {
+        const crossNote = stock.keyKWaitDays > 1 ? `(跨${stock.keyKWaitDays}日確認)` : "(隔日確認)";
         return {
-          bannerClass: &quot;bg-rose-950/50 border border-rose-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-          titleHtml: `&lt;span class=&quot;text-rose-300 font-bold&quot;&gt;🔥 目前階段：【確認K買進階段${crossNote}】${keyDateTag} 突破20MA關鍵K，今日收盤(${stock.todayPrice.toFixed(2)})突破關鍵K高點(${stock.yestHigh.toFixed(2)})！&lt;/span&gt;`,
-          detailHtml: `&lt;span class=&quot;text-yellow-300&quot;&gt;初始停損(-${getExitStrategyConfig().initStopBufferPct}%)：${stock.candidateStopLossPrice.toFixed(2)}&lt;/span&gt;`
+          bannerClass: "bg-rose-950/50 border border-rose-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-rose-300 font-bold">🔥 目前階段：【確認K買進階段${crossNote}】${keyDateTag} 突破20MA關鍵K，今日收盤(${stock.todayPrice.toFixed(2)})突破關鍵K高點(${stock.yestHigh.toFixed(2)})！</span>`,
+          detailHtml: `<span class="text-yellow-300">初始停損(-${getExitStrategyConfig().initStopBufferPct}%)：${stock.candidateStopLossPrice.toFixed(2)}</span>`
         };
       }
 
       // 階段 B：關鍵K後，今日介於關鍵K高～低之間「等待確認中」
-      if (passAllStep1 &amp;&amp; stock.status === &quot;CONSOLIDATE&quot;) {
+      if (passAllStep1 && stock.status === "CONSOLIDATE") {
         return {
-          bannerClass: &quot;bg-amber-950/45 border border-amber-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-          titleHtml: `&lt;span class=&quot;text-amber-300 font-bold&quot;&gt;👀 目前階段：【關鍵K觀察階段(第${stock.keyKWaitDays || 1}天)】${keyDateTag} 符合突破20MA關鍵K，今日現價(${stock.todayPrice.toFixed(2)})介於高(${stock.yestHigh.toFixed(2)})～低(${stock.yestLow.toFixed(2)})之間&lt;/span&gt;`,
-          detailHtml: `&lt;span class=&quot;text-slate-300&quot;&gt;突破 ${stock.yestHigh.toFixed(2)} 轉確認買進 ｜ 跌破 ${stock.yestLow.toFixed(2)} 剔除&lt;/span&gt;`
+          bannerClass: "bg-amber-950/45 border border-amber-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-amber-300 font-bold">👀 目前階段：【關鍵K觀察階段(第${stock.keyKWaitDays || 1}天)】${keyDateTag} 符合突破20MA關鍵K，今日現價(${stock.todayPrice.toFixed(2)})介於高(${stock.yestHigh.toFixed(2)})～低(${stock.yestLow.toFixed(2)})之間</span>`,
+          detailHtml: `<span class="text-slate-300">突破 ${stock.yestHigh.toFixed(2)} 轉確認買進 ｜ 跌破 ${stock.yestLow.toFixed(2)} 剔除</span>`
         };
       }
 
       // 階段 C：關鍵K後，今日跌破關鍵K低點「破底剔除」
-      if (passAllStep1 &amp;&amp; stock.status === &quot;BREAKDOWN&quot;) {
+      if (passAllStep1 && stock.status === "BREAKDOWN") {
         return {
-          bannerClass: &quot;bg-emerald-950/45 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-          titleHtml: `&lt;span class=&quot;text-emerald-300 font-bold&quot;&gt;❄️ 目前階段：【破底K剔除階段】${keyDateTag} 雖為突破20MA關鍵K，但今日收盤(${stock.todayPrice.toFixed(2)})已跌破關鍵K低點(${stock.yestLow.toFixed(2)})，不考慮買進&lt;/span&gt;`,
-          detailHtml: `&lt;span class=&quot;text-emerald-400&quot;&gt;已跌破關鍵K低點&lt;/span&gt;`
+          bannerClass: "bg-emerald-950/45 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-emerald-300 font-bold">❄️ 目前階段：【破底K剔除階段】${keyDateTag} 雖為突破20MA關鍵K，但今日收盤(${stock.todayPrice.toFixed(2)})已跌破關鍵K低點(${stock.yestLow.toFixed(2)})，不考慮買進</span>`,
+          detailHtml: `<span class="text-emerald-400">已跌破關鍵K低點</span>`
         };
       }
 
@@ -3227,8 +3227,8 @@
         const bDate = formatShortDateSlash(t.buyDate);
         if (!t.isClosed) {
           const curCfg = getExitStrategyConfig();
-          let ctrlStr = &quot;&quot;;
-          if (curCfg.strategy === &#39;RR_LADDER&#39;) {
+          let ctrlStr = "";
+          if (curCfg.strategy === 'RR_LADDER') {
             if (t.rrStage === 2) {
               const maP = curCfg.rrTrailMa === 5 ? (t.currentMa5 || t.currentMa20) : (curCfg.rrTrailMa === 10 ? (t.currentMa10 || t.currentMa20) : t.currentMa20);
               ctrlStr = `🚀 鎖利${curCfg.rrLockRatio}R(${(t.dynamicStopPrice || t.buyPrice).toFixed(2)}) ＋ ${curCfg.rrTrailMa}MA控盤中(${maP.toFixed(2)})`;
@@ -3245,70 +3245,70 @@
           } else {
             ctrlStr = t.breakdownIdx !== -1 ? `⚠️破20MA守關鍵K低點(${t.breakdownLow.toFixed(2)})` : `🛡️20MA控盤中(${t.currentMa20.toFixed(2)})`;
           }
-          const pSign = t.profitPoints &gt; 0 ? &quot;+&quot; : &quot;&quot;;
+          const pSign = t.profitPoints > 0 ? "+" : "";
           return {
-            bannerClass: &quot;bg-cyan-950/50 border border-cyan-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-            titleHtml: `${simPrefix}&lt;span class=&quot;text-cyan-300 font-bold&quot;&gt;📈 目前階段：【確認K波段續抱第 ${t.holdingDays} 天】${kDate}關鍵K → ${bDate}確認K收盤(${t.buyPrice.toFixed(2)})買入&lt;/span&gt;`,
-            detailHtml: `&lt;span class=&quot;text-amber-300&quot;&gt;${ctrlStr} ｜ 目前損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})&lt;/span&gt;`
+            bannerClass: "bg-cyan-950/50 border border-cyan-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `${simPrefix}<span class="text-cyan-300 font-bold">📈 目前階段：【確認K波段續抱第 ${t.holdingDays} 天】${kDate}關鍵K → ${bDate}確認K收盤(${t.buyPrice.toFixed(2)})買入</span>`,
+            detailHtml: `<span class="text-amber-300">${ctrlStr} ｜ 目前損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
           };
         } else {
           const sDate = formatShortDateSlash(t.sellDate);
-          const pSign = t.profitPoints &gt; 0 ? &quot;+&quot; : &quot;&quot;;
+          const pSign = t.profitPoints > 0 ? "+" : "";
           return {
-            bannerClass: &quot;bg-purple-950/50 border border-purple-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-            titleHtml: `${simPrefix}&lt;span class=&quot;text-purple-300 font-bold&quot;&gt;🏁 目前階段：【今日確認K波段平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}&lt;/span&gt;`,
-            detailHtml: `&lt;span class=&quot;text-purple-200&quot;&gt;結算損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})&lt;/span&gt;`
+            bannerClass: "bg-purple-950/50 border border-purple-500/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `${simPrefix}<span class="text-purple-300 font-bold">🏁 目前階段：【今日確認K波段平倉】持倉 ${t.holdingDays} 天 (${bDate}～${sDate})・${t.exitReason}</span>`,
+            detailHtml: `<span class="text-purple-200">結算損益：${pSign}${t.profitPoints.toFixed(2)}點 (${formatMoneyDisplay(Math.round(t.profitPoints * 1000))})</span>`
           };
         }
       }
 
       // 階段 E：檢查「今日最後一根K棒」是否剛形成「首日突破20MA關鍵K」（明日準備觀察確認K）
-      if (lastBar &amp;&amp; prevBar &amp;&amp; prevBar.ma20 &gt; 0 &amp;&amp; lastBar.ma20 &gt; 0) {
-        const isTodayFirstBreak = prevBar.close &lt;= prevBar.ma20 &amp;&amp; lastBar.close &gt; lastBar.ma20 &amp;&amp; lastBar.close &gt; prevBar.close;
+      if (lastBar && prevBar && prevBar.ma20 > 0 && lastBar.ma20 > 0) {
+        const isTodayFirstBreak = prevBar.close <= prevBar.ma20 && lastBar.close > lastBar.ma20 && lastBar.close > prevBar.close;
         if (isTodayFirstBreak) {
           return {
-            bannerClass: &quot;bg-indigo-950/55 border border-indigo-400/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-            titleHtml: `&lt;span class=&quot;text-indigo-300 font-bold&quot;&gt;⚡ 目前階段：【今日剛形成「首日突破20MA關鍵K」】今日收盤(${lastBar.close.toFixed(2)})正式站上20MA(${lastBar.ma20.toFixed(2)})！&lt;/span&gt;`,
-            detailHtml: `&lt;span class=&quot;text-amber-300&quot;&gt;明日若收盤突破今日高點(${lastBar.high.toFixed(2)})即觸發確認K買進！&lt;/span&gt;`
+            bannerClass: "bg-indigo-950/55 border border-indigo-400/60 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+            titleHtml: `<span class="text-indigo-300 font-bold">⚡ 目前階段：【今日剛形成「首日突破20MA關鍵K」】今日收盤(${lastBar.close.toFixed(2)})正式站上20MA(${lastBar.ma20.toFixed(2)})！</span>`,
+            detailHtml: `<span class="text-amber-300">明日若收盤突破今日高點(${lastBar.high.toFixed(2)})即觸發確認K買進！</span>`
           };
         }
       }
 
       // 階段 F：雖有首日突破 20MA，但未通過使用者勾選的 STEP 1 附加篩選條件
-      if (stock.isFirstDayBreak20Ma &amp;&amp; failedReasons.length &gt; 0) {
+      if (stock.isFirstDayBreak20Ma && failedReasons.length > 0) {
         return {
-          bannerClass: &quot;bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2&quot;,
-          titleHtml: `&lt;span class=&quot;text-amber-300 font-bold&quot;&gt;⚠️ 目前階段：【${keyDateTag} 突破20MA，但未通過你設定的附加篩選條件】&lt;/span&gt;`,
-          detailHtml: `&lt;span class=&quot;text-rose-300&quot;&gt;未達標原因：${failedReasons.join(&quot;、&quot;)}&lt;/span&gt;`
+          bannerClass: "bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2",
+          titleHtml: `<span class="text-amber-300 font-bold">⚠️ 目前階段：【${keyDateTag} 突破20MA，但未通過你設定的附加篩選條件】</span>`,
+          detailHtml: `<span class="text-rose-300">未達標原因：${failedReasons.join("、")}</span>`
         };
       }
 
       // 階段 G：詳細診斷「為何未符合進場條件」（找出最近一次首日突破20MA的K棒並逐項比對 STEP 1 與確認K條件）
-      const inspectKeyKFailures = (barIdx) =&gt; {
+      const inspectKeyKFailures = (barIdx) => {
         const kb = bars[barIdx], pb = bars[barIdx - 1];
         if (!kb || !pb) return [];
         const reasons = [];
-        if (kb.close &lt;= pb.close) reasons.push(`非上漲紅K(收${kb.close.toFixed(2)} ≤ 昨${pb.close.toFixed(2)})`);
-        if (opts.requireMa20Up &amp;&amp; kb.ma20 &lt;= pb.ma20) reasons.push(`20MA未向上(${pb.ma20.toFixed(2)}→${kb.ma20.toFixed(2)})`);
-        if (opts.requireSolidRedK &amp;&amp; kb.close &lt;= kb.open) reasons.push(`非實體紅K(開${kb.open.toFixed(2)}/收${kb.close.toFixed(2)})`);
-        const gainPct = pb.close &gt; 0 ? ((kb.close - pb.close) / pb.close) * 100 : 0;
-        if (opts.useGainRange &amp;&amp; (gainPct &lt; opts.minGain || gainPct &gt; opts.maxGain)) {
+        if (kb.close <= pb.close) reasons.push(`非上漲紅K(收${kb.close.toFixed(2)} ≤ 昨${pb.close.toFixed(2)})`);
+        if (opts.requireMa20Up && kb.ma20 <= pb.ma20) reasons.push(`20MA未向上(${pb.ma20.toFixed(2)}→${kb.ma20.toFixed(2)})`);
+        if (opts.requireSolidRedK && kb.close <= kb.open) reasons.push(`非實體紅K(開${kb.open.toFixed(2)}/收${kb.close.toFixed(2)})`);
+        const gainPct = pb.close > 0 ? ((kb.close - pb.close) / pb.close) * 100 : 0;
+        if (opts.useGainRange && (gainPct < opts.minGain || gainPct > opts.maxGain)) {
           reasons.push(`漲幅(${gainPct.toFixed(2)}%)未在設定區間(${opts.minGain}%~${opts.maxGain}%)`);
         }
-        const avg5Vol = kb.ma5Vol &gt; 0 ? kb.ma5Vol : 0;
-        const vRatio = avg5Vol &gt; 0 ? Math.round((kb.vol / avg5Vol) * 100) : 100;
-        if (opts.volOp === &quot;GTE&quot; &amp;&amp; vRatio &lt; opts.validVolThreshold) {
+        const avg5Vol = kb.ma5Vol > 0 ? kb.ma5Vol : 0;
+        const vRatio = avg5Vol > 0 ? Math.round((kb.vol / avg5Vol) * 100) : 100;
+        if (opts.volOp === "GTE" && vRatio < opts.validVolThreshold) {
           reasons.push(`關鍵K量比(${vRatio}%)低於設定門檻(${opts.validVolThreshold}%)`);
-        } else if (opts.volOp === &quot;LTE&quot; &amp;&amp; vRatio &gt; opts.validVolThreshold) {
+        } else if (opts.volOp === "LTE" && vRatio > opts.validVolThreshold) {
           reasons.push(`關鍵K量比(${vRatio}%)高於設定門檻(${opts.validVolThreshold}%)`);
         }
         // 若關鍵K本身條件都過了，檢查確認K後續是否破低或逾期未過高
         if (reasons.length === 0) {
           let brokeLow = false, passedHigh = false;
           const endW = Math.min(bars.length - 1, barIdx + 10);
-          for (let j = barIdx + 1; j &lt;= endW; j++) {
-            if (bars[j].close &gt; kb.high) { passedHigh = true; break; }
-            if (bars[j].close &lt; kb.low) { brokeLow = true; break; }
+          for (let j = barIdx + 1; j <= endW; j++) {
+            if (bars[j].close > kb.high) { passedHigh = true; break; }
+            if (bars[j].close < kb.low) { brokeLow = true; break; }
           }
           if (brokeLow) reasons.push(`後續收盤曾跌破該關鍵K低點(${kb.low.toFixed(2)})已淘汰`);
           else if (!passedHigh) reasons.push(`1~10日內尚未出現收盤突破關鍵K高點(${kb.high.toFixed(2)})之確認K`);
@@ -9926,29 +9926,29 @@
       link.download = `首日突破20MA關鍵K清單_${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
     }
-  &lt;/script&gt;
-  &lt;!-- 手動平倉彈窗 (取代瀏覽器原生 prompt，支援手機與 Canvas 預覽) --&gt;
-  &lt;div id=&quot;manualCloseModal&quot; class=&quot;hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4&quot;&gt;
-    &lt;div class=&quot;bg-[#111827] border border-amber-500/50 rounded-xl p-4 w-full max-w-xs space-y-3 shadow-2xl&quot;&gt;
-      &lt;div class=&quot;flex items-center justify-between&quot;&gt;
-        &lt;h3 id=&quot;mcModalTitle&quot; class=&quot;text-sm font-bold text-amber-300&quot;&gt;🔒 手動平倉&lt;/h3&gt;
-        &lt;button type=&quot;button&quot; onclick=&quot;closeManualCloseModal()&quot; class=&quot;text-slate-400 hover:text-white text-sm&quot;&gt;✕&lt;/button&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;space-y-2 text-xs&quot;&gt;
-        &lt;label class=&quot;flex flex-col gap-1&quot;&gt;
-          &lt;span class=&quot;text-[11px] text-slate-400&quot;&gt;平倉賣出價格&lt;/span&gt;
-          &lt;input type=&quot;number&quot; id=&quot;mcSellPriceInput&quot; step=&quot;0.05&quot; class=&quot;bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono font-bold focus:outline-none focus:border-amber-500&quot; /&gt;
-        &lt;/label&gt;
-        &lt;label class=&quot;flex flex-col gap-1&quot;&gt;
-          &lt;span class=&quot;text-[11px] text-slate-400&quot;&gt;平倉日期&lt;/span&gt;
-          &lt;input type=&quot;date&quot; id=&quot;mcSellDateInput&quot; class=&quot;bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-sky-300 font-mono focus:outline-none focus:border-sky-500&quot; /&gt;
-        &lt;/label&gt;
-      &lt;/div&gt;
-      &lt;div class=&quot;flex justify-end gap-2 pt-1&quot;&gt;
-        &lt;button type=&quot;button&quot; onclick=&quot;closeManualCloseModal()&quot; class=&quot;px-3 py-1 rounded bg-slate-800 text-slate-300 text-xs hover:bg-slate-700&quot;&gt;取消&lt;/button&gt;
-        &lt;button type=&quot;button&quot; onclick=&quot;confirmManualCloseModal()&quot; class=&quot;px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold&quot;&gt;確認平倉並計入損益&lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/body&gt;
-&lt;/html&gt;
+  </script>
+  <!-- 手動平倉彈窗 (取代瀏覽器原生 prompt，支援手機與 Canvas 預覽) -->
+  <div id="manualCloseModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+    <div class="bg-[#111827] border border-amber-500/50 rounded-xl p-4 w-full max-w-xs space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="mcModalTitle" class="text-sm font-bold text-amber-300">🔒 手動平倉</h3>
+        <button type="button" onclick="closeManualCloseModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] text-slate-400">平倉賣出價格</span>
+          <input type="number" id="mcSellPriceInput" step="0.05" class="bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono font-bold focus:outline-none focus:border-amber-500" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-[11px] text-slate-400">平倉日期</span>
+          <input type="date" id="mcSellDateInput" class="bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-sky-300 font-mono focus:outline-none focus:border-sky-500" />
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeManualCloseModal()" class="px-3 py-1 rounded bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">取消</button>
+        <button type="button" onclick="confirmManualCloseModal()" class="px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold">確認平倉並計入損益</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
