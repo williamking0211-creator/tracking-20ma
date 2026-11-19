@@ -3784,6 +3784,14 @@
         if (fullAiBusy || capitalAiBusy) return;
         if (!Array.isArray(rows) || rows.length === 0) return;
 
+        applyQuoteRows162(rows);
+      } catch (e) {} finally {
+        isAllQuotesPolling = false;
+      }
+    }
+
+    let ws162=null, wsLast162=0, wsKey162='', wsPending162=new Map(), wsRender162=0;
+    function applyQuoteRows162(rows){
         const qMap = new Map();
         rows.forEach(r => { if (r && r.c && r.p > 0) qMap.set(r.c, r); });
 
@@ -3798,6 +3806,8 @@
               priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
               anyChanged = true;
             }
+            anyChanged = true;
+            if(q.d && q.d > s.latestTradeDate){s.todayHigh=q.h||q.p;s.todayLow=q.l||q.p;s.todayVol=0;}
             s.todayPrice = q.p;
             if (q.o > 0) s.todayOpen = q.o;
             if (q.h > 0) s.todayHigh = Math.max(s.todayHigh || q.h, q.h, q.p);
@@ -3825,11 +3835,18 @@
             tmEl.classList.remove("hidden");
           }
         }
-      } catch (e) {} finally {
-        isAllQuotesPolling = false;
-      }
     }
-
+    function wsTick162(){
+      const cb=document.getElementById('autoSyncCheckbox');
+      if((cb&&!cb.checked)||!(isTaipeiTradingHours()||isHolidayMarketOpen)){if(ws162){ws162.close();ws162=null;}return;}
+      const u=new URL(apiUrl,location.href);u.protocol=u.protocol==='https:'?'wss:':'ws:';u.pathname=u.pathname.replace(/\/stocks\/?$/,'/live-quotes');u.search='';
+      const codes=[...new Set([selectedStockCode,...(lastSimTradesSnapshot||[]).map(t=>t.code),...(filteredStocks||[]).map(t=>t.code)].filter(Boolean).map(String))].slice(0,200);const key=codes.join(',');
+      if(ws162&&ws162.url!==u.href){ws162.close();ws162=null;}
+      if(!ws162||ws162.readyState>=2){try{const w=new WebSocket(u.href);ws162=w;wsLast162=0;wsKey162='';w.onmessage=e=>{if(w!==ws162)return;try{const m=JSON.parse(e.data);wsLast162=Date.now();if(m.type==='quotes')for(const r of m.rows)wsPending162.set(r.c,r);}catch(e){}};w.onerror=()=>w.close();}catch(e){}}
+      if(ws162?.readyState===1&&wsKey162!==key){ws162.send(JSON.stringify({type:'subscribe',codes}));wsKey162=key;}
+      if(ws162?.readyState!==1||Date.now()-wsLast162>5000){if(ws162?.readyState===1&&wsLast162&&Date.now()-wsLast162>5000)ws162.close();pollAllLiveQuotes();}
+    }
+    setInterval(()=>{if(!wsPending162.size||fullAiBusy||capitalAiBusy||stockSync161)return;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);},250);
     async function pollFocusedStockLivePrice() {
       if (fullAiBusy || capitalAiBusy) return;
       if (!selectedStockCode || isFocusedPolling) return;
@@ -3893,8 +3910,8 @@
       if (true) {
         // 全體清單每 1.5 秒自動抓輕量 /quotes，不需點擊任何股票，有跳動就自動更新並閃底！
         focusedStockTimer = setInterval(() => {
-          pollAllLiveQuotes();
-        }, 1500);
+          wsTick162();
+        }, 1000);
       }
     }
 
