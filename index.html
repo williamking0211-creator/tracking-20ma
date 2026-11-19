@@ -222,6 +222,12 @@
         <span id="apiStatusText">連線初始化中...</span>
       </button>
 
+      <div id="perfToolbar163" role="group" aria-label="行情效能模式" class="inline-flex flex-wrap items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 p-1 text-xs">
+        <button type="button" data-perf163="fast" onclick="setPerf163('fast')" aria-pressed="false" class="rounded px-2 py-1">⚡ 極速</button>
+        <button type="button" data-perf163="balanced" onclick="setPerf163('balanced')" aria-pressed="false" class="rounded px-2 py-1">⚖️ 平衡</button>
+        <button type="button" data-perf163="eco" onclick="setPerf163('eco')" aria-pressed="false" class="rounded px-2 py-1">🔋 省電</button>
+        <span id="perfInterval163" aria-live="polite" class="px-1 text-cyan-300 whitespace-nowrap"></span>
+      </div>
       <button type="button" onclick="toggleHolidayMarketOpen()" id="btnHolidayMarketOpen"
               class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium hover:bg-slate-700 transition"
               title="若遇特殊假日開市，點擊此鈕強制改為每 5 秒同步一次報價">
@@ -3802,9 +3808,20 @@
     const perfModes163={fast:250,balanced:1000,eco:3000};
     let perf163='balanced', lastFlush163=0, lastStrategy163=0, dirty163=false;
     try { perf163=localStorage.getItem('w-perf163') || (matchMedia('(max-width:767px)').matches?'eco':'balanced'); } catch(e){}
-    if(!perfModes163[perf163])perf163='balanced';
-    function setPerf163(v){if(!perfModes163[v])return;perf163=v;try{localStorage.setItem('w-perf163',v)}catch(e){}}
-    window.addEventListener('DOMContentLoaded',()=>{const e=document.getElementById('perfMode163');if(e)e.value=perf163;});
+    if(!Object.prototype.hasOwnProperty.call(perfModes163,perf163))perf163='balanced';
+    function syncPerfUi163(){
+      const e=document.getElementById('perfMode163');if(e)e.value=perf163;
+      document.querySelectorAll('[data-perf163]').forEach(btn=>{
+        const active=btn.dataset.perf163===perf163;
+        btn.setAttribute('aria-pressed',String(active));
+        btn.style.background=active?'#0369a1':'transparent';
+        btn.style.color=active?'#ffffff':'#cbd5e1';
+        btn.style.fontWeight=active?'700':'400';
+      });
+      const label=document.getElementById('perfInterval163');if(label)label.textContent='每 '+(perfModes163[perf163]/1000)+' 秒';
+    }
+    function setPerf163(v){if(!Object.prototype.hasOwnProperty.call(perfModes163,v))return;perf163=v;try{localStorage.setItem('w-perf163',v)}catch(e){}syncPerfUi163();}
+    if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',syncPerfUi163);else syncPerfUi163();
     function applyQuoteRows162(rows){
         const qMap = new Map();
         rows.forEach(r => { if (r && r.c && r.p > 0) qMap.set(r.c, r); });
