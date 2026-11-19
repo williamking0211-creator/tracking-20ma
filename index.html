@@ -1425,6 +1425,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       </div>
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區（預設拉長至 540px，並支援上下拖拉分隔線與底框縮放） -->
+      <section id="tradeLedger164" aria-label="個股交易明細" class="bg-slate-950 border border-indigo-500/50 rounded-lg p-2 space-y-2"></section>
       <div id="chartContainer" style="height: 540px;" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex flex-col">
         <!-- 支援手機「長按」拖拉移動的懸浮圖例 -->
         <div id="floatingLegend" style="top: 8px; left: 10px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
@@ -2802,7 +2803,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     async function selectComparisonStrategyCard(strategyKey) {
       if (fullAiBusy || capitalAiBusy) return;
       if (strategyKey === 'AI_POWER_90D') { await setExitStrategy(strategyKey, true); return; }
-      if (_aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { selectAiOptimizedCapitalStrategy(strategyKey); return; }
+      if (_aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { await selectAiOptimizedCapitalStrategy(strategyKey); return; }
       await setExitStrategy(strategyKey);
     }
 
@@ -3088,7 +3089,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         const p5Color = r.pool5Net > 0 ? "text-rose-300" : (r.pool5Net < 0 ? "text-emerald-400" : "text-slate-300");
         const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
         return `
-          <div onclick="selectComparisonStrategyCard('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
+          <div onclick="jumpComparisonPool164('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
             <div class="flex items-center justify-between gap-1 text-[10px]">
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
@@ -10649,7 +10650,7 @@ window.addEventListener('load',()=>{
 <script>
 let poolFold162=false;
 function setPoolFold162(v){poolFold162=!!v;document.getElementById('stockPoolPanel')?.classList.toggle('poolFolded162',poolFold162);const b=document.getElementById('poolFoldBtn162');if(b){b.textContent=poolFold162?'+ 展開':'− 收合';b.setAttribute('aria-expanded',String(!poolFold162));}}
-function renderTodayClosed162(){const body=document.getElementById('todayClosedBody162'), summary=document.getElementById('todayClosedSummary162'), panel=document.getElementById('todayClosed162');if(!body||!summary||!panel)return;panel.classList.toggle('hidden',document.getElementById('simTradesTableWrap').classList.contains('hidden'));const day=lineV14Day(), rows=(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot).filter(t=>t.isClosed&&t.sellDate===day);const cash=n=>Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';summary.textContent=`｜${rows.length} 筆・${rows.reduce((n,t)=>n+(Number(t.lots)||0),0)} 張・淨損益 ${cash(rows.reduce((n,t)=>n+(Number(t.netProfit)||0),0))}`;body.replaceChildren();for(const t of rows){const tr=body.insertRow();const days=t.holdingDays??(t.buyDate?Math.max(1,Math.round((Date.parse(t.sellDate)-Date.parse(t.buyDate))/86400000)+1)+' 日曆日':'—');const values=[t.code+' '+t.name+'｜'+tradeOrdinal164(t),t.buyDate+' / '+t.buyPrice,t.sellDate+' / '+(t.curP??t.exitOrNowPrice),t.lots,t.totalCost==null?'—':cash(t.totalCost),typeof days==='number'?days+' 交易日':days,cash(t.netProfit),(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—')+' / '+(t.exitReason||t.customRuleText||'已平倉')];values.forEach((v,i)=>{const td=tr.insertCell();td.textContent=v??'—';if(i===6)td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[0].style.cursor='pointer';tr.cells[0].onclick=()=>openStockFromSimList(t.code,t.rowId||'');}if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent='今日尚無平倉交易';}}
+function renderTodayClosed162(){const body=document.getElementById('todayClosedBody162'), summary=document.getElementById('todayClosedSummary162'), panel=document.getElementById('todayClosed162');if(!body||!summary||!panel)return;panel.classList.toggle('hidden',document.getElementById('simTradesTableWrap').classList.contains('hidden'));const day=lineV14Day(), rows=(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot).filter(t=>t.isClosed&&t.sellDate===day);const cash=n=>Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';summary.textContent=`｜${rows.length} 筆・${rows.reduce((n,t)=>n+(Number(t.lots)||0),0)} 張・淨損益 ${cash(rows.reduce((n,t)=>n+(Number(t.netProfit)||0),0))}`;body.replaceChildren();for(const t of rows){const tr=body.insertRow();const days=t.holdingDays??(t.buyDate?Math.max(1,Math.round((Date.parse(t.sellDate)-Date.parse(t.buyDate))/86400000)+1)+' 日曆日':'—');const values=[t.code+' '+t.name+'｜'+tradeOrdinal164(t),t.buyDate+' / '+t.buyPrice,t.sellDate+' / '+(t.curP??t.exitOrNowPrice),t.lots,t.totalCost==null?'—':cash(t.totalCost),typeof days==='number'?days+' 交易日':days,cash(t.netProfit),(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—')+' / '+(t.exitReason||t.customRuleText||'已平倉')];values.forEach((v,i)=>{const td=tr.insertCell();td.textContent=v??'—';if(i===6)td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[0].style.cursor='pointer';tr.dataset.stockCode164=t.code;tr.id=`todayclosed164-${t.code}-${rows.indexOf(t)}`;tr.onclick=()=>openStockFromSimList(t.code,tr.id);}if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent='今日尚無平倉交易';}}
 
 function todayBuyRows163(rows,day){return (rows||[]).filter(t=>String(t.buyDate||'').slice(0,10)===day);}
 function renderTodayBuy163(){
@@ -10659,7 +10660,7 @@ function renderTodayBuy163(){
  const cash=n=>n!=null&&Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';
  const sum=k=>rows.reduce((a,t)=>a+(Number(t[k])||0),0);
  summary.textContent=`｜${rows.length} 筆・${sum('lots')} 張・投入 ${cash(sum('totalCost'))}・淨損益 ${cash(sum('netProfit'))}`;
- body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}｜${tradeOrdinal164(t)}`,`${t.buyDate} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,t.rowId||'');});
+ body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}｜${tradeOrdinal164(t)}`,`${t.buyDate} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.dataset.stockCode164=t.code;tr.id=`todaybuy164-${t.code}-${i}`;tr.onclick=()=>openStockFromSimList(t.code,tr.id);});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=9;td.textContent='今日尚無買進交易';}
 }
 window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');const update=()=>{renderTodayClosed162();renderTodayBuy163();renderHistoryClosed164();};if(b)new MutationObserver(update).observe(b,{childList:true});update();});
@@ -10720,7 +10721,7 @@ function renderHistoryClosed164(){
  document.getElementById('historyStats164').textContent=`符合 ${rows.length} 筆｜獲利 ${wins} 筆｜虧損 ${losses} 筆｜持平 ${rows.length-wins-losses} 筆｜勝率 ${rows.length?(wins/rows.length*100).toFixed(1):'0.0'}%｜交易本金合計 ${money(cost)}｜本金加權報酬率 ${cost>0?(net/cost*100).toFixed(2)+'%':'—'}`;
  body.replaceChildren();
  const num=v=>v!=null&&Number.isFinite(Number(v))?Number(v).toFixed(2):'—';
- rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;const vals=[rows.indexOf(t)+1,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.stock,t.realTradeNo164,t.buyDate,num(t.buyPrice),t.sellDate,num(t.sellPrice),t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[3].style.cursor='pointer';tr.cells[3].onclick=()=>openStockFromSimList(t.code,tr.id);});
+ rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;tr.dataset.stockCode164=t.code;const vals=[rows.indexOf(t)+1,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.stock,t.realTradeNo164,t.buyDate,num(t.buyPrice),t.sellDate,num(t.sellPrice),t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[3].style.cursor='pointer';tr.cells[3].onclick=()=>openStockFromSimList(t.code,tr.id);});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=13;td.textContent='沒有符合條件的歷史平倉交易';}
  document.getElementById('historyMore164').classList.toggle('hidden',rows.length<=historyLimit164);
 }
@@ -10739,6 +10740,25 @@ const visibility=()=>tools.classList.toggle('hidden',wrap.classList.contains('hi
 new MutationObserver(visibility).observe(wrap,{attributes:true,attributeFilter:['class']});visibility();
 const empty=()=>{if(!body.rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent=input.value.trim()?'沒有符合搜尋條件的股票':'目前沒有符合條件的交易';td.className='p-3 text-center text-slate-400';}if(!body.querySelector('tr[id]')&&!body.querySelector('tr[id^="sim-row"]')&&(!body.rows.length||body.rows[0].cells.length===1)){const source=simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot;const visible=source.filter(t=>!t.isClosed||document.getElementById('v161History')?.checked);count.textContent=`符合 ${visible.filter(t=>matchSimStock164(t,input.value)).length} / ${visible.length} 筆`;}};
 new MutationObserver(empty).observe(body,{childList:true});
+})();
+</script>
+
+<style>
+#tradeLedger164{font-size:13px;color:#e2e8f0}#tradeLedger164 article{border:1px solid #475569;border-radius:7px;padding:8px;background:#111827}#tradeLedger164 h3{font-weight:800;color:#c4b5fd;margin-bottom:5px}#tradeLedger164 .ledgerRows164{max-height:240px;overflow:auto}#tradeLedger164 .ledgerTrade164{display:flex;flex-wrap:wrap;gap:4px 12px;padding:6px 0;border-top:1px solid #334155}html.mobile164 #tradeLedger164{font-size:clamp(15px,4vw,20px)}#stockTableBody tr,#simTradesTableBody tr,#todayBuyBody163 tr,#todayClosedBody162 tr,#historyClosedBody164 tr,#simSkippedTableBody tr{cursor:pointer}
+</style><script>
+function renderTradeLedger164(){
+ const panel=document.getElementById('tradeLedger164');if(!panel)return;
+ const code=selectedStockCode, ready=chartSim164.strategy===currentExitStrategy;
+ const real=ready?capitalChartRows164(code):[];
+ const skipped=ready?chartSim164.skipped.filter(t=>String(t.code)===String(code)).slice().sort((a,b)=>String(a.buyDate).localeCompare(String(b.buyDate))):[];
+ const money=capitalChartMoney164, fmt=n=>n!=null&&Number.isFinite(Number(n))?Number(n).toFixed(2):'—';
+ const make=(title,rows,hypo)=>{const article=document.createElement('article'),h=document.createElement('h3');h.textContent=title;article.append(h);const a=capitalChartStats164(rows.map(t=>({...t,netProfit:hypo?t.hypoProfit:t.netProfit,totalCost:hypo?t.reqCost:t.totalCost})));const stat=document.createElement('div');stat.textContent=ready?`已平倉 ${a.closed} 筆｜${hypo?'假設':'實戰'}損益 ${money(a.net)}｜勝率 ${a.win.toFixed(1)}%｜未平倉 ${a.open} 筆 ${money(a.unreal)}`:'尚未完成目前策略試算';article.append(stat);const list=document.createElement('div');list.className='ledgerRows164';rows.forEach((t,i)=>{const row=document.createElement('div');row.className='ledgerTrade164';let profit=Number(hypo?t.hypoProfit:t.netProfit),pct=hypo?t.hypoPct:t.netPct;const fields=[`第${hypo?i+1:(t.realTradeNo164||i+1)}筆 ${t.lots||0}張`,`買 ${t.buyDate||'—'} @ ${fmt(t.buyPrice)}`,`${t.isClosed?'賣 '+(t.sellDate||'—'):'續抱／現價'} @ ${fmt(t.exitOrNowPrice??t.curP??t.sellPrice)}`,`${hypo?'假設':t.isClosed?'淨':'未實現'}損益 ${money(profit||0)} (${fmt(pct)}%)`];fields.forEach((v,j)=>{const span=document.createElement('span');span.textContent=v;if(j===3)span.style.color=profit<0?'#34d399':profit>0?'#fb7185':'#94a3b8';row.append(span);});list.append(row);});if(!rows.length&&ready)list.textContent='無符合條件交易';article.append(list);return article;};
+ panel.replaceChildren(make('實戰進出場交易記錄',real,false),make(currentExitStrategy==='AI_POWER_90D'?'AI買賣（錢不夠）｜獨立統計':'資金不足未買進｜獨立統計',skipped,true));
+}
+async function jumpComparisonPool164(key){if(fullAiBusy||capitalAiBusy)return;await selectComparisonStrategyCard(key);if(currentExitStrategy!==key)return;const p=document.getElementById('stockPoolPanel');p?.classList.remove('v161-fold');setPoolFold162(false);document.getElementById('stockTableContainer')?.classList.remove('hidden','v161-fold');requestAnimationFrame(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}));}
+(()=>{const baseUpdate=updateDetailPanel;updateDetailPanel=function(...a){const out=baseUpdate.apply(this,a);renderTradeLedger164();return out;};const baseRefresh=refreshCapitalChart164;refreshCapitalChart164=function(...a){const out=baseRefresh.apply(this,a);renderTradeLedger164();return out;};
+ const ids=new Set(['stockTableBody','simTradesTableBody','todayBuyBody163','todayClosedBody162','historyClosedBody164','simSkippedTableBody']);
+ document.addEventListener('click',e=>{const row=e.target.closest?.('tr'),body=row?.parentElement;if(!row||!ids.has(body?.id)||e.target.closest('button,input,select,textarea,label,a,[role="button"]')||row.querySelector('td[colspan]'))return;let code=row.dataset.stockCode164||row.getAttribute('onclick')?.match(/(?:selectStock|openStockFromSimList)\('([^']+)'/)?.[1];if(!code){const cell=[...row.cells].find(c=>/^\s*[0-9]{4,6}[A-Z]?\s+/.test(c.textContent));code=cell?.textContent.trim().match(/^[0-9]{4,6}[A-Z]?/)?.[0];}if(!code)return;e.stopPropagation();e.preventDefault();const panel=document.getElementById('detailPanelSection');panel?.classList.remove('hidden','v161-fold');if(body.id==='stockTableBody')selectStock(code,true);else openStockFromSimList(code,row.id||'');requestAnimationFrame(()=>panel?.scrollIntoView({behavior:'smooth',block:'start'}));},true);
 })();
 </script>
 </body>
