@@ -810,6 +810,11 @@
                        class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sky-300 font-mono font-bold focus:outline-none focus:border-sky-500" />
               </label>
 
+              <label class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5">
+                <span class="text-[10px] text-slate-400">期末投資日期（空白＝最新行情）</span>
+                <input type="date" id="simEndDateInput" onchange="onCapitalStartDateChanged()" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sky-300 font-mono font-bold" />
+              </label>
+
               <div class="flex flex-col gap-1 bg-slate-900/90 border border-slate-800 rounded p-1.5 min-w-0">
                 <span class="text-[10px] text-slate-400">單檔買進方式</span>
                 <select id="simLotModeSelect" onchange="runPortfolioCapitalSimulation()"
@@ -1449,9 +1454,12 @@
       
       <label class="flex items-center gap-2 text-xs text-slate-300 mb-4 cursor-pointer">
         <input type="checkbox" id="autoSyncCheckbox" checked onchange="saveUserSettingsToStorage(false)" class="rounded bg-slate-800 border-slate-600 text-blue-500" />
-        啟用盤中即時自動同步 (每 30 秒背景更新報價)
+        啟用盤中即時串流與自動同步
       </label>
 
+      <label class="block text-xs text-slate-300 mb-3">行情效能模式
+        <select id="perfMode163" onchange="setPerf163(this.value)" class="w-full mt-1 bg-slate-800 text-white rounded p-2"><option value="fast">極速 0.25秒</option><option value="balanced">平衡 1秒</option><option value="eco">省電 3秒</option></select>
+      </label>
       <div class="flex justify-end gap-2">
         <button onclick="closeApiModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700">
           取消
@@ -2366,7 +2374,7 @@
       let h=2166136261, h2=5381;
       const add=v=>{const t=JSON.stringify(v) || ''; for(let i=0;i<t.length;i++){h=Math.imul(h^t.charCodeAt(i),16777619);h2=Math.imul(h2,33)^t.charCodeAt(i);}};
       const ids=['pnlStartDateInput','pnlEndDateInput','pnlDateBasisSelect','searchInput'];
-      if(capital) ids.push('simInitCapitalInput','simStartDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
+      if(capital) ids.push('simInitCapitalInput','simStartDateInput','simEndDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
       add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
       add(getSelectedSimSectors());
       if(capital){add(simManualCloseMap);}
@@ -3791,16 +3799,25 @@
     }
 
     let ws162=null, wsLast162=0, wsKey162='', wsPending162=new Map(), wsRender162=0;
+    const perfModes163={fast:250,balanced:1000,eco:3000};
+    let perf163='balanced', lastFlush163=0, lastStrategy163=0, dirty163=false;
+    try { perf163=localStorage.getItem('w-perf163') || (matchMedia('(max-width:767px)').matches?'eco':'balanced'); } catch(e){}
+    if(!perfModes163[perf163])perf163='balanced';
+    function setPerf163(v){if(!perfModes163[v])return;perf163=v;try{localStorage.setItem('w-perf163',v)}catch(e){}}
+    window.addEventListener('DOMContentLoaded',()=>{const e=document.getElementById('perfMode163');if(e)e.value=perf163;});
     function applyQuoteRows162(rows){
         const qMap = new Map();
         rows.forEach(r => { if (r && r.c && r.p > 0) qMap.set(r.c, r); });
 
         let anyChanged = false;
+        const changed163=[];
         const nowTs = Date.now();
         rawAllLoadedStocks.forEach(s => {
           const q = qMap.get(s.code);
           if (!q) return;
-          if (q.p !== s.todayPrice || q.v !== s.todayVol || (q.d && q.d > s.latestTradeDate)) {
+          if(q.d && s.latestTradeDate && q.d < s.latestTradeDate)return;
+          if (q.p !== s.todayPrice || q.v !== s.todayVol || (q.h>0 && q.h>s.todayHigh) || (q.l>0 && q.l<s.todayLow) || (q.d && q.d > s.latestTradeDate)) {
+            changed163.push(s);
             if (s.todayPrice > 0 && q.p !== s.todayPrice) {
               globalTickSeq++;
               priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
@@ -3827,7 +3844,20 @@
         });
 
         if (anyChanged) {
-          applyFiltersAndRender();
+          dirty163=true;
+          // Fast path: patch existing quote cells only; full strategy pass is independent.
+          for(const s of changed163){
+            const row=document.getElementById('stock-row-'+s.code);
+            if(!row || !row.getClientRects().length)continue;
+            const t=getPoolTrackInfo(s), pnl=isPnlPoolActive();
+            if(pnl && (!t || t.isClosed || currentExitStrategy==='AI_POWER_90D'))continue;
+            const cell=row.cells[pnl?2:4];
+            const value=cell?.firstElementChild;
+            if(value && !value.textContent.includes('漲停') && !value.textContent.includes('跌停')){value.textContent=s.todayPrice.toFixed(2);const tick=priceTickState.get(s.code);if(tick && nowTs-tick.ts<2000 && flashedSeqTracker.get('fast163_'+s.code)!==tick.seq){flashedSeqTracker.set('fast163_'+s.code,tick.seq);triggerElementFlash(cell,tick.dir);}}
+          }
+          const focus=changed163.find(s=>s.code===selectedStockCode);
+          if(focus&&!document.hidden){const badge=document.getElementById('detailLivePriceBadge');if(badge)badge.textContent=focus.todayPrice.toFixed(2);const last=chartState.bars[chartState.bars.length-1];if(last && last.date===focus.latestTradeDate){last.close=focus.todayPrice;last.high=Math.max(last.high,focus.todayHigh);last.low=Math.min(last.low,focus.todayLow);last.vol=focus.todayVol;renderCanvasChart();}}
+
           const tmEl = document.getElementById("detailLiveTimeTag");
           if (tmEl) {
             const nowStr = new Date().toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
@@ -3846,7 +3876,8 @@
       if(ws162?.readyState===1&&wsKey162!==key){ws162.send(JSON.stringify({type:'subscribe',codes}));wsKey162=key;}
       if(ws162?.readyState!==1||Date.now()-wsLast162>5000){if(ws162?.readyState===1&&wsLast162&&Date.now()-wsLast162>5000)ws162.close();pollAllLiveQuotes();}
     }
-    setInterval(()=>{if(!wsPending162.size||fullAiBusy||capitalAiBusy||stockSync161)return;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);},250);
+    setInterval(()=>{if(fullAiBusy||capitalAiBusy||stockSync161)return;const now=Date.now();if(wsPending162.size && now-lastFlush163 >= (document.hidden?5000:perfModes163[perf163])){lastFlush163=now;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);}if(dirty163&&now-lastStrategy163>=5000&&!document.hidden){dirty163=false;lastStrategy163=now;applyFiltersAndRender();}},250);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)lastStrategy163=0;});
     async function pollFocusedStockLivePrice() {
       if (fullAiBusy || capitalAiBusy) return;
       if (!selectedStockCode || isFocusedPolling) return;
@@ -4908,6 +4939,17 @@
       };
     }
 
+    function capitalEndDate() { return document.getElementById('simEndDateInput')?.value || lineV14Day(); }
+    function capitalWindowEvents(events, start, end) {
+      const stocks = new Map(rawAllLoadedStocks.map(s=>[String(s.code),s]));
+      return events.filter(t=>t.buyDate>=start && t.buyDate<=end).map(t=>{
+        if(t.isClosed && t.sellDate && t.sellDate<=end) return t;
+        const stock=stocks.get(String(t.code));
+        const bars=stock?buildStockDailyBarsWithToday(stock):[];
+        const bar=bars.filter(b=>(b.date==='今日'?(stock.latestTradeDate||lineV14Day()):b.date)<=end).at(-1);
+        return {...t,isClosed:false,isManualClosed:false,sellDate:null,exitOrNowPrice:Number(bar?.close||t.buyPrice),exitReason:'期末續抱',holdingDays:Math.max(1,Math.round((Date.parse(end)-Date.parse(t.buyDate))/86400000)+1)};
+      });
+    }
     async function simulateCapitalForStrategy(strategyKey, overrideCfg = null, overrideFilterOpts = null, overridePriorityMode = null, cachedEvents = null) {
       const capInput = document.getElementById("simInitCapitalInput");
       const startInput = document.getElementById("simStartDateInput");
@@ -4922,6 +4964,7 @@
       const perStockBudget = Math.max(10000, parseFloat(budgetInput?.value || "250000") || 250000);
       const withdrawParam = Math.max(0, parseFloat(withdrawInput?.value || "0") || 0);
       const startDate = startInput?.value || "2000-01-01";
+      const endDate = capitalEndDate();
       const sectorMode = getSelectedSimSectors();
       const filterOpts = overrideFilterOpts || getCurrentFilterOptions();
       const cfg = overrideCfg || getExitStrategyConfig(strategyKey);
@@ -4961,7 +5004,7 @@
         }
         list.forEach(tr => {
           if (!tr || !tr.buyDate || tr.buyPrice <= 0 || tr.isDirectKeyBreakdown) return;
-          if (tr.buyDate < startDate) return;
+          if (tr.buyDate < startDate || tr.buyDate > endDate) return;
           const uid = `${s.code}_${tr.buyDate}_${tr.buyPrice}`;
           if (seenKey.has(uid)) return;
           seenKey.add(uid);
@@ -4984,7 +5027,7 @@
       }
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = applyOutlierTrimToEvents(events, trimN, includeFees);
+      const trimRes = applyOutlierTrimToEvents(capitalWindowEvents(events,startDate,endDate), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
       const taxRate = includeFees ? 0.003 : 0;
@@ -5082,6 +5125,8 @@
     let capitalDateRefreshTimer = null;
     function requestCapitalDateRefresh() { clearTimeout(capitalDateRefreshTimer); pendingCapitalDateRefresh=false; }
     function onCapitalStartDateChanged() {
+      const a=document.getElementById('simStartDateInput'), b=document.getElementById('simEndDateInput');
+      if(b){b.min=a?.value||'';b.max=lineV14Day();if(b.value && b.value<a.value)b.value=a.value;if(b.value>b.max)b.value=b.max;}
       runPortfolioCapitalSimulation();
       saveUserSettingsToStorage(false);
       if (document.getElementById("chkAiCapitalOpt")?.checked) {
@@ -5496,7 +5541,7 @@
     }
 
 
-const dev15Ids=["chkMa20Up", "chkSolidRedK", "chkGainRange", "minGainInput", "maxGainInput", "volOperatorSelect", "volThresholdInput", "chkTimeStop", "timeStopDaysInput", "globalExitConfirmMode", "initStopBufferPctInput", "chkEntryLimitUpStopAtLow", "shortMaTriggerPctInput", "shortMaPeriodSelect", "shortMaModeSelect", "breakevenTriggerPctInput", "peakTrailTriggerPctInput", "peakDrawdownPctInput", "whaleTriggerPctInput", "whaleSellMultInput", "rrBreakevenRatioInput", "rrBreakevenBufferPctInput", "rrTier2RatioInput", "rrTier2ActionSelect", "rrLockRatioInput", "rrTrailMaSelect", "rrMaConfirmModeSelect", "aiPowerReevalDaysInput", "simInitCapitalInput", "simStartDateInput", "simLotModeSelect", "simPerStockBudgetInput", "simProfitRuleSelect", "simWithdrawValInput", "simIncludeFeesChk", "simPrioritySelect", "simTrimTopWinnersSelect", "lineEnabled", "lineBUY", "linePROFIT", "lineLOSS", "lineKEY", "lineREPORT"]; const dev15Keys=["DEFAULT_20MA", "SHORT_MA_TRAIL", "PEAK_TRAILING", "WHALE_SELL_EXIT", "RR_LADDER", "AI_ADAPTIVE", "AI_POWER_90D"];
+const dev15Ids=["chkMa20Up", "chkSolidRedK", "chkGainRange", "minGainInput", "maxGainInput", "volOperatorSelect", "volThresholdInput", "chkTimeStop", "timeStopDaysInput", "globalExitConfirmMode", "initStopBufferPctInput", "chkEntryLimitUpStopAtLow", "shortMaTriggerPctInput", "shortMaPeriodSelect", "shortMaModeSelect", "breakevenTriggerPctInput", "peakTrailTriggerPctInput", "peakDrawdownPctInput", "whaleTriggerPctInput", "whaleSellMultInput", "rrBreakevenRatioInput", "rrBreakevenBufferPctInput", "rrTier2RatioInput", "rrTier2ActionSelect", "rrLockRatioInput", "rrTrailMaSelect", "rrMaConfirmModeSelect", "aiPowerReevalDaysInput", "simInitCapitalInput", "simStartDateInput", "simEndDateInput", "simLotModeSelect", "simPerStockBudgetInput", "simProfitRuleSelect", "simWithdrawValInput", "simIncludeFeesChk", "simPrioritySelect", "simTrimTopWinnersSelect", "lineEnabled", "lineBUY", "linePROFIT", "lineLOSS", "lineKEY", "lineREPORT"]; const dev15Keys=["DEFAULT_20MA", "SHORT_MA_TRAIL", "PEAK_TRAILING", "WHALE_SELL_EXIT", "RR_LADDER", "AI_ADAPTIVE", "AI_POWER_90D"];
 let dev15Token='',dev15Base='',dev15Monitor=false,dev15Rev=0,dev15Profile=null;
 
 const key151='w-personal-strategy-v151';
@@ -5646,6 +5691,7 @@ function lineTradeAmount161(t,close=false){
         startInput.value = d.toISOString().slice(0, 10);
       }
       const startDate = startInput?.value || "2000-01-01";
+      const endDate = capitalEndDate();
 
       const events = [];
       const seenKey = new Set();
@@ -5671,7 +5717,7 @@ function lineTradeAmount161(t,close=false){
         }
         list.forEach(tr => {
           if (!tr || !tr.buyDate || tr.buyPrice <= 0 || tr.isDirectKeyBreakdown) return;
-          if (tr.buyDate < startDate) return;
+          if (tr.buyDate < startDate || tr.buyDate > endDate) return;
           const uid = `${s.code}_${tr.buyDate}_${tr.buyPrice}`;
           if (seenKey.has(uid)) return;
           seenKey.add(uid);
@@ -5702,7 +5748,7 @@ function lineTradeAmount161(t,close=false){
       });
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = applyOutlierTrimToEvents(events, trimN, includeFees);
+      const trimRes = applyOutlierTrimToEvents(capitalWindowEvents(events,startDate,endDate), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const trimBadge = document.getElementById("simTrimmedInfoBadge");
       if (trimBadge) {
@@ -5808,13 +5854,13 @@ function lineTradeAmount161(t,close=false){
         });
       });
 
-      if(!location.pathname.endsWith('/monitor161.html')) for(const t of manualPool161()) {
-        if(t.buyDate<startDate)continue;
+      if(!location.pathname.endsWith('/monitor161.html')) for(const t of capitalWindowEvents(manualPool161(),startDate,endDate)) {
+        if(t.buyDate<startDate||t.buyDate>endDate)continue;
         const stock=rawAllLoadedStocks.find(s=>s.code===t.code);
-        const price=t.isClosed?Number(t.exitOrNowPrice):Number(stock?.todayPrice||stock?.price||t.buyPrice);
+        const price=Number(t.exitOrNowPrice||t.buyPrice);
         const gross=t.buyPrice*1000*t.lots,totalCost=gross+Math.round(gross*feeRate),sell=price*1000*t.lots,net=sell-Math.round(sell*feeRate)-Math.round(sell*taxRate),profit=net-totalCost;
         availableCash+=-totalCost+(t.isClosed?net:0);
-        boughtTrades.push({...t,uid:'manualpool_'+t.id,name:stock?.name||t.name||t.code,strategyKey:currentExitStrategy,exitOrNowPrice:price,totalCost,netProfit:profit,netPct:profit/totalCost*100,entryReason:'手動買進',exitReason:t.isClosed?'手動平倉':'手動持倉',holdingDays:Math.max(1,Math.round((Date.parse(t.sellDate||lineV14Day())-Date.parse(t.buyDate))/86400000)+1),settled:t.isClosed});
+        boughtTrades.push({...t,uid:'manualpool_'+t.id,name:stock?.name||t.name||t.code,strategyKey:currentExitStrategy,exitOrNowPrice:price,totalCost,netProfit:profit,netPct:profit/totalCost*100,entryReason:'手動買進',exitReason:t.isClosed?'手動平倉':'手動持倉',holdingDays:Math.max(1,Math.round((Date.parse(t.sellDate||endDate)-Date.parse(t.buyDate))/86400000)+1),settled:t.isClosed});
       }
       let realizedProfit = 0;
       let unrealizedProfit = 0;
@@ -5943,10 +5989,10 @@ function lineTradeAmount161(t,close=false){
       const stratBadge = document.getElementById("simActiveStrategyBadge");
       if (stratBadge) stratBadge.textContent = `目前套用：${stratLabelMap[currentExitStrategy] || currentExitStrategy}`;
       const noteEl = document.getElementById("simStatusNote");
-      if (noteEl) noteEl.textContent = `${startDate} 起投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
+      if (noteEl) noteEl.textContent = `${startDate} ～ ${endDate} 投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
       lastSimTradesSnapshot = boughtTrades;
-      lineV14Snapshot = { trades: boughtTrades.map(t=>({...t})), keys: allStocks.map(t=>({code:t.code,name:t.name,date:t.keyKDate,price:t.yestClose})), strategy: stratLabelMap[currentExitStrategy] || currentExitStrategy, config: JSON.stringify([getExitStrategyConfig(),getCurrentFilterOptions(),startDate,initCapital,lotMode,perStockBudget,withdrawParam,profitRule,includeFees,sectorMode,trimN,document.getElementById("simPrioritySelect")?.value,simManualCloseMap]), dataDate: rawAllLoadedStocks.reduce((d,t)=>String(t.latestTradeDate||'')>d?String(t.latestTradeDate):d,''), report: {initCapital,totalNetProfit,totalRoiPct,realizedProfit,unrealizedProfit,availableCash,holdingCnt, equity:availableCash+lockedVault+holdingMarketValue} };
+      lineV14Snapshot = endDate < lineV14Day() ? null : { trades: boughtTrades.map(t=>({...t})), keys: allStocks.map(t=>({code:t.code,name:t.name,date:t.keyKDate,price:t.yestClose})), strategy: stratLabelMap[currentExitStrategy] || currentExitStrategy, config: JSON.stringify([getExitStrategyConfig(),getCurrentFilterOptions(),startDate,endDate,initCapital,lotMode,perStockBudget,withdrawParam,profitRule,includeFees,sectorMode,trimN,document.getElementById("simPrioritySelect")?.value,simManualCloseMap]), dataDate: rawAllLoadedStocks.reduce((d,t)=>String(t.latestTradeDate||'')>d?String(t.latestTradeDate):d,''), report: {initCapital,totalNetProfit,totalRoiPct,realizedProfit,unrealizedProfit,availableCash,holdingCnt, equity:availableCash+lockedVault+holdingMarketValue} };
       const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
       if (aiCmpBox && !aiCmpBox.classList.contains("hidden")) {
         if (window._skipNextAiCapOptInSim) {
@@ -8234,6 +8280,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       `;
     }
 
+    const tickFetch163=new Map();
     async function fetchIntradayTickPower(code) {
       if (!code || !apiUrl) return;
       try {
@@ -8783,7 +8830,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         chartState.postExitActiveRef=null;chartState.simPreservedTrades=[];
       }
       renderAiPowerPlanBox(stock);
-      fetchIntradayTickPower(stock.code);
+      if(!tickFetch163.has(stock.code)||Date.now()-tickFetch163.get(stock.code)>=5000){tickFetch163.set(stock.code,Date.now());fetchIntradayTickPower(stock.code);}
       if (chartState.timeframe === '5m') {
         load5mKlineData(stock.code, resetView);
       } else {
