@@ -1559,6 +1559,14 @@
     // 取得該股在目前股池對應的損益追蹤紀錄 (股池四取 trackingInfo；股池五取 closedBreakdownInfo 或 directBreakdownInfo)
     function getPoolTrackInfo(stock) {
       if (!stock) return null;
+      if (currentExitStrategy === 'AI_POWER_90D') {
+        const plan = computeAiBuySellPowerOptimalPlan(stock);
+        if (!plan?.trades.length) return null;
+        const trades = plan.trades, first=trades[0], last=trades[trades.length-1];
+        const pts=plan.totalPts, basis=trades.reduce((n,t)=>n+t.buyPrice,0);
+        return {...last, buyDate:first.buyDate, buyPrice:first.buyPrice, profitPoints:pts, profitPct:100*pts/basis,
+          holdingDays:trades.reduce((n,t)=>n+t.sellIdx-t.buyIdx+1,0), aiTrades:trades, trackStatus:last.isClosed?'EXITED_BREAKDOWN':'HOLDING', strategyKey:'AI_POWER_90D'};
+      }
       if (currentFilter === "BREAKDOWN") {
         return stock.closedBreakdownInfo || stock.directBreakdownInfo || stock.trackingInfo || null;
       }
@@ -2336,8 +2344,8 @@
       for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
       return `v13-events-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
-    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v159-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
-    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v159-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v160-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
     function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
 
     function getPoolStocksWithCrossovers(independent = false) {
@@ -2708,6 +2716,7 @@
 
     async function selectComparisonStrategyCard(strategyKey) {
       if (fullAiBusy || capitalAiBusy) return;
+      if (strategyKey === 'AI_POWER_90D') { await setExitStrategy(strategyKey, true); return; }
       if (capitalV8Key===aiV8Key(true) && _aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { selectAiOptimizedCapitalStrategy(strategyKey); return; }
       await setExitStrategy(strategyKey);
     }
@@ -3909,12 +3918,12 @@
       };
 
       if (isPnlPoolActive()) {
-        const buyColTitle = currentFilter === 'BREAKDOWN' ? '確認K買入(或關鍵收)' : '確認K買入';
-        const exitColTitle = currentFilter === 'BREAKDOWN' ? '破K平倉/現價' : '平倉/現價';
-        const statusColTitle = currentFilter === 'BREAKDOWN' ? '破底K狀態(持倉天數)' : '確認K追蹤(天數/平倉)';
+        const buyColTitle = currentExitStrategy === "AI_POWER_90D" ? "AI買入" : currentFilter === 'BREAKDOWN' ? '確認K買入(或關鍵收)' : '確認K買入';
+        const exitColTitle = currentExitStrategy === "AI_POWER_90D" ? "AI賣出/現價" : currentFilter === 'BREAKDOWN' ? '破K平倉/現價' : '平倉/現價';
+        const statusColTitle = currentExitStrategy === "AI_POWER_90D" ? "AI交易狀態" : currentFilter === 'BREAKDOWN' ? '破底K狀態(持倉天數)' : '確認K追蹤(天數/平倉)';
         thead.innerHTML = `
           <tr>
-            <th class="py-2.5 px-2.5">股票代號 / 關鍵K與持倉期間</th>
+            <th class="py-2.5 px-2.5">${currentExitStrategy === "AI_POWER_90D" ? "股票代號 / AI交易" : "股票代號 / 關鍵K與持倉期間"}</th>
             <th onclick="toggleSort('trackBuyPrice')" class="sortable-th py-2.5 px-1.5 text-right">
               ${buyColTitle} ${getIcon('trackBuyPrice')}
             </th>
@@ -3927,7 +3936,7 @@
             <th onclick="toggleSort('trackProfitMoney')" class="sortable-th py-2.5 px-1.5 text-right text-amber-300">
               賺多少錢(1張) ${getIcon('trackProfitMoney')}
             </th>
-            <th class="py-2.5 px-1.5 text-right">控盤狀態 / 防守價</th>
+            <th class="py-2.5 px-1.5 text-right">${currentExitStrategy === "AI_POWER_90D" ? "AI規則" : "控盤狀態 / 防守價"}</th>
             <th onclick="toggleSort('trackHoldingDays')" class="sortable-th py-2.5 px-2.5 text-center" title="點擊依持倉/續抱天數排序">
               ${statusColTitle} ${getIcon('trackHoldingDays')}
             </th>
@@ -7448,6 +7457,12 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         tbody.innerHTML = filteredStocks.map(s => {
           const t = getPoolTrackInfo(s);
           const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
+          if (currentExitStrategy === 'AI_POWER_90D') {
+            if (!t) return '';
+            const ts=t.aiTrades, col=t.profitPoints>=0?'text-rose-400':'text-emerald-400';
+            const each=fn=>ts.map((x,i)=>`<div>第${i+1}筆 ${fn(x)}</div>`).join('');
+            return `<tr id="stock-row-${s.code}" onclick="selectStock('${s.code}',true)" class="${rowBg} cursor-pointer"><td class="p-2">${s.code} ${s.name}<div>AI 共 ${ts.length} 筆</div></td><td class="p-2 text-right">${each(x=>x.buyDate+' '+x.buyPrice.toFixed(2))}</td><td class="p-2 text-right">${each(x=>(x.isClosed?x.sellDate:'現價')+' '+x.sellPrice.toFixed(2))}</td><td class="p-2 text-right ${col}">${t.profitPoints.toFixed(2)}點</td><td class="p-2 text-right ${col}">${formatMoneyDisplay(Math.round(t.profitPoints*1000))}</td><td class="p-2">AI 獨立進出場</td><td class="p-2">${each(x=>x.isClosed?'AI已賣出':'等待AI賣點')}</td></tr>`;
+          }
           const exitOrNowP = t.isClosed ? t.sellPrice : s.todayPrice;
           const ptsSign = t.profitPoints > 0 ? "+" : "";
           const ptsColor = t.profitPoints > 0 ? "text-rose-400" : (t.profitPoints < 0 ? "text-emerald-400" : "text-slate-300");
@@ -7710,6 +7725,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
     }
 
     function resolveSimulatedStockForPreview(stock) {
+      if (currentExitStrategy === "AI_POWER_90D") return stock;
       const simChk = document.getElementById("chkSimulateRawBreakoutEntry");
       if (!simChk || !simChk.checked || !stock) return stock;
       if (stock.trackingInfo || stock.closedBreakdownInfo) return stock;
@@ -7901,7 +7917,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       const bars = inputBars || buildStockDailyBarsWithToday(stock);
       if (!bars || bars.length < 10) return null;
 
-      const sig = `${stock.code}|v159|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
+      const sig = `${stock.code}|v160|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
       if (stock._aiPowerPlanSig === sig) return stock._aiPowerPlanCache;
 
       const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
@@ -8134,6 +8150,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         if (tp && tp.source === 'FubonTrades') {
           const target = rawAllLoadedStocks.find(s => s.code === code) || (window._lastCustomInspectedStock && window._lastCustomInspectedStock.code === code ? window._lastCustomInspectedStock : null);
           if (target) target.tickPower = tp;
+          if (target && currentExitStrategy === "AI_POWER_90D") { const lc=evaluateStockTrackingLifecycle(target,getCurrentFilterOptions());target.trackingInfo=lc.activeOrTodayExit;target.closedBreakdownInfo=lc.closedBreakdown;renderTable();runPortfolioCapitalSimulation(); }
           if (selectedStockCode === code) {
             if (target) renderAiPowerPlanBox(target);
             renderCanvasChart();
@@ -8146,11 +8163,12 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
     }
 
     function updateDetailPanel(stock, resetView = false) {
+      const gOnly = currentExitStrategy === "AI_POWER_90D";
       if (!rawAllLoadedStocks.some(s => s.code === stock.code)) window._lastCustomInspectedStock = stock;
       stock = resolveSimulatedStockForPreview(stock);
       const hasNewerKeyK = stock.isFirstDayBreak20Ma && (!stock.closedBreakdownInfo || stock.keyKIdx > stock.closedBreakdownInfo.sellIdx);
       const activeOrClosedTrack = stock.trackingInfo || ((currentFilter === "BREAKDOWN" || !hasNewerKeyK) ? (stock.closedBreakdownInfo || stock.directBreakdownInfo) : null);
-      const showTrackingMode = Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
+      const showTrackingMode = !gOnly && Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
       const keyDateSlash = formatShortDateSlash(stock.keyKDate);
 
       document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
@@ -8653,6 +8671,18 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         badge.textContent = stock.todayPrice >= todayMa20 ? "📊 20MA之上運行" : "📉 20MA之下整理";
       }
 
+      if (gOnly) {
+        const plan=computeAiBuySellPowerOptimalPlan(stock);
+        document.getElementById('detailKeyKTag').textContent='G. AI最佳買賣';
+        document.getElementById('detailSubTitle').textContent='獨立AI進出場 ｜ 今日總量 '+formatVolDisplay(stock.todayVol);
+        document.getElementById('detailDecisionBadge').textContent=plan?.trades.at(-1)?.isClosed?'AI已平倉':'AI追蹤';
+        document.getElementById('trackingDetailBanner').classList.add('hidden');
+        document.getElementById('legendStopLossItem')?.classList.add('hidden');
+        for (const [id,txt] of [['cardStopLossTitle','AI出場'],['cardStopLossPrice','依AI賣點'],['cardKeyHighTitle','AI買賣'],['cardKeyLowTitle','AI買賣'],['cardYestHigh','--'],['cardYestLow','--']]) {const el=document.getElementById(id);if(el)el.textContent=txt;}
+        if(diagTitle)diagTitle.textContent='AI獨立策略';
+        if(diagDetail)diagDetail.textContent=plan?`共 ${plan.trades.length} 筆 ｜ ${plan.totalPts.toFixed(2)} 點 ｜ ${formatMoneyDisplay(Math.round(plan.totalPts*1000))}`:'尚無AI交易';
+        chartState.postExitActiveRef=null;chartState.simPreservedTrades=[];
+      }
       renderAiPowerPlanBox(stock);
       fetchIntradayTickPower(stock.code);
       if (chartState.timeframe === '5m') {
@@ -8660,7 +8690,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       } else {
         chartState.bars = bars;
         if (resetView) {
-          let targetVis = 22;
+          let targetVis = gOnly ? bars.length : 22;
           if (stock._isRelaxedPreviewSim && activeOrClosedTrack) {
             const firstIdx = activeOrClosedTrack.keyKIdx >= 0 ? activeOrClosedTrack.keyKIdx : activeOrClosedTrack.buyIdx;
             if (firstIdx >= 0 && firstIdx < bars.length) {
@@ -9093,8 +9123,8 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       const bars = aiOnly ? chartState.bars.map(b => {const copy={...b}; for(const k of Object.keys(copy)) if(k==='isKeyK'||k.startsWith('isTrack')) delete copy[k]; return copy;}) : chartState.bars;
       if (!stock || bars.length === 0) return;
 
-      const showBubbles = document.getElementById("chkShowBubbles").checked;
-      const showDeduct = document.getElementById("chkShowDeduct").checked;
+      const showBubbles = !aiOnly && document.getElementById("chkShowBubbles").checked;
+      const showDeduct = !aiOnly && document.getElementById("chkShowDeduct").checked;
 
       clampRightOffset();
       const rawEndIdx = bars.length - chartState.rightOffset;
@@ -9310,7 +9340,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         return y;
       };
 
-      const showOrderFlow = document.getElementById("chkShowOrderFlow")?.checked ?? true;
+      const showOrderFlow = !aiOnly && (document.getElementById("chkShowOrderFlow")?.checked ?? true);
       const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
       const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
@@ -9422,7 +9452,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         }
       });
 
-      if (showShortMaPeriod === 0 && ma20Points.length >= 2) {
+      if (!aiOnly && showShortMaPeriod === 0 && ma20Points.length >= 2) {
         ctx.lineWidth = 2.4;
         for (let i = 1; i < ma20Points.length; i++) {
           const p0 = ma20Points[i - 1], p1 = ma20Points[i];
@@ -9435,7 +9465,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         }
       }
 
-      if (shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
+      if (!aiOnly && shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
         const shortMaColor = showShortMaPeriod === 5 ? "#e879f9" : "#22d3ee";
         ctx.save();
         ctx.strokeStyle = shortMaColor;
