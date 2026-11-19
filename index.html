@@ -2486,6 +2486,15 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       const n = Math.max(0, Math.min(100, Math.floor(pct)));
       document.getElementById(kind + 'AiProgressText').textContent = `${n}% · ${label}`;
       document.getElementById(kind + 'AiProgressBar').value = n;
+      if (kind === 'capital') {
+        const mobile = document.getElementById('mobileCapitalProgress164');
+        if (mobile) {
+          mobile.dataset.visible = '1';
+          document.getElementById('mobileCapitalPct164').textContent = n + '%';
+          document.getElementById('mobileCapitalStage164').textContent = label;
+          document.getElementById('mobileCapitalBar164').value = n;
+        }
+      }
     }
     let fullAiBusy = false, capitalAiBusy = false;
     async function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy, report = () => {}) {
@@ -10572,5 +10581,9 @@ html.mobile164 #capitalParams164 input:not(.hidden),html.mobile164 #capitalParam
 html.mobile164 #capitalParams164 span,html.mobile164 #capitalOptions164 label,html.mobile164 #capitalOptions164 span{font-size:clamp(15px,4vw,21px)!important;overflow-wrap:anywhere}
 html.mobile164 #capitalOptions164,html.mobile164 #capitalOptions164>div:first-child{display:flex;flex-wrap:wrap;gap:8px!important;min-width:0;width:100%}
 html.mobile164 #capitalOptions164 label{max-width:100%;flex-wrap:wrap}html.mobile164 #capitalOptions164 select{max-width:100%;min-width:0}html.mobile164 #lblAiCapitalOpt{display:flex!important;width:100%;box-sizing:border-box;min-height:64px;padding:10px!important;white-space:normal;align-items:center;justify-content:center}html.mobile164 #lblAiCapitalOpt span{font-size:clamp(20px,5vw,26px)!important;text-align:center}html.mobile164 #lblAiCapitalOpt input{flex-shrink:0}
-</style></body>
+</style><style>
+#mobileCapitalProgress164{display:none}html.mobile164 #mobileCapitalProgress164[data-visible="1"]{display:block!important;width:100%;flex:0 0 100%;box-sizing:border-box;padding:10px;border:1px solid #a78bfa;border-radius:10px;background:#241345;color:#fff;margin:6px 0;position:relative}#mobileCapitalPct164{font-size:30px;font-weight:800;color:#facc15}#mobileCapitalStage164{font-size:16px;overflow-wrap:anywhere}#mobileCapitalBar164{width:100%;height:14px;accent-color:#a78bfa}
+</style><script>
+(()=>{const label=document.getElementById('lblAiCapitalOpt');if(!label)return;const panel=document.createElement('div');panel.id='mobileCapitalProgress164';panel.setAttribute('aria-live','polite');panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><strong>AI 實戰尋優進度</strong><span id="mobileCapitalPct164">0%</span></div><progress id="mobileCapitalBar164" max="100" value="0"></progress><div id="mobileCapitalStage164"></div>';function place(){if(label.nextElementSibling!==panel)label.after(panel);}place();const obs=new MutationObserver(place);obs.observe(document.getElementById('capitalSimBody')||document.body,{childList:true,subtree:true});const old=document.getElementById('capitalAiProgress');if(old&&!old.classList.contains('hidden')){const bar=document.getElementById('capitalAiProgressBar');const txt=document.getElementById('capitalAiProgressText');showAiProgress('capital',bar.value,(txt.textContent||'').replace(/^\d+%\s*·\s*/,''));}})();
+</script></body>
 </html>
