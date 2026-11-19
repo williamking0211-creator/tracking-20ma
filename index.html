@@ -205,6 +205,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
 html.mobile164 #capitalMainPanel164 { min-width:0; max-width:100%; width:100%; }
 html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.3; }
 </style>
+<style>#manualCapitalGrid button.capitalWinnerCard164{border:2px solid #facc15!important;background:#54247c!important;box-shadow:0 0 9px #facc1566}.capitalWinnerBadge164{color:#fde047;font-weight:800;margin-bottom:4px}#capitalWinner164[hidden]{display:none!important}#capitalWinner164{overflow-wrap:anywhere}</style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
 
@@ -950,7 +951,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 <label>通知對象 <select id="line155Mode" class="bg-slate-800 rounded p-1"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()" class="px-2 py-1 rounded bg-indigo-800">儲存通知對象</button><span id="line155Status">尚未讀取</span><button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待首次行情同步（需保持網頁開啟）</span></div>
             </div>
 
-<div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（目前參數）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
+<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（目前參數）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -1075,6 +1076,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
             <details id="todayBuy163" class="hidden rounded-lg border border-rose-500/40 bg-slate-900 p-2" open><summary class="cursor-pointer text-rose-200 font-bold text-xs">📈 今日買進清單 <span id="todayBuySummary163"></span></summary><div class="overflow-x-auto mt-2"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th>#</th><th>股票</th><th>買進日 / 價格</th><th>張數</th><th>投入本金</th><th>現價 / 平倉價</th><th>淨損益 / 報酬率</th><th>買進條件</th><th>狀態</th></tr></thead><tbody id="todayBuyBody163"></tbody></table></div></details>
             <details id="todayClosed162" class="hidden rounded-lg border border-purple-500/40 bg-slate-900 p-2" open><summary class="cursor-pointer text-purple-200 font-bold text-xs">今日已平倉清單 <span id="todayClosedSummary162"></span></summary><div class="overflow-x-auto mt-2"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th>股票</th><th>買進日 / 價格</th><th>平倉日 / 價格</th><th>張數</th><th>投入本金</th><th>持有天數</th><th>淨損益</th><th>報酬率 / 出場原因</th></tr></thead><tbody id="todayClosedBody162"></tbody></table></div></details>
+            <details id="historyClosed164" class="hidden rounded-lg border border-amber-500/40 bg-slate-900 p-2"><summary class="cursor-pointer text-amber-200 font-bold text-xs">📚 歷史平倉記錄 <span id="historyClosedSummary164"></span></summary><div class="overflow-x-auto mt-2"><div id="historyStats164" class="text-xs mb-2"></div><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th>#</th><th>股票</th><th>買進日 / 價格</th><th>平倉日 / 價格</th><th>張數</th><th>投入本金</th><th>持有天數</th><th>淨損益 / 報酬率</th><th>出場原因</th></tr></thead><tbody id="historyClosedBody164"></tbody></table><button type="button" id="historyMore164" class="hidden px-3 py-2 rounded bg-slate-700 mt-2">顯示更多</button></div></details>
             <!-- ⏭️ 資金不足跳過之股票假設試算面板 -->
             <div id="simSkippedPanel" class="hidden border border-amber-500/40 rounded-lg bg-slate-900/90 p-2 space-y-1.5">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -4399,8 +4401,25 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     const USER_PORTFOLIO_KEY = "tw_keyk_user_portfolio_v1";
     let simTableMode = "SIM"; // "SIM" | "PORTFOLIO"
     let userPortfolioTrades = [];
+    function numberStockTrades164(rows){
+      const counts=new Map();
+      [...rows].sort((a,b)=>String(a.buyDate||'').localeCompare(String(b.buyDate||''))).forEach(t=>{const k=String(t.code);const n=(counts.get(k)||0)+1;counts.set(k,n);t.realTradeNo164=n;});
+      return rows;
+    }
+    function tradeOrdinal164(t){return `第${t.realTradeNo164||1}次買入`;}
     let lastSimTradesSnapshot = [];
     let chartSim164 = {strategy:null, bought:[], skipped:[]};
+    function capitalChartRows164(code){
+      if(chartSim164.strategy!==currentExitStrategy)return [];
+      const source=simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:chartSim164.bought;
+      return source.filter(t=>String(t.code)===String(code)).slice().sort((a,b)=>String(a.buyDate).localeCompare(String(b.buyDate)));
+    }
+    function capitalChartStats164(rows){const closed=rows.filter(t=>t.isClosed),sum=rs=>rs.reduce((a,t)=>a+(Number(t.netProfit)||0),0),cost=closed.reduce((a,t)=>a+(Number(t.totalCost)||0),0);return {closed:closed.length,open:rows.length-closed.length,net:sum(closed),unreal:sum(rows.filter(t=>!t.isClosed)),roi:cost>0?sum(closed)/cost*100:0,win:closed.length?closed.filter(t=>Number(t.netProfit)>0).length/closed.length*100:0};}
+    function capitalChartState164(code){if(chartSim164.strategy!==currentExitStrategy)return '尚未試算';const a=capitalChartStats164(capitalChartRows164(code));return a.open?'實戰續抱中':a.closed?'實戰已平倉':'無實戰交易';}
+    function refreshCapitalChart164(){if(!selectedStockCode)return;const code=selectedStockCode;if(currentExitStrategy==='AI_POWER_90D'){const d=document.getElementById('diagDetail');if(d)d.textContent=capitalChartText164(code);const b=document.getElementById('detailDecisionBadge');if(b)b.textContent=capitalChartState164(code);const p=document.getElementById('aiPowerPlanBox');if(p){const content=document.createElement('div');content.innerHTML=capitalChartHud164(code);const fold=p.querySelector('.v161-collapse');p.replaceChildren(content);if(fold)p.append(fold);}}const bars=chartState.bars;if(bars?.length){updateHudDisplay(bars.at(-1),bars.at(-2)||null);renderCanvasChart();}}
+    function capitalChartMoney164(n){return (n<0?'−$':n>0?'+$':'$')+Math.round(Math.abs(n)).toLocaleString();}
+    function capitalChartText164(code){if(chartSim164.strategy!==currentExitStrategy)return '尚未完成目前策略資金試算';const a=capitalChartStats164(capitalChartRows164(code));return `實戰已平倉 ${a.closed} 筆 ｜ 淨損益 ${capitalChartMoney164(a.net)} ｜ 勝率 ${a.win.toFixed(1)}% ｜ 未平倉 ${a.open} 筆 ${capitalChartMoney164(a.unreal)}`;}
+    function capitalChartHud164(code){const rows=capitalChartRows164(code),a=capitalChartStats164(rows);if(chartSim164.strategy!==currentExitStrategy)return '<div>尚未完成目前策略資金試算</div>';if(!rows.length)return '<div>目前策略及投資區間無實戰交易</div>';return `<div class="w-full mt-1 border-t border-purple-500/25 pt-1"><div class="font-bold text-purple-200">實戰進出場明細｜${capitalChartText164(code)}</div><div>已平倉本金加權報酬率 ${a.roi.toFixed(2)}%</div>${rows.map((t,i)=>`<div class="flex flex-wrap gap-x-3 text-[10.5px]"><span>第 ${t.realTradeNo164||i+1} 次買入・${Number(t.lots)||0} 張</span><span>買入 ${t.buyDate} @ ${Number(t.buyPrice).toFixed(2)}</span><span>${t.isClosed?'平倉 '+t.sellDate:'續抱'} @ ${Number(t.exitOrNowPrice??t.curP??t.sellPrice??t.buyPrice).toFixed(2)}</span><span class="${Number(t.netProfit)<0?'text-emerald-300':'text-rose-300'}">${t.isClosed?'淨損益':'未實現損益'} ${capitalChartMoney164(Number(t.netProfit)||0)} ｜ ${Number(t.netPct??(Number(t.totalCost)>0?Number(t.netProfit)/Number(t.totalCost)*100:0)).toFixed(2)}%</span></div>`).join('')}</div>`;}
     function aiMarkerStatus164(code,tr){
       if(chartSim164.strategy !== "AI_POWER_90D") return "（未試算）";
       const match=t=>String(t.code).trim()===String(code).trim()&&String(t.buyDate).slice(0,10)===String(tr.buyDate).slice(0,10)&&Math.abs(Number(t.buyPrice)-Number(tr.buyPrice))<0.0001;
@@ -4484,7 +4503,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
             <tr id="${rowId}" onclick="openStockFromSimList('${pt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
               <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
               <td class="py-1.5 px-2">
-                <div class="font-bold text-white">${pt.code} ${pt.name}</div>
+                <div class="font-bold text-white">${pt.code} ${pt.name}</div><div class="text-[10px] text-amber-200">${tradeOrdinal164(pt)}</div>
                 <input type="date" value="${pt.buyDate}" onclick="event.stopPropagation()" onchange="updatePortfolioField('${pt.id}', 'buyDate', this.value)"
                        class="mt-0.5 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300 w-24" />
               </td>
@@ -4547,7 +4566,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
             <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
             <td class="py-1.5 px-2">
               <div class="font-bold text-white">${bt.code} ${bt.name}</div>
-              <div class="text-[10px] text-slate-400">${bt.aiTradeNo ? `第${bt.aiTradeNo}筆 AI ` : ""}${formatShortDateSlash(bt.buyDate)} 買</div>
+              <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${formatShortDateSlash(bt.buyDate)} 買</div>
             </td>
             <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
             <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
@@ -4858,7 +4877,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
     function toggleSimTradesTable() {
       const el = document.getElementById("simTradesTableWrap");
-      if (el) { const hidden=el.classList.toggle("hidden"); document.getElementById('todayClosed162')?.classList.toggle('hidden',hidden);renderTodayBuy163(); if(!hidden){setPoolFold162(true);document.getElementById("strategyCompareBox")?.classList.add("v161-fold");const b=document.querySelector("#strategyCompareBox > .v161-collapse");if(b){b.textContent="+";b.setAttribute("aria-expanded","false");}renderSimTradesTableOnly();} }
+      if (el) { const hidden=el.classList.toggle("hidden"); document.getElementById('todayClosed162')?.classList.toggle('hidden',hidden);renderTodayBuy163();renderHistoryClosed164(); if(!hidden){setPoolFold162(true);document.getElementById("strategyCompareBox")?.classList.add("v161-fold");const b=document.querySelector("#strategyCompareBox > .v161-collapse");if(b){b.textContent="+";b.setAttribute("aria-expanded","false");}renderSimTradesTableOnly();} }
     }
 
     const TW_SEMI_CODES = new Set([
@@ -4970,6 +4989,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       runPortfolioCapitalSimulation();
       if (await rerankCachedCapital()) return;
       if (_lastAiCapitalResultsCache?.length) { document.getElementById("simAiStrategyCompareGrid").innerHTML = ""; document.getElementById("simAiWinnerSummary").textContent = "舊 AI 結果不適用於目前剔除條件，請重新尋優"; }
+      paintCapitalWinner164(null);
       showAiProgress('capital',0,'尚無有效交易快取，請先尋優');
     }
     let pendingTrimRefresh = false;
@@ -5348,12 +5368,43 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
     let _lastAiCapitalResultsCache = null;
 
+    function paintCapitalWinner164(winner) {
+      const panel=document.getElementById('capitalWinner164');
+      if(!panel)return;
+      panel.hidden=!winner;
+      document.querySelectorAll('#manualCapitalGrid button').forEach(b=>{
+        const win=!!winner && b.dataset.strategy===winner.strategyKey;
+        b.classList.toggle('capitalWinnerCard164',win);
+        let badge=b.querySelector('.capitalWinnerBadge164');
+        if(!win){badge?.remove();return;}
+        if(!badge){badge=document.createElement('div');badge.className='capitalWinnerBadge164';b.prepend(badge);}
+        badge.textContent='🏆 AI 最佳策略 ｜ '+(winner.totalNetProfit>=0?'+':'-')+'$'+Math.abs(winner.totalNetProfit).toLocaleString();
+      });
+      if(!winner)return;
+      const money=n=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString();
+      document.getElementById('capitalWinnerText164').textContent=`最佳策略：${winner.label}\n最佳條件：${winner.bestTag}\n淨損益：${money(winner.totalNetProfit)} ｜ 報酬率：${winner.totalRoiPct.toFixed(2)}%\n期末總權益：$${Number(winner.finalEquity||0).toLocaleString()}\n上次 AI 尋優／快取試算結果`;
+      document.getElementById('capitalWinnerLink164').onclick=()=>openAiCapitalTrades164(winner.strategyKey);
+    }
+    async function openAiCapitalTrades164(key){
+      if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 運算完成','info');return;}
+      if(!_aiCapitalBestParamsMap[key]){showToast('尚無有效 AI 策略參數','info');return;}
+      document.getElementById('capitalSimBody')?.classList.remove('hidden','v161-fold');
+      simTableMode='SIM';
+      await selectAiOptimizedCapitalStrategy(key);
+      setSimTableMode('SIM');
+      const wrap=document.getElementById('simTradesTableWrap');
+      if(wrap?.classList.contains('hidden'))toggleSimTradesTable();
+      wrap?.classList.remove('v161-fold');
+      renderSimTradesTableOnly();
+      document.getElementById('btnToggleSimTable')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
     function renderAiCapitalCompareCardsOnly() {
       const grid = document.getElementById("simAiStrategyCompareGrid");
       const summary = document.getElementById("simAiWinnerSummary");
       if (!grid || !Array.isArray(_lastAiCapitalResultsCache) || _lastAiCapitalResultsCache.length === 0) return false;
       const results = _lastAiCapitalResultsCache;
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
+      paintCapitalWinner164(winner);
       const fmtMoney = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString()}`;
       if (summary && winner) {
         summary.textContent = `🏆 AI推薦最佳策略：${winner.label} [${winner.bestTag}] (${fmtMoney(winner.totalNetProfit)} / ${winner.totalRoiPct >= 0 ? "+" : ""}${winner.totalRoiPct.toFixed(1)}%)`;
@@ -5368,7 +5419,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
           ? `<div class="text-[9.5px] text-amber-300 mt-1 break-words" title="${r.topTrade.code} ${r.topTrade.name}">👑 ${r.topTrade.code} ${r.topTrade.name} (${fmtMoney(Math.round(r.topTrade.netProfit))})</div>`
           : `<div class="text-[9.5px] text-slate-500 mt-1">無交易</div>`;
         return `
-          <div onclick="selectAiOptimizedCapitalStrategy('${r.strategyKey}')" class="cursor-pointer min-w-0 rounded-lg p-3 border transition ${isCur ? 'bg-purple-900/55 border-purple-400 ring-2 ring-purple-400/70' : (isWin ? 'bg-purple-900/35 border-amber-400/80 ring-1 ring-amber-400/50' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
+          <div onclick="openAiCapitalTrades164('${r.strategyKey}')" class="cursor-pointer min-w-0 rounded-lg p-3 border transition ${isCur ? 'bg-purple-900/55 border-purple-400 ring-2 ring-purple-400/70' : (isWin ? 'bg-purple-900/35 border-amber-400/80 ring-1 ring-amber-400/50' : 'bg-slate-900/80 border-slate-800 hover:border-slate-600')}">
             <div class="flex flex-wrap items-center justify-between gap-1 font-bold text-slate-200">
               <span class="break-words">${r.label}</span>
               ${isWin ? '<span class="px-1 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] shrink-0">🏆最大</span>' : ''}
@@ -5386,7 +5437,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       return true;
     }
 
-    function selectAiOptimizedCapitalStrategy(strategyKey) {
+    async function selectAiOptimizedCapitalStrategy(strategyKey) {
       if(fullAiBusy || capitalAiBusy)return;
       if(!_aiCapitalBestParamsMap[strategyKey])return;
       currentExitStrategy = strategyKey;
@@ -5409,11 +5460,10 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       }
       renderAiCapitalCompareCardsOnly();
       window._skipNextAiCapOptInSim = true;
-      requestAnimationFrame(() => {
-        if (bestS1) applyStep1ParamsToUI(bestS1);
-        if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
-        setExitStrategy(strategyKey, true);
-      });
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+      if (bestS1) applyStep1ParamsToUI(bestS1);
+      if (bestP) applyBestParamsToStrategyUI(strategyKey, bestP);
+      await setExitStrategy(strategyKey, true);
     }
 
     async function runAiCapitalStrategyOptimizer(autoSwitch = false) {
@@ -5495,6 +5545,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       _aiCapitalBestParamsMap = {};
       _aiCapitalBestStep1Map = {};
       _aiCapitalLifecycleCache = new Map();
+      paintCapitalWinner164(null);
       const optimizerRunId = ++_aiCapitalOptimizerRunId;
       const progressEl = document.getElementById("simAiWinnerSummary");
       if (progressEl) progressEl.textContent = "AI 正在建立共用股票資料快取並進行七大策略尋優…";
@@ -5716,6 +5767,7 @@ function lineTradeAmount161(t,close=false){
       });
     }
     async function chooseManualCapitalStrategy(k) {
+      if(document.querySelector(`#manualCapitalGrid button[data-strategy="${k}"]`)?.classList.contains("capitalWinnerCard164")){await openAiCapitalTrades164(k);return;}
       await selectComparisonStrategyCard(k);
       paintManualCapitalCards();
     }
@@ -6081,11 +6133,9 @@ function lineTradeAmount161(t,close=false){
       if (noteEl) noteEl.textContent = `${startDate} ～ ${endDate} 投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
       manualCapitalRows[currentExitStrategy]={totalNetProfit:Math.round(totalNetProfit)}; paintManualCapitalCards();
-      lastSimTradesSnapshot = boughtTrades;
+      lastSimTradesSnapshot = numberStockTrades164(boughtTrades);
       chartSim164 = {strategy:currentExitStrategy,bought:boughtTrades.slice(),skipped:skippedTrades.slice()};
-      if(selectedStockCode && currentExitStrategy==='AI_POWER_90D') {
-        if(!window._markerRedraw164) window._markerRedraw164=requestAnimationFrame(()=>{window._markerRedraw164=0;if(selectedStockCode&&currentExitStrategy==='AI_POWER_90D')renderCanvasChart();});
-      }
+      if(selectedStockCode && !window._markerRedraw164) window._markerRedraw164=requestAnimationFrame(()=>{window._markerRedraw164=0;refreshCapitalChart164();});
       lineV14Snapshot = endDate < lineV14Day() ? null : { trades: boughtTrades.map(t=>({...t})), keys: allStocks.map(t=>({code:t.code,name:t.name,date:t.keyKDate,price:t.yestClose})), strategy: stratLabelMap[currentExitStrategy] || currentExitStrategy, config: JSON.stringify([getExitStrategyConfig(),getCurrentFilterOptions(),startDate,endDate,initCapital,lotMode,perStockBudget,withdrawParam,profitRule,includeFees,sectorMode,trimN,document.getElementById("simPrioritySelect")?.value,simManualCloseMap]), dataDate: rawAllLoadedStocks.reduce((d,t)=>String(t.latestTradeDate||'')>d?String(t.latestTradeDate):d,''), report: {initCapital,totalNetProfit,totalRoiPct,realizedProfit,unrealizedProfit,availableCash,holdingCnt, equity:availableCash+lockedVault+holdingMarketValue} };
       const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
       if (aiCmpBox && !aiCmpBox.classList.contains("hidden")) {
@@ -6127,7 +6177,7 @@ function lineTradeAmount161(t,close=false){
           return { ...pt, curP, totalCost, netProfit, netPct, autoRule, rowId: `sim-row-${pt.id || idx}` };
         });
 
-        lastPortComputedSnapshot = portComputed;
+        lastPortComputedSnapshot = numberStockTrades164(portComputed);
         const portNet = pRealized + pUnrealized;
         const portRoi = initCapital > 0 ? (portNet / initCapital) * 100 : 0;
         const portCash = initCapital - pSpentCash + pReturnedCash;
@@ -6166,7 +6216,7 @@ function lineTradeAmount161(t,close=false){
                 <tr id="${pt.rowId}" class="hover:bg-slate-800/40 transition">
                   <td class="py-1.5 px-1.5 text-center text-amber-300 font-bold">${idx + 1}</td>
                   <td class="py-1.5 px-2">
-                    <div onclick="openStockFromSimList('${pt.code}', '${pt.rowId}')" class="font-bold text-sky-300 hover:underline cursor-pointer">${pt.code} ${pt.name} 📈</div>
+                    <div onclick="openStockFromSimList('${pt.code}', '${pt.rowId}')" class="font-bold text-sky-300 hover:underline cursor-pointer">${pt.code} ${pt.name} 📈</div><div class="text-[10px] text-amber-200">${tradeOrdinal164(pt)}</div>
                     <input type="date" value="${pt.buyDate}" onchange="updatePortfolioField('${pt.id}', 'buyDate', this.value)"
                            class="mt-0.5 bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300" />
                   </td>
@@ -6235,7 +6285,7 @@ function lineTradeAmount161(t,close=false){
                 <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
                 <td class="py-1.5 px-2">
                   <div class="font-bold text-white">${bt.code} ${bt.name}</div>
-                  <div class="text-[10px] text-slate-400">${bt.aiTradeNo ? `第${bt.aiTradeNo}筆 AI ` : ""}${formatShortDateSlash(bt.buyDate)} 買</div>
+                  <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${formatShortDateSlash(bt.buyDate)} 買</div>
                 </td>
                 <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
@@ -8334,6 +8384,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
     function renderAiPowerPlanBox(stock) {
       const box = document.getElementById("aiPowerPlanBox");
       if (!box) return;
+      if(currentExitStrategy==='AI_POWER_90D'){box.innerHTML=capitalChartHud164(stock.code);return;}
       const plan = computeAiBuySellPowerOptimalPlan(stock);
       if (!plan) {
         box.innerHTML = `<div class="text-slate-400">🧠 AI 買賣力道規劃：此股近 60 日尚無足夠買力與價差樣本</div>`;
@@ -8358,7 +8409,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
           <span class="font-bold text-cyan-300">🧠 AI 買賣力道最佳價差規劃（已加入防出貨禁忌過濾）</span>
           <div class="flex flex-wrap items-center gap-1.5">
             <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 ${ptsColor} font-bold">
-              共 ${plan.trades.length} 筆 ｜ 最大價差合計：${ptsSign}${plan.totalPts.toFixed(2)} 點 (${ptsSign}$${Math.round(plan.totalPts * 1000).toLocaleString()}) ｜ 勝率 ${plan.winRate}%
+              AI理論參考（非實戰損益）｜ 共 ${plan.trades.length} 筆 ｜ 最大價差合計：${ptsSign}${plan.totalPts.toFixed(2)} 點 (${ptsSign}$${Math.round(plan.totalPts * 1000).toLocaleString()}) ｜ 勝率 ${plan.winRate}%
             </span>
             <button type="button" onclick="runAiMarketPatternLearner(true)" class="px-2 py-0.5 rounded bg-cyan-700/80 hover:bg-cyan-600 text-white font-bold text-[10.5px] transition shadow-sm">
               📚 AI 全市場回測歸納「必買/禁買理由」
@@ -8915,13 +8966,13 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       if (gOnly) {
         const plan=computeAiBuySellPowerOptimalPlan(stock);
         document.getElementById('detailKeyKTag').textContent='G. AI最佳買賣';
-        document.getElementById('detailSubTitle').textContent='獨立AI進出場 ｜ 今日總量 '+formatVolDisplay(stock.todayVol);
-        document.getElementById('detailDecisionBadge').textContent=plan?.trades.at(-1)?.isClosed?'AI已平倉':'AI追蹤';
+        document.getElementById('detailSubTitle').textContent='實戰資金模擬 ｜ 今日總量 '+formatVolDisplay(stock.todayVol);
+        document.getElementById('detailDecisionBadge').textContent=capitalChartState164(stock.code);
         document.getElementById('trackingDetailBanner').classList.add('hidden');
         document.getElementById('legendStopLossItem')?.classList.add('hidden');
         for (const [id,txt] of [['cardStopLossTitle','AI出場'],['cardStopLossPrice','依AI賣點'],['cardKeyHighTitle','AI買賣'],['cardKeyLowTitle','AI買賣'],['cardYestHigh','--'],['cardYestLow','--']]) {const el=document.getElementById(id);if(el)el.textContent=txt;}
-        if(diagTitle)diagTitle.textContent='AI獨立策略';
-        if(diagDetail)diagDetail.textContent=plan?`共 ${plan.trades.length} 筆 ｜ ${plan.totalPts.toFixed(2)} 點 ｜ ${formatMoneyDisplay(Math.round(plan.totalPts*1000))}`:'尚無AI交易';
+        if(diagTitle)diagTitle.textContent='實戰資金模擬';
+        if(diagDetail)diagDetail.textContent=capitalChartText164(stock.code);
         chartState.postExitActiveRef=null;chartState.simPreservedTrades=[];
       }
       renderAiPowerPlanBox(stock);
@@ -9981,13 +10032,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
               drawNonOverlappingLabel(`⚑ 第${tradeIdx+1}筆 AI賣${cashNote164} ${tr.sellPrice.toFixed(1)} (${sSign}${tr.profitPoints.toFixed(1)}點)`, xS, flagY - 13, -1, "#facc15", "bold 9.5px sans-serif");
             }
           });
-          // K線圖左上角顯示 AI 買進與賣出整合總獲利膠囊
-          if (aiPlan.trades.length > 0) {
-            const totSign = aiPlan.totalPts >= 0 ? "+" : "";
-            const totTxt = `🧠 AI買賣總獲利：${totSign}${aiPlan.totalPts.toFixed(2)}點 (${totSign}$${Math.round(aiPlan.totalPts * 1000).toLocaleString()}) ｜ ${aiPlan.trades.length}筆 勝率${aiPlan.winRate}%`;
-            const profitBadge=document.getElementById('aiProfit161');
-            if(profitBadge){profitBadge.textContent=totTxt;profitBadge.classList.toggle('loss161',aiPlan.totalPts<0);profitBadge.hidden=false;}
-          }
+
         }
       }
 
@@ -10184,7 +10229,8 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         }
         updateHudDisplay(hoveredBar, hoveredPrevBar);
       }
-      if(!is5mTf){const groups=[{rows:userPortfolioTrades.filter(t=>t.code===selectedStockCode&&String(t.id).startsWith('manual161_')&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'個人',color:'#38bdf8'},{rows:official161Rows.filter(t=>t.code===selectedStockCode&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'正式',color:'#fbbf24'}];if((document.getElementById('chkShowCapitalMarkers164')?.checked??true)&&chartSim164.strategy===currentExitStrategy)groups.unshift({rows:chartSim164.bought.filter(t=>String(t.code)===String(selectedStockCode)),label:'實戰',color:'#fb7185'});ctx.save();ctx.font='bold 11px sans-serif';ctx.textAlign='center';for(const g of groups){g.rows.sort((a,b)=>a.buyDate.localeCompare(b.buyDate)).forEach((t,i)=>{if(g.label==='實戰'&&t.isClosed){const bi=bars.findIndex(b=>b.date===t.buyDate),si=bars.findIndex(b=>b.date===t.sellDate);const pnl=Number(t.netProfit);drawTradeLink164(bi,si,pnl);}for(const [date,price,side] of [[t.buyDate,t.buyPrice,'買'],[t.isClosed?t.sellDate:null,t.exitOrNowPrice||t.sellPrice,'賣']]){const j=visibleBars.findIndex(b=>b.date===date);if(j<0||!price)continue;const x=padLeft+stepX*(j+.5);if(g.label==='實戰'){const buy=side==='買',bar=visibleBars[j],anchor=priceToY(buy?bar.low:bar.high),r=8,cy=anchor+(buy?r:-r),col=buy?'#a78bfa':'#facc15';ctx.save();ctx.fillStyle=buy?'#7c3aed':'#a16207';ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(x,cy,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffffff';ctx.fillText(buy?'🧠':'🏁',x,cy);ctx.restore();drawNonOverlappingLabel('第'+(i+1)+'筆 實戰'+side,x,cy+(buy?18:-16),buy?1:-1,col,'bold 10px sans-serif');continue;}const y=priceToY(price),ly=Math.max(padTop+12,Math.min(padTop+pricePlotH-12,y+(side==='買'?25:-25)));ctx.strokeStyle=(side==='買'?'#ef4444':'#10b981');ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,ly);ctx.stroke();ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.fillText(('✋'+g.label+(i+1)+side),x,ly);}});}ctx.restore();}
+      if(stock){const badge=document.getElementById('aiProfit161');if(badge){badge.textContent=capitalChartText164(stock.code);badge.classList.toggle('loss161',capitalChartStats164(capitalChartRows164(stock.code)).net<0);badge.hidden=false;}}
+      if(!is5mTf){const groups=[{rows:userPortfolioTrades.filter(t=>t.code===selectedStockCode&&String(t.id).startsWith('manual161_')&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'個人',color:'#38bdf8'},{rows:official161Rows.filter(t=>t.code===selectedStockCode&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'正式',color:'#fbbf24'}];if((document.getElementById('chkShowCapitalMarkers164')?.checked??true)&&chartSim164.strategy===currentExitStrategy)groups.unshift({rows:capitalChartRows164(selectedStockCode),label:'實戰',color:'#fb7185'});ctx.save();ctx.font='bold 11px sans-serif';ctx.textAlign='center';for(const g of groups){g.rows.sort((a,b)=>a.buyDate.localeCompare(b.buyDate)).forEach((t,i)=>{if(g.label==='實戰'&&t.isClosed){const bi=bars.findIndex(b=>b.date===t.buyDate),si=bars.findIndex(b=>b.date===t.sellDate);const pnl=Number(t.netProfit);drawTradeLink164(bi,si,pnl);}for(const [date,price,side] of [[t.buyDate,t.buyPrice,'買'],[t.isClosed?t.sellDate:null,t.exitOrNowPrice??t.curP??t.sellPrice,'賣']]){const j=visibleBars.findIndex(b=>b.date===date);if(j<0||!price)continue;const x=padLeft+stepX*(j+.5);if(g.label==='實戰'){const buy=side==='買',bar=visibleBars[j],anchor=priceToY(buy?bar.low:bar.high),r=8,cy=anchor+(buy?r:-r),col=buy?'#a78bfa':'#facc15';ctx.save();ctx.fillStyle=buy?'#7c3aed':'#a16207';ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(x,cy,r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffffff';ctx.fillText(buy?'🧠':'🏁',x,cy);ctx.restore();drawNonOverlappingLabel('第'+(t.realTradeNo164||i+1)+'筆 實戰'+side,x,cy+(buy?18:-16),buy?1:-1,col,'bold 10px sans-serif');continue;}const y=priceToY(price),ly=Math.max(padTop+12,Math.min(padTop+pricePlotH-12,y+(side==='買'?25:-25)));ctx.strokeStyle=(side==='買'?'#ef4444':'#10b981');ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,ly);ctx.stroke();ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.fillText(('✋'+g.label+(i+1)+side),x,ly);}});}ctx.restore();}
     }
 
     function drawHorizontalRefLine(ctx, price, y, color, label, x1, x2, dashPattern = [4, 3], lineWidth = 1.2, placedYs = null) {
@@ -10291,24 +10337,8 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
           flowHudHtml += `<div class="text-[10.5px] font-mono text-slate-400 mt-0.5">📊 價量推估買方力道：<b class="${estBuyPct >= 55 ? 'text-rose-300' : 'text-emerald-300'}">${estBuyPct}%</b>（量柱下粉紅=買力 / 上青綠=賣壓）</div>`;
         }
       }
-      if (showAiHud && hudStock) {
-        const aiHudPlan = computeAiBuySellPowerOptimalPlan(hudStock);
-        if (aiHudPlan && aiHudPlan.trades.length > 0) {
-          const pSign = aiHudPlan.totalPts >= 0 ? "+" : "";
-          const pCol = aiHudPlan.totalPts >= 0 ? "text-rose-300" : "text-emerald-300";
-          const moneyStr = `${pSign}$${Math.round(aiHudPlan.totalPts * 1000).toLocaleString()}`;
-          const matchedTr = aiHudPlan.trades.find(tr => bar.date >= tr.buyDate && bar.date <= tr.sellDate);
-          const trNote = matchedTr
-            ? ` ｜ 當前波段(${matchedTr.buyDate.slice(5)}買 ${matchedTr.buyPrice.toFixed(1)} → ${matchedTr.isClosed ? matchedTr.sellDate.slice(5)+'賣 '+matchedTr.sellPrice.toFixed(1) : '續抱'}：<b class="${matchedTr.profitPoints >= 0 ? 'text-amber-300' : 'text-emerald-300'}">${matchedTr.profitPoints >= 0 ? '+' : ''}${matchedTr.profitPoints.toFixed(2)}點</b>)`
-            : "";
-          if (document.getElementById("chkShowAiPowerMarkers")?.checked) {
-            const bRuleTxt = aiHudPlan.buyRule ? aiHudPlan.buyRule.name : "--";
-            const sRuleTxt = aiHudPlan.sellRule ? aiHudPlan.sellRule.name : "--";
-            flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5 w-full">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
-            flowHudHtml += `<div class="text-[10.5px] font-mono text-amber-200/95 mt-0.5 w-full">📌 AI 選出規則：買入【<b class="text-rose-300">${bRuleTxt}</b>】 ｜ 平倉【<b class="text-cyan-300">${sRuleTxt}</b>】</div>`;
-            flowHudHtml += `<div class="w-full mt-1 border-t border-purple-500/25 pt-1 space-y-1"><div class="font-bold text-purple-200">AI 進出場明細</div>${aiHudPlan.trades.map((tr, i) => `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-300"><span>第 ${i+1} 筆</span><span class="text-rose-300">買入 ${tr.buyDate} @ ${Number(tr.buyPrice).toFixed(2)}</span><span class="text-cyan-300">${tr.isClosed ? `賣出 ${tr.sellDate} @ ${Number(tr.sellPrice).toFixed(2)}` : '持有中（未平倉）'}</span><span class="${tr.profitPoints >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${tr.isClosed ? '價差' : '未實現價差'} ${tr.profitPoints >= 0 ? '+' : ''}${Number(tr.profitPoints).toFixed(2)} 點（NT$${Math.round(tr.profitPoints*1000).toLocaleString()}） ｜ ${tr.isClosed ? "報酬率" : "未實現報酬率"} ${Number(tr.buyPrice)>0 && Number.isFinite(Number(tr.profitPoints)) ? `${Number(tr.profitPoints)>0 ? "+" : ""}${(Number(tr.profitPoints)/Number(tr.buyPrice)*100).toFixed(2)}%` : "--"}</span></div>`).join('')}</div>`;
-          }
-        }
+      if(hudStock && currentExitStrategy!=='AI_POWER_90D' && document.getElementById('chkShowCapitalMarkers164')?.checked){
+        flowHudHtml += capitalChartHud164(hudStock.code);
       }
       const avgP = bar.forceAvgPrice > 0 ? bar.forceAvgPrice.toFixed(2) : bar.close.toFixed(2);
       const amtStr = formatAmountWan(bar.amountWan);
@@ -10600,7 +10630,7 @@ window.addEventListener('load',()=>{
 <script>
 let poolFold162=false;
 function setPoolFold162(v){poolFold162=!!v;document.getElementById('stockPoolPanel')?.classList.toggle('poolFolded162',poolFold162);const b=document.getElementById('poolFoldBtn162');if(b){b.textContent=poolFold162?'+ 展開':'− 收合';b.setAttribute('aria-expanded',String(!poolFold162));}}
-function renderTodayClosed162(){const body=document.getElementById('todayClosedBody162'), summary=document.getElementById('todayClosedSummary162'), panel=document.getElementById('todayClosed162');if(!body||!summary||!panel)return;panel.classList.toggle('hidden',document.getElementById('simTradesTableWrap').classList.contains('hidden'));const day=lineV14Day(), rows=(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot).filter(t=>t.isClosed&&t.sellDate===day);const cash=n=>Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';summary.textContent=`｜${rows.length} 筆・${rows.reduce((n,t)=>n+(Number(t.lots)||0),0)} 張・淨損益 ${cash(rows.reduce((n,t)=>n+(Number(t.netProfit)||0),0))}`;body.replaceChildren();for(const t of rows){const tr=body.insertRow();const days=t.holdingDays??(t.buyDate?Math.max(1,Math.round((Date.parse(t.sellDate)-Date.parse(t.buyDate))/86400000)+1)+' 日曆日':'—');const values=[t.code+' '+t.name,t.buyDate+' / '+t.buyPrice,t.sellDate+' / '+(t.curP??t.exitOrNowPrice),t.lots,t.totalCost==null?'—':cash(t.totalCost),typeof days==='number'?days+' 交易日':days,cash(t.netProfit),(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—')+' / '+(t.exitReason||t.customRuleText||'已平倉')];values.forEach((v,i)=>{const td=tr.insertCell();td.textContent=v??'—';if(i===6)td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[0].style.cursor='pointer';tr.cells[0].onclick=()=>openStockFromSimList(t.code,t.rowId||'');}if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent='今日尚無平倉交易';}}
+function renderTodayClosed162(){const body=document.getElementById('todayClosedBody162'), summary=document.getElementById('todayClosedSummary162'), panel=document.getElementById('todayClosed162');if(!body||!summary||!panel)return;panel.classList.toggle('hidden',document.getElementById('simTradesTableWrap').classList.contains('hidden'));const day=lineV14Day(), rows=(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot).filter(t=>t.isClosed&&t.sellDate===day);const cash=n=>Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';summary.textContent=`｜${rows.length} 筆・${rows.reduce((n,t)=>n+(Number(t.lots)||0),0)} 張・淨損益 ${cash(rows.reduce((n,t)=>n+(Number(t.netProfit)||0),0))}`;body.replaceChildren();for(const t of rows){const tr=body.insertRow();const days=t.holdingDays??(t.buyDate?Math.max(1,Math.round((Date.parse(t.sellDate)-Date.parse(t.buyDate))/86400000)+1)+' 日曆日':'—');const values=[t.code+' '+t.name+'｜'+tradeOrdinal164(t),t.buyDate+' / '+t.buyPrice,t.sellDate+' / '+(t.curP??t.exitOrNowPrice),t.lots,t.totalCost==null?'—':cash(t.totalCost),typeof days==='number'?days+' 交易日':days,cash(t.netProfit),(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—')+' / '+(t.exitReason||t.customRuleText||'已平倉')];values.forEach((v,i)=>{const td=tr.insertCell();td.textContent=v??'—';if(i===6)td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[0].style.cursor='pointer';tr.cells[0].onclick=()=>openStockFromSimList(t.code,t.rowId||'');}if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent='今日尚無平倉交易';}}
 
 function todayBuyRows163(rows,day){return (rows||[]).filter(t=>String(t.buyDate||'').slice(0,10)===day);}
 function renderTodayBuy163(){
@@ -10610,14 +10640,14 @@ function renderTodayBuy163(){
  const cash=n=>n!=null&&Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';
  const sum=k=>rows.reduce((a,t)=>a+(Number(t[k])||0),0);
  summary.textContent=`｜${rows.length} 筆・${sum('lots')} 張・投入 ${cash(sum('totalCost'))}・淨損益 ${cash(sum('netProfit'))}`;
- body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}`,`${t.buyDate} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,t.rowId||'');});
+ body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}｜${tradeOrdinal164(t)}`,`${t.buyDate} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,t.rowId||'');});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=9;td.textContent='今日尚無買進交易';}
 }
-window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');const update=()=>{renderTodayClosed162();renderTodayBuy163();};if(b)new MutationObserver(update).observe(b,{childList:true});update();});
+window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');const update=()=>{renderTodayClosed162();renderTodayBuy163();renderHistoryClosed164();};if(b)new MutationObserver(update).observe(b,{childList:true});update();});
 </script>
 <nav id="nav164" aria-label="手機快捷選單"><button type="button" data-go164="home">⌂ 首頁</button><button type="button" data-go164="chart">📈 K線</button><button type="button" data-go164="hold">📋 持倉</button><button type="button" data-go164="settings">⚙ 設定</button></nav><script>
 (()=>{const root=document.documentElement,select=document.getElementById('layoutSelect164'),status=document.getElementById('layoutStatus164');const mq=matchMedia('(max-width: 767px)'),coarse=matchMedia('(pointer: coarse)');let choice='auto';try{choice=localStorage.getItem('w-layout164')||'auto'}catch(e){}if(!['auto','mobile','desktop'].includes(choice))choice='auto';select.value=choice;let lastMode='';function apply(){const mobile=choice==='mobile'||(choice==='auto'&&(mq.matches||(coarse.matches&&/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent))));const mode=mobile?'mobile':'desktop';root.classList.toggle('mobile164',mobile);root.classList.toggle('desktop164',!mobile);status.textContent=mobile?'目前：手機版':'目前：電腦版';if(mode!==lastMode){lastMode=mode;requestAnimationFrame(()=>{if(typeof renderCanvasChart==='function')try{renderCanvasChart()}catch(e){}})}}select.addEventListener('change',()=>{choice=select.value;try{localStorage.setItem('w-layout164',choice)}catch(e){}apply()});mq.addEventListener('change',apply);coarse.addEventListener('change',apply);apply();
-const ids=['simTradesTableBody','stockTableBody','todayBuyBody163','todayClosedBody162','simSkippedTableBody'];for(const id of ids){const body=document.getElementById(id),table=body?.closest('table');if(!table)continue;table.classList.add('rwdCards164');function decorate(){const heads=[...table.querySelectorAll('thead tr:last-child th')].map(x=>x.textContent.replace(/[▼▲↕]/g,'').trim());for(const row of body.rows){if(row.cells.length!==heads.length)continue;[...row.cells].forEach((cell,i)=>{cell.dataset.label164=heads[i];if(i===0||/股票|狀態|條件|原因/.test(heads[i]))cell.dataset.wide164='1';else delete cell.dataset.wide164;});}}const obs=new MutationObserver(decorate);obs.observe(body,{childList:true,subtree:true});if(table.tHead)obs.observe(table.tHead,{childList:true,subtree:true});decorate();}
+const ids=['simTradesTableBody','stockTableBody','todayBuyBody163','todayClosedBody162','historyClosedBody164','simSkippedTableBody'];for(const id of ids){const body=document.getElementById(id),table=body?.closest('table');if(!table)continue;table.classList.add('rwdCards164');function decorate(){const heads=[...table.querySelectorAll('thead tr:last-child th')].map(x=>x.textContent.replace(/[▼▲↕]/g,'').trim());for(const row of body.rows){if(row.cells.length!==heads.length)continue;[...row.cells].forEach((cell,i)=>{cell.dataset.label164=heads[i];if(i===0||/股票|狀態|條件|原因/.test(heads[i]))cell.dataset.wide164='1';else delete cell.dataset.wide164;});}}const obs=new MutationObserver(decorate);obs.observe(body,{childList:true,subtree:true});if(table.tHead)obs.observe(table.tHead,{childList:true,subtree:true});decorate();}
 const scroll=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});document.getElementById('nav164').addEventListener('click',e=>{const key=e.target.closest('button')?.dataset.go164;if(key==='home')window.scrollTo({top:0,behavior:'smooth'});if(key==='chart')scroll('detailPanelSection');if(key==='hold'){const wrap=document.getElementById('simTradesTableWrap');if(wrap?.classList.contains('hidden'))document.getElementById('btnToggleSimTable')?.click();scroll('btnToggleSimTable')}if(key==='settings')document.getElementById('apiStatusBtn')?.click()});
 })();</script>
 <script id="mobileHome164Script">
@@ -10625,9 +10655,9 @@ const scroll=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',
 const panel=body.parentElement, marker=document.createComment('capital original position');panel.before(marker);const home=document.createElement('section');home.id='mobileHome164';main.prepend(home);
 const params=document.createElement('details'), ai=document.createElement('details');params.className=ai.className='mobileHomeFold164';params.innerHTML='<summary>投資參數與策略設定</summary>';ai.innerHTML='<summary>AI 實戰資金模擬七大策略收益對比</summary>';
 const equity=document.createElement('div');equity.className='mobileHomeFold164';equity.innerHTML='<div>期末總權益</div><div id="mobileEquity164">--</div><div id="mobilePeriod164" class="text-slate-400"></div>';
-const results=$('simResultCardsMobile'), strategies=$('manualCapitalStrategies'), compare=$('simAiStrategyCompareBox');const first=$('capitalParams164'), second=$('capitalOptions164'), aiLabel=$('lblAiCapitalOpt');const aiAnchor=document.createComment('AI original position');aiLabel.before(aiAnchor);const buy=$('todayBuy163');const closed=$('todayClosed162');const tracked=[first,second,strategies,compare,results,buy,closed].filter(Boolean);const anchors=new Map(tracked.map(n=>{const c=document.createComment('original mobile home');n.before(c);return[n,c]}));let active=false,opened=false,oldPool=false;
+const results=$('simResultCardsMobile'), strategies=$('manualCapitalStrategies'), compare=$('simAiStrategyCompareBox');const first=$('capitalParams164'), second=$('capitalOptions164'), aiLabel=$('lblAiCapitalOpt');const aiAnchor=document.createComment('AI original position');aiLabel.before(aiAnchor);const buy=$('todayBuy163');const closed=$('todayClosed162');const history=$('historyClosed164');const tracked=[first,second,strategies,compare,results,buy,closed,history].filter(Boolean);const anchors=new Map(tracked.map(n=>{const c=document.createComment('original mobile home');n.before(c);return[n,c]}));let active=false,opened=false,oldPool=false;
 function update(){const note=$('simStatusNote')?.textContent||'', m=note.match(/期末總權益\s*(.+)$/);const v=m?m[1]:'--';if($('mobileEquity164').textContent!==v)$('mobileEquity164').textContent=v;const period=note.split('投入')[0].trim();if($('mobilePeriod164').textContent!==period)$('mobilePeriod164').textContent=period;const p=$('simTotalProfitEl');$('mobileEquity164').style.color=p?.textContent.trim().startsWith('-')?'#34d399':'#fb7185';ai.hidden=compare.classList.contains('hidden');}
-function apply(){const mobile=document.documentElement.classList.contains('mobile164');if(mobile===active)return;active=mobile;if(mobile){home.append(panel);body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');const cb=$('btnToggleCapitalSim');if(cb)cb.textContent='🔼 收合資金試算';body.prepend(equity,results,strategies);params.append(first,second);strategies.before(params);strategies.after(aiLabel);ai.append(compare);body.append(buy,closed,ai);params.open=true;ai.open=!compare.classList.contains("hidden");oldPool=typeof poolFold162!=='undefined'&&poolFold162;if(typeof setPoolFold162==='function')setPoolFold162(true);const wrap=$('simTradesTableWrap');opened=!!wrap?.classList.contains('hidden');if(opened)$('btnToggleSimTable')?.click();}else{marker.after(panel);aiAnchor.after(aiLabel);for(const [n,c] of anchors)c.after(n);equity.remove();params.remove();ai.remove();if(opened&&!$('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();if(typeof setPoolFold162==='function')setPoolFold162(oldPool);}if(mobile)update();}
+function apply(){const mobile=document.documentElement.classList.contains('mobile164');if(mobile===active)return;active=mobile;if(mobile){home.append(panel);body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');const cb=$('btnToggleCapitalSim');if(cb)cb.textContent='🔼 收合資金試算';body.prepend(equity,results,strategies);params.append(first,second);strategies.before(params);strategies.after(aiLabel);ai.append(compare);body.append(buy,closed,history,ai);params.open=true;ai.open=!compare.classList.contains("hidden");oldPool=typeof poolFold162!=='undefined'&&poolFold162;if(typeof setPoolFold162==='function')setPoolFold162(true);const wrap=$('simTradesTableWrap');opened=!!wrap?.classList.contains('hidden');if(opened)$('btnToggleSimTable')?.click();}else{marker.after(panel);aiAnchor.after(aiLabel);for(const [n,c] of anchors)c.after(n);equity.remove();params.remove();ai.remove();if(opened&&!$('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();if(typeof setPoolFold162==='function')setPoolFold162(oldPool);}if(mobile)update();}
 const obs=new MutationObserver(()=>{apply();if(active)update()});obs.observe(document.documentElement,{attributes:true,attributeFilter:['class']});for(const n of [$('simStatusNote'),$('simTotalProfitEl'),compare])if(n)obs.observe(n,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
 window.addEventListener('load',()=>{apply();if(active){body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');update();}});apply();
 const nav=$('nav164');nav?.addEventListener('click',e=>{if(!active)return;const key=e.target.closest('button')?.dataset.go164;if(key==='home'||key==='hold'||key==='settings'){e.stopImmediatePropagation();if(key==='settings'){params.open=true;params.scrollIntoView({block:'start',behavior:'smooth'});}else if(key==='hold'){if($('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();$('btnToggleSimTable')?.scrollIntoView({block:'start',behavior:'smooth'});}else home.scrollIntoView({block:'start',behavior:'smooth'});}},true);const homeButton=nav?.querySelector('[data-go164="home"]');if(homeButton)homeButton.textContent='⌂ 實戰首頁';})();
@@ -10652,5 +10682,33 @@ html.mobile164 #capitalOptions164 label{max-width:100%;flex-wrap:wrap}html.mobil
 #mobileCapitalProgress164{display:none}html.mobile164 #mobileCapitalProgress164[data-visible="1"]{display:block!important;width:100%;flex:0 0 100%;box-sizing:border-box;padding:10px;border:1px solid #a78bfa;border-radius:10px;background:#241345;color:#fff;margin:6px 0;position:relative}#mobileCapitalPct164{font-size:30px;font-weight:800;color:#facc15}#mobileCapitalStage164{font-size:16px;overflow-wrap:anywhere}#mobileCapitalBar164{width:100%;height:14px;accent-color:#a78bfa}
 </style><script>
 (()=>{const label=document.getElementById('lblAiCapitalOpt');if(!label)return;const panel=document.createElement('div');panel.id='mobileCapitalProgress164';panel.setAttribute('aria-live','polite');panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><strong>AI 實戰尋優進度</strong><span id="mobileCapitalPct164">0%</span></div><progress id="mobileCapitalBar164" max="100" value="0"></progress><div id="mobileCapitalStage164"></div>';function place(){if(label.nextElementSibling!==panel)label.after(panel);}place();const obs=new MutationObserver(place);obs.observe(document.getElementById('capitalSimBody')||document.body,{childList:true,subtree:true});const old=document.getElementById('capitalAiProgress');if(old&&!old.classList.contains('hidden')){const bar=document.getElementById('capitalAiProgressBar');const txt=document.getElementById('capitalAiProgressText');showAiProgress('capital',bar.value,(txt.textContent||'').replace(/^\d+%\s*·\s*/,''));}})();
-</script></body>
+</script>
+<script>
+let historyLimit164=50, historySort164={key:'sellDate',dir:-1}, historyFilters164={};
+const historyCols164=[['seq','#'],['stock','股票'],['realTradeNo164','第幾次買入'],['buyDate','買進日'],['buyPrice','買進價'],['sellDate','平倉日'],['sellPrice','平倉價'],['lots','張數'],['totalCost','投入本金'],['holdingDays','持有天數'],['netProfit','淨損益'],['pct','報酬率 (%)'],['reason','出場原因']];
+function historyRows164(rows,day){return (rows||[]).filter(t=>t.isClosed&&t.sellDate&&String(t.sellDate).slice(0,10)<day).sort((a,b)=>String(b.sellDate).localeCompare(String(a.sellDate))||String(b.buyDate).localeCompare(String(a.buyDate))).map((t,i)=>({...t,seq:i+1,stock:`${t.code} ${t.name||''}`,sellPrice:t.exitOrNowPrice??t.curP??t.sellPrice,pct:t.netPct??(Number(t.totalCost)>0?Number(t.netProfit)/Number(t.totalCost)*100:null),reason:t.exitReason||t.customRuleText||'已平倉'}));}
+function historyMatch164(v,q){q=String(q||'').trim().toLowerCase();if(!q)return true;const m=q.match(/^(>=|<=|>|<|=)\s*(-?\d+(?:\.\d+)?)$/);if(m){if(v==null||v===''||!Number.isFinite(Number(v)))return false;const a=Number(v),b=Number(m[2]);return m[1]==='>='?a>=b:m[1]==='<='?a<=b:m[1]==='>'?a>b:m[1]==='<'?a<b:a===b;}return String(v??'').toLowerCase().includes(q);}
+function historyQuery164(rows,query,filters,sort){return rows.filter(t=>historyMatch164(t.stock,query)&&Object.entries(filters).every(([k,v])=>historyMatch164(t[k],v))).sort((a,b)=>{let x=a[sort.key],y=b[sort.key];if(x==null||y==null)return x==null?(y==null?0:1):-1;const numeric=!['stock','buyDate','sellDate','reason'].includes(sort.key);return sort.dir*(numeric?Number(x)-Number(y):String(x).localeCompare(String(y),'zh-Hant'))||a.seq-b.seq;});}
+function renderHistoryClosed164(){
+ const panel=document.getElementById('historyClosed164'),body=document.getElementById('historyClosedBody164'),wrap=document.getElementById('simTradesTableWrap');if(!panel||!body||!wrap)return;
+ const hidden=wrap.classList.contains('hidden');panel.classList.toggle('hidden',hidden);if(hidden)return;
+ const all=historyRows164(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot,lineV14Day());
+ const rows=historyQuery164(all,document.getElementById('historySearch164')?.value,historyFilters164,historySort164);
+ const money=n=>n!=null&&Number.isFinite(Number(n))?(Number(n)<0?'−$':Number(n)>0?'+$':'$')+Math.round(Math.abs(Number(n))).toLocaleString('en-US'):'—';
+ const sum=k=>rows.reduce((a,t)=>a+(Number(t[k])||0),0),net=sum('netProfit'),wins=rows.filter(t=>Number(t.netProfit)>0).length,losses=rows.filter(t=>Number(t.netProfit)<0).length,cost=sum('totalCost');
+ document.getElementById('historyClosedSummary164').textContent=`｜${rows.length}/${all.length} 筆・${sum('lots')} 張・淨損益 ${money(net)}`;
+ if(!panel.open)return;
+ document.getElementById('historyStats164').textContent=`符合 ${rows.length} 筆｜獲利 ${wins} 筆｜虧損 ${losses} 筆｜持平 ${rows.length-wins-losses} 筆｜勝率 ${rows.length?(wins/rows.length*100).toFixed(1):'0.0'}%｜交易本金合計 ${money(cost)}｜本金加權報酬率 ${cost>0?(net/cost*100).toFixed(2)+'%':'—'}`;
+ body.replaceChildren();
+ const num=v=>v!=null&&Number.isFinite(Number(v))?Number(v).toFixed(2):'—';
+ rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;const vals=[rows.indexOf(t)+1,t.stock,t.realTradeNo164,t.buyDate,num(t.buyPrice),t.sellDate,num(t.sellPrice),t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(j===1||j===12)td.dataset.wide164='1';if(j===10||j===11)td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,tr.id);});
+ if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=13;td.textContent='沒有符合條件的歷史平倉交易';}
+ document.getElementById('historyMore164').classList.toggle('hidden',rows.length<=historyLimit164);
+}
+(()=>{const panel=document.getElementById('historyClosed164'),table=panel.querySelector('table'),head=table.tHead.rows[0];const tools=document.createElement('div');tools.className='historyTools164';tools.innerHTML='<input id="historySearch164" type="search" placeholder="搜尋股票代號或名稱" aria-label="搜尋股票代號或名稱"><button type="button" id="historyReset164">清除篩選</button><label>排序 <select id="historySortField164"></select></label><button type="button" id="historySortDir164">由大／新到小／舊</button><details><summary>各欄位篩選（可輸入 &gt;100、&lt;0）</summary><div id="historyFilterGrid164"></div></details>';table.before(tools);const select=document.getElementById('historySortField164'),grid=document.getElementById('historyFilterGrid164');head.replaceChildren();function refresh(){historyLimit164=50;select.value=historySort164.key;document.getElementById('historySortDir164').textContent=historySort164.dir===-1?'由大／新到小／舊':'由小／舊到大／新';head.querySelectorAll('button').forEach(b=>b.textContent=b.dataset.name+(b.dataset.key===historySort164.key?(historySort164.dir===1?' ▲':' ▼'):' ↕'));renderHistoryClosed164();}for(const [key,name] of historyCols164){const opt=document.createElement('option');opt.value=key;opt.textContent=name;select.append(opt);const th=document.createElement('th'),btn=document.createElement('button');btn.type='button';btn.dataset.key=key;btn.dataset.name=name;btn.onclick=()=>{historySort164={key,dir:historySort164.key===key?-historySort164.dir:-1};refresh();};th.append(btn);head.append(th);const label=document.createElement('label');label.textContent=name;const inp=document.createElement('input');inp.dataset.key=key;inp.placeholder=['buyDate','sellDate'].includes(key)?'YYYY-MM-DD':'篩選';inp.oninput=()=>{historyFilters164[key]=inp.value;refresh();};label.append(inp);grid.append(label);}select.onchange=()=>{historySort164.key=select.value;refresh();};document.getElementById('historySortDir164').onclick=()=>{historySort164.dir*=-1;refresh();};document.getElementById('historySearch164').oninput=refresh;document.getElementById('historyReset164').onclick=()=>{historyFilters164={};document.getElementById('historySearch164').value='';grid.querySelectorAll('input').forEach(i=>i.value='');refresh();};refresh();})();
+document.getElementById('historyClosed164').addEventListener('toggle',()=>{if(document.getElementById('historyClosed164').open)renderHistoryClosed164();});
+document.getElementById('historyMore164').addEventListener('click',()=>{historyLimit164+=50;renderHistoryClosed164();});
+</script>
+<style>#historyClosed164 td,#historyClosed164 th{padding:6px;white-space:nowrap}#historyClosed164 tbody tr{border-top:1px solid #334155}html.mobile164 #historyClosed164 td{white-space:normal;overflow-wrap:anywhere}html.mobile164 #historyClosed164 td:nth-child(13){grid-column:1/-1}.historyTools164{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;align-items:center}.historyTools164 input,.historyTools164 select,.historyTools164 button{background:#182438;color:#fff;border:1px solid #64748b;border-radius:5px;padding:7px;max-width:100%;min-width:0}.historyTools164 details{flex-basis:100%}#historyFilterGrid164{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:7px}#historyFilterGrid164 label{display:grid;gap:3px;min-width:0}html.mobile164 .historyTools164 input,html.mobile164 .historyTools164 select,html.mobile164 .historyTools164 button{font-size:16px}#historyClosed164 th button{cursor:pointer}</style>
+</body>
 </html>
