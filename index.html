@@ -4424,7 +4424,7 @@
             <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
             <td class="py-1.5 px-2 text-center space-y-1">
               <div>${stBadge}</div>
-              ${!bt.isClosed && bt.strategyKey !== "AI_POWER_90D" ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 恢復追蹤</button>` : '')}
+              ${!bt.manualSource && !bt.isClosed && bt.strategyKey !== "AI_POWER_90D" ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 恢復追蹤</button>` : '')}
             </td>
           </tr>
         `;
@@ -4723,7 +4723,7 @@
 
     function toggleSimTradesTable() {
       const el = document.getElementById("simTradesTableWrap");
-      if (el) { const hidden=el.classList.toggle("hidden"); if(!hidden){renderSimTradesTableOnly();} }
+      if (el) { const hidden=el.classList.toggle("hidden"); if(!hidden){document.getElementById("strategyCompareBox")?.classList.add("v161-fold");const b=document.querySelector("#strategyCompareBox > .v161-collapse");if(b){b.textContent="+";b.setAttribute("aria-expanded","false");}renderSimTradesTableOnly();} }
     }
 
     const TW_SEMI_CODES = new Set([
@@ -5481,6 +5481,16 @@ setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);awai
 async function line155Load(){try{const r=await dev15Req('line-mode');line155Actual=r.mode;document.getElementById('line155Mode').value=r.mode;document.getElementById('line155Status').textContent='已生效：'+(r.mode==='broadcast'?'全體好友':'僅本人');}catch(e){line155Actual=null;document.getElementById('line155Status').textContent='讀取失敗：'+e.message;}}
 async function line155Save(){try{const mode=document.getElementById('line155Mode').value;if(mode==='broadcast'&&!confirm('全體好友將收到正式交易通知及測試訊息，並消耗訊息額度。確定？'))return;await dev15Req('line-mode',{mode});await line155Load();}catch(e){lineV14Status('儲存失敗：'+e.message);}}
 async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Error('無法確認通知對象');if(line155Actual==='broadcast'&&!confirm('確定向全體好友發送測試通知？'))return;const result=await lineV14Post({test:true,mode:line155Actual});if(result.accepted!==true||result.mode!==line155Actual)throw Error('後台版本不符，請更新 V15.6');lineV14Status('LINE API 已受理（'+(result.mode==='broadcast'?'全體好友':'僅本人')+'），請確認手機實際收件');}catch(e){lineV14Status(e.message);}}
+function lineTradeAmount161(t,close=false){
+ const lots=Number(t.lots), buy=Number(t.buyPrice), sell=Number(t.exitOrNowPrice);
+ const valid=Number.isFinite(lots)&&lots>0&&Number.isFinite(buy)&&buy>0;
+ const money=n=>Number.isFinite(n)?'NT$'+Math.round(n).toLocaleString('en-US'):'未提供';
+ const signed=n=>Number.isFinite(n)?(n<0?'-':n>0?'+':'')+money(Math.abs(n)):'未提供';
+ if(!valid)return '\n交易張數／金額：未提供';
+ if(!close)return '\n買進張數：'+lots+' 張\n買進金額：'+money(buy*lots*1000);
+ if(!Number.isFinite(sell)||sell<=0)return '\n平倉張數：'+lots+' 張\n平倉金額／損益：未提供';
+ return '\n平倉張數：'+lots+' 張\n買進金額：'+money(buy*lots*1000)+'\n平倉金額：'+money(sell*lots*1000)+'\n實現損益（未扣費）：'+signed((sell-buy)*lots*1000)+(Number.isFinite(t.netProfit)?'\n估算淨損益（扣費）：'+signed(t.netProfit):'');
+}
     async function lineProcessV14(){
       if(!dev15Monitor)return;
       if(lineV14Busy)return;
@@ -5498,10 +5508,11 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         const money=v=>Number.isFinite(v)?'NT$'+Math.round(v).toLocaleString('en-US'):'未提供';
         const px=v=>Number.isFinite(v)&&v>0?v.toFixed(2)+' 元':'未提供';
         for(const t of snap.trades){
+          if(t.manualSource)continue;
           const label=t.code+' '+t.name+'｜'+snap.strategy;
           const cash='\n目前剩餘可投入資金：'+money(snap.report.availableCash);
-          add('BUY',t.uid,t.buyDate,'🔴 模擬買進訊號\n'+label+'\n日期：'+t.buyDate+'\n買進價格：'+px(t.buyPrice)+'｜'+t.lots+' 張\n進場原因：'+t.entryReason+'\n初始停損：'+px(t.initialStopPrice)+cash);
-          if(t.isClosed&&!t.isManualClosed)add(t.exitOrNowPrice>t.buyPrice?'PROFIT':'LOSS',t.uid,t.sellDate,(t.exitOrNowPrice>t.buyPrice?'💰 停利':'🟢 停損／保本')+' 模擬平倉\n'+label+'\n日期：'+t.sellDate+'\n買進：'+px(t.buyPrice)+' → 賣出：'+px(t.exitOrNowPrice)+'｜'+t.lots+' 張\n出場原因：'+t.exitReason+'\n初始停損：'+px(t.initialStopPrice)+'\n持有時間：'+(Number.isFinite(t.holdingDays)?t.holdingDays+' 個交易日（含進出場日）':'未提供')+'\n估算淨損益：'+money(t.netProfit)+'\n報酬率：'+(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'未提供')+cash);
+          add('BUY',t.uid,t.buyDate,'🔴 模擬買進訊號\n'+label+'\n日期：'+t.buyDate+'\n買進價格：'+px(t.buyPrice)+'｜'+t.lots+' 張\n進場原因：'+t.entryReason+'\n初始停損：'+px(t.initialStopPrice)+lineTradeAmount161(t)+cash);
+          if(t.isClosed&&!t.isManualClosed)add(t.exitOrNowPrice>t.buyPrice?'PROFIT':'LOSS',t.uid,t.sellDate,(t.exitOrNowPrice>t.buyPrice?'💰 停利':'🟢 停損／保本')+' 模擬平倉\n'+label+'\n日期：'+t.sellDate+'\n買進：'+px(t.buyPrice)+' → 賣出：'+px(t.exitOrNowPrice)+'｜'+t.lots+' 張\n出場原因：'+t.exitReason+'\n初始停損：'+px(t.initialStopPrice)+'\n持有時間：'+(Number.isFinite(t.holdingDays)?t.holdingDays+' 個交易日（含進出場日）':'未提供')+lineTradeAmount161(t,true)+'\n報酬率：'+(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'未提供')+cash);
         }
         for(const k of snap.keys)add('KEY',k.code,k.date,'🔥 關鍵K\n'+k.code+' '+k.name+'｜'+k.date+'\n收盤 '+k.price);
         const hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
@@ -5749,6 +5760,14 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         });
       });
 
+      if(!location.pathname.endsWith('/monitor161.html')) for(const t of manualPool161()) {
+        if(t.buyDate<startDate)continue;
+        const stock=rawAllLoadedStocks.find(s=>s.code===t.code);
+        const price=t.isClosed?Number(t.exitOrNowPrice):Number(stock?.todayPrice||stock?.price||t.buyPrice);
+        const gross=t.buyPrice*1000*t.lots,totalCost=gross+Math.round(gross*feeRate),sell=price*1000*t.lots,net=sell-Math.round(sell*feeRate)-Math.round(sell*taxRate),profit=net-totalCost;
+        availableCash+=-totalCost+(t.isClosed?net:0);
+        boughtTrades.push({...t,uid:'manualpool_'+t.id,name:stock?.name||t.name||t.code,strategyKey:currentExitStrategy,exitOrNowPrice:price,totalCost,netProfit:profit,netPct:profit/totalCost*100,entryReason:'手動買進',exitReason:t.isClosed?'手動平倉':'手動持倉',holdingDays:Math.max(1,Math.round((Date.parse(t.sellDate||lineV14Day())-Date.parse(t.buyDate))/86400000)+1),settled:t.isClosed});
+      }
       let realizedProfit = 0;
       let unrealizedProfit = 0;
       let holdingCostTotal = 0;
@@ -6040,7 +6059,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
                 <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
                 <td class="py-1.5 px-2 text-center space-y-1">
                   <div>${stBadge}</div>
-                  ${!bt.isClosed && bt.strategyKey !== "AI_POWER_90D"
+                  ${!bt.manualSource && !bt.isClosed && bt.strategyKey !== "AI_POWER_90D"
                     ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>`
                     : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 還原</button>` : '')}
                 </td>
@@ -7667,9 +7686,14 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
 
 
 let official161Rows=[];let sim161Context=null;
+function strategyLetter161(k){return 'ABCDEFG'[['DEFAULT_20MA','SHORT_MA_TRAIL','PEAK_TRAILING','WHALE_SELL_EXIT','RR_LADDER','AI_ADAPTIVE','AI_POWER_90D'].indexOf(k)]||'?';}
+function manualPool161(){return [...userPortfolioTrades.filter(t=>String(t.id).startsWith('manual161_')).map(t=>({...t,manualSource:'個人'})),...official161Rows.map(t=>({...t,manualSource:'正式'}))].filter(t=>(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy);}
+function refreshManual161(){runPortfolioCapitalSimulation();renderSimTradesTableOnly();renderCanvasChart();}
+async function deleteManual161(official){try{if(official&&!dev15Token)throw Error('請先登入開發者');if(official)await loadOfficial161();const list=manualPool161().filter(t=>t.code===selectedStockCode&&t.manualSource===(official?'正式':'個人'));if(!list.length)throw Error('本策略沒有手動紀錄');const n=prompt(list.map((t,i)=>`${i+1}. ${t.buyDate} ${t.buyPrice} 元 × ${t.lots} 張 ${t.isClosed?'已平倉':'持倉'}`).join('\n')+'\n輸入要刪除的序號');if(n===null)return;const t=list[Number(n)-1];if(!t)throw Error('序號不正確');if(!confirm('刪除整筆交易紀錄？已發送的 LINE 不會撤回。'))return;if(official){await dev15Req('manual161',{side:'DELETE',id:t.id});await loadOfficial161();}else{userPortfolioTrades=userPortfolioTrades.filter(x=>x.id!==t.id);saveUserPortfolioToStorage();}refreshManual161();showToast('已刪除交易','success');}catch(e){showToast(e.message,'error');}}
+
 async function loadOfficial161(){try{const r=await fetch(new URL(apiUrl).origin+'/official161',{cache:'no-store'});if(r.ok)official161Rows=await r.json();}catch(e){} }
-async function manual161(side,official){try{const code=selectedStockCode;const stock=rawAllLoadedStocks.find(s=>s.code===code)||window._lastCustomInspectedStock;if(!stock||stock.code!==code)throw Error('請先選擇股票');if(official&&!dev15Token)throw Error('請先登入開發者');const p=prompt('成交價格',stock.todayPrice||stock.price||'');if(p===null)return;const price=Number(p);if(!Number.isFinite(price)||price<=0)throw Error('價格不正確');let lots=1,id;const day=lineV14Day();if(side==='BUY'){const l=prompt('買進張數','1');if(l===null)return;lots=Number(l);if(!Number.isInteger(lots)||lots<1)throw Error('張數不正確');}else{if(official)await loadOfficial161();const rows=(official?official161Rows:userPortfolioTrades).filter(t=>t.code===code&&!t.isClosed);if(!rows.length)throw Error('沒有可平倉持倉');const n=prompt(rows.map((t,i)=>`${i+1}. ${t.buyDate} ${t.buyPrice} 元 × ${t.lots} 張`).join('\n')+'\n輸入序號','1');if(n===null)return;id=rows[Number(n)-1]?.id;if(!id)throw Error('序號不正確');}if(official){if(!confirm('正式手動訊號將依通知模式發送 LINE，確定？'))return;await dev15Req('manual161',{code,side,price,lots,id});await loadOfficial161();showToast('正式交易已儲存，通知進入佇列','success');}else{if(side==='BUY')userPortfolioTrades.push({id:'manual161_'+Date.now(),code,name:stock.name,buyDate:day,buyPrice:price,lots,isClosed:false,exitOrNowPrice:price});else Object.assign(userPortfolioTrades.find(t=>t.id===id),{isClosed:true,sellDate:day,exitOrNowPrice:price});saveUserPortfolioToStorage();setSimTableMode('PORTFOLIO');showToast('個人交易已儲存','success');}renderCanvasChart();}catch(e){showToast(e.message,'error');}}
-window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement('div');el.className='flex flex-wrap gap-2 p-2';for(const [label,side,official] of [['個人買進','BUY',false],['個人賣出','SELL',false],['開發者買進','BUY',true],['開發者賣出','SELL',true]]){const btn=document.createElement('button');btn.textContent=label;btn.className='rounded border border-slate-500 px-3 py-2';btn.onclick=()=>manual161(side,official);if(official){btn.dataset.official161='1';btn.hidden=true;}el.append(btn);}document.getElementById('klineCanvas').before(el);void loadOfficial161();setInterval(()=>{el.querySelectorAll('[data-official161]').forEach(x=>x.hidden=!dev15Token);void loadOfficial161();},15000);});
+async function manual161(side,official){try{const code=selectedStockCode;const stock=rawAllLoadedStocks.find(s=>s.code===code)||window._lastCustomInspectedStock;if(!stock||stock.code!==code)throw Error('請先選擇股票');if(official&&!dev15Token)throw Error('請先登入開發者');const p=prompt('成交價格',stock.todayPrice||stock.price||'');if(p===null)return;const price=Number(p);if(!Number.isFinite(price)||price<=0)throw Error('價格不正確');let lots=1,id;const day=lineV14Day();if(side==='BUY'){const l=prompt('買進張數','1');if(l===null)return;lots=Number(l);if(!Number.isInteger(lots)||lots<1)throw Error('張數不正確');}else{if(official)await loadOfficial161();const rows=(official?official161Rows:userPortfolioTrades).filter(t=>t.code===code&&!t.isClosed&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy&&(official||String(t.id).startsWith('manual161_')));if(!rows.length)throw Error('沒有可平倉持倉');const n=prompt(rows.map((t,i)=>`${i+1}. ${t.buyDate} ${t.buyPrice} 元 × ${t.lots} 張`).join('\n')+'\n輸入序號','1');if(n===null)return;id=rows[Number(n)-1]?.id;if(!id)throw Error('序號不正確');}if(official){if(!confirm('正式手動訊號將依通知模式發送 LINE，確定？'))return;await dev15Req('manual161',{code,side,price,lots,id,strategyKey:currentExitStrategy});await loadOfficial161();showToast('正式交易已儲存，通知進入佇列','success');}else{if(side==='BUY')userPortfolioTrades.push({id:'manual161_'+Date.now(),code,name:stock.name,buyDate:day,buyPrice:price,lots,isClosed:false,exitOrNowPrice:price,strategyKey:currentExitStrategy});else Object.assign(userPortfolioTrades.find(t=>t.id===id),{isClosed:true,sellDate:day,exitOrNowPrice:price});saveUserPortfolioToStorage();showToast('個人交易已儲存','success');}refreshManual161();}catch(e){showToast(e.message,'error');}}
+window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement('div');el.className='flex flex-wrap gap-2 p-2';for(const [label,side,official] of [['個人買進','BUY',false],['個人賣出','SELL',false],['開發者買進','BUY',true],['開發者賣出','SELL',true]]){const btn=document.createElement('button');btn.textContent=label;btn.className='rounded border px-3 py-2 font-bold '+(side==='BUY'?'bg-rose-800 text-white border-rose-400':'bg-emerald-800 text-white border-emerald-400');btn.onclick=()=>manual161(side,official);if(official){btn.dataset.official161='1';btn.hidden=true;}el.append(btn);}for(const official of [false,true]){const b=document.createElement('button');b.textContent=official?'刪除正式交易':'刪除個人交易';b.className='rounded border border-slate-500 px-3 py-2';b.onclick=()=>deleteManual161(official);if(official){b.dataset.official161='1';b.hidden=true;}el.append(b);}document.getElementById('klineCanvas').before(el);void loadOfficial161();setInterval(()=>{el.querySelectorAll('[data-official161]').forEach(x=>x.hidden=!dev15Token);void loadOfficial161();},15000);});
 
     function selectStock(code, scrollToChart = false, origin = "POOL", simRowId = "") {
       if(scrollToChart)sim161Context=origin==="SIM"?{code,strategy:currentExitStrategy,rows:structuredClone((simTableMode==="PORTFOLIO"?userPortfolioTrades:lastSimTradesSnapshot).filter(t=>t.code===code))}:null;
@@ -8186,7 +8210,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       const showTrackingMode = !gOnly && Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
       const keyDateSlash = formatShortDateSlash(stock.keyKDate);
 
-      document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name}`;
+      document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name} ｜策略 ${strategyLetter161(currentExitStrategy)}`;
       document.getElementById("detailKeyKTag").textContent = showTrackingMode
         ? (activeOrClosedTrack.isDirectKeyBreakdown
             ? `★ 關鍵K(${formatShortDateSlash(activeOrClosedTrack.keyKDate)}) → 跌破低點剔除`
@@ -9968,7 +9992,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         }
         updateHudDisplay(hoveredBar, hoveredPrevBar);
       }
-      if(!is5mTf){const groups=[{rows:userPortfolioTrades.filter(t=>t.code===selectedStockCode&&String(t.id).startsWith('manual161_')),label:'個人',color:'#38bdf8'},{rows:official161Rows.filter(t=>t.code===selectedStockCode),label:'正式',color:'#fbbf24'}];if(sim161Context?.code===selectedStockCode&&sim161Context.strategy===currentExitStrategy)groups.unshift({rows:sim161Context.rows,label:'明細',color:'#c084fc'});ctx.save();ctx.font='bold 11px sans-serif';ctx.textAlign='center';for(const g of groups){g.rows.sort((a,b)=>a.buyDate.localeCompare(b.buyDate)).forEach((t,i)=>{for(const [date,price,side] of [[t.buyDate,t.buyPrice,'買'],[t.isClosed?t.sellDate:null,t.exitOrNowPrice||t.sellPrice,'賣']]){const j=visibleBars.findIndex(b=>b.date===date);if(j<0||!price)continue;const x=padLeft+stepX*(j+.5),y=priceToY(price),ly=Math.max(padTop+12,Math.min(padTop+pricePlotH-12,y+(side==='買'?25:-25)));ctx.strokeStyle=g.color;ctx.fillStyle=g.color;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,ly);ctx.stroke();ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.fillText(g.label+(i+1)+side,x,ly);}});}ctx.restore();}
+      if(!is5mTf){const groups=[{rows:userPortfolioTrades.filter(t=>t.code===selectedStockCode&&String(t.id).startsWith('manual161_')&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'個人',color:'#38bdf8'},{rows:official161Rows.filter(t=>t.code===selectedStockCode&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy),label:'正式',color:'#fbbf24'}];if(sim161Context?.code===selectedStockCode&&sim161Context.strategy===currentExitStrategy)groups.unshift({rows:sim161Context.rows,label:'明細',color:'#c084fc'});ctx.save();ctx.font='bold 11px sans-serif';ctx.textAlign='center';for(const g of groups){g.rows.sort((a,b)=>a.buyDate.localeCompare(b.buyDate)).forEach((t,i)=>{for(const [date,price,side] of [[t.buyDate,t.buyPrice,'買'],[t.isClosed?t.sellDate:null,t.exitOrNowPrice||t.sellPrice,'賣']]){const j=visibleBars.findIndex(b=>b.date===date);if(j<0||!price)continue;const x=padLeft+stepX*(j+.5),y=priceToY(price),ly=Math.max(padTop+12,Math.min(padTop+pricePlotH-12,y+(side==='買'?25:-25)));ctx.strokeStyle=g.label==='明細'?g.color:(side==='買'?'#fb7185':'#34d399');ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,ly);ctx.stroke();ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.fillText((g.label==='明細'?'':'✋')+g.label+(i+1)+side,x,ly);}});}ctx.restore();}
     }
 
     function drawHorizontalRefLine(ctx, price, y, color, label, x1, x2, dashPattern = [4, 3], lineWidth = 1.2, placedYs = null) {
@@ -10374,8 +10398,10 @@ window.addEventListener('load',()=>{const w=document.getElementById('simTradesTa
 <style>.v161-collapse{position:absolute;top:4px;right:4px;z-index:5;background:#334155;color:white;border-radius:4px;padding:2px 8px;font-size:14px}.v161-fold>*:not(.v161-collapse):not(:first-child){display:none!important}.v161-fold{min-height:36px!important;max-height:48px!important;overflow:hidden!important}</style>
 <script>
 window.addEventListener('load',()=>{
+ for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
+ const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
  for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
- for(const id of ['stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
+ for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
 </body>
