@@ -167,7 +167,7 @@
       #strategyCompareGrid, #simResultCardsMobile { grid-template-columns: minmax(0,1fr) !important; }
     }
   </style>
-</head>
+<style>.v161saved{animation:v161save .6s alternate 5;background:#166534!important}@keyframes v161save{to{opacity:.35}}.row-flash td{animation:v161yellow .55s alternate 6}@keyframes v161yellow{to{background:#a16207;color:white}}@media(max-width:768px){body{font-size:14px}button,input,select{min-height:36px}table td,table th{font-size:12px!important}.text-xs{font-size:13px!important}#detailPanelSection{min-width:0;max-width:100%}} </style></head>
 <body class="min-h-screen p-3 md:p-5">
 
   <!-- 頂部通知 Toast -->
@@ -906,7 +906,7 @@
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
-              <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新尋優／讀取快取</button>
+              <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新執行 AI 尋優</button>
               <div id="v8CapitalQuickCards" class="w-full gap-2" style="display:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))"></div>
               <div id="simAiStrategyCompareGrid" class="w-full gap-2 text-[11px]" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"></div>
             </div>
@@ -1756,7 +1756,7 @@
       runPortfolioCapitalSimulation();
       const chkAiCap = document.getElementById("chkAiCapitalOpt");
       if (chkAiCap && chkAiCap.checked) {
-        runAiCapitalStrategyOptimizer(false);
+        /* V16.1: keep saved AI result */
       }
       if (selectedStockCode) {
         const cur = rawAllLoadedStocks.find(s => s.code === selectedStockCode);
@@ -2345,7 +2345,7 @@
       return `v13-events-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
     function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
-    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v160-'+kind,JSON.stringify({key,data}));}catch(e){console.warn('AI 快取儲存失敗',e);}}
+    function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v160-'+kind,JSON.stringify({key,data,savedAt:Date.now()}));}catch(e){showToast('AI 結果存檔失敗：瀏覽器儲存空間不足','error');throw e;}}
     function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
 
     function getPoolStocksWithCrossovers(independent = false) {
@@ -2717,7 +2717,7 @@
     async function selectComparisonStrategyCard(strategyKey) {
       if (fullAiBusy || capitalAiBusy) return;
       if (strategyKey === 'AI_POWER_90D') { await setExitStrategy(strategyKey, true); return; }
-      if (capitalV8Key===aiV8Key(true) && _aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { selectAiOptimizedCapitalStrategy(strategyKey); return; }
+      if (_aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { selectAiOptimizedCapitalStrategy(strategyKey); return; }
       await setExitStrategy(strategyKey);
     }
 
@@ -2757,6 +2757,7 @@
     async function runAiFullStep1Optimizer(applyToControls = false, runFilterRender = false) {
       if (fullAiBusy || capitalAiBusy) return null;
       fullAiBusy = true;
+      _fullStep1Cache.clear();
       aiV8RefreshFull(aiV8Key());
       showAiProgress('full', 0, '準備尋優');
       try { await aiYield();
@@ -2785,7 +2786,7 @@
           runPortfolioCapitalSimulation();
         }
       }
-      showAiProgress("full",100,"尋優完成"); return best;
+      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();showAiProgress("full",100,"尋優完成 · 已存檔"); return best;
       } catch(e) { showAiProgress("full",0,"尋優失敗："+e.message); console.error(e); return null; } finally { fullAiBusy=false; }
     }
 
@@ -2815,8 +2816,7 @@
         renderFullAiAdvice(cached);
         showAiProgress("full", 100, "已套用快取最佳參數");
       } else if (!capitalSelection && useFullOpt && !cached) {
-        await runAiFullStep1Optimizer(true, true);
-        return;
+        /* No automatic AI rerun on strategy switch. */
       }
       window._skipNextAiCapOptInSim = true;
       saveUserSettingsToStorage(false);
@@ -3762,7 +3762,7 @@
         rawAllLoadedStocks.forEach(s => {
           const q = qMap.get(s.code);
           if (!q) return;
-          if (q.p !== s.todayPrice || q.v !== s.todayVol) {
+          if (q.p !== s.todayPrice || q.v !== s.todayVol || (q.d && q.d > s.latestTradeDate)) {
             if (s.todayPrice > 0 && q.p !== s.todayPrice) {
               globalTickSeq++;
               priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
@@ -3775,7 +3775,7 @@
             if (q.v > 0) s.todayVol = q.v;
             if (Array.isArray(s.realBars) && s.realBars.length > 0) {
               const lastBar = s.realBars[s.realBars.length - 1];
-              if (lastBar.date === s.latestTradeDate) {
+              if (q.d && q.d !== lastBar.date && q.d > lastBar.date) { s.latestTradeDate=q.d; s.realBars.push({date:q.d,open:q.o||q.p,high:q.h||q.p,low:q.l||q.p,close:q.p,vol:q.v||0,ma20:computeDynamicTodayMa20(s.realBars,q.p,s.yestMa20)}); anyChanged=true; } else if (lastBar.date === s.latestTradeDate) {
                 lastBar.close = q.p;
                 lastBar.high = Math.max(lastBar.high, s.todayHigh, q.p);
                 lastBar.low = Math.min(lastBar.low, s.todayLow, q.p);
@@ -3854,13 +3854,13 @@
       const cb = document.getElementById("autoSyncCheckbox");
       if (cb && isLive) cb.checked = true;
 
-      const intervalMs = isLive ? 60000 : 600000; // 完整K線同步：開市1分鐘；盤後/假日10分鐘
+      const intervalMs = 60000; // 完整K線同步：開市1分鐘；盤後/假日10分鐘
       const runTick = () => {
         const curCb = document.getElementById("autoSyncCheckbox");
         if (!curCb || curCb.checked) fetchStocksData(true);
       };
       syncTimer = setInterval(runTick, intervalMs);
-      if (isLive) {
+      if (true) {
         // 全體清單每 1.5 秒自動抓輕量 /quotes，不需點擊任何股票，有跳動就自動更新並閃底！
         focusedStockTimer = setInterval(() => {
           pollAllLiveQuotes();
@@ -3977,9 +3977,8 @@
           const fetchOpts = { signal: ctrl.signal };
           if (url.includes("ngrok")) fetchOpts.headers = { "ngrok-skip-browser-warning": "true" };
           const resp = await fetch(url, fetchOpts);
-          clearTimeout(timer);
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          return await resp.json();
+          const data=await resp.json();clearTimeout(timer);return data;
         } catch (err) {
           clearTimeout(timer);
           lastErr = err.name === "AbortError" ? new Error("連線逾時(手機網路較慢)") : err;
@@ -4019,7 +4018,7 @@
           const sep = apiUrl.includes("?") ? "&" : "?";
           rawData = await fetchWithTimeoutRetry(
             `${apiUrl}${sep}_t=${Date.now()}`,
-            18000,
+            (matchMedia("(max-width: 768px)").matches ? 60000 : 30000),
             2,
             (curAttempt, maxAtt) => {
               if (statusText) statusText.textContent = `連線重試中 (${curAttempt}/${maxAtt})...`;
@@ -4028,7 +4027,7 @@
         } catch (primaryErr) {
           // 若遠端通道 (如 trycloudflare) 失效且本機正在跑 localhost:3000，自動切換備援連線
           const localFallbackUrl = "http://localhost:3000/stocks";
-          if (apiUrl !== localFallbackUrl && /Failed to fetch|NetworkError|Load failed/i.test(primaryErr.message || "")) {
+          if (!matchMedia("(max-width: 768px)").matches && apiUrl !== localFallbackUrl && /Failed to fetch|NetworkError|Load failed/i.test(primaryErr.message || "")) {
             try {
               rawData = await fetchWithTimeoutRetry(`${localFallbackUrl}?_t=${Date.now()}`, 5000, 0);
               apiUrl = localFallbackUrl;
@@ -4381,12 +4380,12 @@
       }
 
       if (!Array.isArray(lastSimTradesSnapshot) || lastSimTradesSnapshot.length === 0) return false;
-      tbody.innerHTML = sortSimRows(lastSimTradesSnapshot).map((bt, idx) => {
+      tbody.innerHTML = sortSimRows(lastSimTradesSnapshot.filter(t=>!t.isClosed||t.sellDate===lineV14Day()||document.getElementById("v161History")?.checked)).map((bt, idx) => {
         const rowId = `sim-row-${bt.code}-${idx}`;
         const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
         const stBadge = bt.isClosed
-          ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉</span>`
-          : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中</span>`;
+          ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉（${bt.holdingDays||0}交易日）</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中 第${bt.holdingDays||1}天</span>`;
         const ruleInfo = resolveTradeStopAndRuleInfo(bt.code, bt);
         const priceLine = [
           ruleInfo.stopPrice > 0 ? `<span class="text-yellow-300">停損:${ruleInfo.stopPrice.toFixed(2)}</span>` : "",
@@ -4710,7 +4709,7 @@
 
     function toggleSimTradesTable() {
       const el = document.getElementById("simTradesTableWrap");
-      if (el) el.classList.toggle("hidden");
+      if (el) { const hidden=el.classList.toggle("hidden"); if(!hidden){renderSimTradesTableOnly();} }
     }
 
     const TW_SEMI_CODES = new Set([
@@ -5019,17 +5018,7 @@
 
     let pendingCapitalDateRefresh = false;
     let capitalDateRefreshTimer = null;
-    function requestCapitalDateRefresh() {
-      clearTimeout(capitalDateRefreshTimer);
-      if (!document.getElementById("chkAiCapitalOpt")?.checked) { pendingCapitalDateRefresh=false; return; }
-      if (fullAiBusy || capitalAiBusy) {
-        pendingCapitalDateRefresh=true;
-        capitalDateRefreshTimer=setTimeout(requestCapitalDateRefresh, 250);
-        return;
-      }
-      pendingCapitalDateRefresh=false;
-      runAiCapitalStrategyOptimizer(true);
-    }
+    function requestCapitalDateRefresh() { clearTimeout(capitalDateRefreshTimer); pendingCapitalDateRefresh=false; }
     function onCapitalStartDateChanged() {
       runPortfolioCapitalSimulation();
       saveUserSettingsToStorage(false);
@@ -5054,7 +5043,7 @@
       }
       if (isOn) {
         if(box) box.classList.remove("hidden");
-        requestCapitalDateRefresh();
+        runAiCapitalStrategyOptimizer(true);
       } else if (box) {
         clearTimeout(capitalDateRefreshTimer);
         pendingCapitalDateRefresh=false;
@@ -5204,7 +5193,7 @@
 
     function selectAiOptimizedCapitalStrategy(strategyKey) {
       if(fullAiBusy || capitalAiBusy)return;
-      if(capitalV8Key!==aiV8Key(true)){runAiCapitalStrategyOptimizer(true);return;}
+      if(!_aiCapitalBestParamsMap[strategyKey])return;
       currentExitStrategy = strategyKey;
       updateExitStrategyUI();
       const bestS1 = _aiCapitalBestStep1Map[strategyKey];
@@ -5243,7 +5232,7 @@
       capitalAiBusy = true;
       const runKey=aiV8Key(true);
       aiV8RefreshFull(aiV8Key());
-      const stored=capitalV8Key===runKey && _lastAiCapitalResultsCache ? {results:_lastAiCapitalResultsCache,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map}:aiV8Read('capital',runKey);
+      const stored=null; _fullStep1Cache.clear();
       showAiProgress("capital",0,"準備七大策略");
       try {
       box.classList.remove("hidden");
@@ -5399,13 +5388,14 @@
       _lastAiCapitalResultsCache = results;
       capitalV8Key=runKey;
       if(runKey!==aiV8Key(true)){
+        aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});
         renderAiCapitalCompareCardsOnly();
         showAiProgress('capital',100,'已完成 · 舊資料結果，點擊重新尋優更新');
         return;
       }
       aiV8Save('full',fullV8Key,_aiFullStep1PerStrategyMap);
       capitalV8Key=runKey;
-      aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});
+      aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});freeze151();
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
       renderAiCapitalCompareCardsOnly();
 
@@ -5450,7 +5440,7 @@ let dev15Token='',dev15Base='',dev15Monitor=false,dev15Rev=0,dev15Profile=null;
 const key151='w-personal-strategy-v151';
 function saved151Exists(){try{return !!localStorage.getItem(key151);}catch(e){return false;}}
 function freeze151(){for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;} _aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;}
-function save151(){if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 尋優完成','warn');return;}const a=dev15Capture();for(const k of Object.keys(a.fields))if(k.startsWith('line'))delete a.fields[k];for(const id of ['chkShowBubbles','chkShowDeduct','autoSyncCheckbox','pnlDateBasisSelect','pnlStartDateInput','pnlEndDateInput','chkShowAiPowerMarkers']){const e=document.getElementById(id);if(e)a.fields[id]=e.type==='checkbox'?e.checked:e.value;}a.filter=currentFilter;a.bubble=bubbleMultThreshold;a.savedAt=Date.now();try{localStorage.setItem(key151,JSON.stringify(a));}catch(e){showToast('儲存失敗：瀏覽器空間不足或禁止儲存','error');return;}freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');applyFiltersAndRender();showToast('個人策略已儲存；不會變更正式 LINE 策略');}
+function save151(){if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 尋優完成','warn');return;}const a=dev15Capture();for(const k of Object.keys(a.fields))if(k.startsWith('line'))delete a.fields[k];for(const id of ['chkShowBubbles','chkShowDeduct','autoSyncCheckbox','pnlDateBasisSelect','pnlStartDateInput','pnlEndDateInput','chkShowAiPowerMarkers']){const e=document.getElementById(id);if(e)a.fields[id]=e.type==='checkbox'?e.checked:e.value;}a.filter=currentFilter;a.bubble=bubbleMultThreshold;a.savedAt=Date.now();try{localStorage.setItem(key151,JSON.stringify(a));}catch(e){showToast('儲存失敗：瀏覽器空間不足或禁止儲存','error');return;}freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');applyFiltersAndRender();showToast('個人策略已儲存；不會變更正式 LINE 策略');const badge=document.getElementById("savedSettingsBadge");badge.classList.add("v161saved");setTimeout(()=>badge.classList.remove("v161saved"),3000);}
 function restore151(){try{const a=JSON.parse(localStorage.getItem(key151)||'null');if(!a||!dev15Keys.includes(a.strategy))return;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields||{})){if(id.startsWith('line'))continue;const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=(a.sectors||[]).includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};if(['ALL','BREAKOUT','CONSOLIDATE','TRACKING','BREAKDOWN'].includes(a.filter)){currentFilter=a.filter;document.querySelectorAll('.filter-card').forEach(e=>{const active=e.id==='tab-'+currentFilter;e.classList.toggle('border-2',active);e.classList.toggle('border-blue-500',active);e.classList.toggle('border',!active);e.classList.toggle('border-slate-800',!active);});}if(Number.isFinite(a.bubble))bubbleMultThreshold=a.bubble;freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');}catch(e){console.warn('個人設定還原失敗',e);}}
 function toggle152(id,b){const e=document.getElementById(id);const show=e.type==='password';e.type=show?'text':'password';b.textContent=show?'隱藏':'顯示 👁';b.setAttribute('aria-pressed',String(show));}
 function visibility151(ok){for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?'flex':'none','important');}
@@ -5464,7 +5454,7 @@ async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new
 async function dev15Publish(){try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy)throw Error('請等待 AI 完成');if(!confirm('將目前策略與參數設定為正式 LINE 監控條件？切換後舊訊號不補發。'))return;const r=await dev15Req('profile',dev15Capture());dev15Rev=0;await dev15Pull(false);dev15Status('已發布 '+getStrategyDisplayName(r.profile.strategy)+' · 版本 '+r.rev);}catch(e){dev15Status('發布失敗：'+e.message);}}
 async function dev15Pull(force){if(!dev15Token)return;try{const r=await dev15Req('profile');if(!r.profile){dev15Status('尚無正式策略，請先發布');return;}if(fullAiBusy||capitalAiBusy)return;const changed=r.rev!==dev15Rev;dev15Profile=r.profile;if(force||dev15Monitor&&(changed||JSON.stringify(dev15Capture())!==JSON.stringify(r.profile))){const a=r.profile;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields)){const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=a.sectors.includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;}_aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;syncStep1ControlsUI();updateExitStrategyUI();applyFiltersAndRender();}dev15Rev=r.rev;dev15Status((dev15Monitor?'本機監控':'遠端控制')+'｜正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+r.rev);}catch(e){dev15Profile=null;dev15Status('正式策略連線失敗：'+e.message);}}
 async function dev15Logout(){try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
-setInterval(()=>{if(dev15Monitor&&!lineV14Busy)void dev15Pull(false);},5000);
+setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);await lineProcessV14();}},15000);
 
     let lineV14Snapshot=null, lineV14Busy=false;
     const lineV14Day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -5478,7 +5468,11 @@ async function line155Load(){try{const r=await dev15Req('line-mode');line155Actu
 async function line155Save(){try{const mode=document.getElementById('line155Mode').value;if(mode==='broadcast'&&!confirm('全體好友將收到正式交易通知及測試訊息，並消耗訊息額度。確定？'))return;await dev15Req('line-mode',{mode});await line155Load();}catch(e){lineV14Status('儲存失敗：'+e.message);}}
 async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Error('無法確認通知對象');if(line155Actual==='broadcast'&&!confirm('確定向全體好友發送測試通知？'))return;const result=await lineV14Post({test:true,mode:line155Actual});if(result.accepted!==true||result.mode!==line155Actual)throw Error('後台版本不符，請更新 V15.6');lineV14Status('LINE API 已受理（'+(result.mode==='broadcast'?'全體好友':'僅本人')+'），請確認手機實際收件');}catch(e){lineV14Status(e.message);}}
     async function lineProcessV14(){
-      if(!dev15Monitor||!dev15Profile||JSON.stringify(dev15Capture())!==JSON.stringify(dev15Profile)||lineV14Busy||fullAiBusy||capitalAiBusy||!lineV14Snapshot)return;
+      if(!dev15Monitor)return;
+      if(lineV14Busy)return;
+      if(!dev15Profile){lineV14Status('尚未發布正式策略');return;}
+      if(JSON.stringify(dev15Capture())!==JSON.stringify(dev15Profile)){lineV14Status('正式策略不同，等待同步');return;}
+      if(fullAiBusy||capitalAiBusy||!lineV14Snapshot){lineV14Status('等待運算及交易資料');return;}
       const snap=lineV14Snapshot, day=lineV14Day();
       if(!document.getElementById('lineEnabled')?.checked){localStorage.removeItem('lineV14Baseline');return;}
       if(snap.dataDate!==day){lineV14Status('等待當日新行情');return;}
@@ -5486,7 +5480,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       try{
         let prev=null;try{prev=JSON.parse(localStorage.getItem('lineV14Baseline')||'null');}catch(e){}
         const ids=[], events=[];
-        const add=(type,id,date,text)=>{const k=type+':'+id+':'+date;ids.push(k);if(date===day&&prev?.config===snap.config&&!prev.ids.includes(k)&&document.getElementById('line'+type)?.checked)events.push({id:k,text});};
+        const add=(type,id,date,text)=>{const k=type+':'+id+':'+date;ids.push(k);if(date===day&&(!prev||prev.config!==snap.config||!prev.ids.includes(k))&&document.getElementById('line'+type)?.checked)events.push({id:k,text});};
         const money=v=>Number.isFinite(v)?'NT$'+Math.round(v).toLocaleString('en-US'):'未提供';
         const px=v=>Number.isFinite(v)&&v>0?v.toFixed(2)+' 元':'未提供';
         for(const t of snap.trades){
@@ -5500,7 +5494,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         if(hm>='14:00'&&document.getElementById('lineREPORT')?.checked){const r=snap.report;events.push({id:'REPORT:'+day,text:'📊 實戰模擬每日報告 '+day+'\n'+snap.strategy+'\n今日買進 '+snap.trades.filter(t=>t.buyDate===day).length+' 筆｜平倉 '+snap.trades.filter(t=>t.isClosed&&t.sellDate===day).length+' 筆\n起始資金 '+r.initCapital+'\n總權益 '+Math.round(r.equity)+'\n已實現 '+Math.round(r.realizedProfit)+'\n未實現（估算） '+Math.round(r.unrealizedProfit)+'\n累計報酬 '+r.totalRoiPct.toFixed(2)+'%\n剩餘現金 '+Math.round(r.availableCash)+'\n持倉 '+r.holdingCnt+' 筆'});}
         if(events.length)await lineV14Post({events});
         localStorage.setItem('lineV14Baseline',JSON.stringify({config:snap.config,ids:[...new Set([...(prev?.config===snap.config?prev.ids:[]),...ids])]}));
-        lineV14Status(!prev||prev.config!==snap.config?'已建立基準，歷史訊號不推播':'監控中 · '+hm);
+        lineV14Status(!prev||prev.config!==snap.config?'已建立基準，當日訊號已檢查':'監控中 · '+hm);
       }catch(e){lineV14Status('通知失敗：'+e.message);}finally{lineV14Busy=false;}
     }
 
@@ -6008,7 +6002,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
             const rowId = `sim-row-${bt.code}-${idx}`;
             const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
             const stBadge = bt.isClosed
-              ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉</span>`
+              ? `<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">${formatShortDateSlash(bt.sellDate)}平倉（${bt.holdingDays||0}交易日）</span>`
               : `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">續抱中</span>`;
             const ruleInfo = resolveTradeStopAndRuleInfo(bt.code, bt);
             const priceLine = [
@@ -7892,7 +7886,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
     }
 
     function evaluateAiPower90dStrategy(stock, bars, cfg) {
-      const plan = computeAiBuySellPowerOptimalPlan(stock, bars);
+      const plan = computeAiBuySellPowerOptimalPlan(stock);
       const empty = {activeOrTodayExit:null, closedBreakdown:null};
       if (!plan || !plan.trades.length) return empty;
       const last = bars[bars.length-1];
@@ -9123,7 +9117,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       const bars = aiOnly ? chartState.bars.map(b => {const copy={...b}; for(const k of Object.keys(copy)) if(k==='isKeyK'||k.startsWith('isTrack')) delete copy[k]; return copy;}) : chartState.bars;
       if (!stock || bars.length === 0) return;
 
-      const showBubbles = !aiOnly && document.getElementById("chkShowBubbles").checked;
+      const showBubbles = document.getElementById("chkShowBubbles").checked;
       const showDeduct = !aiOnly && document.getElementById("chkShowDeduct").checked;
 
       clampRightOffset();
@@ -9335,12 +9329,13 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
           }
         }
         ctx.fillStyle = color;
+        if (Math.abs(y-targetY)>12) {ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,targetY);ctx.lineTo(cx,y-5);ctx.stroke();}
         ctx.fillText(text, cx, y);
         ctx.restore();
         return y;
       };
 
-      const showOrderFlow = !aiOnly && (document.getElementById("chkShowOrderFlow")?.checked ?? true);
+      const showOrderFlow = (document.getElementById("chkShowOrderFlow")?.checked ?? true);
       const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
       const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
       visibleBars.forEach((b, idx) => {
@@ -9452,7 +9447,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
         }
       });
 
-      if (!aiOnly && showShortMaPeriod === 0 && ma20Points.length >= 2) {
+      if ((aiOnly || showShortMaPeriod === 0) && ma20Points.length >= 2) {
         ctx.lineWidth = 2.4;
         for (let i = 1; i < ma20Points.length; i++) {
           const p0 = ma20Points[i - 1], p1 = ma20Points[i];
@@ -10073,7 +10068,7 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
             const sRuleTxt = aiHudPlan.sellRule ? aiHudPlan.sellRule.name : "--";
             flowHudHtml += `<div class="text-[10.5px] font-mono text-purple-200 mt-0.5 w-full">🧠 AI 買賣總獲利：<b class="${pCol}">${pSign}${aiHudPlan.totalPts.toFixed(2)} 點 (${moneyStr})</b> ｜ 共 <b>${aiHudPlan.trades.length}</b> 筆 (勝率 <b>${aiHudPlan.winRate}%</b>)${trNote}</div>`;
             flowHudHtml += `<div class="text-[10.5px] font-mono text-amber-200/95 mt-0.5 w-full">📌 AI 選出規則：買入【<b class="text-rose-300">${bRuleTxt}</b>】 ｜ 平倉【<b class="text-cyan-300">${sRuleTxt}</b>】</div>`;
-            flowHudHtml += `<div class="w-full mt-1 border-t border-purple-500/25 pt-1 space-y-1"><div class="font-bold text-purple-200">AI 進出場明細</div>${aiHudPlan.trades.map((tr, i) => `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-300"><span>第 ${i+1} 筆</span><span class="text-rose-300">買入 ${tr.buyDate} @ ${Number(tr.buyPrice).toFixed(2)}</span><span class="text-cyan-300">${tr.isClosed ? `賣出 ${tr.sellDate} @ ${Number(tr.sellPrice).toFixed(2)}` : '持有中（未平倉）'}</span><span class="${tr.profitPoints >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${tr.isClosed ? '價差' : '未實現價差'} ${tr.profitPoints >= 0 ? '+' : ''}${Number(tr.profitPoints).toFixed(2)} 點</span></div>`).join('')}</div>`;
+            flowHudHtml += `<div class="w-full mt-1 border-t border-purple-500/25 pt-1 space-y-1"><div class="font-bold text-purple-200">AI 進出場明細</div>${aiHudPlan.trades.map((tr, i) => `<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-300"><span>第 ${i+1} 筆</span><span class="text-rose-300">買入 ${tr.buyDate} @ ${Number(tr.buyPrice).toFixed(2)}</span><span class="text-cyan-300">${tr.isClosed ? `賣出 ${tr.sellDate} @ ${Number(tr.sellPrice).toFixed(2)}` : '持有中（未平倉）'}</span><span class="${tr.profitPoints >= 0 ? 'text-rose-300' : 'text-emerald-300'}">${tr.isClosed ? '價差' : '未實現價差'} ${tr.profitPoints >= 0 ? '+' : ''}${Number(tr.profitPoints).toFixed(2)} 點（NT$${Math.round(tr.profitPoints*1000).toLocaleString()}）</span></div>`).join('')}</div>`;
           }
         }
       }
@@ -10349,5 +10344,17 @@ async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Err
       </div>
     </div>
   </div>
+<script>
+window.addEventListener('online',()=>fetchStocksData(true));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){fetchStocksData(true);pollFocusedStockLivePrice();}});
+window.addEventListener('load',()=>{const w=document.getElementById('simTradesTableWrap');if(w){const l=document.createElement('label');l.className='block text-xs p-2';const c=document.createElement('input');c.type='checkbox';c.id='v161History';c.onchange=()=>renderSimTradesTableOnly();l.append(c,document.createTextNode(' 顯示歷史平倉（預設僅持倉及今日平倉）'));w.before(l);}});
+</script>
+<style>.v161-collapse{position:absolute;top:4px;right:4px;z-index:5;background:#334155;color:white;border-radius:4px;padding:2px 8px;font-size:14px}.v161-fold>*:not(.v161-collapse):not(:first-child){display:none!important}.v161-fold{min-height:36px!important;max-height:48px!important;overflow:hidden!important}</style>
+<script>
+window.addEventListener('load',()=>{
+ for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ for(const id of ['stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
+});
+</script>
 </body>
 </html>
