@@ -181,7 +181,16 @@
 .developer161 .manualBtn161{font-size:10px;padding:3px 5px}
 @media(max-width:480px){#manualButtons161{gap:2px}.developer161 .manualBtn161{font-size:9px;padding:3px 2px}#manualToolbar161{padding:4px 3px}}
 </style>
-</head>
+<style>
+.devModeActive164{background:#f59e0b!important;color:#422006!important;border:2px solid #fde68a!important;font-weight:900!important;box-shadow:0 0 12px #f59e0b88;}
+#detailTitle .strategyBadge163{white-space:normal;overflow-wrap:anywhere;vertical-align:middle;}
+.strategyBadge163{display:inline-block;background:#6d28d9;color:#fff;border:1px solid #c4b5fd;border-radius:6px;padding:2px 9px;font-weight:900;font-size:1.05em;white-space:nowrap;box-shadow:0 0 8px #7c3aed66}
+#ohlcHud{height:112px!important;min-height:112px!important;max-height:112px!important;overflow:auto!important;align-content:flex-start!important;box-sizing:border-box}
+#stockTableBody,#todayClosedBody162,#simSkippedTableBody{counter-reset:pool163}
+#stockTableBody tr:not(:has(td[colspan])),#todayClosedBody162 tr:not(:has(td[colspan])),#simSkippedTableBody tr:not(:has(td[colspan])){counter-increment:pool163}
+#stockTableBody tr:not(:has(td[colspan])) td:first-child::before,#todayClosedBody162 tr:not(:has(td[colspan])) td:first-child::before,#simSkippedTableBody tr:not(:has(td[colspan])) td:first-child::before{content:counter(pool163) ". ";color:#94a3b8;font-weight:700;font-variant-numeric:tabular-nums}
+@media(max-width:767px){#ohlcHud{height:148px!important;min-height:148px!important;max-height:148px!important}}
+</style></head>
 <body class="min-h-screen p-3 md:p-5">
 
   <!-- 頂部通知 Toast -->
@@ -204,7 +213,7 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <button type="button" onclick="save151()" class="px-3 py-2 rounded bg-indigo-700 text-white">💾 儲存目前策略</button><button type="button" onclick="const p=document.getElementById('dev15Panel');p.style.display='block';p.scrollIntoView({block:'nearest'});" class="px-3 py-2 rounded text-xs bg-slate-800 border border-indigo-400 text-indigo-200">🔐 開發者登入</button><span id="savedSettingsBadge" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center gap-1.5" title="所有篩選條件、拉桿參數與日期區間均會自動儲存於瀏覽器，下次開啟自動還原">
+      <button type="button" onclick="save151()" class="px-3 py-2 rounded bg-indigo-700 text-white">💾 儲存目前策略</button><button id="devModeIndicator164" type="button" aria-pressed="false" onclick="const p=document.getElementById('dev15Panel');p.style.display='block';p.scrollIntoView({block:'nearest'});" class="px-3 py-2 rounded text-xs bg-slate-800 border border-indigo-400 text-indigo-200">🔐 開發者登入</button><span id="savedSettingsBadge" class="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium flex items-center gap-1.5" title="所有篩選條件、拉桿參數與日期區間均會自動儲存於瀏覽器，下次開啟自動還原">
         💾 尚未手動儲存
       </span>
 
@@ -2721,6 +2730,7 @@
       }
       if(fullV8Key!==aiV8Key()){throw new Error("尋優期間條件已變更，請重新尋優");}
       aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);
+      for(const k of keys){const r=_aiFullStep1PerStrategyMap[k];if(!r)continue;const cfg={...getExitStrategyConfig(k),...r.exitPatch};const opts={...getCurrentFilterOptions(),requireMa20Up:!!r.reqMaUp,requireSolidRedK:!!r.reqRed,useGainRange:true,minGain:r.minG,maxGain:r.maxG,volOp:'GTE',validVolThreshold:r.minV};for(const st of rawAllLoadedStocks)evaluateStockTrackingLifecycle(st,opts,cfg);await aiYield();}
       _aiFullStep1ModeActive = true;
       if (autoSelectBestStrategy && globalWinnerKey) {
         currentExitStrategy = globalWinnerKey;
@@ -2828,7 +2838,7 @@
       updateExitStrategyUI();
       const chkFull = document.getElementById("chkAiAutoFullStep1");
       const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive;
-      if(useFullOpt && !capitalSelection) aiV8RefreshFull(aiV8Key());
+      if(useFullOpt && !capitalSelection && !Object.keys(_aiFullStep1PerStrategyMap).length) {try{_aiFullStep1PerStrategyMap=JSON.parse(localStorage.getItem("20ma-v160-full")||"null")?.data||{};}catch(e){}}
       const cached = _aiFullStep1PerStrategyMap[strategyName];
       if (!capitalSelection && useFullOpt && cached) {
         applyStep1ParamsToUI(cached);
@@ -5478,7 +5488,7 @@ function freeze151(){for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){c
 function save151(){if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 尋優完成','warn');return;}const a=dev15Capture();for(const k of Object.keys(a.fields))if(k.startsWith('line'))delete a.fields[k];for(const id of ['chkShowBubbles','chkShowDeduct','autoSyncCheckbox','pnlDateBasisSelect','pnlStartDateInput','pnlEndDateInput','chkShowAiPowerMarkers']){const e=document.getElementById(id);if(e)a.fields[id]=e.type==='checkbox'?e.checked:e.value;}a.filter=currentFilter;a.bubble=bubbleMultThreshold;a.savedAt=Date.now();try{localStorage.setItem(key151,JSON.stringify(a));}catch(e){showToast('儲存失敗：瀏覽器空間不足或禁止儲存','error');return;}freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');applyFiltersAndRender();showToast('個人策略已儲存；不會變更正式 LINE 策略');const badge=document.getElementById("savedSettingsBadge");badge.classList.add("v161saved");setTimeout(()=>badge.classList.remove("v161saved"),3000);}
 function restore151(){try{const a=JSON.parse(localStorage.getItem(key151)||'null');if(!a||!dev15Keys.includes(a.strategy))return;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields||{})){if(id.startsWith('line'))continue;const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=(a.sectors||[]).includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};if(['ALL','BREAKOUT','CONSOLIDATE','TRACKING','BREAKDOWN'].includes(a.filter)){currentFilter=a.filter;document.querySelectorAll('.filter-card').forEach(e=>{const active=e.id==='tab-'+currentFilter;e.classList.toggle('border-2',active);e.classList.toggle('border-blue-500',active);e.classList.toggle('border',!active);e.classList.toggle('border-slate-800',!active);});}if(Number.isFinite(a.bubble))bubbleMultThreshold=a.bubble;freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');}catch(e){console.warn('個人設定還原失敗',e);}}
 function toggle152(id,b){const e=document.getElementById(id);const show=e.type==='password';e.type=show?'text':'password';b.textContent=show?'隱藏':'顯示 👁';b.setAttribute('aria-pressed',String(show));}
-function visibility151(ok){updateManualToolbar161();for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?'flex':'none','important');}
+function visibility151(ok){const b=document.getElementById('devModeIndicator164');if(b){b.classList.toggle('devModeActive164',!!ok);b.setAttribute('aria-pressed',String(!!ok));b.textContent=ok?'🔓 開發者模式 ON':'🔐 開發者登入';b.title=ok?(dev15Monitor?'已登入：本機監控':'已登入：遠端控制'):'一般使用者模式';}updateManualToolbar161();for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?'flex':'none','important');}
 async function change151(){const ids=['dev151NewUser','dev151Old','dev151New','dev151Confirm'];const [user,oldPassword,password,confirmPassword]=ids.map(id=>document.getElementById(id).value);if(password!==confirmPassword||password.length<12){dev15Status('新密碼至少12字且兩次必須相同');return;}try{await dev15Req('credentials',{user,oldPassword,password});ids.forEach(id=>document.getElementById(id).value='');await dev15Logout();document.getElementById('dev15Panel').style.display='';dev15Status('帳密已更新，所有裝置請重新登入（本機需重新開啟監控）');}catch(e){dev15Status('修改失敗：'+e.message);}}
 
 const dev15Status=t=>document.getElementById('dev15Status').textContent=t;
@@ -5902,7 +5912,7 @@ function lineTradeAmount161(t,close=false){
       }
 
       const btnTbl = document.getElementById("btnToggleSimTable");
-      if (btnTbl) btnTbl.textContent = `📋 查看可買進股票明細與每筆損益 (${boughtTrades.length} 筆)`;
+      if (btnTbl) btnTbl.textContent = `📋 查看可買進股票明細與每筆損益（已平倉 ${boughtTrades.filter(t=>t.isClosed).length} 筆｜未平倉 ${boughtTrades.filter(t=>!t.isClosed).length} 筆）`;
 
       const stratLabelMap = {
         DEFAULT_20MA: 'A. 原版20MA破線',
@@ -6181,14 +6191,17 @@ function lineTradeAmount161(t,close=false){
     // 2. 20MA 控盤跌破 20MA 首根為「破20MA關鍵K」，反彈若未站回 20MA 之上不得解除警報；後續收盤跌破該關鍵K低點即觸發「破K確認平倉」(如 1303 南亞 10/30 關鍵K -> 11/03 確認K平倉)
     function evaluateStockTrackingLifecycle(stock, filterOpts, exitConfig = null, overrideBars = null) {
       const cfg = exitConfig || getExitStrategyConfig();
-      if (cfg.strategy === "AI_POWER_90D") return _evaluateStockTrackingLifecycleCore(stock, filterOpts, cfg, overrideBars);
+
       if (!overrideBars) {
         const barsSig = `${stock.todayPrice}|${stock.todayVol}|${stock.latestTradeDate}`;
         const lcKey = `${barsSig}|${filterOpts.requireMa20Up}|${filterOpts.requireSolidRedK}|${filterOpts.useGainRange}|${filterOpts.minGain}|${filterOpts.maxGain}|${filterOpts.volOp}|${filterOpts.validVolThreshold}|${JSON.stringify(cfg)}`;
+        if(!stock._lcMulti163) Object.defineProperty(stock,'_lcMulti163',{value:new Map(),configurable:true});
+        if(stock._lcMulti163.has(lcKey)) return stock._lcMulti163.get(lcKey);
         if (stock._lcCache && stock._lcCacheKey === lcKey) return stock._lcCache;
         const res = _evaluateStockTrackingLifecycleCore(stock, filterOpts, cfg, null);
         stock._lcCacheKey = lcKey;
         stock._lcCache = res;
+        stock._lcMulti163.set(lcKey,res);if(stock._lcMulti163.size>32)stock._lcMulti163.delete(stock._lcMulti163.keys().next().value);
         return res;
       }
       return _evaluateStockTrackingLifecycleCore(stock, filterOpts, cfg, overrideBars);
@@ -7747,9 +7760,11 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         const wrapEl = document.getElementById("simTradesTableWrap");
         if (bodyEl) bodyEl.classList.remove("hidden");
         if (wrapEl) wrapEl.classList.remove("hidden");
-        const targetEl = (lastSimRowId && document.getElementById(lastSimRowId)) || wrapEl;
+        const targetEl = (lastSimRowId && document.getElementById(lastSimRowId)) || Array.from(wrapEl?.querySelectorAll('tbody tr')||[]).find(r=>r.textContent.includes(selectedStockCode));
+        if(!targetEl){wrapEl?.scrollIntoView({behavior:'smooth',block:'start'});return;}
         if (targetEl) {
           targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          document.querySelectorAll(".row-flash").forEach(r=>r.classList.remove("row-flash"));
           targetEl.classList.remove("row-flash");
           void targetEl.offsetWidth;
           targetEl.classList.add("row-flash");
@@ -7763,6 +7778,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       const rowEl = document.getElementById(`stock-row-${selectedStockCode}`);
       if (rowEl) {
         rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelectorAll(".row-flash").forEach(r=>r.classList.remove("row-flash"));
         rowEl.classList.remove("row-flash");
         void rowEl.offsetWidth;
         rowEl.classList.add("row-flash");
@@ -8232,7 +8248,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       const showTrackingMode = !gOnly && Boolean(activeOrClosedTrack) && (currentFilter === "TRACKING" || currentFilter === "BREAKDOWN" || !hasNewerKeyK);
       const keyDateSlash = formatShortDateSlash(stock.keyKDate);
 
-      document.getElementById("detailTitle").textContent = `${stock.code} ${stock.name} ｜策略 ${strategyLetter161(currentExitStrategy)}`;
+      const title163=document.getElementById("detailTitle"); title163.textContent=`${stock.code} ${stock.name} `; const badge163=document.createElement('span');badge163.className='strategyBadge163';badge163.textContent=getStrategyDisplayName(currentExitStrategy);title163.append(badge163);
       document.getElementById("detailKeyKTag").textContent = showTrackingMode
         ? (activeOrClosedTrack.isDirectKeyBreakdown
             ? `★ 關鍵K(${formatShortDateSlash(activeOrClosedTrack.keyKDate)}) → 跌破低點剔除`
@@ -8640,12 +8656,17 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
             tsb.closedHoldingDays = t.holdingDays;
             tsb.closedExitLabel = isConfirmKExitTrade(t) ? "破線確認K平倉" : "破直接平倉";
           }
-          if (tsbIdx >= 0) {
+          if (tsbIdx >= 0 && lastListOrigin !== "SIM" && currentFilter !== "BREAKDOWN") {
             chartState.postExitActiveRef = simulateChartFallbackLifecycleFrom(bars, tsbIdx + 1, getCurrentFilterOptions());
           }
         }
       }
 
+      if(showTrackingMode && activeOrClosedTrack?.isClosed && (currentFilter==='BREAKDOWN'||lastListOrigin==='SIM')){
+        const end=activeOrClosedTrack.sellDate;
+        if(end) for(const b of bars) if(b.date>end) for(const k of Object.keys(b)) if(k==='isKeyK'||k.startsWith('isTrack')) delete b[k];
+        chartState.postExitActiveRef=null;
+      }
       evaluateWhaleBubbleComparison(bars, '1d');
       enrichConsecutiveStreakAvg(bars);
 
@@ -9215,7 +9236,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       const is5mTf = chartState.timeframe === '5m';
       const tInfo = aiOnly ? null : is5mTf ? (chartState.track5m || null) : (showTrackingMode ? activeOrClosedTrack : null);
       const candInfo = is5mTf ? (chartState.cand5m || null) : null;
-      const hasCandKey = aiOnly ? false : is5mTf ? !!candInfo : stock.isFirstDayBreak20Ma;
+      const hasCandKey = aiOnly || (!is5mTf && tInfo?.isClosed && (currentFilter==="BREAKDOWN" || lastListOrigin==="SIM")) ? false : is5mTf ? !!candInfo : stock.isFirstDayBreak20Ma;
       const candHighVal = is5mTf ? (candInfo ? candInfo.keyHigh : 0) : stock.yestHigh;
       const candLowVal = is5mTf ? (candInfo ? candInfo.keyLow : 0) : stock.yestLow;
       const candStopVal = is5mTf ? (candInfo ? candInfo.stopLossPrice : 0) : stock.candidateStopLossPrice;
