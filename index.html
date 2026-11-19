@@ -190,7 +190,7 @@
 #stockTableBody tr:not(:has(td[colspan])),#todayClosedBody162 tr:not(:has(td[colspan])),#simSkippedTableBody tr:not(:has(td[colspan])){counter-increment:pool163}
 #stockTableBody tr:not(:has(td[colspan])) td:first-child::before,#todayClosedBody162 tr:not(:has(td[colspan])) td:first-child::before,#simSkippedTableBody tr:not(:has(td[colspan])) td:first-child::before{content:counter(pool163) ". ";color:#94a3b8;font-weight:700;font-variant-numeric:tabular-nums}
 @media(max-width:767px){#ohlcHud{height:148px!important;min-height:148px!important;max-height:148px!important}}
-</style></head>
+</style><style>#todayBuy163 td,#todayBuy163 th{padding:6px;white-space:nowrap}#todayBuy163 tbody tr{border-top:1px solid #334155}</style></head>
 <body class="min-h-screen p-3 md:p-5">
 
   <!-- 頂部通知 Toast -->
@@ -1053,6 +1053,7 @@
               </table>
             </div>
 
+            <details id="todayBuy163" class="hidden rounded-lg border border-rose-500/40 bg-slate-900 p-2" open><summary class="cursor-pointer text-rose-200 font-bold text-xs">📈 今日買進清單 <span id="todayBuySummary163"></span></summary><div class="overflow-x-auto mt-2"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th>#</th><th>股票</th><th>買進日 / 價格</th><th>張數</th><th>投入本金</th><th>現價 / 平倉價</th><th>淨損益 / 報酬率</th><th>買進條件</th><th>狀態</th></tr></thead><tbody id="todayBuyBody163"></tbody></table></div></details>
             <details id="todayClosed162" class="hidden rounded-lg border border-purple-500/40 bg-slate-900 p-2" open><summary class="cursor-pointer text-purple-200 font-bold text-xs">今日已平倉清單 <span id="todayClosedSummary162"></span></summary><div class="overflow-x-auto mt-2"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th>股票</th><th>買進日 / 價格</th><th>平倉日 / 價格</th><th>張數</th><th>投入本金</th><th>持有天數</th><th>淨損益</th><th>報酬率 / 出場原因</th></tr></thead><tbody id="todayClosedBody162"></tbody></table></div></details>
             <!-- ⏭️ 資金不足跳過之股票假設試算面板 -->
             <div id="simSkippedPanel" class="hidden border border-amber-500/40 rounded-lg bg-slate-900/90 p-2 space-y-1.5">
@@ -3217,7 +3218,7 @@
     }
 
     function buildStockDailyBarsWithToday(stock) {
-      const cacheSig = `${stock.todayPrice}|${stock.todayOpen}|${stock.todayHigh}|${stock.todayLow}|${stock.todayVol}|${stock.latestTradeDate}|${(stock.realBars || []).length}`;
+      const cacheSig = `${stock.todayPrice}|${stock.todayOpen}|${stock.todayHigh}|${stock.todayLow}|${stock.todayVol}|${stock.latestTradeDate}|${(stock.realBars || []).map(b=>`${b.date}:${b.close}:${b.vol}`).join(",")}`;
       if (stock._barsCacheSig === cacheSig && Array.isArray(stock._barsCache)) {
         return stock._barsCache;
       }
@@ -3380,6 +3381,7 @@
         selectedStockCode = found.code;
         renderTable();
         updateDetailPanel(found, true);
+        void pollFocusedStockLivePrice(true);
         return;
       }
 
@@ -3895,22 +3897,28 @@
     }
     setInterval(()=>{if(fullAiBusy||capitalAiBusy||stockSync161)return;const now=Date.now();if(wsPending162.size && now-lastFlush163 >= (document.hidden?5000:perfModes163[perf163])){lastFlush163=now;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);}if(dirty163&&now-lastStrategy163>=5000&&!document.hidden){dirty163=false;lastStrategy163=now;applyFiltersAndRender();}},250);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)lastStrategy163=0;});
-    async function pollFocusedStockLivePrice() {
+    async function pollFocusedStockLivePrice(forceDaily=false) {
       if (fullAiBusy || capitalAiBusy) return;
       if (!selectedStockCode || isFocusedPolling) return;
-      if (!(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
+      if (!forceDaily && !(isTaipeiTradingHours() || isHolidayMarketOpen)) return;
       const curCb = document.getElementById("autoSyncCheckbox");
-      if (curCb && !curCb.checked) return;
+      if (!forceDaily && curCb && !curCb.checked) return;
+      const requestedCode=selectedStockCode, requestedApi=apiUrl;
+      const tm=document.getElementById('detailLiveTimeTag');
+      if(forceDaily&&tm){tm.textContent='歷史K線同步中…';tm.classList.remove('hidden');}
       isFocusedPolling = true;
       try {
-        const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
-        const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(selectedStockCode)}&_t=${Date.now()}`, {
-          headers: { "ngrok-skip-browser-warning": "true" }
+        const singleStockUrl = apiUrl.replace(/\/stocks(\?.*)?$/, "/stock");
+        const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(requestedCode)}${forceDaily?"&daily=1":""}&_t=${Date.now()}`, {
+          headers: { "ngrok-skip-browser-warning": "true" }, cache: "no-store", signal: AbortSignal.timeout(45000)
         });
-        if (!sRes.ok) return;
+        if (!sRes.ok) throw Error(`HTTP ${sRes.status}`);
         const sRaw = await sRes.json();
         if (fullAiBusy || capitalAiBusy) return;
+        if(requestedApi!==apiUrl)return;
         const sNorm = normalizeStockItem(sRaw);
+        const existing=rawAllLoadedStocks.find(x=>x.code===sNorm.code);
+        if(existing && existing.latestTradeDate>sNorm.latestTradeDate && !forceDaily)return;
         const filterOpts = getCurrentFilterOptions();
         const candUnfiltered = resolveCandidateKeyKForToday(sNorm, null);
         if (candUnfiltered) applyCandidateKeyKToStock(sNorm, candUnfiltered);
@@ -3924,7 +3932,7 @@
         const liveBadgeEl = document.getElementById("detailLivePriceBadge");
         const displayedOldP = liveBadgeEl ? parseFloat(liveBadgeEl.textContent) : (idx >= 0 ? rawAllLoadedStocks[idx].todayPrice : 0);
 
-        if (idx >= 0) rawAllLoadedStocks[idx] = sNorm;
+        if (idx >= 0) rawAllLoadedStocks[idx] = sNorm; else rawAllLoadedStocks.push(sNorm);
         if (displayedOldP > 0 && sNorm.todayPrice > 0 && sNorm.todayPrice !== displayedOldP) {
           priceTickState.set(sNorm.code, { dir: sNorm.todayPrice > displayedOldP ? "UP" : "DOWN", ts: Date.now() });
         }
@@ -3933,11 +3941,11 @@
           const tmEl = document.getElementById("detailLiveTimeTag");
           if (tmEl) {
             const nowStr = new Date().toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
-            tmEl.textContent = `● 即時 ${nowStr}`;
+            tmEl.textContent = `行情日 ${sNorm.latestTradeDate} ｜ 同步 ${nowStr}`;
             tmEl.classList.remove("hidden");
           }
         }
-      } catch (e) {} finally {
+      } catch (e) {if(forceDaily&&selectedStockCode===requestedCode&&tm){tm.textContent='歷史K線同步失敗 · 顯示已載入資料';tm.classList.remove('hidden');}} finally {
         isFocusedPolling = false;
       }
     }
@@ -4149,7 +4157,9 @@
 
         const prevPriceMap = new Map();
         rawAllLoadedStocks.forEach(s => { if (s.todayPrice > 0) prevPriceMap.set(s.code, s.todayPrice); });
-        rawAllLoadedStocks = list.map(item => normalizeStockItem(item));
+        const previous163=new Map(rawAllLoadedStocks.map(s=>[s.code,s]));
+        rawAllLoadedStocks = list.map(item => {const n=normalizeStockItem(item),o=previous163.get(n.code);return o && (o.latestTradeDate>n.latestTradeDate || (o.latestTradeDate===n.latestTradeDate&&o.realBars.length>n.realBars.length))?o:n;});
+        if(selectedStockCode&&!rawAllLoadedStocks.some(s=>s.code===selectedStockCode)&&previous163.has(selectedStockCode))rawAllLoadedStocks.push(previous163.get(selectedStockCode));
         const nowTs = Date.now();
         rawAllLoadedStocks.forEach(s => {
           const oldP = prevPriceMap.get(s.code);
@@ -4171,30 +4181,10 @@
         statusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
         const syncModeStr = isHolidayMarketOpen ? "假日開市・1秒盯盤" : (isTaipeiTradingHours() ? "開市・1秒盯盤" : "盤後/假日・10分同步");
         statusText.textContent = `${syncModeStr} (${rawAllLoadedStocks.length}檔)`;
-        if ((isTaipeiTradingHours() || isHolidayMarketOpen) && selectedStockCode) {
-          try {
-            const singleStockUrl = apiUrl.replace(/\/stocks$/, "/stock");
-            const sRes = await fetch(`${singleStockUrl}?q=${encodeURIComponent(selectedStockCode)}&_t=${Date.now()}`, {
-              headers: { "ngrok-skip-browser-warning": "true" }, signal: AbortSignal.timeout(12000)
-            });
-            if (sRes.ok) {
-              const sRaw = await sRes.json();
-              if (fullAiBusy || capitalAiBusy) return;
-              const sNorm = normalizeStockItem(sRaw);
-              const idx = rawAllLoadedStocks.findIndex(x => x.code === sNorm.code);
-              if (idx >= 0) {
-                const oldP = rawAllLoadedStocks[idx].todayPrice;
-                if (oldP && sNorm.todayPrice > 0 && sNorm.todayPrice !== oldP) {
-                  priceTickState.set(sNorm.code, { dir: sNorm.todayPrice > oldP ? "UP" : "DOWN", ts: Date.now() });
-                }
-                rawAllLoadedStocks[idx] = sNorm;
-              }
-            }
-          } catch (e) {}
-        }
         if(dev15Monitor) await dev15Pull(false);
         applyFiltersAndRender();
         void lineProcessV14();
+        if(selectedStockCode) void pollFocusedStockLivePrice(true);
       } catch (err) {
         if(generation!==syncGeneration161)return;
         if(err.status===503){statusDot.className='w-2 h-2 rounded-full bg-amber-400 animate-pulse';statusText.textContent='後台正在建立歷史行情，15秒後再檢查';clearTimeout(warmupTimer161);warmupTimer161=setTimeout(()=>fetchStocksData(true),15000);return;}
@@ -4819,7 +4809,7 @@
 
     function toggleSimTradesTable() {
       const el = document.getElementById("simTradesTableWrap");
-      if (el) { const hidden=el.classList.toggle("hidden"); document.getElementById('todayClosed162')?.classList.toggle('hidden',hidden); if(!hidden){setPoolFold162(true);document.getElementById("strategyCompareBox")?.classList.add("v161-fold");const b=document.querySelector("#strategyCompareBox > .v161-collapse");if(b){b.textContent="+";b.setAttribute("aria-expanded","false");}renderSimTradesTableOnly();} }
+      if (el) { const hidden=el.classList.toggle("hidden"); document.getElementById('todayClosed162')?.classList.toggle('hidden',hidden);renderTodayBuy163(); if(!hidden){setPoolFold162(true);document.getElementById("strategyCompareBox")?.classList.add("v161-fold");const b=document.querySelector("#strategyCompareBox > .v161-collapse");if(b){b.textContent="+";b.setAttribute("aria-expanded","false");}renderSimTradesTableOnly();} }
     }
 
     const TW_SEMI_CODES = new Set([
@@ -4899,14 +4889,15 @@
     async function onTrimTopWinnersChanged() {
       saveUserSettingsToStorage(false);
       if (capitalAiBusy || fullAiBusy) { pendingTrimRefresh = true; return; }
-      if (await rerankCachedCapital()) return;
       window._skipNextAiCapOptInSim = true;
       runPortfolioCapitalSimulation();
+      if (await rerankCachedCapital()) return;
+      if (_lastAiCapitalResultsCache?.length) { document.getElementById("simAiStrategyCompareGrid").innerHTML = ""; document.getElementById("simAiWinnerSummary").textContent = "舊 AI 結果不適用於目前剔除條件，請重新尋優"; }
       showAiProgress('capital',0,'尚無有效交易快取，請先尋優');
     }
     let pendingTrimRefresh = false;
     async function rerankCachedCapital() {
-      if (capitalAiBusy || fullAiBusy || capitalV8Key !== aiV8Key(true) || !_lastAiCapitalResultsCache?.every(r=>Array.isArray(r.cachedEvents)) || _lastAiCapitalResultsCache.length!==7) return false;
+      if (capitalAiBusy || fullAiBusy || !_lastAiCapitalResultsCache?.every(r=>Array.isArray(r.cachedEvents)) || _lastAiCapitalResultsCache.length!==7) return false;
       capitalAiBusy=true;
       const key=capitalV8Key;
       const trim=getTrimTopWinnersCount();
@@ -4918,11 +4909,11 @@
           showAiProgress('capital',Math.round(rows.length/7*99),'快取資金重算 '+rows.length+'/7');
           await aiYield();
         }
-        if(key!==aiV8Key(true)||trim!==getTrimTopWinnersCount()){pendingTrimRefresh=true;return true;}
+        if(trim!==getTrimTopWinnersCount()){pendingTrimRefresh=true;return true;}
         _lastAiCapitalResultsCache=rows;
         aiV8Save('capital',key,{results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim});
         renderAiCapitalCompareCardsOnly();
-        showAiProgress('capital',100,'已剔除獲利王並重新排名（快取）');
+        showAiProgress('capital',100,`已按${trim ? '剔除前 '+trim+' 名' : '不剔除'}重新試算（上次 AI 交易快照，非重新尋優）`);
         window._skipNextAiCapOptInSim=true;
         runPortfolioCapitalSimulation();
         return true;
@@ -5123,6 +5114,7 @@
       return {
         strategyKey,
         cachedEvents: events,
+        trimmedItems: trimRes.trimmedItems,
         totalNetProfit: Math.round(totalNetProfit),
         totalRoiPct,
         finalEquity: Math.round(finalEquity),
@@ -5309,6 +5301,7 @@
             <div class="text-[9.5px] text-slate-400 font-mono">權益:$${(r.finalEquity ?? 0).toLocaleString()}</div>
             <div class="text-[9.5px] text-slate-400 font-mono">${r.tradeCount ?? 0}筆 ｜ 勝率${r.winRate ?? 0}%</div>
             ${topStr}
+            ${Array.isArray(r.trimmedItems) && r.trimmedItems.length ? `<div class="text-[10px] text-amber-300">已剔除：${r.trimmedItems.map(t=>t.code).join("、")}</div>` : ""}
           </div>
         `;
       }).join("");
@@ -5512,14 +5505,14 @@
       _lastAiCapitalResultsCache = results;
       capitalV8Key=runKey;
       if(runKey!==aiV8Key(true)){
-        aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});
+        aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim:getTrimTopWinnersCount()});
         renderAiCapitalCompareCardsOnly();
         showAiProgress('capital',100,'已完成 · 舊資料結果，點擊重新尋優更新');
         return;
       }
       aiV8Save('full',fullV8Key,_aiFullStep1PerStrategyMap);
       capitalV8Key=runKey;
-      aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map});freeze151();
+      aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim:getTrimTopWinnersCount()});freeze151();
       const winner = results.reduce((best, cur) => (cur.totalNetProfit > best.totalNetProfit ? cur : best), results[0]);
       renderAiCapitalCompareCardsOnly();
 
@@ -7825,6 +7818,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
       const stock = rawAllLoadedStocks.find(s => s.code === code);
       if (stock) {
         updateDetailPanel(stock, true);
+        void pollFocusedStockLivePrice(true);
         if (scrollToChart) {
           const chartSection = document.getElementById("detailPanelSection");
           if (chartSection) {
@@ -10504,7 +10498,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
   </div>
 <script>
 window.addEventListener('online',()=>fetchStocksData(true));
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){fetchStocksData(true);pollFocusedStockLivePrice();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){fetchStocksData(true);pollFocusedStockLivePrice(true);}});
 window.addEventListener('load',()=>{const w=document.getElementById('simTradesTableWrap');if(w){const l=document.createElement('label');l.className='block text-xs p-2';const c=document.createElement('input');c.type='checkbox';c.id='v161History';c.onchange=()=>renderSimTradesTableOnly();l.append(c,document.createTextNode(' 顯示歷史平倉（預設持倉；今日平倉另列）'));w.before(l);}});
 </script>
 <style>.v161-collapse{position:absolute;top:4px;right:4px;z-index:5;background:#334155;color:white;border-radius:4px;padding:2px 8px;font-size:14px}.v161-fold>*:not(.v161-collapse):not(:first-child){display:none!important}.v161-fold{min-height:36px!important;max-height:48px!important;overflow:hidden!important}</style>
@@ -10512,7 +10506,7 @@ window.addEventListener('load',()=>{const w=document.getElementById('simTradesTa
 window.addEventListener('load',()=>{
  for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
  const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
- for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
  for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
@@ -10521,7 +10515,19 @@ window.addEventListener('load',()=>{
 let poolFold162=false;
 function setPoolFold162(v){poolFold162=!!v;document.getElementById('stockPoolPanel')?.classList.toggle('poolFolded162',poolFold162);const b=document.getElementById('poolFoldBtn162');if(b){b.textContent=poolFold162?'+ 展開':'− 收合';b.setAttribute('aria-expanded',String(!poolFold162));}}
 function renderTodayClosed162(){const body=document.getElementById('todayClosedBody162'), summary=document.getElementById('todayClosedSummary162'), panel=document.getElementById('todayClosed162');if(!body||!summary||!panel)return;panel.classList.toggle('hidden',document.getElementById('simTradesTableWrap').classList.contains('hidden'));const day=lineV14Day(), rows=(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot).filter(t=>t.isClosed&&t.sellDate===day);const cash=n=>Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';summary.textContent=`｜${rows.length} 筆・${rows.reduce((n,t)=>n+(Number(t.lots)||0),0)} 張・淨損益 ${cash(rows.reduce((n,t)=>n+(Number(t.netProfit)||0),0))}`;body.replaceChildren();for(const t of rows){const tr=body.insertRow();const days=t.holdingDays??(t.buyDate?Math.max(1,Math.round((Date.parse(t.sellDate)-Date.parse(t.buyDate))/86400000)+1)+' 日曆日':'—');const values=[t.code+' '+t.name,t.buyDate+' / '+t.buyPrice,t.sellDate+' / '+(t.curP??t.exitOrNowPrice),t.lots,t.totalCost==null?'—':cash(t.totalCost),typeof days==='number'?days+' 交易日':days,cash(t.netProfit),(Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—')+' / '+(t.exitReason||t.customRuleText||'已平倉')];values.forEach((v,i)=>{const td=tr.insertCell();td.textContent=v??'—';if(i===6)td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[0].style.cursor='pointer';tr.cells[0].onclick=()=>openStockFromSimList(t.code,t.rowId||'');}if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=8;td.textContent='今日尚無平倉交易';}}
-window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');if(b)new MutationObserver(renderTodayClosed162).observe(b,{childList:true});renderTodayClosed162();});
+
+function todayBuyRows163(rows,day){return (rows||[]).filter(t=>String(t.buyDate||'').slice(0,10)===day);}
+function renderTodayBuy163(){
+ const panel=document.getElementById('todayBuy163'),body=document.getElementById('todayBuyBody163'),summary=document.getElementById('todayBuySummary163');if(!panel||!body||!summary)return;
+ const hidden=document.getElementById('simTradesTableWrap').classList.contains('hidden');panel.classList.toggle('hidden',hidden);if(hidden)return;
+ const rows=todayBuyRows163(simTableMode==='PORTFOLIO'?lastPortComputedSnapshot:lastSimTradesSnapshot,lineV14Day());
+ const cash=n=>n!=null&&Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';
+ const sum=k=>rows.reduce((a,t)=>a+(Number(t[k])||0),0);
+ summary.textContent=`｜${rows.length} 筆・${sum('lots')} 張・投入 ${cash(sum('totalCost'))}・淨損益 ${cash(sum('netProfit'))}`;
+ body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}`,`${t.buyDate} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,t.rowId||'');});
+ if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=9;td.textContent='今日尚無買進交易';}
+}
+window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');const update=()=>{renderTodayClosed162();renderTodayBuy163();};if(b)new MutationObserver(update).observe(b,{childList:true});update();});
 </script>
 </body>
 </html>
