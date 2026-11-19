@@ -2391,7 +2391,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       if(capital) ids.push('simInitCapitalInput','simStartDateInput','simEndDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
       add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
       add(getSelectedSimSectors());
-      if(capital){add(simManualCloseMap);}
+      if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
       for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
       return `v13-events-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
@@ -4907,6 +4907,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
 
     async function onTrimTopWinnersChanged() {
       saveUserSettingsToStorage(false);
+      manualCapitalKey=""; manualCapitalRows={}; paintManualCapitalCards();
       if (capitalAiBusy || fullAiBusy) { pendingTrimRefresh = true; return; }
       window._skipNextAiCapOptInSim = true;
       runPortfolioCapitalSimulation();
@@ -4918,7 +4919,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
     async function rerankCachedCapital() {
       if (capitalAiBusy || fullAiBusy || !_lastAiCapitalResultsCache?.every(r=>Array.isArray(r.cachedEvents)) || _lastAiCapitalResultsCache.length!==7) return false;
       capitalAiBusy=true;
-      const key=capitalV8Key;
+      const key=aiV8Key(true);
       const trim=getTrimTopWinnersCount();
       try {
         const rows=[];
@@ -4929,7 +4930,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
           await aiYield();
         }
         if(trim!==getTrimTopWinnersCount()){pendingTrimRefresh=true;return true;}
-        _lastAiCapitalResultsCache=rows;
+        _lastAiCapitalResultsCache=rows; capitalV8Key=key;
         aiV8Save('capital',key,{results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim});
         renderAiCapitalCompareCardsOnly();
         showAiProgress('capital',100,`已按${trim ? '剔除前 '+trim+' 名' : '不剔除'}重新試算（上次 AI 交易快照，非重新尋優）`);
@@ -4998,7 +4999,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
 
       const events = cachedEvents ? cachedEvents.slice() : [];
       const seenKey = new Set();
-      const sourceStocks = cachedEvents ? [] : strategyKey === "AI_POWER_90D" ? getPoolStocksWithCrossovers(true) : (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
+      const sourceStocks = cachedEvents ? [] : strategyKey === "AI_POWER_90D" ? rawAllLoadedStocks : (overrideFilterOpts && Array.isArray(overrideFilterOpts._prefilteredPool))
         ? overrideFilterOpts._prefilteredPool
         : rawAllLoadedStocks;
       const lifecycleFilterKey = JSON.stringify({
@@ -5667,22 +5668,22 @@ function lineTradeAmount161(t,close=false){
       manualCapitalTimer=setTimeout(async()=>{
         const panel=document.getElementById('manualCapitalStrategies'), status=document.getElementById('manualCapitalStatus');
         if(!panel || !status)return;
-        if(document.getElementById('chkAiCapitalOpt')?.checked || !rawAllLoadedStocks.length || !panel.getClientRects().length)return;
+        if(!rawAllLoadedStocks.length || !panel.getClientRects().length)return;
         if(fullAiBusy || capitalAiBusy){scheduleManualCapitalCards();return;}
         const keys=Array.from(document.querySelectorAll('#manualCapitalGrid button'), b=>b.dataset.strategy);
         const opts=getCurrentFilterOptions();
         const configs=keys.map(k=>getExitStrategyConfig(k));
         const sig=JSON.stringify([aiV8Key(true),opts,configs,getTrimTopWinnersCount(),document.getElementById('simPrioritySelect')?.value]);
         if(sig===manualCapitalKey){paintManualCapitalCards();return;}
-        manualCapitalRows={};paintManualCapitalCards();
+        manualCapitalRows=manualCapitalRows[currentExitStrategy]?{[currentExitStrategy]:manualCapitalRows[currentExitStrategy]}:{};paintManualCapitalCards();
         try{
           for(let i=0;i<keys.length;i++){
-            if(generation!==manualCapitalGeneration || fullAiBusy || capitalAiBusy || document.getElementById('chkAiCapitalOpt')?.checked)return;
+            if(generation!==manualCapitalGeneration || fullAiBusy || capitalAiBusy)return;
             status.textContent='一般資金試算 '+(i+1)+'/7（非 AI 尋優）';
             await aiYield();
             const r=await simulateCapitalForStrategy(keys[i],configs[i],opts);
             if(generation!==manualCapitalGeneration)return;
-            manualCapitalRows[keys[i]]=r;paintManualCapitalCards();
+            if(keys[i]!==currentExitStrategy || !manualCapitalRows[keys[i]]) manualCapitalRows[keys[i]]=r;paintManualCapitalCards();
           }
           manualCapitalKey=sig;status.textContent='目前參數試算完成（非 AI 尋優）';
         }catch(e){status.textContent='一般試算失敗：'+e.message;}
@@ -6020,6 +6021,7 @@ function lineTradeAmount161(t,close=false){
       const noteEl = document.getElementById("simStatusNote");
       if (noteEl) noteEl.textContent = `${startDate} ～ ${endDate} 投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
+      manualCapitalRows[currentExitStrategy]={totalNetProfit:Math.round(totalNetProfit)}; paintManualCapitalCards();
       lastSimTradesSnapshot = boughtTrades;
       lineV14Snapshot = endDate < lineV14Day() ? null : { trades: boughtTrades.map(t=>({...t})), keys: allStocks.map(t=>({code:t.code,name:t.name,date:t.keyKDate,price:t.yestClose})), strategy: stratLabelMap[currentExitStrategy] || currentExitStrategy, config: JSON.stringify([getExitStrategyConfig(),getCurrentFilterOptions(),startDate,endDate,initCapital,lotMode,perStockBudget,withdrawParam,profitRule,includeFees,sectorMode,trimN,document.getElementById("simPrioritySelect")?.value,simManualCloseMap]), dataDate: rawAllLoadedStocks.reduce((d,t)=>String(t.latestTradeDate||'')>d?String(t.latestTradeDate):d,''), report: {initCapital,totalNetProfit,totalRoiPct,realizedProfit,unrealizedProfit,availableCash,holdingCnt, equity:availableCash+lockedVault+holdingMarketValue} };
       const aiCmpBox = document.getElementById("simAiStrategyCompareBox");
