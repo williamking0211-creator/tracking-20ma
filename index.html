@@ -922,7 +922,12 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
                     <option value="5">剔除獲利前 5 名</option>
                   </select>
                 </label>
-                <label id="lblAiCapitalOpt" class="inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm">
+                <div id="simVolumeFilter164" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;padding:8px;border:1px solid #64748b;border-radius:8px;background:#172034;color:#e2e8f0">
+<b>📊 實戰成交量篩選（張）</b><select id="simVolumeMode164" style="background:#0f172a" aria-label="成交量條件"><option value="all">不限</option><option value="min">大於等於</option><option value="max">小於等於</option><option value="range">指定區間</option></select>
+<select id="simVolumeBasis164" style="background:#0f172a" aria-label="成交量基準"><option value="buy">買進當日</option><option value="key">關鍵K當日</option><option value="avg">買進前5日均量</option></select>
+<input id="simVolumeLow164" type="number" min="0" value="1000" aria-label="成交量下限或單一門檻" style="width:7em;background:#0f172a"/><input id="simVolumeHigh164" type="number" min="0" value="10000" aria-label="成交量上限" style="width:7em;background:#0f172a"/>
+<button type="button" onclick="applyVolume164()" style="padding:8px;background:#6d28d9;border-radius:6px">套用篩選／重算</button><small id="simVolumeNote164" style="width:100%">不限成交量；關鍵K不存在時不納入該基準。</small></div>
+<label id="lblAiCapitalOpt" class="inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm">
                   <input type="checkbox" id="chkAiCapitalOpt" onchange="toggleAiCapitalStrategyOptimizer()"
                          class="rounded bg-slate-900 border-purple-400 text-purple-500 focus:ring-0" />
                   <span id="txtAiCapitalOpt">🤖 AI 找實戰最大收益策略 (未開啟)</span>
@@ -2318,6 +2323,14 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
     function updateExitStrategyUI() {
       syncStrategyEDescText();
       const independent = currentExitStrategy === 'AI_POWER_90D';
+      // V16.4: automatically enable AI markers when entering strategy G.
+      if (independent && updateExitStrategyUI.lastStrategy !== currentExitStrategy) {
+        for (const id of ['chkShowAiPowerMarkers', 'chkShowAiPowerMarkersHud']) {
+          const checkbox = document.getElementById(id);
+          if (checkbox) checkbox.checked = true;
+        }
+      }
+      updateExitStrategyUI.lastStrategy = currentExitStrategy;
       const marker = document.getElementById('gIndependentNotice');
       if (marker) marker.classList.toggle('hidden', !independent);
       for (const id of ['chkMa20Up','chkSolidRedK','chkGainRange','minGainInput','maxGainInput','volOperatorSelect','volThresholdInput']) { const el=document.getElementById(id); if(el) el.disabled=independent; }
@@ -2391,7 +2404,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       if(capital) ids.push('simInitCapitalInput','simStartDateInput','simEndDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk');
       add(ids.map(id=>[document.getElementById(id)?.value,document.getElementById(id)?.checked]));
       add(getSelectedSimSectors());
-      if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());}
+      if(capital){add(simManualCloseMap);add(getTrimTopWinnersCount());add(volume164);}
       for(const st of [...rawAllLoadedStocks].sort((a,b)=>String(a.code).localeCompare(String(b.code)))){add([st.code,st.name,st.latestTradeDate,st.todayPrice,st.todayOpen,st.todayHigh,st.todayLow,st.todayVol,st.todayBigBuyVol,st.todayBigSellVol,st.realBars]);}
       return `v13-events-${capital?'cap':'full'}-${rawAllLoadedStocks.length}-${h>>>0}-${h2>>>0}`;
     }
@@ -4901,6 +4914,33 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       return selectedSectors.includes(resolveStockCategory(s));
     }
 
+
+    let volume164={mode:'all',basis:'buy',lo:1000,hi:10000};
+    function applyVolume164(){
+      const el=id=>document.getElementById(id);
+      const mode=el('simVolumeMode164').value,basis=el('simVolumeBasis164').value;
+      const lo=Number(el('simVolumeLow164').value),hi=Number(el('simVolumeHigh164').value);
+      if(mode!=='all'&&(!el('simVolumeLow164').value||!Number.isFinite(lo)||lo<0||(mode==='range'&&(!el('simVolumeHigh164').value||!Number.isFinite(hi)||hi<lo)))){el('simVolumeNote164').textContent='請輸入有效非負成交量，且上限不得小於下限';return;}
+      volume164={mode,basis,lo,hi};
+      el('simVolumeNote164').textContent=mode==='all'?'不限成交量':`${basis==='buy'?'買進當日':basis==='key'?'關鍵K當日':'買進前5日均量'}：${mode==='range'?lo+'～'+hi:mode==='min'?'≥ '+lo:'≤ '+lo} 張；缺資料不納入`;
+      onTrimTopWinnersChanged();
+    }
+    function filterVolume164(events, cfg=volume164){
+      if(cfg.mode==='all')return events;
+      const stocks=new Map(rawAllLoadedStocks.map(s=>[String(s.code),s])), cache=new Map();
+      return events.filter(t=>{
+        const code=String(t.code), stock=stocks.get(code);if(!stock)return false;
+        if(!cache.has(code))cache.set(code,buildStockDailyBarsWithToday(stock));
+        const bars=cache.get(code), date=cfg.basis==='key'?t.keyKDate:t.buyDate;
+        if(!date)return false;
+        const idx=bars.findIndex(b=>b.date===date||(b.date==='今日'&&stock.latestTradeDate===date));let v;
+        if(cfg.basis==='avg'){if(idx<5)return false;const vs=bars.slice(idx-5,idx).map(b=>b.vol);if(vs.some(x=>!Number.isFinite(x)||x<0))return false;v=vs.reduce((a,b)=>a+b,0)/5;}
+        else {if(idx<0)return false;v=bars[idx].vol;}
+        if(!Number.isFinite(v)||v<0)return false;
+        return cfg.mode==='min'?v>=cfg.lo:cfg.mode==='max'?v<=cfg.lo:v>=cfg.lo&&v<=cfg.hi;
+      });
+    }
+
     function getTrimTopWinnersCount() {
       return Math.max(0, parseInt(document.getElementById("simTrimTopWinnersSelect")?.value || "0", 10) || 0);
     }
@@ -4920,7 +4960,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       if (capitalAiBusy || fullAiBusy || !_lastAiCapitalResultsCache?.every(r=>Array.isArray(r.cachedEvents)) || _lastAiCapitalResultsCache.length!==7) return false;
       capitalAiBusy=true;
       const key=aiV8Key(true);
-      const trim=getTrimTopWinnersCount();
+      const trim=getTrimTopWinnersCount(); const volumeSig=JSON.stringify(volume164);
       try {
         const rows=[];
         for (const r of _lastAiCapitalResultsCache) {
@@ -4929,7 +4969,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
           showAiProgress('capital',Math.round(rows.length/7*99),'快取資金重算 '+rows.length+'/7');
           await aiYield();
         }
-        if(trim!==getTrimTopWinnersCount()){pendingTrimRefresh=true;return true;}
+        if(trim!==getTrimTopWinnersCount()||volumeSig!==JSON.stringify(volume164)){pendingTrimRefresh=true;return true;}
         _lastAiCapitalResultsCache=rows; capitalV8Key=key;
         aiV8Save('capital',key,{results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim});
         renderAiCapitalCompareCardsOnly();
@@ -5042,6 +5082,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
             code: s.code,
             name: s.name,
             buyDate: tr.buyDate,
+            keyKDate: tr.keyKDate || null,
             buyPrice: tr.buyPrice,
             isClosed: mc ? true : !!tr.isClosed,
             sellDate: mc ? mc.sellDate : (tr.isClosed ? tr.sellDate : null),
@@ -5055,7 +5096,7 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
       }
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = applyOutlierTrimToEvents(capitalWindowEvents(events,startDate,endDate), trimN, includeFees);
+      const trimRes = applyOutlierTrimToEvents(filterVolume164(capitalWindowEvents(events,startDate,endDate)), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
       const taxRate = includeFees ? 0.003 : 0;
@@ -5762,6 +5803,7 @@ function lineTradeAmount161(t,close=false){
             code: s.code,
             name: s.name,
             buyDate: tr.buyDate,
+            keyKDate: tr.keyKDate || null,
             buyPrice: tr.buyPrice,
             isClosed: isClosedEff,
             isManualClosed: !!mc,
@@ -5778,7 +5820,7 @@ function lineTradeAmount161(t,close=false){
       });
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = applyOutlierTrimToEvents(capitalWindowEvents(events,startDate,endDate), trimN, includeFees);
+      const trimRes = applyOutlierTrimToEvents(filterVolume164(capitalWindowEvents(events,startDate,endDate)), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const trimBadge = document.getElementById("simTrimmedInfoBadge");
       if (trimBadge) {
