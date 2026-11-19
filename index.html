@@ -197,6 +197,14 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
 <style id="mobileHome164Style">
 #mobileHome164{display:none} html.mobile164 #mobileHome164{display:block;order:-1;scroll-margin-top:12px} html.mobile164 #mobileHome164 #capitalSimBody:not(.hidden){display:flex;flex-direction:column;gap:12px} html.mobile164 #mobileHome164 #simResultCardsMobile{grid-template-columns:repeat(2,minmax(0,1fr))!important} html.mobile164 #mobileHome164 #simResultCardsMobile>div:not(.v161-collapse){min-width:0;overflow-wrap:anywhere} html.mobile164 #mobileHome164 #simTotalProfitEl,html.mobile164 #mobileHome164 #simRealizedProfitEl,html.mobile164 #mobileHome164 #simUnrealizedProfitEl{font-size:21px!important} html.mobile164 #mobileHome164 #manualCapitalGrid>*{min-height:76px;overflow-wrap:anywhere} html.mobile164 #mobileHome164 #simTradesTableWrap{overflow:visible!important} html.mobile164 #mobileHome164 table{min-width:0!important} html.mobile164 #mobileHome164 .mobileHomeFold164{border:1px solid #475569;border-radius:10px;padding:10px;background:#111c30} html.mobile164 #mobileHome164 .mobileHomeFold164>summary{font-weight:700;color:#cbd5e1} html.mobile164 #mobileEquity164{font-size:28px;font-weight:800;overflow-wrap:anywhere} html.mobile164 #mobileHome164 .v161-collapse{min-height:28px} html.mobile164 #mobileHome164 #simResultCardsMobile>.v161-collapse{display:none} html.mobile164 #mobileHome164 #simResultCardsMobile.v161-fold{max-height:none!important} html.mobile164 #mobileHome164 #todayBuy163,html.mobile164 #mobileHome164 #todayClosed162{overflow:hidden} html.mobile164 #mobileHome164 .mobileHomeFold164[hidden]{display:none!important}
 </style>
+<style id="capitalMainTheme164">
+#capitalMainPanel164 { background: linear-gradient(145deg,#7136a8 0%,#51268b 55%,#303b91 100%) !important; border: 3px solid #fbbf24 !important; border-radius: 14px !important; box-shadow: 0 0 0 1px #9a6718, 0 0 16px rgba(251,191,36,.45); box-sizing: border-box; }
+#capitalMainPanel164 > div:first-child { background: linear-gradient(90deg,#a05c19,#7838ab); border-radius: 8px; padding: 9px 10px; }
+#capitalMainTitle164 { color: #fff0a8 !important; font-weight: 900; font-size: 16px; }
+#capitalMainPanel164 #capitalSimBody { border-top-color: #a77c40 !important; }
+html.mobile164 #capitalMainPanel164 { min-width:0; max-width:100%; width:100%; }
+html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.3; }
+</style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
 
@@ -797,10 +805,10 @@ html.mobile164 body{padding:10px 10px 85px!important;min-width:0;font-size:15px}
         </div>
 
         <!-- 💰 實戰資金模擬回測器 (起始資金 / 起始買入日 / 獲利再投資與提領設定) -->
-        <div class="bg-slate-950/90 border border-amber-500/40 rounded-lg p-2.5 space-y-2 text-xs">
+        <div id="capitalMainPanel164" class="bg-slate-950/90 border border-amber-500/40 rounded-lg p-2.5 space-y-2 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-amber-300">💰 實戰資金模擬試算</span>
+              <span id="capitalMainTitle164" class="font-bold text-amber-300">💰 實戰資金模擬試算</span>
               <span id="simActiveStrategyBadge" class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-400/40 text-indigo-200 font-semibold">目前策略：--</span>
             </div>
             <button type="button" onclick="toggleCapitalSimPanel()" id="btnToggleCapitalSim"
