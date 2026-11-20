@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.1｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -253,7 +253,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.1 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V15.3</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
 
   <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
@@ -951,7 +951,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 <label>通知對象 <select id="line155Mode" class="bg-slate-800 rounded p-1"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()" class="px-2 py-1 rounded bg-indigo-800">儲存通知對象</button><span id="line155Status">尚未讀取</span><button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待通知測試</span><span id="monitorStatus164">尚未讀取後台狀態</span><button type="button" onclick="monitorStatus164()" class="px-2 py-1 rounded bg-indigo-800">檢查 LINE 狀態</button></div>
             </div>
 
-<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（目前參數）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
+<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -4997,7 +4997,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
     async function onTrimTopWinnersChanged() {
       saveUserSettingsToStorage(false);
-      manualCapitalKey=""; manualCapitalRows={}; paintManualCapitalCards();
+      paintManualCapitalCards();
       if (capitalAiBusy || fullAiBusy) { pendingTrimRefresh = true; document.getElementById("simVolumeNote164").textContent += " ｜等待目前 AI 運算完成後重算"; return; }
       window._skipNextAiCapOptInSim = true;
       runPortfolioCapitalSimulation();
@@ -5401,6 +5401,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         if(!badge){badge=document.createElement('div');badge.className='capitalWinnerBadge164';b.prepend(badge);}
         badge.textContent='🏆 AI 最佳策略 ｜ '+(winner.totalNetProfit>=0?'+':'-')+'$'+Math.abs(winner.totalNetProfit).toLocaleString();
       });
+      paintManualCapitalCards();
       if(!winner)return;
       const money=n=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString();
       document.getElementById('capitalWinnerText164').textContent=`最佳策略：${winner.label}\n最佳條件：${winner.bestTag}\n淨損益：${money(winner.totalNetProfit)} ｜ 報酬率：${winner.totalRoiPct.toFixed(2)}%\n期末總權益：$${Number(winner.finalEquity||0).toLocaleString()}\n上次 AI 尋優／快取試算結果`;
@@ -5653,6 +5654,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         showAiProgress('capital',85+14*(i+1)/3,`前三名精調 ${i+1}/3`);
       }
       _lastAiCapitalResultsCache = results;
+      saveCapitalCards1641(results);
       capitalV8Key=runKey;
       if(runKey!==aiV8Key(true)){
         aiV8Save('capital',runKey,{results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim:getTrimTopWinnersCount()});
@@ -5784,14 +5786,25 @@ function lineTradeAmount161(t,close=false){
       }catch(e){lineV14Status('通知失敗：'+e.message);}finally{lineV14Busy=false;}
     }
 
-    let manualCapitalTimer = null, manualCapitalGeneration = 0, manualCapitalKey = '', manualCapitalRows = {};
+    const capitalCardsCacheKey1641='w-capital-cards-v1641';
+    let manualCapitalSnapshot=null;
+    function loadCapitalCards1641(){try{const v=JSON.parse(localStorage.getItem(capitalCardsCacheKey1641)||'null');if(v?.rows?.length===7 && v.rows.every(r=>Number.isFinite(r.totalNetProfit)))manualCapitalSnapshot=v;}catch(e){console.warn(e);}}
+    function saveCapitalCards1641(results){if(results.length!==7||!results.every(r=>Number.isFinite(r.totalNetProfit)))return;manualCapitalSnapshot={savedAt:Date.now(),rows:results.map(r=>({strategyKey:r.strategyKey,totalNetProfit:r.totalNetProfit}))};try{localStorage.setItem(capitalCardsCacheKey1641,JSON.stringify(manualCapitalSnapshot));}catch(e){showToast('七大策略快取無法永久儲存','error');}paintManualCapitalCards();}
     function paintManualCapitalCards() {
+      const status=document.getElementById('manualCapitalStatus');
+      if(status)status.textContent=manualCapitalSnapshot?'AI 最後運算時間：'+new Date(manualCapitalSnapshot.savedAt).toLocaleString('zh-TW')+' ｜ 固定快取':'尚無快取，請執行 AI 實戰找最大收益';
+      const rows=manualCapitalSnapshot?.rows||[];
+      const winner=rows.reduce((a,b)=>!a||b.totalNetProfit>a.totalNetProfit?b:a,null);
       document.querySelectorAll('#manualCapitalGrid button').forEach(b=>{
-        const k=b.dataset.strategy, r=manualCapitalRows[k], active=k===currentExitStrategy;
+        const k=b.dataset.strategy, r=manualCapitalSnapshot?.rows.find(x=>x.strategyKey===k), active=k===currentExitStrategy;
         b.classList.toggle('ring-2',active); b.classList.toggle('ring-indigo-400',active);
         b.setAttribute('aria-pressed',String(active));
+        const win=winner?.strategyKey===k;
+        b.classList.toggle('capitalWinnerCard164',win);
+        let badge=b.querySelector('.capitalWinnerBadge164');
+        if(win){if(!badge){badge=document.createElement('div');badge.className='capitalWinnerBadge164';b.prepend(badge);}badge.textContent='🏆 AI 最佳策略 ｜ '+(r.totalNetProfit>=0?'+':'-')+'$'+Math.abs(r.totalNetProfit).toLocaleString();}else badge?.remove();
         const el=b.querySelector('[data-return]');
-        el.textContent=r ? (r.totalNetProfit>=0?'+':'-')+'$'+Math.abs(r.totalNetProfit).toLocaleString() : '等待試算';
+        el.textContent=r ? (r.totalNetProfit>=0?'+':'-')+'$'+Math.abs(r.totalNetProfit).toLocaleString() : '請先執行 AI 尋優';
         el.style.color=r?(r.totalNetProfit>=0?'#fda4af':'#6ee7b7'):'';
       });
     }
@@ -5800,34 +5813,7 @@ function lineTradeAmount161(t,close=false){
       await selectComparisonStrategyCard(k);
       paintManualCapitalCards();
     }
-    function scheduleManualCapitalCards() {
-      paintManualCapitalCards();
-      clearTimeout(manualCapitalTimer);
-      const generation=++manualCapitalGeneration;
-      manualCapitalTimer=setTimeout(async()=>{
-        const panel=document.getElementById('manualCapitalStrategies'), status=document.getElementById('manualCapitalStatus');
-        if(!panel || !status)return;
-        if(!rawAllLoadedStocks.length || !panel.getClientRects().length)return;
-        if(fullAiBusy || capitalAiBusy){scheduleManualCapitalCards();return;}
-        const keys=Array.from(document.querySelectorAll('#manualCapitalGrid button'), b=>b.dataset.strategy);
-        const opts=getCurrentFilterOptions();
-        const configs=keys.map(k=>getExitStrategyConfig(k));
-        const sig=JSON.stringify([aiV8Key(true),opts,configs,getTrimTopWinnersCount(),document.getElementById('simPrioritySelect')?.value]);
-        if(sig===manualCapitalKey){paintManualCapitalCards();return;}
-        manualCapitalRows=manualCapitalRows[currentExitStrategy]?{[currentExitStrategy]:manualCapitalRows[currentExitStrategy]}:{};paintManualCapitalCards();
-        try{
-          for(let i=0;i<keys.length;i++){
-            if(generation!==manualCapitalGeneration || fullAiBusy || capitalAiBusy)return;
-            status.textContent='一般資金試算 '+(i+1)+'/7（非 AI 尋優）';
-            await aiYield();
-            const r=await simulateCapitalForStrategy(keys[i],configs[i],opts);
-            if(generation!==manualCapitalGeneration)return;
-            if(keys[i]!==currentExitStrategy || !manualCapitalRows[keys[i]]) manualCapitalRows[keys[i]]=r;paintManualCapitalCards();
-          }
-          manualCapitalKey=sig;status.textContent='目前參數試算完成（非 AI 尋優）';
-        }catch(e){status.textContent='一般試算失敗：'+e.message;}
-      },300);
-    }
+    function scheduleManualCapitalCards() { paintManualCapitalCards(); }
     function runPortfolioCapitalSimulation() {
       scheduleManualCapitalCards();
       const capInput = document.getElementById("simInitCapitalInput");
@@ -6161,7 +6147,7 @@ function lineTradeAmount161(t,close=false){
       const noteEl = document.getElementById("simStatusNote");
       if (noteEl) noteEl.textContent = `${startDate} ～ ${endDate} 投入 ${fmtCash(initCapital)} → 期末總權益 ${fmtCash(availableCash + lockedVault + holdingMarketValue)}`;
 
-      manualCapitalRows[currentExitStrategy]={totalNetProfit:Math.round(totalNetProfit)}; paintManualCapitalCards();
+      paintManualCapitalCards();
       lastSimTradesSnapshot = numberStockTrades164(boughtTrades);
       chartSim164 = {strategy:currentExitStrategy,bought:boughtTrades.slice(),skipped:skippedTrades.slice()};
       if(selectedStockCode && !window._markerRedraw164) window._markerRedraw164=requestAnimationFrame(()=>{window._markerRedraw164=0;refreshCapitalChart164();});
@@ -10649,6 +10635,7 @@ window.addEventListener('load',()=>{const w=document.getElementById('simTradesTa
 <style>.v161-collapse{position:absolute;top:4px;right:4px;z-index:5;background:#334155;color:white;border-radius:4px;padding:2px 8px;font-size:14px}.v161-fold>*:not(.v161-collapse):not(:first-child){display:none!important}.v161-fold{min-height:36px!important;max-height:48px!important;overflow:hidden!important}</style>
 <script>
 window.addEventListener('load',()=>{
+ loadCapitalCards1641();paintManualCapitalCards();
  for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
  const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
  for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
