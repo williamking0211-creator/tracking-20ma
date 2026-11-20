@@ -1625,22 +1625,29 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     }
 
     // 取得該股在目前股池對應的損益追蹤紀錄 (股池四取 trackingInfo；股池五取 closedBreakdownInfo 或 directBreakdownInfo)
+    function samePoolTrade164(a,b) {
+      return !!(a && b && a.isClosed && b.isClosed && String(a.buyDate||'').slice(0,10)===String(b.buyDate||'').slice(0,10) && String(a.sellDate||'').slice(0,10)===String(b.sellDate||'').slice(0,10) && Number(a.buyPrice)===Number(b.buyPrice) && Number(a.sellPrice)===Number(b.sellPrice));
+    }
     function getPoolTrackInfo(stock) {
       if (!stock) return null;
       if (currentExitStrategy === 'AI_POWER_90D') {
-        const plan = computeAiBuySellPowerOptimalPlan(stock);
-        if (!plan?.trades.length) return null;
-        const trades = plan.trades, first=trades[0], last=trades[trades.length-1];
-        const pts=plan.totalPts, basis=trades.reduce((n,t)=>n+t.buyPrice,0);
-        return {...last, buyDate:first.buyDate, buyPrice:first.buyPrice, profitPoints:pts, profitPct:100*pts/basis,
-          holdingDays:trades.reduce((n,t)=>n+t.sellIdx-t.buyIdx+1,0), aiTrades:trades, trackStatus:last.isClosed?'EXITED_BREAKDOWN':'HOLDING', strategyKey:'AI_POWER_90D'};
+        return gPoolRecord164(stock, currentFilter === 'BREAKDOWN' ? 'closed' : 'open');
       }
       if (currentFilter === "BREAKDOWN") {
         return stock.closedBreakdownInfo || stock.directBreakdownInfo || stock.trackingInfo || null;
       }
-      return stock.trackingInfo || null;
+      const closed = stock.closedBreakdownInfo || stock.directBreakdownInfo;
+      const eligibleClosed = breakdownPoolStocks.some(x=>x.code===stock.code);
+      return eligibleClosed && samePoolTrade164(stock.trackingInfo,closed) ? null : stock.trackingInfo || null;
     }
 
+    function gPoolRecord164(stock, kind, cfg = getExitStrategyConfig('AI_POWER_90D')) {
+      const plan = computeAiBuySellPowerOptimalPlan(stock, null, cfg);
+      const trades = (plan?.trades || []).filter(t => (kind === 'closed' ? t.isClosed : !t.isClosed) && checkStockMatchesPnlDateRange(stock,t));
+      if (!trades.length) return null;
+      const first=trades[0], last=trades[trades.length-1], pts=trades.reduce((n,t)=>n+Number(t.profitPoints||0),0), basis=trades.reduce((n,t)=>n+t.buyPrice,0);
+      return {...last,buyDate:first.buyDate,buyPrice:first.buyPrice,profitPoints:pts,profitPct:basis?100*pts/basis:0,holdingDays:trades.reduce((n,t)=>n+t.sellIdx-t.buyIdx+1,0),aiTrades:trades,strategyKey:'AI_POWER_90D'};
+    }
     // 自動儲存與載入使用者所有篩選參數與設定
     function saveUserSettingsToStorage(showNotification = false) {
       if(saved151Exists()) return;
@@ -2067,8 +2074,8 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       const basis = document.getElementById("pnlDateBasisSelect")?.value || "AUTO";
       if (!startStr && !endStr) return true;
 
-      const buyD = String(t.buyDate || stock.keyKDate || "");
-      const exitD = String(t.isClosed ? (t.sellDate || stock.latestTradeDate) : (stock.latestTradeDate || t.buyDate));
+      const buyD = String(t.buyDate || stock.keyKDate || "").slice(0,10);
+      const exitD = String(t.isClosed ? (t.sellDate || stock.latestTradeDate) : (stock.latestTradeDate || t.buyDate)).slice(0,10);
 
       if (basis === "OVERLAP") {
         const afterStart = !startStr || exitD >= startStr;
@@ -2377,6 +2384,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       let totalNtd = 0, totalTrades = 0, wins = 0;
       for (let i = 0; i < poolStocks.length; i++) {
         const s = poolStocks[i];
+        if(cfg.strategy==='AI_POWER_90D') {const a=gPoolRecord164(s,'open',cfg),b=gPoolRecord164(s,'closed',cfg);if(a||b){const p=Math.round((a?.profitPoints||0)*1000)+Math.round((b?.profitPoints||0)*1000);totalNtd+=p;totalTrades++;if(p>0)wins++;}continue;}
         const lc = evaluateStockTrackingLifecycle(s, testOpts, cfg);
         const p5Rec = (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) ? lc.closedBreakdown : null;
         let uniqueRec = null;
@@ -2525,7 +2533,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     async function computeAiBestFullStep1ForStrategy(strategyKey = currentExitStrategy, report = () => {}) {
       if (!Array.isArray(rawAllLoadedStocks) || rawAllLoadedStocks.length === 0) return null;
       const poolStocks = getPoolStocksWithCrossovers(strategyKey === "AI_POWER_90D");
-      if (poolStocks.length === 0) return null;
+      if (poolStocks.length === 0) return {reqMaUp:false,reqRed:false,minG:0,maxG:10.5,minV:0,cnt:0,winRate:0,avgProfitNtd:0,totalProfitNtd:0,exitPatch:getExitStrategyConfig(strategyKey),exitTag:"無符合樣本"};
 
       const baseCfg = getExitStrategyConfig(strategyKey);
       const pnlS = document.getElementById("pnlStartDateInput")?.value || "";
@@ -2742,6 +2750,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         }
         overallBest = { ...curBestRes, exitPatch: curPatch, exitTag: buildExitParamTag(strategyKey, curPatch) };
       }
+      if (!overallBest) {const fallback=evaluateFullStep1ComboExact(poolStocks,baseCfg,false,false,0,10.5,0);overallBest={...fallback,exitPatch:baseCfg,exitTag:'不限進場條件'};}
       if (overallBest) _fullStep1Cache.set(fCacheKey, overallBest);
       return overallBest;
     }
@@ -2874,7 +2883,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
           runPortfolioCapitalSimulation();
         }
       }
-      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();showAiProgress("full",100,"尋優完成 · 已存檔"); return best;
+      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();showAiProgress("full",100,`尋優完成 · ${Object.keys(_aiFullStep1PerStrategyMap).length}/7 策略已存檔`); return best;
       } catch(e) { showAiProgress("full",0,"尋優失敗："+e.message); console.error(e); return null; } finally { fullAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
     }
 
@@ -3002,17 +3011,17 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
       const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked) || Object.keys(_aiFullStep1PerStrategyMap).length > 0;
       let results;
-      if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
+      if (false && fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
       } else {
       const aiCardPool = useAiFullCards ? getPoolStocksWithCrossovers() : rawAllLoadedStocks;
       results = list.map(item => {
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || null) : null;
-        if(useAiFullCards && !aiS1) return {...item, totalTrades:0,pool4Cnt:0,pool4Net:0,pool5Cnt:0,pool5Net:0,net:0,pf:"—",winRate:"—",pending:true};
+        
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
         const baseItemCfg = getExitStrategyConfig(item.key);
         const cfg = (useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
-        const effOpts = (useAiFullCards && aiS1)
+        const effOpts = (useAiFullCards && aiS1 && !aiS1.independent)
           ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: "GTE", validVolThreshold: aiS1.minV }
           : filterOpts;
         let totalTrades = 0;
@@ -3028,44 +3037,23 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
+          if(item.key==='AI_POWER_90D') {const a=gPoolRecord164(s,'open',cfg),b=gPoolRecord164(s,'closed',cfg);if(a){pool4Cnt++;pool4Net+=Math.round(a.profitPoints*1000);}if(b){pool5Cnt++;pool5Net+=Math.round(b.profitPoints*1000);}for(const r of [a,b]){if(!r)continue;const m=Math.round(r.profitPoints*1000);totalTrades++;if(m>0){winSum+=m;winCnt++;}else if(m<0)lossSum+=m;}return;}
           const lc = evaluateStockTrackingLifecycle(s, effOpts, cfg);
 
-          // 股池四（續抱中 + 今日剛平倉）
-          if (lc.activeOrTodayExit && checkStockMatchesPnlDateRange(s, lc.activeOrTodayExit)) {
-            pool4Cnt++;
-            pool4Net += Math.round(lc.activeOrTodayExit.profitPoints * 1000);
-          }
-
-          // 股池五（破K出場 + 直接跌破關鍵低）
+          let p4Rec = lc.activeOrTodayExit;
           let p5Rec = null;
-          if (lc.closedBreakdown && (item.key === "AI_POWER_90D" || !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT"))) {
-            p5Rec = lc.closedBreakdown;
-          } else if (item.key !== "AI_POWER_90D" && !aiS1 && allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) {
-            p5Rec = s.directBreakdownInfo;
+          if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) p5Rec = lc.closedBreakdown;
+          else if (!aiS1 && allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) p5Rec = s.directBreakdownInfo;
+          if (samePoolTrade164(p4Rec,p5Rec)) p4Rec=null;
+          for (const [kind,rec] of [[4,p4Rec],[5,p5Rec]]) {
+            if (!rec || !checkStockMatchesPnlDateRange(s,rec)) continue;
+            const money=Math.round(rec.profitPoints*1000);
+            if(kind===4){pool4Cnt++;pool4Net+=money;}else{pool5Cnt++;pool5Net+=money;}
+            totalTrades++;if(money>0){winSum+=money;winCnt++;}else if(money<0)lossSum+=money;
           }
-          if (p5Rec && checkStockMatchesPnlDateRange(s, p5Rec)) {
-            pool5Cnt++;
-            pool5Net += Math.round(p5Rec.profitPoints * 1000);
-          }
-
-          // 全體去重合計（今日平倉不重複計算）
-          let uniqueRec = null;
-          if (lc.activeOrTodayExit && !lc.activeOrTodayExit.isClosed) {
-            uniqueRec = lc.activeOrTodayExit;
-          } else if (p5Rec) {
-            uniqueRec = p5Rec;
-          } else if (lc.activeOrTodayExit) {
-            uniqueRec = lc.activeOrTodayExit;
-          }
-          if (!uniqueRec || !checkStockMatchesPnlDateRange(s, uniqueRec)) return;
-
-          const money = Math.round(uniqueRec.profitPoints * 1000);
-          totalTrades++;
-          if (money > 0) { winSum += money; winCnt++; }
-          else if (money < 0) { lossSum += money; }
         });
 
-        const net = winSum + lossSum;
+        const net = pool4Net + pool5Net;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
         let dynLabel = item.label;
@@ -3076,12 +3064,13 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
           else if (item.key === 'RR_LADDER' && (ep.rrBreakevenRatio || ep.rrTier2Ratio)) dynLabel = `E. 風報比1:${ep.rrBreakevenRatio || 1}/1:${ep.rrTier2Ratio || 3}`;
           else if (item.key === 'AI_POWER_90D' && ep.aiPowerReevalDays) dynLabel = `G. 🧠AI買賣${ep.aiPowerReevalDays}天`;
         }
-        return { ...item, label: dynLabel, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1 };
+        return { ...item, label: dynLabel, totalTrades, pool4Cnt, pool4Net, pool5Cnt, pool5Net, net, pf, winRate, aiS1, pending:useAiFullCards&&!aiS1 };
       });
 
       }
       _lastCmpResultsCache = results;
       if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜A～F 突破股池；G 獨立股池｜相同日期與去重損益口徑";
+      if(currentExitStrategy==='AI_POWER_90D'){const g=results.find(r=>r.key==='AI_POWER_90D');const b=_aiFullStep1PerStrategyMap.AI_POWER_90D;if(g&&b&&!g.pending)renderFullAiAdvice({...b,cnt:g.totalTrades,totalProfitNtd:g.net,avgProfitNtd:g.totalTrades?Math.round(g.net/g.totalTrades):0,winRate:Number(g.winRate)});}
       const bestNet = Math.max(...results.filter(r=>!r.pending).map(r => r.net));
 
       grid.innerHTML = results.map(r => {
@@ -6395,14 +6384,14 @@ function lineTradeAmount161(t,close=false){
         return true;
       });
 
-      trackingStocks = rawAllLoadedStocks.filter(s => s.trackingInfo !== null && (activeStep1Sectors.length === 0 || matchesSimSectorFilter(s, activeStep1Sectors)));
+      trackingStocks = rawAllLoadedStocks.filter(s => (_liveCfg.strategy === "AI_POWER_90D" ? !!gPoolRecord164(s,"open",_liveCfg) : s.trackingInfo !== null) && (activeStep1Sectors.length === 0 || matchesSimSectorFilter(s, activeStep1Sectors)));
 
       // 股池五（破底K / 破K股池）：包含 (A) 突破20MA關鍵K後跌破低點之股票，以及 (B) 20MA控盤跌破關鍵K後出現確認K平倉出場之股票 (如 1303 南亞)
       const breakdownSet = new Set();
       breakdownPoolStocks = [];
       rawAllLoadedStocks.forEach(s => {
         if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
-        if (s.closedBreakdownInfo && (_liveCfg.strategy === "AI_POWER_90D" || !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT"))) {
+        if (_liveCfg.strategy === "AI_POWER_90D" ? !!gPoolRecord164(s,"closed",_liveCfg) : (s.closedBreakdownInfo && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT"))) {
           breakdownSet.add(s.code);
           breakdownPoolStocks.push(s);
         }
@@ -7715,7 +7704,7 @@ function lineTradeAmount161(t,close=false){
         if (!matchFilter || !matchKeyword) return false;
         if (isPnlPoolActive()) {
           const t = getPoolTrackInfo(s);
-          if (!checkStockMatchesPnlDateRange(s, t)) return false;
+          if (!t || (currentExitStrategy!=="AI_POWER_90D" && !checkStockMatchesPnlDateRange(s, t))) return false;
         }
         return true;
       });
@@ -8217,7 +8206,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
     }
 
     function evaluateAiPower90dStrategy(stock, bars, cfg) {
-      const plan = computeAiBuySellPowerOptimalPlan(stock);
+      const plan = computeAiBuySellPowerOptimalPlan(stock, bars, cfg);
       const empty = {activeOrTodayExit:null, closedBreakdown:null};
       if (!plan || !plan.trades.length) return empty;
       const last = bars[bars.length-1];
@@ -8237,12 +8226,12 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         closedBreakdown:wrap(closed[closed.length-1])};
     }
 
-    function computeAiBuySellPowerOptimalPlan(stock, inputBars = null) {
+    function computeAiBuySellPowerOptimalPlan(stock, inputBars = null, cfg = getExitStrategyConfig("AI_POWER_90D")) {
       if (!stock) return null;
       const bars = inputBars || buildStockDailyBarsWithToday(stock);
       if (!bars || bars.length < 10) return null;
 
-      const sig = `${stock.code}|v160|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
+      const sig = `${stock.code}|v164fix|${cfg.initStopBufferPct}|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
       if (stock._aiPowerPlanSig === sig) return stock._aiPowerPlanCache;
 
       const buyPowers = bars.map(b => getBarBuyPowerRatio(b, stock));
@@ -8264,7 +8253,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
                   buyPrice: b.close,
                   buyPowerPct: Math.round(buyPowers[i] * 100),
                   maxHigh: b.high,
-                  initStop: Math.max(b.close * 0.94, swingLow * 0.985)
+                  initStop: Math.max(b.close * 0.94, swingLow * (1-(cfg.initStopBufferPct??1.5)/100))
                 };
               }
             } else {
@@ -8954,7 +8943,7 @@ window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement(
         if (adjList.length > 0) {
           p90El.innerHTML = adjList.map(a => `<span class="${a.changed ? 'text-amber-300' : 'text-cyan-300'}">[${formatShortDateSlash(a.date)} ${a.note}] 買：${a.buyName} ｜ 賣：${a.sellName}</span>`).join(" <br/> ");
         } else {
-          p90El.textContent = `${stock.code} ${stock.name}：目前區間未達進場門檻或尚無調整紀錄。`;
+          p90El.textContent = currentExitStrategy=== "AI_POWER_90D" ? `${stock.code} ${stock.name}：${computeAiBuySellPowerOptimalPlan(stock)?.trades?.length||0} 筆 AI 理論交易` : "";
         }
       }
 
@@ -10775,8 +10764,21 @@ function renderTradeLedger164(){
  const make=(title,rows,hypo)=>{const article=document.createElement('article'),h=document.createElement('h3');h.textContent=title;article.append(h);const a=capitalChartStats164(rows.map(t=>({...t,netProfit:hypo?t.hypoProfit:t.netProfit,totalCost:hypo?t.reqCost:t.totalCost})));const stat=document.createElement('div');stat.textContent=ready?`已平倉 ${a.closed} 筆｜${poolMode?'毛':hypo?'假設':'實戰'}損益 ${money(a.net)}｜勝率 ${a.win.toFixed(1)}%｜未平倉 ${a.open} 筆 ${money(a.unreal)}`:'尚未完成目前策略試算';article.append(stat);const list=document.createElement('div');list.className='ledgerRows164';rows.forEach((t,i)=>{const row=document.createElement('div');row.className='ledgerTrade164';let profit=Number(hypo?t.hypoProfit:t.netProfit),pct=hypo?t.hypoPct:t.netPct;const fields=[`第${hypo?i+1:(t.realTradeNo164||i+1)}筆 ${t.lots||0}張`,`買 ${dateOnly164(t.buyDate)||'—'} @ ${fmt(t.buyPrice)}`,`${t.isClosed?'賣 '+(dateOnly164(t.sellDate)||'—'):'續抱／現價'} @ ${fmt(t.exitOrNowPrice??t.curP??t.sellPrice)}`,`${poolMode?'毛':hypo?'假設':t.isClosed?'淨':'未實現'}損益 ${money(profit||0)} (${fmt(pct)}%)`];fields.forEach((v,j)=>{const span=document.createElement('span');span.textContent=v;if(j===3)span.style.color=profit<0?'#34d399':profit>0?'#fb7185':'#94a3b8';row.append(span);});list.append(row);});if(!rows.length&&ready)list.textContent='無符合條件交易';article.append(list);return article;};
  panel.replaceChildren(make(poolMode?'股池交易（未扣費）':'實戰交易',real,false),...(poolMode?[]:[make(currentExitStrategy==='AI_POWER_90D'?'AI買賣（錢不夠）｜獨立統計':'資金不足未買進｜獨立統計',skipped,true)]));
 }
-let comparisonClick164={key:null,time:0};
-async function jumpComparisonPool164(key){const now=performance.now();if(comparisonClick164.key!==key||now-comparisonClick164.time>350){comparisonClick164={key,time:now};return;}comparisonClick164={key:null,time:0};if(fullAiBusy||capitalAiBusy)return;await selectComparisonStrategyCard(key);if(currentExitStrategy!==key)return;const p=document.getElementById('stockPoolPanel');p?.classList.remove('v161-fold');setPoolFold162(false);document.getElementById('stockTableContainer')?.classList.remove('hidden','v161-fold');requestAnimationFrame(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}));}
+let comparisonClick164={key:null,time:0}, comparisonSwitch164=Promise.resolve(), comparisonRequest164=0;
+function jumpComparisonPool164(key){
+ const now=performance.now(), dbl=comparisonClick164.key===key&&now-comparisonClick164.time<=450;
+ comparisonClick164=dbl?{key:null,time:0}:{key,time:now};
+ const request=++comparisonRequest164;
+ comparisonSwitch164=comparisonSwitch164.catch(console.error).then(async()=>{
+   if(request!==comparisonRequest164)return;
+   if(fullAiBusy||capitalAiBusy){showToast('AI 運算中，完成後可切換');return;}
+   if(currentExitStrategy!==key)await setExitStrategy(key,false);
+   if(request!==comparisonRequest164||currentExitStrategy!==key)return;
+   if(!isPnlPoolActive())setFilter('BREAKDOWN');
+   if(dbl){const p=document.getElementById('stockPoolPanel');p?.classList.remove('v161-fold');setPoolFold162(false);document.getElementById('stockTableContainer')?.classList.remove('hidden','v161-fold');requestAnimationFrame(()=>p?.scrollIntoView({behavior:'smooth',block:'start'}));}
+ }).catch(e=>{console.error(e);showToast('策略切換失敗：'+e.message);});
+ return comparisonSwitch164;
+}
 (()=>{const baseUpdate=updateDetailPanel;updateDetailPanel=function(...a){const out=baseUpdate.apply(this,a);renderTradeLedger164();return out;};const baseRefresh=refreshCapitalChart164;refreshCapitalChart164=function(...a){const out=baseRefresh.apply(this,a);renderTradeLedger164();return out;};
  const ids=new Set(['stockTableBody','simTradesTableBody','todayBuyBody163','todayClosedBody162','historyClosedBody164','simSkippedTableBody']);
  document.addEventListener('click',e=>{const row=e.target.closest?.('tr'),body=row?.parentElement;if(!row||!ids.has(body?.id)||e.target.closest('button,input,select,textarea,label,a,[role="button"]')||row.querySelector('td[colspan]'))return;let code=row.dataset.stockCode164||row.getAttribute('onclick')?.match(/(?:selectStock|openStockFromSimList)\('([^']+)'/)?.[1];if(!code){const cell=[...row.cells].find(c=>/^\s*[0-9]{4,6}[A-Z]?\s+/.test(c.textContent));code=cell?.textContent.trim().match(/^[0-9]{4,6}[A-Z]?/)?.[0];}if(!code)return;e.stopPropagation();e.preventDefault();const panel=document.getElementById('detailPanelSection');panel?.classList.remove('hidden','v161-fold');if(body.id==='stockTableBody')selectStock(code,true);else openStockFromSimList(code,row.id||'');requestAnimationFrame(()=>panel?.scrollIntoView({behavior:'smooth',block:'start'}));},true);
