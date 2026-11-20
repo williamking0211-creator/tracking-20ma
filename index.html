@@ -948,7 +948,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
               </div><div class="my-2 p-2 rounded border border-emerald-700 bg-slate-900 text-xs flex flex-wrap gap-3 items-center" id="lineNotifyPanel" style="display:none">
 <b class="text-emerald-300">LINE 交易通知</b><label><input type="checkbox" id="lineEnabled" checked> 啟用</label>
 <label><input type="checkbox" id="lineBUY" checked> 買進</label><label><input type="checkbox" id="linePROFIT" checked> 停利</label><label><input type="checkbox" id="lineLOSS" checked> 停損／保本</label><label><input type="checkbox" id="lineKEY" checked> 關鍵K</label><label><input type="checkbox" id="lineREPORT" checked> 14:00報告</label>
-<label>通知對象 <select id="line155Mode" class="bg-slate-800 rounded p-1"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()" class="px-2 py-1 rounded bg-indigo-800">儲存通知對象</button><span id="line155Status">尚未讀取</span><button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待首次行情同步（需保持網頁開啟）</span></div>
+<label>通知對象 <select id="line155Mode" class="bg-slate-800 rounded p-1"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()" class="px-2 py-1 rounded bg-indigo-800">儲存通知對象</button><span id="line155Status">尚未讀取</span><button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待通知測試</span><span id="monitorStatus164">尚未讀取後台狀態</span><button type="button" onclick="monitorStatus164()" class="px-2 py-1 rounded bg-indigo-800">檢查 LINE 狀態</button></div>
             </div>
 
 <section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（目前參數）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
@@ -2422,7 +2422,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     }
     function aiV8Read(kind,key){try{const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');return v?.key===key?v.data:null;}catch(e){return null;}}
     function aiV8Save(kind,key,data){try{localStorage.setItem('20ma-v160-'+kind,JSON.stringify({key,data,savedAt:Date.now()}));}catch(e){showToast('AI 結果存檔失敗：瀏覽器儲存空間不足','error');throw e;}}
-    function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||{};fullV8Key=key;}
+    function aiV8RefreshFull(key){if(fullV8Key===key)return;_fullStep1Cache.clear();_lastCmpResultsCache=null;_aiFullStep1PerStrategyMap=aiV8Read('full',key)||_aiFullStep1PerStrategyMap||{};fullV8Key=key;}
 
     function getPoolStocksWithCrossovers(independent = false) {
       const activeSectors = getSelectedSimSectors();
@@ -2802,7 +2802,8 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
     async function selectComparisonStrategyCard(strategyKey) {
       if (fullAiBusy || capitalAiBusy) return;
-      if (strategyKey === 'AI_POWER_90D') { await setExitStrategy(strategyKey, true); return; }
+      if (strategyKey === 'AI_POWER_90D') { await setExitStrategy(strategyKey, false);
+      rememberAiOfficial164(strategyKey); return; }
       if (_aiCapitalBestParamsMap[strategyKey] && document.getElementById('chkAiCapitalOpt')?.checked) { await selectAiOptimizedCapitalStrategy(strategyKey); return; }
       await setExitStrategy(strategyKey);
     }
@@ -2850,6 +2851,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       const adviceEl = document.getElementById("aiFullStep1AdviceText");
       let best = null;
       if (applyToControls && runFilterRender) {
+        _aiFullStep1PerStrategyMap = {};
         const allRes = await applyAiStep1AllStrategiesAndPickBest(true);
         best = allRes.bestForCurrent;
       } else {
@@ -2893,7 +2895,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       currentExitStrategy = strategyName;
       updateExitStrategyUI();
       const chkFull = document.getElementById("chkAiAutoFullStep1");
-      const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive;
+      const useFullOpt = Boolean(chkFull && chkFull.checked) || _aiFullStep1ModeActive || Object.keys(_aiFullStep1PerStrategyMap).length > 0;
       if(useFullOpt && !capitalSelection && !Object.keys(_aiFullStep1PerStrategyMap).length) {try{_aiFullStep1PerStrategyMap=JSON.parse(localStorage.getItem("20ma-v160-full")||"null")?.data||{};}catch(e){}}
       const cached = _aiFullStep1PerStrategyMap[strategyName];
       if (!capitalSelection && useFullOpt && cached) {
@@ -2998,7 +3000,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       const keyword = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
       const activeStep1Sectors = getSelectedSimSectors();
 
-      const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked);
+      const useAiFullCards = _aiFullStep1ModeActive || Boolean(document.getElementById("chkAiAutoFullStep1")?.checked) || Object.keys(_aiFullStep1PerStrategyMap).length > 0;
       let results;
       if (fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
@@ -3006,6 +3008,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       const aiCardPool = useAiFullCards ? getPoolStocksWithCrossovers() : rawAllLoadedStocks;
       results = list.map(item => {
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || null) : null;
+        if(useAiFullCards && !aiS1) return {...item, totalTrades:0,pool4Cnt:0,pool4Net:0,pool5Cnt:0,pool5Net:0,net:0,pf:"—",winRate:"—",pending:true};
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
         const baseItemCfg = getExitStrategyConfig(item.key);
         const cfg = (useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
@@ -3062,7 +3065,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
           else if (money < 0) { lossSum += money; }
         });
 
-        const net = aiS1 ? aiS1.totalProfitNtd : winSum + lossSum;
+        const net = winSum + lossSum;
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
         let dynLabel = item.label;
@@ -3079,7 +3082,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       }
       _lastCmpResultsCache = results;
       if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜A～F 突破股池；G 獨立股池｜相同日期與去重損益口徑";
-      const bestNet = Math.max(...results.map(r => r.net));
+      const bestNet = Math.max(...results.filter(r=>!r.pending).map(r => r.net));
 
       grid.innerHTML = results.map(r => {
         const isCur = r.key === currentExitStrategy;
@@ -3094,7 +3097,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
               ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
             </div>
-            <div class="${netColor} font-bold text-xs mt-0.5">${r.aiS1 ? 'AI最高 ' : '合計 '}${formatMoneyDisplay(r.net)}</div>
+            <div class="${netColor} font-bold text-xs mt-0.5">${r.pending ? "尚未尋優" : (r.aiS1 ? "AI條件 " : "合計 ")+formatMoneyDisplay(r.net)}</div>
             <div class="text-[10px] mt-1 space-y-0.5 border-t border-slate-800/80 pt-1 whitespace-nowrap">
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
@@ -5506,7 +5509,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       capitalAiBusy = true;
       const runKey=aiV8Key(true);
       aiV8RefreshFull(aiV8Key());
-      const stored=null; _fullStep1Cache.clear();
+      const stored=null; _fullStep1Cache.clear(); _aiFullStep1PerStrategyMap={};
       showAiProgress("capital",0,"準備七大策略");
       try {
       box.classList.remove("hidden");
@@ -5697,6 +5700,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         runPortfolioCapitalSimulation();
       }
 
+      if(autoSwitch && winner) rememberAiOfficial164(winner.strategyKey);
       _lastAiCapitalResultsCache = results;
       if (progressEl) progressEl.textContent = "AI 七大策略快速尋優完成";
       renderAiCapitalCompareCardsOnly();
@@ -5709,7 +5713,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     }
 
 
-const dev15Ids=["chkMa20Up", "chkSolidRedK", "chkGainRange", "minGainInput", "maxGainInput", "volOperatorSelect", "volThresholdInput", "chkTimeStop", "timeStopDaysInput", "globalExitConfirmMode", "initStopBufferPctInput", "chkEntryLimitUpStopAtLow", "shortMaTriggerPctInput", "shortMaPeriodSelect", "shortMaModeSelect", "breakevenTriggerPctInput", "peakTrailTriggerPctInput", "peakDrawdownPctInput", "whaleTriggerPctInput", "whaleSellMultInput", "rrBreakevenRatioInput", "rrBreakevenBufferPctInput", "rrTier2RatioInput", "rrTier2ActionSelect", "rrLockRatioInput", "rrTrailMaSelect", "rrMaConfirmModeSelect", "aiPowerReevalDaysInput", "simInitCapitalInput", "simStartDateInput", "simEndDateInput", "simLotModeSelect", "simPerStockBudgetInput", "simProfitRuleSelect", "simWithdrawValInput", "simIncludeFeesChk", "simPrioritySelect", "simTrimTopWinnersSelect", "lineEnabled", "lineBUY", "linePROFIT", "lineLOSS", "lineKEY", "lineREPORT"]; const dev15Keys=["DEFAULT_20MA", "SHORT_MA_TRAIL", "PEAK_TRAILING", "WHALE_SELL_EXIT", "RR_LADDER", "AI_ADAPTIVE", "AI_POWER_90D"];
+const dev15Ids=["simVolumeMode164","simVolumeBasis164","simVolumeLow164","simVolumeHigh164","chkMa20Up", "chkSolidRedK", "chkGainRange", "minGainInput", "maxGainInput", "volOperatorSelect", "volThresholdInput", "chkTimeStop", "timeStopDaysInput", "globalExitConfirmMode", "initStopBufferPctInput", "chkEntryLimitUpStopAtLow", "shortMaTriggerPctInput", "shortMaPeriodSelect", "shortMaModeSelect", "breakevenTriggerPctInput", "peakTrailTriggerPctInput", "peakDrawdownPctInput", "whaleTriggerPctInput", "whaleSellMultInput", "rrBreakevenRatioInput", "rrBreakevenBufferPctInput", "rrTier2RatioInput", "rrTier2ActionSelect", "rrLockRatioInput", "rrTrailMaSelect", "rrMaConfirmModeSelect", "aiPowerReevalDaysInput", "simInitCapitalInput", "simStartDateInput", "simEndDateInput", "simLotModeSelect", "simPerStockBudgetInput", "simProfitRuleSelect", "simWithdrawValInput", "simIncludeFeesChk", "simPrioritySelect", "simTrimTopWinnersSelect", "lineEnabled", "lineBUY", "linePROFIT", "lineLOSS", "lineKEY", "lineREPORT"]; const dev15Keys=["DEFAULT_20MA", "SHORT_MA_TRAIL", "PEAK_TRAILING", "WHALE_SELL_EXIT", "RR_LADDER", "AI_ADAPTIVE", "AI_POWER_90D"];
 let dev15Token='',dev15Base='',dev15Monitor=false,dev15Rev=0,dev15Profile=null;
 
 const key151='w-personal-strategy-v151';
@@ -5721,21 +5725,28 @@ function toggle152(id,b){const e=document.getElementById(id);const show=e.type==
 function visibility151(ok){const b=document.getElementById('devModeIndicator164');if(b){b.classList.toggle('devModeActive164',!!ok);b.setAttribute('aria-pressed',String(!!ok));b.textContent=ok?'🔓 開發者模式 ON':'🔐 開發者登入';b.title=ok?(dev15Monitor?'已登入：本機監控':'已登入：遠端控制'):'一般使用者模式';}updateManualToolbar161();for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?'flex':'none','important');}
 async function change151(){const ids=['dev151NewUser','dev151Old','dev151New','dev151Confirm'];const [user,oldPassword,password,confirmPassword]=ids.map(id=>document.getElementById(id).value);if(password!==confirmPassword||password.length<12){dev15Status('新密碼至少12字且兩次必須相同');return;}try{await dev15Req('credentials',{user,oldPassword,password});ids.forEach(id=>document.getElementById(id).value='');await dev15Logout();document.getElementById('dev15Panel').style.display='';dev15Status('帳密已更新，所有裝置請重新登入（本機需重新開啟監控）');}catch(e){dev15Status('修改失敗：'+e.message);}}
 
+const aiOfficialKey164='w-ai-official-choice-v164';
+const aiOfficialCapitalIds164=new Set(['simInitCapitalInput','simStartDateInput','simEndDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk','simTrimTopWinnersSelect']);
+function rememberAiOfficial164(key){const a=dev15Capture();if(a.strategy!==key)return;try{localStorage.setItem(aiOfficialKey164,JSON.stringify(a));}catch(e){showToast('AI 正式策略選擇未能儲存','error');}}
+function officialChoice164(){const current=dev15Capture();let a;try{a=JSON.parse(localStorage.getItem(aiOfficialKey164)||'null');}catch(e){}if(!a||!dev15Keys.includes(a.strategy))throw Error('請先點選 AI 找實戰最大收益策略中的策略字卡');for(const [id,value] of Object.entries(current.fields)){if(id.startsWith('line')||aiOfficialCapitalIds164.has(id)||id.startsWith('simVolume'))a.fields[id]=value;}a.sectors=current.sectors;a.manual=a.strategy===current.strategy?current.manual:a.manual;return a;}
+function restoreOfficialVolume164(fields){const ids=['simVolumeMode164','simVolumeBasis164','simVolumeLow164','simVolumeHigh164'];if(!ids.every(id=>fields[id]!==undefined))return;volume164={mode:fields[ids[0]],basis:fields[ids[1]],lo:Number(fields[ids[2]]),hi:Number(fields[ids[3]])};const e=document.getElementById('simVolumeNote164');if(e)e.textContent=volume164.mode==='all'?'不限成交量':'正式成交量條件已套用';}
+async function monitorStatus164(){try{const r=await dev15Req('monitor161');const e=document.getElementById('monitorStatus164');if(e)e.textContent='後台：'+r.status+' ｜ LINE：'+(r.line?.status||'尚未發送')+' ｜成功 '+(r.line?.accepted||0)+'／失敗 '+(r.line?.failed||0);}catch(e){const el=document.getElementById('monitorStatus164');if(el)el.textContent='後台狀態讀取失敗：'+e.message;}}
 const dev15Status=t=>document.getElementById('dev15Status').textContent=t;
-function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
-async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
+function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}Object.assign(fields,{simVolumeMode164:volume164.mode,simVolumeBasis164:volume164.basis,simVolumeLow164:String(volume164.lo),simVolumeHigh164:String(volume164.hi)});return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
+async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.error||('HTTP '+r.status));}return r.json();}
 async function dev153LocalLogin(){const r=await fetch('http://127.0.0.1:3105/local-monitor',{method:'POST',cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
 async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；請發布策略或讀取正式策略');}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
-async function dev15Publish(){try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy)throw Error('請等待 AI 完成');if(!confirm('將目前策略與參數設定為正式 LINE 監控條件？切換後舊訊號不補發。'))return;const r=await dev15Req('profile',dev15Capture());dev15Rev=0;await dev15Pull(false);dev15Status('已發布 '+getStrategyDisplayName(r.profile.strategy)+' · 版本 '+r.rev);}catch(e){dev15Status('發布失敗：'+e.message);}}
-async function dev15Pull(force){if(!dev15Token)return;try{const r=await dev15Req('profile');if(!r.profile){dev15Status('尚無正式策略，請先發布');return;}if(fullAiBusy||capitalAiBusy)return;const changed=r.rev!==dev15Rev;dev15Profile=r.profile;if(force||dev15Monitor&&(changed||JSON.stringify(dev15Capture())!==JSON.stringify(r.profile))){const a=r.profile;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields)){const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=a.sectors.includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;}_aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;syncStep1ControlsUI();updateExitStrategyUI();applyFiltersAndRender();}dev15Rev=r.rev;dev15Status((dev15Monitor?'本機監控':'遠端控制')+'｜正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+r.rev);}catch(e){dev15Profile=null;dev15Status('正式策略連線失敗：'+e.message);}}
+async function dev15Publish(){try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy)throw Error('請等待 AI 完成');const choice=officialChoice164();if(!confirm('發布 AI 實戰策略 '+getStrategyDisplayName(choice.strategy)+' 至正式 LINE 監控？發布本身不會發送交易訊息。'))return;const r=await dev15Req('profile',choice);dev15Rev=0;await dev15Pull(true);await monitorStatus164();dev15Status('已發布 '+getStrategyDisplayName(r.profile.strategy)+' · 版本 '+r.rev);}catch(e){dev15Status('發布失敗：'+e.message);}}
+async function dev15Pull(force){if(!dev15Token)return;try{const r=await dev15Req('profile');if(!r.profile){dev15Status('尚無正式策略，請先發布');return;}if(fullAiBusy||capitalAiBusy)return;const changed=r.rev!==dev15Rev;dev15Profile=r.profile;if(force||dev15Monitor&&(changed||JSON.stringify(dev15Capture())!==JSON.stringify(r.profile))){const a=r.profile;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields)){const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=a.sectors.includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};restoreOfficialVolume164(a.fields);for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){const e=document.getElementById(id);if(e)e.checked=false;}_aiFullStep1ModeActive=false;window._skipNextAiCapOptInSim=true;syncStep1ControlsUI();updateExitStrategyUI();applyFiltersAndRender();}dev15Rev=r.rev;if(force)try{localStorage.setItem(aiOfficialKey164,JSON.stringify(r.profile));}catch(e){}dev15Status((dev15Monitor?'本機監控':'遠端控制')+'｜正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+r.rev);}catch(e){dev15Profile=null;dev15Status('正式策略連線失敗：'+e.message);}}
 async function dev15Logout(){try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
+setInterval(()=>{if(dev15Token)void monitorStatus164();},15000);
 setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);await lineProcessV14();}},15000);
 
     let lineV14Snapshot=null, lineV14Busy=false;
     const lineV14Day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const lineV14Status=t=>{const e=document.getElementById('lineStatus');if(e)e.textContent=t;};
     async function lineV14Post(payload){
-      if(!dev15Token)throw Error('請先登入開發者');const r=await fetch(dev15Base+'/line-notify-v14',{method:'POST',headers:{'Content-Type':'application/json','X-W-Trading':'v14',Authorization:'Bearer '+dev15Token},body:JSON.stringify({...payload,rev:dev15Rev})});
+      if(!dev15Token)throw Error('請先登入開發者');const r=await fetch(dev15Base+'/line-notify-v14',{method:'POST',headers:{'Content-Type':'application/json','X-W-Trading':'v14',Authorization:'Bearer '+dev15Token},signal:AbortSignal.timeout(60000),body:JSON.stringify({...payload,rev:dev15Rev})});
       const result=await r.json().catch(()=>({}));if(!r.ok||result.ok!==true)throw Error(result.error||('LINE HTTP '+r.status));return result;
     }
     let line155Actual=null;
@@ -10651,7 +10662,7 @@ window.addEventListener('load',()=>{const w=document.getElementById('simTradesTa
 window.addEventListener('load',()=>{
  for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
  const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
- for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
  for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
