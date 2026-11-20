@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.5｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.6｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -253,8 +253,8 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.5 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
-<div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V16.4.5</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="officialChoiceStatus1645" class="text-amber-300 font-bold" aria-live="polite"></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
+  <div id="layout164"><label for="layoutSelect164">V16.4.6 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+<div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V16.4.6</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="officialChoiceStatus1645" class="text-amber-300 font-bold" aria-live="polite"></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
 
   <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
   <div class="max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2">
@@ -1629,17 +1629,31 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
     function samePoolTrade164(a,b) {
       return !!(a && b && a.isClosed && b.isClosed && String(a.buyDate||'').slice(0,10)===String(b.buyDate||'').slice(0,10) && String(a.sellDate||'').slice(0,10)===String(b.sellDate||'').slice(0,10) && Number(a.buyPrice)===Number(b.buyPrice) && Number(a.sellPrice)===Number(b.sellPrice));
     }
+    // Single pool membership rule for cards, lists and chart records.
+    function poolCandidate1646(s, opts, closed) {
+      if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
+      if (closed && closed.sellIdx >= s.keyKIdx && s.status !== "BREAKOUT") return false;
+      if (opts.requireMa20Up && !s.isMa20SlopeUp) return false;
+      if (opts.requireSolidRedK && !s.isBullishRedK) return false;
+      if (opts.useGainRange && (s.yestGainPct < opts.minGain || s.yestGainPct > opts.maxGain)) return false;
+      if (opts.volOp === "GTE" && s.volRatio < opts.validVolThreshold) return false;
+      if (opts.volOp === "LTE" && s.volRatio > opts.validVolThreshold) return false;
+      return true;
+    }
+    function poolPair1646(s, opts, cfg, lc) {
+      if (cfg.strategy === 'AI_POWER_90D') return [gPoolRecord164(s,'open',cfg),gPoolRecord164(s,'closed',cfg)];
+      const life=lc || evaluateStockTrackingLifecycle(s,opts,cfg);
+      let open=life.activeOrTodayExit, closed=null;
+      if (life.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === 'BREAKOUT')) closed=life.closedBreakdown;
+      else if (s.status === 'BREAKDOWN' && poolCandidate1646(s,opts,life.closedBreakdown)) closed=buildDirectKeyBreakdownRecord(s);
+      if (samePoolTrade164(open,closed)) open=null;
+      return [open,closed];
+    }
     function getPoolTrackInfo(stock) {
       if (!stock) return null;
-      if (currentExitStrategy === 'AI_POWER_90D') {
-        return gPoolRecord164(stock, currentFilter === 'BREAKDOWN' ? 'closed' : 'open');
-      }
-      if (currentFilter === "BREAKDOWN") {
-        return stock.closedBreakdownInfo || stock.directBreakdownInfo || stock.trackingInfo || null;
-      }
-      const closed = stock.closedBreakdownInfo || stock.directBreakdownInfo;
-      const eligibleClosed = breakdownPoolStocks.some(x=>x.code===stock.code);
-      return eligibleClosed && samePoolTrade164(stock.trackingInfo,closed) ? null : stock.trackingInfo || null;
+      if (!isPnlPoolActive()) return stock.trackingInfo || null;
+      const pair=poolPair1646(stock,getCurrentFilterOptions(),getExitStrategyConfig());
+      return pair[currentFilter === 'BREAKDOWN' ? 1 : 0] || null;
     }
 
     function gPoolRecord164(stock, kind, cfg = getExitStrategyConfig('AI_POWER_90D')) {
@@ -3019,14 +3033,14 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
       if (false && fastHighlightOnly && Array.isArray(_lastCmpResultsCache) && _lastCmpResultsCache.length === 7) {
         results = _lastCmpResultsCache;
       } else {
-      const aiCardPool = useAiFullCards ? getPoolStocksWithCrossovers() : rawAllLoadedStocks;
+
       results = list.map(item => {
         const aiS1 = useAiFullCards ? (_aiFullStep1PerStrategyMap[item.key] || null) : null;
         
         if (useAiFullCards && aiS1) _aiFullStep1PerStrategyMap[item.key] = aiS1;
         const baseItemCfg = getExitStrategyConfig(item.key);
-        const cfg = (useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
-        const effOpts = (useAiFullCards && aiS1 && !aiS1.independent)
+        const cfg = (item.key !== currentExitStrategy && useAiFullCards && aiS1 && aiS1.exitPatch) ? { ...baseItemCfg, ...aiS1.exitPatch } : baseItemCfg;
+        const effOpts = (item.key !== currentExitStrategy && useAiFullCards && aiS1 && !aiS1.independent)
           ? { requireMa20Up: aiS1.reqMaUp, requireSolidRedK: aiS1.reqRed, useGainRange: true, minGain: aiS1.minG, maxGain: aiS1.maxG, volOp: "GTE", validVolThreshold: aiS1.minV }
           : filterOpts;
         let totalTrades = 0;
@@ -3038,20 +3052,13 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        (item.key === "AI_POWER_90D" ? rawAllLoadedStocks : aiS1 ? aiCardPool : rawAllLoadedStocks).forEach(s => {
+        rawAllLoadedStocks.forEach(s => {
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
 
-          if(item.key==='AI_POWER_90D') {const a=gPoolRecord164(s,'open',cfg),b=gPoolRecord164(s,'closed',cfg);if(a){pool4Cnt++;pool4Net+=Math.round(a.profitPoints*1000);}if(b){pool5Cnt++;pool5Net+=Math.round(b.profitPoints*1000);}for(const r of [a,b]){if(!r)continue;const m=Math.round(r.profitPoints*1000);totalTrades++;if(m>0){winSum+=m;winCnt++;}else if(m<0)lossSum+=m;}return;}
-          const lc = evaluateStockTrackingLifecycle(s, effOpts, cfg);
-
-          let p4Rec = lc.activeOrTodayExit;
-          let p5Rec = null;
-          if (lc.closedBreakdown && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT")) p5Rec = lc.closedBreakdown;
-          else if (!aiS1 && allStocks.some(a => a.code === s.code && a.status === "BREAKDOWN") && s.directBreakdownInfo) p5Rec = s.directBreakdownInfo;
-          if (samePoolTrade164(p4Rec,p5Rec)) p4Rec=null;
+          const [p4Rec,p5Rec] = poolPair1646(s,effOpts,cfg);
           for (const [kind,rec] of [[4,p4Rec],[5,p5Rec]]) {
-            if (!rec || !checkStockMatchesPnlDateRange(s,rec)) continue;
+            if (!rec || (item.key !== "AI_POWER_90D" && !checkStockMatchesPnlDateRange(s,rec))) continue;
             const money=Math.round(rec.profitPoints*1000);
             if(kind===4){pool4Cnt++;pool4Net+=money;}else{pool5Cnt++;pool5Net+=money;}
             totalTrades++;if(money>0){winSum+=money;winCnt++;}else if(money<0)lossSum+=money;
@@ -3074,7 +3081,7 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 
       }
       _lastCmpResultsCache = results;
-      if (note && useAiFullCards) note.textContent = "AI 各策略獨立最佳條件｜A～F 突破股池；G 獨立股池｜相同日期與去重損益口徑";
+      if (note && useAiFullCards) note.textContent = "AI 各策略獨立條件｜目前策略依已套用參數｜股池與區間共用結算";
       if(currentExitStrategy==='AI_POWER_90D'){const g=results.find(r=>r.key==='AI_POWER_90D');const b=_aiFullStep1PerStrategyMap.AI_POWER_90D;if(g&&b&&!g.pending)renderFullAiAdvice({...b,cnt:g.totalTrades,totalProfitNtd:g.net,avgProfitNtd:g.totalTrades?Math.round(g.net/g.totalTrades):0,winRate:Number(g.winRate)});}
       const bestNet = Math.max(...results.filter(r=>!r.pending).map(r => r.net));
 
@@ -6316,39 +6323,15 @@ function lineTradeAmount161(t,close=false){
       });
 
       const activeStep1Sectors = getSelectedSimSectors();
-      allStocks = rawAllLoadedStocks.filter(s => {
-        if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return false;
-        if (_liveCfg.strategy === "AI_POWER_90D") return false;
-        if (!s.isFirstDayBreak20Ma || !s.isUpDay) return false;
-        // 若該股為先前 20MA 控盤已破線確認平倉 (如 1303 南亞 10/30破線關鍵K -> 11/03確認K平倉)，且之後並無更新的突破20MA關鍵K，才歸入破K池而非待確認池
-        if (s.closedBreakdownInfo && s.closedBreakdownInfo.sellIdx >= s.keyKIdx && s.status !== "BREAKOUT") return false;
-        if (filterOpts.requireMa20Up && !s.isMa20SlopeUp) return false;
-        if (filterOpts.requireSolidRedK && !s.isBullishRedK) return false;
-        if (filterOpts.useGainRange) {
-          if (s.yestGainPct < filterOpts.minGain || s.yestGainPct > filterOpts.maxGain) return false;
-        }
-        if (filterOpts.volOp === "GTE" && s.volRatio < filterOpts.validVolThreshold) return false;
-        if (filterOpts.volOp === "LTE" && s.volRatio > filterOpts.validVolThreshold) return false;
-        return true;
-      });
-
-      trackingStocks = rawAllLoadedStocks.filter(s => (_liveCfg.strategy === "AI_POWER_90D" ? !!gPoolRecord164(s,"open",_liveCfg) : s.trackingInfo !== null) && (activeStep1Sectors.length === 0 || matchesSimSectorFilter(s, activeStep1Sectors)));
-
-      // 股池五（破底K / 破K股池）：包含 (A) 突破20MA關鍵K後跌破低點之股票，以及 (B) 20MA控盤跌破關鍵K後出現確認K平倉出場之股票 (如 1303 南亞)
-      const breakdownSet = new Set();
+      const sectorMatch = s => !activeStep1Sectors.length || matchesSimSectorFilter(s,activeStep1Sectors);
+      allStocks = rawAllLoadedStocks.filter(s => sectorMatch(s) && _liveCfg.strategy !== 'AI_POWER_90D' && poolCandidate1646(s,filterOpts,s.closedBreakdownInfo));
+      trackingStocks = [];
       breakdownPoolStocks = [];
       rawAllLoadedStocks.forEach(s => {
-        if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
-        if (_liveCfg.strategy === "AI_POWER_90D" ? !!gPoolRecord164(s,"closed",_liveCfg) : (s.closedBreakdownInfo && !(s.isFirstDayBreak20Ma && s.status === "BREAKOUT"))) {
-          breakdownSet.add(s.code);
-          breakdownPoolStocks.push(s);
-        }
-      });
-      allStocks.forEach(s => {
-        if (s.status === "BREAKDOWN" && !breakdownSet.has(s.code)) {
-          breakdownSet.add(s.code);
-          breakdownPoolStocks.push(s);
-        }
+        if (!sectorMatch(s)) return;
+        const [open,closed]=poolPair1646(s,filterOpts,_liveCfg,{activeOrTodayExit:s.trackingInfo,closedBreakdown:s.closedBreakdownInfo});
+        if(open) trackingStocks.push(s);
+        if(closed) breakdownPoolStocks.push(s);
       });
 
       document.getElementById("count-ALL").textContent = allStocks.length;
