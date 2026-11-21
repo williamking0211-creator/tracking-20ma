@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.20｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.21｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -271,7 +271,7 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
 </style>
 
 <style id="devLineLayout16420">
-/* V16.4.20: compact grouped settings, preserving all original IDs and handlers. */
+/* V16.4.21: compact grouped settings, preserving all original IDs and handlers. */
 #dev15Panel.devPanel420{box-sizing:border-box;max-width:1440px;margin:10px auto 12px;padding:14px;border:1px solid #6873bd;border-radius:14px;background:#0e1729;color:#e2e8f0;font-size:13px;box-shadow:0 5px 18px #02061755}
 #dev15Panel .dev420Top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:11px}
 #dev15Panel .dev420Top h2{font-size:17px;line-height:1.4;font-weight:850;color:#f8fafc;margin:3px 0}
@@ -376,10 +376,10 @@ main, #step123Section{align-items:start!important}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.20 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.21 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.20</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.21</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -10948,10 +10948,10 @@ const params=document.createElement('details'), ai=document.createElement('detai
 const equity=document.createElement('div');equity.className='mobileHomeFold164';equity.innerHTML='<div>期末總權益</div><div id="mobileEquity164">--</div><div id="mobilePeriod164" class="text-slate-400"></div>';
 const results=$('simResultCardsMobile'), strategies=$('manualCapitalStrategies'), compare=$('simAiStrategyCompareBox');const first=$('capitalParams164'), second=$('capitalOptions164'), aiLabel=$('lblAiCapitalOpt');const aiAnchor=document.createComment('AI original position');aiLabel.before(aiAnchor);const buy=$('todayBuy163');const closed=$('todayClosed162');const history=$('historyClosed164');const tracked=[first,second,strategies,compare,results,buy,closed,history].filter(Boolean);const anchors=new Map(tracked.map(n=>{const c=document.createComment('original mobile home');n.before(c);return[n,c]}));let active=false,opened=false,oldPool=false;
 function update(){const note=$('simStatusNote')?.textContent||'', m=note.match(/期末總權益\s*(.+)$/);const v=m?m[1]:'--';if($('mobileEquity164').textContent!==v)$('mobileEquity164').textContent=v;const period=note.split('投入')[0].trim();if($('mobilePeriod164').textContent!==period)$('mobilePeriod164').textContent=period;const p=$('simTotalProfitEl');$('mobileEquity164').style.color=p?.textContent.trim().startsWith('-')?'#34d399':'#fb7185';ai.hidden=compare.classList.contains('hidden');}
-function apply(){const mobile=document.documentElement.classList.contains('mobile164');if(mobile===active)return;active=mobile;if(mobile){home.append(panel);body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');const cb=$('btnToggleCapitalSim');if(cb)cb.textContent='🔼 收合資金試算';body.prepend(equity,results,strategies);params.append(first,second);strategies.before(params);strategies.after(aiLabel);ai.append(compare);body.append(buy,closed,history,ai);params.open=true;ai.open=!compare.classList.contains("hidden");oldPool=typeof poolFold162!=='undefined'&&poolFold162;if(typeof setPoolFold162==='function')setPoolFold162(true);const wrap=$('simTradesTableWrap');opened=!!wrap?.classList.contains('hidden');if(opened)$('btnToggleSimTable')?.click();}else{marker.after(panel);aiAnchor.after(aiLabel);for(const [n,c] of anchors)c.after(n);equity.remove();params.remove();ai.remove();if(opened&&!$('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();if(typeof setPoolFold162==='function')setPoolFold162(oldPool);}if(mobile)update();}
+function apply(){const mobile=document.documentElement.classList.contains('mobile164');if(mobile===active)return;active=mobile;if(mobile){home.append(panel);body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');const cb=$('btnToggleCapitalSim');if(cb)cb.textContent='🔼 收合資金試算';body.prepend(equity,results,strategies);/* V16.4.21: capital inputs stay in unified panel on mobile, do not detach them */ strategies.after(aiLabel);const uf=document.getElementById('unifiedFilter16417');if(uf)equity.after(uf);ai.append(compare);body.append(buy,closed,history,ai);params.open=true;ai.open=!compare.classList.contains("hidden");oldPool=typeof poolFold162!=='undefined'&&poolFold162;if(typeof setPoolFold162==='function')setPoolFold162(true);const wrap=$('simTradesTableWrap');opened=!!wrap?.classList.contains('hidden');if(opened)$('btnToggleSimTable')?.click();}else{marker.after(panel);aiAnchor.after(aiLabel);for(const [n,c] of anchors){if(n===first||n===second)continue;c.after(n);}equity.remove();params.remove();ai.remove();if(opened&&!$('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();if(typeof setPoolFold162==='function')setPoolFold162(oldPool);}if(mobile)update();}
 const obs=new MutationObserver(()=>{apply();if(active)update()});obs.observe(document.documentElement,{attributes:true,attributeFilter:['class']});for(const n of [$('simStatusNote'),$('simTotalProfitEl'),compare])if(n)obs.observe(n,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
 window.addEventListener('load',()=>{apply();if(active){body.classList.remove('hidden','v161-fold');results.classList.remove('v161-fold');update();}});apply();
-const nav=$('nav164');nav?.addEventListener('click',e=>{if(!active)return;const key=e.target.closest('button')?.dataset.go164;if(key==='home'||key==='hold'||key==='settings'){e.stopImmediatePropagation();if(key==='settings'){params.open=true;params.scrollIntoView({block:'start',behavior:'smooth'});}else if(key==='hold'){if($('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();$('btnToggleSimTable')?.scrollIntoView({block:'start',behavior:'smooth'});}else home.scrollIntoView({block:'start',behavior:'smooth'});}},true);const homeButton=nav?.querySelector('[data-go164="home"]');if(homeButton)homeButton.textContent='⌂ 實戰首頁';})();
+const nav=$('nav164');nav?.addEventListener('click',e=>{if(!active)return;const key=e.target.closest('button')?.dataset.go164;if(key==='home'||key==='hold'||key==='settings'){e.stopImmediatePropagation();if(key==='settings'){const uf=document.getElementById('unifiedFilter16417');(uf||params).scrollIntoView({block:'start',behavior:'smooth'});}else if(key==='hold'){if($('simTradesTableWrap')?.classList.contains('hidden'))$('btnToggleSimTable')?.click();$('btnToggleSimTable')?.scrollIntoView({block:'start',behavior:'smooth'});}else home.scrollIntoView({block:'start',behavior:'smooth'});}},true);const homeButton=nav?.querySelector('[data-go164="home"]');if(homeButton)homeButton.textContent='⌂ 實戰首頁';})();
 </script>
 <style>html.mobile164 #mobileHome164{width:100%;max-width:100%;min-width:0}html.mobile164 #mobileHome164 #capitalSimBody:not(.hidden){max-height:none!important;overflow:visible!important}html.mobile164 #mobileHome164 #capitalSimBody>.v161-collapse{display:none!important}html.mobile164 #mobileHome164 #simResultCardsMobile{display:grid!important}html.mobile164 #mobileHome164 #simResultCardsMobile>div{max-width:100%}html.mobile164 #mobileHome164 #manualCapitalGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important}html.mobile164 #mobileHome164 #manualCapitalGrid button{font-size:15px!important}html.mobile164 #mobileHome164 #simTradesTableWrap:not(.hidden){max-height:none!important}html.mobile164 #mobileHome164 #btnToggleSimTable{font-size:16px!important}html.mobile164 #mobileHome164 #mobileEquity164{font-size:30px!important}html.mobile164 #mobileHome164 .mobileHomeFold164{overflow-wrap:anywhere}html.mobile164 #mobileHome164 #simResultCardsMobile.v161-fold>div:not(.v161-collapse){display:block!important}html.mobile164 #mobileHome164 #capitalSimBody.v161-fold>*:not(.v161-collapse){display:revert}html.mobile164 #mobileHome164 #capitalSimBody.v161-fold>details:not([open])>*:not(summary){display:none}html.mobile164 #mobileHome164 #capitalSimBody .hidden{display:none!important}</style>
 <script>window.addEventListener('load',()=>{const root=document.documentElement, picker=document.getElementById('layoutSelect164');function ensure(){if(!root.classList.contains('mobile164'))return;const b=document.getElementById('capitalSimBody'),r=document.getElementById('simResultCardsMobile');if(b)b.classList.remove('v161-fold');if(r)r.classList.remove('v161-fold');}ensure();picker?.addEventListener('change',()=>requestAnimationFrame(()=>{ensure();if(root.classList.contains('mobile164'))document.getElementById('mobileHome164')?.scrollIntoView({block:'start'});}));});</script><style id="compact164">
@@ -11077,9 +11077,12 @@ function refreshVolumeCells411(changed){const map=new Map((changed||rawAllLoaded
     if(!old||!smart||byId('unifiedFilter16417'))return;
     const parent=old.parentNode;
     const panel=document.createElement('section');panel.id='unifiedFilter16417';panel.setAttribute('aria-label','AI實戰條件整合');
-    panel.innerHTML='<div class="ufTitle">🎯 AI 實戰篩選與資金規則（統一設定）</div><p class="ufIntro">同一處設定股票類別、成交量、股價、交易費用及剔除獲利王。按「套用所有條件」後，沿用已完成的 AI 最佳參數，同步重新結算 A～G 及股池；完整尋優請使用原本的 AI 按鈕。</p><div class="ufGrid"><div class="ufCard" id="ufSector16417"><h3>01　股票類別（可複選）</h3><p class="ufHint">「全部」表示不限類股；分類也會套用至 AI 選股範圍。</p></div><div class="ufCard" id="ufMarket16417"><h3>02　成交量與股價條件</h3></div><div class="ufCard" id="ufRule16417"><h3>03　資金試算與風險設定</h3><p class="ufHint">費率、同日買進優先順序及剔除獲利王，都會影響資金模擬淨利。</p></div><div class="ufCard" id="ufAi16417"><h3>04　AI 尋優模式</h3><p class="ufHint">切換策略或套用條件不是重新尋找最佳參數；如要尋找新的最優策略，請啟動完整尋優。</p></div></div><div class="ufBottom" id="ufBottom16417"><div class="ufInfo">提醒：近5／10／20日均量是目前市場篩選，不等於歷史平倉日量。選「買進當日量」或「買進前5日均量」才會逐筆驗證歷史交易；股價區間仍為目前價格。</div></div>';
+    panel.innerHTML='<div class="ufTitleRow"><div><div class="ufTitle">🎯 AI 實戰條件與資金設定</div><p class="ufIntro">本金、日期、買進方式與選股條件集中設定，保留原本 AI 快取及資金試算機制。</p></div><span class="ufTag">統一設定 · A～G</span></div><div class="ufCard ufCapital" id="ufCapital16421"><h3>01　💰 投資本金、回測期間與買進方式</h3><div class="ufCapitalHint">原本「實戰資金模擬試算」的設定全部移到這裡；日期或本金變更仍依原本流程更新試算。</div></div><div class="ufColumns"><div class="ufCol"><div class="ufCard" id="ufSector16417"><h3>02　股票類別</h3><p class="ufHint">全部代表不限制類別，可勾選多個產業。</p></div><div class="ufCard" id="ufMarket16417"><h3>03　成交量及股價門檻</h3></div></div><div class="ufCol"><div class="ufCard" id="ufRule16417"><h3>04　交易成本及資金風險</h3></div><div class="ufCard" id="ufAi16417"><h3>05　AI 尋優模式</h3><p class="ufHint">套用篩選只依現有參數重算；要找新的最佳參數，才執行完整 AI 尋優。</p></div></div></div><div class="ufBottom" id="ufBottom16417"><div class="ufInfo">成交量採目前均量時，是依最新行情篩選；若要核對歷史交易的進場量，請選買進當日或買進前5日均量。股價區間依目前價格判定。</div></div>';
     parent.insertBefore(panel,old);
+    // Keep the same original input elements and handlers; do not clone or duplicate controls.
     function move(node,target,cls){if(!node)return;target.appendChild(node);if(cls)node.classList.add(cls);return node;}
+    // Move the entire existing capital parameter group into the unified setting panel.
+    move(byId('capitalParams164'),byId('ufCapital16421'),'ufCapitalFields');
     const sector=byId('btnSimSectorAll')?.parentElement;
     move(sector,byId('ufSector16417'),'ufSectorChoices');
     const repeatSectorLabel=sector?.querySelector('span.font-semibold');if(repeatSectorLabel)repeatSectorLabel.hidden=true;
@@ -11101,6 +11104,13 @@ function refreshVolumeCells411(changed){const map=new Map((changed||rawAllLoaded
     // Legacy instant recalculation button duplicated the primary Apply action.
     const legacyRecalc=[...old.querySelectorAll('button')].find(b=>b.textContent.includes('立即重算'));
     if(legacyRecalc)legacyRecalc.hidden=true;
+    const oldChoiceRow=old.querySelector(':scope > div:first-child');
+    if(oldChoiceRow)oldChoiceRow.style.display='none';
+    // If mobile layout was activated before DOMContentLoaded, put the unified panel after the equity summary.
+    if(document.documentElement.classList.contains('mobile164')){
+      const equity=byId('mobileEquity164')?.parentElement;
+      if(equity?.parentNode===panel.parentNode) equity.after(panel);
+    }
     // Existing hidden historical-volume control must stay in the DOM for older saved profiles.
     // It remains hidden; no duplicate visible filter is created.
   }
@@ -11108,5 +11118,58 @@ function refreshVolumeCells411(changed){const map=new Map((changed||rawAllLoaded
   else initializeUnifiedFilter16417();
 })();
 </script>
+<style id="capitalIntegrated16421">
+/* V16.4.21 -- true DOM integration of the original capital controls into AI rules. */
+#unifiedFilter16417{margin-top:8px;padding:12px;border:1px solid #9072e8;border-radius:12px;background:linear-gradient(135deg,#22133b,#121b32);box-shadow:none}
+#unifiedFilter16417 .ufTitleRow{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:11px}
+#unifiedFilter16417 .ufTitle{font-size:17px;line-height:1.3;color:#ffdd83}
+#unifiedFilter16417 .ufIntro{font-size:11px;color:#cbd5e1;margin:4px 0 0;line-height:1.45}
+#unifiedFilter16417 .ufTag{background:#493778;color:#ddd6fe;border:1px solid #7960b8;border-radius:999px;font-size:11px;padding:5px 9px;white-space:nowrap}
+#unifiedFilter16417 .ufCapital{margin-bottom:9px;border-color:#ad8654;background:linear-gradient(140deg,#202842,#21233a)}
+#unifiedFilter16417 .ufCapital h3{color:#ffdc8a}
+#unifiedFilter16417 .ufCapitalHint{font-size:11px;color:#9cb5d2;line-height:1.45;margin-top:-3px}
+#unifiedFilter16417 .ufColumns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start}
+#unifiedFilter16417 .ufCol{display:flex;flex-direction:column;gap:9px;min-width:0}
+#unifiedFilter16417 .ufCard{gap:7px;padding:10px;border-color:#455773;background:#111d32;border-radius:9px}
+#unifiedFilter16417 .ufCard h3{font-size:13px;color:#91d8f8}
+#unifiedFilter16417 .ufCard .ufHint{font-size:11px;line-height:1.45}
+#unifiedFilter16417 #capitalParams164{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,142px),1fr))!important;gap:8px!important;min-width:0;margin:0!important}
+#unifiedFilter16417 #capitalParams164 > *{min-width:0!important;grid-column:auto!important;border:1px solid #3e5575!important;border-radius:8px!important;background:#16253b!important;padding:9px!important;margin:0!important;gap:6px!important;align-items:stretch!important}
+#unifiedFilter16417 #capitalParams164 span{color:#c5d6eb!important;font-size:11px!important;font-weight:650;line-height:1.3}
+#unifiedFilter16417 #capitalParams164 input,#unifiedFilter16417 #capitalParams164 select{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;background:#233650!important;border:1px solid #657c9e!important;color:#f8fafc!important;border-radius:6px!important;padding:7px!important;min-height:36px!important;font-size:13px!important;color-scheme:dark}
+#unifiedFilter16417 #capitalParams164 input[type=date]{font-family:inherit}
+#unifiedFilter16417 #capitalParams164 #simInitCapitalInput{color:#fbd67b!important;font-weight:850}
+#unifiedFilter16417 #capitalParams164 #simPerStockBudgetInput.hidden,#unifiedFilter16417 #capitalParams164 #simWithdrawValInput.hidden{display:none!important}
+#unifiedFilter16417 #capitalParams164 #simWithdrawValInput:not(.hidden){width:88px!important;flex:none}
+#unifiedFilter16417 .ufSectorChoices{gap:5px!important}
+#unifiedFilter16417 .ufSectorChoices > label{font-size:11px!important;padding:5px 7px!important}
+#unifiedFilter16417 #aiPre1642 .sfGrid{gap:7px!important}
+#unifiedFilter16417 #aiPre1642 .sfGroup{padding:9px!important;margin:0!important}
+#unifiedFilter16417 #aiPre1642 .sfFields{gap:7px!important}
+#unifiedFilter16417 #aiPre1642 .sfHint{margin:1px 0 5px!important}
+#unifiedFilter16417 .ufBottom{margin-top:10px;padding-top:10px;gap:7px}
+#unifiedFilter16417 .ufInfo{font-size:11px;color:#d5c2fd}
+#unifiedFilter16417 #preApply1642{min-height:42px!important;font-size:14px!important}
+#unifiedFilter16417 .ufSetting{padding:8px!important;gap:5px!important}
+#unifiedFilter16417 #lblAiCapitalOpt{font-size:14px!important;min-height:40px!important}
+/* Prevent old empty capital options row from creating whitespace. */
+#capitalOptions164>div:first-child[style*="display: none"]{display:none!important}
+@media(max-width:760px){
+ #unifiedFilter16417{padding:10px!important;margin:8px 0}
+ #unifiedFilter16417 .ufTitleRow{flex-wrap:wrap;gap:5px}
+ #unifiedFilter16417 .ufColumns{grid-template-columns:1fr}
+ #unifiedFilter16417 .ufTag{font-size:10px}
+ #unifiedFilter16417 .ufCapitalHint{font-size:11px}
+}
+html.mobile164 #unifiedFilter16417 #capitalParams164{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+html.mobile164 #unifiedFilter16417 #capitalParams164>*{grid-column:auto!important;min-width:0!important}
+html.mobile164 #unifiedFilter16417 #capitalParams164>*:last-child{grid-column:1/-1!important}
+html.mobile164 #unifiedFilter16417 #capitalParams164 input,html.mobile164 #unifiedFilter16417 #capitalParams164 select{font-size:clamp(15px,4vw,19px)!important;min-height:42px!important}
+html.mobile164 #unifiedFilter16417 #capitalParams164 span{font-size:clamp(13px,3.5vw,17px)!important}
+html.mobile164 #unifiedFilter16417 .ufCard h3{font-size:clamp(15px,4vw,20px)!important}
+html.mobile164 #unifiedFilter16417 .ufSetting,html.mobile164 #unifiedFilter16417 .ufIntro{font-size:clamp(13px,3.5vw,17px)!important}
+html.mobile164 #mobileHome164 #unifiedFilter16417{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+@media(max-width:360px){html.mobile164 #unifiedFilter16417 #capitalParams164{grid-template-columns:1fr!important}html.mobile164 #unifiedFilter16417 #capitalParams164>*:last-child{grid-column:auto!important}}
+</style>
 </body>
 </html>
