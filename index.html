@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.19｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.20｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -269,6 +269,66 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
 @media(max-width:760px){#unifiedFilter16417 .ufGrid{grid-template-columns:1fr}#unifiedFilter16417{padding:11px}#unifiedFilter16417 .ufTitle{font-size:16px}}
 @media(max-width:380px){#unifiedFilter16417 #aiPre1642 .sfFields{grid-template-columns:1fr!important}}
 </style>
+
+<style id="devLineLayout16420">
+/* V16.4.20: compact grouped settings, preserving all original IDs and handlers. */
+#dev15Panel.devPanel420{box-sizing:border-box;max-width:1440px;margin:10px auto 12px;padding:14px;border:1px solid #6873bd;border-radius:14px;background:#0e1729;color:#e2e8f0;font-size:13px;box-shadow:0 5px 18px #02061755}
+#dev15Panel .dev420Top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:11px}
+#dev15Panel .dev420Top h2{font-size:17px;line-height:1.4;font-weight:850;color:#f8fafc;margin:3px 0}
+#dev15Panel .dev420Top p{color:#9db3d1;font-size:12px;margin:0}
+#dev15Panel .dev420Eyebrow{color:#a5b4fc;font-size:12px;font-weight:700}
+#dev15Panel .dev420Version{font-size:12px;color:#c4b5fd;background:#332259;border-radius:5px;padding:2px 7px}
+#dev15Panel .dev420Close{background:#243249;border:1px solid #475569;color:#dbeafe;padding:6px 12px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+#dev15Panel .dev420Grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:11px;align-items:start}
+#dev15Panel .dev420Card{min-width:0;background:#131f33;border:1px solid #394b69;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;align-self:start}
+#dev15Panel .dev420Card h3{font-size:14px;font-weight:800;color:#f6d887;margin:0}
+#dev15Panel .dev420Num{display:inline-grid;place-items:center;font-size:11px;color:#a5d9ff;background:#19385b;border-radius:5px;padding:3px 6px;margin-right:5px}
+#dev15Panel .dev420Fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#dev15Panel label{display:flex;flex-direction:column;gap:5px;color:#becde4;min-width:0;font-size:12px}
+#dev15Panel input{background:#0b1425;border:1px solid #536784;border-radius:7px;padding:9px 10px;min-width:0;width:100%;color:#fff;font-size:14px;min-height:38px}
+#dev15Panel input:focus{outline:2px solid #8b5cf6;outline-offset:0}
+#dev15Panel .dev420Pw{display:flex;align-items:center;gap:5px;min-width:0}
+#dev15Panel .dev420Pw input{flex:1 1 auto}
+#dev15Panel .dev420Pw button{flex:0 0 auto;border:1px solid #475569;background:#334155;color:#e2e8f0;border-radius:6px;padding:9px 7px;min-height:38px;font-size:12px}
+#dev15Panel .dev420Buttons{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+#dev15Panel .dev420Buttons button,#dev15Panel .dev420CredentialFields>button{padding:9px 12px;min-height:36px;border-radius:7px;background:#34445f;color:white;font-weight:700;font-size:12px;white-space:normal}
+#dev15Panel .dev420Buttons .dev420Primary,#dev15Panel .dev420CredentialFields>.dev420Primary{background:#5741c7}
+#dev15Panel .dev420Buttons .dev420Publish{background:#057857;color:#fff}
+#dev15Panel .dev420Message{background:#0a2430;color:#a7ecd7;border:1px solid #1e5f65;border-radius:7px;padding:8px 10px;overflow-wrap:anywhere;line-height:1.5;min-height:0}
+#dev15Panel .dev420StrategyStatus{background:#25213e;color:#fcd68b;border:1px solid #605180;border-radius:7px;padding:8px 10px;overflow-wrap:anywhere;line-height:1.55;min-height:0}
+#dev15Panel .dev420Hint{color:#9db3d1;font-size:11px;line-height:1.5;margin:0}
+#dev15Panel .dev420Credentials{border-top:1px solid #37455f;margin-top:11px;padding-top:6px}
+#dev15Panel .dev420Credentials>summary{cursor:pointer;list-style:none;color:#cbd5e1;font-weight:700;font-size:12px;padding:6px 1px}
+#dev15Panel .dev420Credentials>summary::before{content:'▸';margin-right:8px;color:#a78bfa}
+#dev15Panel .dev420Credentials[open]>summary::before{content:'▾'}
+#dev15Panel .dev420Credentials>summary span{font-weight:400;color:#7e98b5;margin-left:5px}
+#dev15Panel .dev420CredentialFields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;align-items:end;margin-top:9px}
+#dev15Panel .dev420CredentialFields>.dev420Primary{height:38px}
+#lineNotifyPanel.linePanel420{box-sizing:border-box;max-width:1440px;margin:8px auto 10px;padding:12px;border:1px solid #118263;border-radius:12px;background:#0f1b2d;color:#e2e8f0;gap:9px;flex-direction:column;align-items:stretch;font-size:12px;min-height:0}
+#lineNotifyPanel .line420Head{display:flex;gap:10px;align-items:center;justify-content:space-between}
+#lineNotifyPanel .line420Head strong{color:#6ee7b7;font-size:14px}
+#lineNotifyPanel .line420Muted{color:#94a3b8;font-size:11px}
+#lineNotifyPanel .line420Options{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:center;background:#162840;border:1px solid #31415e;border-radius:8px;padding:8px 10px}
+#lineNotifyPanel .line420Options label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+#lineNotifyPanel input[type=checkbox]{accent-color:#10b981}
+#lineNotifyPanel .line420Actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#lineNotifyPanel .line420Mode{display:inline-flex;align-items:center;gap:6px}
+#lineNotifyPanel .line420Mode select{background:#253857;border:1px solid #526685;color:#fff;border-radius:7px;padding:7px}
+#lineNotifyPanel .line420Actions button{background:#31476e;color:#fff;border:1px solid #4b6486;border-radius:7px;padding:8px 11px;font-weight:700}
+#lineNotifyPanel .line420Actions .line420Test{background:#0c6d58;border-color:#1c9d7b}
+#lineNotifyPanel .line420ModeStatus{color:#a7f3d0}
+#lineNotifyPanel .line420Details{border-top:1px solid #334155;padding-top:7px;min-height:0}
+#lineNotifyPanel .line420Details summary{color:#b9cbdf;cursor:pointer;padding:4px 0;line-height:1.5}
+#lineNotifyPanel .line420Details p{line-height:1.55;overflow-wrap:anywhere;margin:6px 0;color:#a5b4fc}
+/* No fixed blank space under a list with zero matching rows. */
+main, #step123Section{align-items:start!important}
+#stockPoolPanel,#detailPanelSection{align-self:start!important;height:auto!important;min-height:0!important}
+#stockPoolPanel #stockTableContainer{min-height:0!important}
+#stockTableContainer:has(#stockTableBody tr:only-child td[colspan]){max-height:175px!important}
+@media(max-width:800px){#dev15Panel .dev420Grid{grid-template-columns:1fr}#dev15Panel .dev420CredentialFields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){#dev15Panel.devPanel420{padding:10px}#dev15Panel .dev420Fields,#dev15Panel .dev420CredentialFields{grid-template-columns:1fr}#dev15Panel .dev420Top h2{font-size:15px}#dev15Panel .dev420Top p{font-size:11px}#lineNotifyPanel .line420Head{flex-direction:column;align-items:start;gap:3px}#lineNotifyPanel .line420Actions button{flex:1 1 auto}#dev15Panel .dev420Credentials>summary span{display:block;margin-left:18px}}
+</style>
+
 </head>
 <body class="min-h-screen p-3 md:p-5">
 
@@ -316,8 +376,40 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.19 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
-<div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V16.4.19</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="officialChoiceStatus1645" class="text-amber-300 font-bold" aria-live="polite"></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
+  <div id="layout164"><label for="layoutSelect164">V16.4.20 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+<section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
+  <div class="dev420Top">
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.20</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
+  </div>
+  <div class="dev420Grid">
+    <section class="dev420Card" aria-label="登入設定">
+      <h3><span class="dev420Num">01</span> 開發者登入</h3>
+      <div class="dev420Fields">
+        <label>帳號<input id="dev15User" autocomplete="username" placeholder="開發者帳號"></label>
+        <label>密碼<span class="dev420Pw"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="登入密碼" onkeydown="if(event.key==='Enter')dev15Login(false)"><button type="button" aria-pressed="false" onclick="toggle152('dev15Password',this)">顯示 👁</button></span></label>
+      </div>
+      <div class="dev420Buttons"><button type="button" class="dev420Primary" onclick="dev15Login(false)">開發者登入</button><button type="button" onclick="dev15Login(true)">本機登入並監控</button></div>
+      <div id="dev15Status" class="dev420Message" aria-live="polite">未登入；一般分析不影響 LINE</div>
+    </section>
+    <section class="dev420Card" aria-label="策略發布">
+      <h3><span class="dev420Num">02</span> LINE 正式策略</h3>
+      <div id="officialChoiceStatus1645" class="dev420StrategyStatus" aria-live="polite">目前實戰選擇與 LINE 已發布策略，請登入後核對。</div>
+      <p class="dev420Hint">僅發布成功才變更正式策略；單純讀取不會覆蓋實戰選擇。</p>
+      <div id="dev151Actions" style="display:none!important" class="dev420Buttons"><button type="button" class="dev420Publish" onclick="dev15Publish()">發布目前策略至 LINE</button><button type="button" onclick="dev15Pull(true)">讀取正式策略</button><button type="button" onclick="dev15Logout()">登出</button></div>
+    </section>
+  </div>
+  <details class="dev420Credentials">
+    <summary>🔒 帳號與密碼管理 <span>需要時再展開，不佔用平常操作空間</span></summary>
+    <div id="dev151Credentials" style="display:none!important" class="dev420CredentialFields">
+      <label>新帳號<input id="dev151NewUser" autocomplete="off" placeholder="新帳號"></label>
+      <label>目前密碼<span class="dev420Pw"><input id="dev151Old" type="password" autocomplete="off" placeholder="目前密碼"><button type="button" aria-pressed="false" onclick="toggle152('dev151Old',this)">顯示 👁</button></span></label>
+      <label>新密碼<span class="dev420Pw"><input id="dev151New" type="password" autocomplete="new-password" placeholder="至少12字"><button type="button" aria-pressed="false" onclick="toggle152('dev151New',this)">顯示 👁</button></span></label>
+      <label>再次確認<span class="dev420Pw"><input id="dev151Confirm" type="password" autocomplete="new-password" placeholder="確認新密碼"><button type="button" aria-pressed="false" onclick="toggle152('dev151Confirm',this)">顯示 👁</button></span></label>
+      <button type="button" class="dev420Primary" onclick="change151()">修改帳密</button>
+    </div>
+  </details>
+</section>
 
   <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
   <div class="max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2">
@@ -1009,10 +1101,19 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
               <div class="flex flex-wrap items-center gap-2">
                 <span id="simTrimmedInfoBadge" class="hidden text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950/60 border border-rose-500/40 text-rose-200"></span>
                 <span id="simStatusNote" class="font-mono text-slate-300"></span>
-              </div><div class="my-2 p-2 rounded border border-emerald-700 bg-slate-900 text-xs flex flex-wrap gap-3 items-center" id="lineNotifyPanel" style="display:none">
-<b class="text-emerald-300">LINE 交易通知</b><label><input type="checkbox" id="lineEnabled" checked> 啟用</label>
-<label><input type="checkbox" id="lineBUY" checked> 買進</label><label><input type="checkbox" id="linePROFIT" checked> 停利</label><label><input type="checkbox" id="lineLOSS" checked> 停損／保本</label><label><input type="checkbox" id="lineKEY" checked> 關鍵K</label><label><input type="checkbox" id="lineREPORT" checked> 14:00報告</label>
-<label>通知對象 <select id="line155Mode" class="bg-slate-800 rounded p-1"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()" class="px-2 py-1 rounded bg-indigo-800">儲存通知對象</button><span id="line155Status">尚未讀取</span><button type="button" onclick="lineTestV14()" class="px-2 py-1 rounded bg-emerald-800">測試 LINE</button><span id="lineStatus">等待通知測試</span><span id="monitorStatus164">尚未讀取後台狀態</span><button type="button" onclick="monitorStatus164()" class="px-2 py-1 rounded bg-indigo-800">檢查 LINE 狀態</button></div>
+              </div><section id="lineNotifyPanel" class="linePanel420" style="display:none" aria-label="LINE 交易通知">
+  <div class="line420Head"><strong>📨 LINE 交易通知</strong><span class="line420Muted">只有正式發布的策略會產生通知</span></div>
+  <div class="line420Options">
+    <label><input type="checkbox" id="lineEnabled" checked>啟用</label>
+    <label><input type="checkbox" id="lineBUY" checked>買進</label>
+    <label><input type="checkbox" id="linePROFIT" checked>停利</label>
+    <label><input type="checkbox" id="lineLOSS" checked>停損／保本</label>
+    <label><input type="checkbox" id="lineKEY" checked>關鍵K</label>
+    <label><input type="checkbox" id="lineREPORT" checked>14:00報告</label>
+  </div>
+  <div class="line420Actions"><label class="line420Mode">通知對象 <select id="line155Mode"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()">儲存通知對象</button><button type="button" class="line420Test" onclick="lineTestV14()">測試 LINE</button><button type="button" onclick="monitorStatus164()">檢查 LINE 狀態</button><span id="line155Status" class="line420ModeStatus">尚未讀取</span></div>
+  <details class="line420Details"><summary>查看 LINE 通知及監控狀態</summary><p id="lineStatus">等待通知測試</p><p id="monitorStatus164">尚未讀取後台狀態</p></details>
+</section>
             </div>
 
 <section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
@@ -5932,7 +6033,7 @@ function freeze151(){for(const id of ['chkAiAutoFullStep1','chkAiCapitalOpt']){c
 function save151(){if(fullAiBusy||capitalAiBusy){showToast('請等待 AI 尋優完成','warn');return;}const a=dev15Capture();for(const k of Object.keys(a.fields))if(k.startsWith('line'))delete a.fields[k];for(const id of ['chkShowBubbles','chkShowDeduct','autoSyncCheckbox','pnlDateBasisSelect','pnlStartDateInput','pnlEndDateInput','chkShowAiPowerMarkers']){const e=document.getElementById(id);if(e)a.fields[id]=e.type==='checkbox'?e.checked:e.value;}a.filter=currentFilter;a.bubble=bubbleMultThreshold;a.savedAt=Date.now();try{localStorage.setItem(key151,JSON.stringify(a));}catch(e){showToast('儲存失敗：瀏覽器空間不足或禁止儲存','error');return;}freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');applyFiltersAndRender();showToast('個人策略已儲存；不會變更正式 LINE 策略');const badge=document.getElementById("savedSettingsBadge");badge.classList.add("v161saved");setTimeout(()=>badge.classList.remove("v161saved"),3000);}
 function restore151(){try{const a=JSON.parse(localStorage.getItem(key151)||'null');if(!a||!dev15Keys.includes(a.strategy))return;currentExitStrategy=a.strategy;for(const [id,v] of Object.entries(a.fields||{})){if(id.startsWith('line'))continue;const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v;}}document.querySelectorAll('.sim-sector-chk').forEach(e=>e.checked=(a.sectors||[]).includes(e.value));syncSectorCheckboxes('sim-sector-chk','step1-sector-chk');simManualCloseMap=a.manual||{};if(['ALL','BREAKOUT','CONSOLIDATE','TRACKING','BREAKDOWN'].includes(a.filter)){currentFilter=a.filter;document.querySelectorAll('.filter-card').forEach(e=>{const active=e.id==='tab-'+currentFilter;e.classList.toggle('border-2',active);e.classList.toggle('border-blue-500',active);e.classList.toggle('border',!active);e.classList.toggle('border-slate-800',!active);});}if(Number.isFinite(a.bubble))bubbleMultThreshold=a.bubble;freeze151();document.getElementById('savedSettingsBadge').textContent='💾 已儲存 '+new Date(a.savedAt).toLocaleString('zh-TW');}catch(e){console.warn('個人設定還原失敗',e);}}
 function toggle152(id,b){const e=document.getElementById(id);const show=e.type==='password';e.type=show?'text':'password';b.textContent=show?'隱藏':'顯示 👁';b.setAttribute('aria-pressed',String(show));}
-function visibility151(ok){const b=document.getElementById('devModeIndicator164');if(b){b.classList.toggle('devModeActive164',!!ok);b.setAttribute('aria-pressed',String(!!ok));b.textContent=ok?'🔓 開發者模式 ON':'🔐 開發者登入';b.title=ok?(dev15Monitor?'已登入：本機監控':'已登入：遠端控制'):'一般使用者模式';}updateManualToolbar161();for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?'flex':'none','important');}
+function visibility151(ok){const b=document.getElementById('devModeIndicator164');if(b){b.classList.toggle('devModeActive164',!!ok);b.setAttribute('aria-pressed',String(!!ok));b.textContent=ok?'🔓 開發者模式 ON':'🔐 開發者登入';b.title=ok?(dev15Monitor?'已登入：本機監控':'已登入：遠端控制'):'一般使用者模式';}updateManualToolbar161();for(const id of ['lineNotifyPanel','dev151Actions','dev151Credentials'])document.getElementById(id).style.setProperty('display',ok?(id==='dev151Credentials'?'grid':'flex'):'none','important');}
 async function change151(){const ids=['dev151NewUser','dev151Old','dev151New','dev151Confirm'];const [user,oldPassword,password,confirmPassword]=ids.map(id=>document.getElementById(id).value);if(password!==confirmPassword||password.length<12){dev15Status('新密碼至少12字且兩次必須相同');return;}try{await dev15Req('credentials',{user,oldPassword,password});ids.forEach(id=>document.getElementById(id).value='');await dev15Logout();document.getElementById('dev15Panel').style.display='';paintOfficial1645();dev15Status('帳密已更新，所有裝置請重新登入（本機需重新開啟監控）');}catch(e){dev15Status('修改失敗：'+e.message);}}
 
 const aiOfficialKey164='w-ai-official-choice-v1645';
@@ -6000,7 +6101,7 @@ function scheduleOfficialSync16419(key){
 
 function officialChoice164(){if(!pendingOfficial1645||!dev15Keys.includes(pendingOfficial1645.strategy))throw Error('請先在實戰資金模擬試算選擇策略');const current=dev15Capture(),a=JSON.parse(JSON.stringify(pendingOfficial1645));for(const [id,value] of Object.entries(current.fields)){if(id.startsWith('line')||aiOfficialCapitalIds164.has(id)||id.startsWith('simVolume')||id==='smartFilter48'||(a.strategy===current.strategy&&id==='simPrioritySelect'))a.fields[id]=value;}a.sectors=current.sectors;if(a.strategy===current.strategy)a.manual=current.manual;return a;}
 function restoreOfficialVolume164(fields){if(fields.smartFilter48){const c=JSON.parse(fields.smartFilter48);if(!c||!['all','min','max','lt','range'].includes(c.mode)||!['today','1','5','10','20','buy','buy5'].includes(String(c.basis)))throw Error('正式策略的成交量條件無效，請重新發布');preCfg1642=c;}else preCfg1642={mode:'all',basis:'20',lo:500,hi:10000};const ids=['simVolumeMode164','simVolumeBasis164','simVolumeLow164','simVolumeHigh164'];if(!ids.every(id=>fields[id]!==undefined))return;volume164={mode:fields[ids[0]],basis:fields[ids[1]],lo:Number(fields[ids[2]]),hi:Number(fields[ids[3]])};const e=document.getElementById('simVolumeNote164');if(e)e.textContent=volume164.mode==='all'?'不限成交量':'正式成交量條件已套用';}
-async function monitorStatus164(){try{const r=await dev15Req('monitor161');const e=document.getElementById('monitorStatus164');if(e)e.textContent='後台：'+(r.engineVersion==='16.4.16'?(r.status||'等待監控'):'前後端版本不符，請更新 C:\\Yfinance 內的 index.js 與 index.html')+' ｜ LINE：'+(r.line?.status||'尚未發送')+' ｜成功 '+(r.line?.accepted||0)+'／失敗 '+(r.line?.failed||0);}catch(e){const el=document.getElementById('monitorStatus164');if(el)el.textContent='後台狀態讀取失敗：'+e.message;}}
+async function monitorStatus164(){try{const r=await dev15Req('monitor161');const e=document.getElementById('monitorStatus164');if(e){const local=r.localHtml||{};const detail=local.engineReady===false?'〔本機監控HTML未就緒：'+(local.uiVersion||'未知版本')+'；請將此版 index.html 放入 C:\\Yfinance〕':'';e.textContent='後台：'+(r.status||'等待監控')+detail+' ｜ LINE：'+(r.line?.status||'尚未發送')+' ｜成功 '+(r.line?.accepted||0)+'／失敗 '+(r.line?.failed||0);}}catch(e){const el=document.getElementById('monitorStatus164');if(el)el.textContent='後台狀態讀取失敗：'+e.message;}}
 const dev15Status=t=>{document.getElementById('dev15Status').textContent=t;paintOfficial1645();};
 function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}Object.assign(fields,{simVolumeMode164:volume164.mode,simVolumeBasis164:volume164.basis,simVolumeLow164:String(volume164.lo),simVolumeHigh164:String(volume164.hi),smartFilter48:JSON.stringify(preCfg1642)});return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
 async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.error||('HTTP '+r.status));}return r.json();}
