@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.16｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.19｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -226,6 +226,49 @@ html.mobile164 #capitalMainTitle164 { font-size: 24px !important; line-height:1.
 #aiPre1642 *{box-sizing:border-box}#aiPre1642 .sfHead{display:flex!important;flex-wrap:wrap;justify-content:space-between;gap:6px;background:none!important;padding:0!important;align-items:center}#aiPre1642 .sfHead strong{font-size:18px;color:#f9d77a}#aiPre1642 .sfHead span,#aiPre1642 .sfHint{color:#c5cde0;font-size:12px!important;margin:5px 0 10px}#aiPre1642 .sfGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:10px}#aiPre1642 .sfGroup{min-width:0;background:#101b30;border:1px solid #475976;border-radius:9px;padding:12px}#aiPre1642 h3{color:#7dd3fc;font-size:15px!important;margin:0 0 9px;font-weight:800}#aiPre1642 .sfFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#aiPre1642 label{display:flex!important;flex-direction:column!important;gap:5px;min-width:0;color:#e2e8f0!important;font-size:13px!important}#aiPre1642 [hidden]{display:none!important}
 html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:none!important;-webkit-appearance:none!important;background:#263956!important;background-color:#263956!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid #8295b3!important;border-radius:7px!important;width:100%!important;min-width:0!important;max-width:100%!important;height:42px!important;padding:8px 10px!important;font-size:14px!important;opacity:1!important;color-scheme:dark!important}html body #aiPre1642 select{padding-right:28px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 8px center!important}#aiPre1642 select option{background:#263956!important;color:#fff!important}#aiPre1642 input::placeholder{color:#c1cde0!important;-webkit-text-fill-color:#c1cde0!important}#aiPre1642 :focus-visible{outline:2px solid #7dd3fc!important;outline-offset:2px}#aiPre1642 .sfSummary{margin:10px 0;padding:10px;background:#392658;border-radius:8px;color:#fff}#aiPre1642 .sfSummary strong{color:#f9d77a}#aiPre1642 .sfActions{display:flex;flex-wrap:wrap;gap:8px}#aiPre1642 button{min-height:42px;border-radius:8px!important;padding:9px 14px!important;color:#fff!important;font-weight:800!important;font-size:14px!important}#aiPre1642 #preApply1642{background:#6d28d9!important;flex:1}#aiPre1642 #preCancel1642{background:#475569!important}#aiPre1642 #preCancel1642:disabled{display:none!important}#aiPre1642 button:disabled{opacity:.55!important}#aiPre1642 .sfProgress{margin-top:12px;border-top:1px solid #5c487a;padding-top:9px;color:#cbd5e1}#aiPre1642 progress{display:block;width:100%!important;height:10px!important;appearance:none!important;border:0;border-radius:8px;overflow:hidden;background:#334155!important;margin:7px 0}#aiPre1642 progress::-webkit-progress-bar{background:#334155}#aiPre1642 progress::-webkit-progress-value{background:#34d399}#aiPre1642 progress::-moz-progress-bar{background:#34d399}#aiPre1642 #preStatus1642{overflow-wrap:anywhere;font-size:12px!important}html.mobile164 #aiPre1642 .sfGrid{grid-template-columns:1fr!important}@media(max-width:420px){#aiPre1642 .sfFields{grid-template-columns:1fr}}
 </style>
+
+<style id="unifiedFilterTheme16417">
+/* V16.4.18: only existing controls are moved; input IDs/handlers and calculations remain unchanged. */
+#unifiedFilter16417{border:2px solid #bba0ff;border-radius:14px;background:linear-gradient(165deg,#25104b,#141d33);color:#e2e8f0;padding:16px;margin:10px 0 14px;box-shadow:0 0 14px #6d28d929}
+#unifiedFilter16417 *{box-sizing:border-box}
+#unifiedFilter16417 .ufTitle{color:#ffd57f;font-weight:900;font-size:18px;letter-spacing:.2px}
+#unifiedFilter16417 .ufIntro{color:#d4cdeb;font-size:12px;margin:5px 0 12px;line-height:1.65}
+#unifiedFilter16417 .ufGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+#unifiedFilter16417 .ufCard{min-width:0;background:#101b30;border:1px solid #52627e;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px}
+#unifiedFilter16417 .ufCard h3{color:#8edfff;font-size:14px;font-weight:800;margin:0}
+#unifiedFilter16417 .ufHint{color:#b4c3db;font-size:11px;line-height:1.6;margin:0}
+#unifiedFilter16417 .ufSectorChoices{display:flex!important;flex-wrap:wrap;gap:7px!important;align-items:center}
+#unifiedFilter16417 .ufSectorChoices > label{display:inline-flex!important;flex-direction:row!important;gap:4px;align-items:center;background:#1b2b45!important;color:#f1f5f9!important;padding:7px 9px!important;border:1px solid #475d80;border-radius:7px;font-size:12px!important;cursor:pointer}
+#unifiedFilter16417 .ufSectorChoices > label:has(input:checked){background:#2c2365!important;border-color:#a78bfa;color:white!important}
+#unifiedFilter16417 .ufSectorChoices button{min-height:33px;background:#155e75;color:white;border:1px solid #22d3ee;border-radius:7px;padding:5px 10px}
+#unifiedFilter16417 .ufSetting{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important;background:#1b2b45!important;border:1px solid #475d80!important;border-radius:8px!important;padding:10px!important;min-width:0;font-size:12px!important;color:#f1f5f9!important}
+#unifiedFilter16417 .ufSetting:has(input[type=checkbox]){flex-direction:row!important;align-items:center!important;flex-wrap:wrap}
+#unifiedFilter16417 select,#unifiedFilter16417 input[type=number]{color:#f8fafc!important;background:#263956!important;border:1px solid #7184a4!important;border-radius:7px;padding:8px 9px;font-size:13px!important;color-scheme:dark;min-width:0;width:100%;min-height:38px}
+#unifiedFilter16417 input[type=checkbox]{accent-color:#8b5cf6;flex-shrink:0;width:16px;height:16px}
+#unifiedFilter16417 select option{background:#263956;color:#fff}
+#unifiedFilter16417 button{cursor:pointer;touch-action:manipulation}
+#unifiedFilter16417 #aiPre1642{border:0!important;border-radius:0!important;padding:0!important;background:transparent!important;margin:0!important}
+#unifiedFilter16417 #aiPre1642 .sfHead{display:none!important}
+#unifiedFilter16417 #aiPre1642 .sfHint{font-size:11px!important;line-height:1.55;margin:1px 0 8px!important}
+#unifiedFilter16417 #aiPre1642 .sfGroup{padding:10px;background:#17253a!important}
+#unifiedFilter16417 #aiPre1642 .sfGrid{grid-template-columns:1fr!important}
+#unifiedFilter16417 #aiPre1642 .sfFields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#unifiedFilter16417 #aiPre1642 .sfSummary,#unifiedFilter16417 .sfSummary{background:#372253!important;border:1px solid #58467a;border-radius:8px;padding:10px;color:#fff;font-size:12px;line-height:1.6}
+#unifiedFilter16417 .sfSummary strong{color:#ffdb83}
+#unifiedFilter16417 .ufBottom{margin-top:12px;display:flex;flex-direction:column;gap:10px;border-top:1px solid #66568c;padding-top:12px}
+#unifiedFilter16417 .sfActions{display:flex;flex-wrap:wrap;gap:8px}
+#unifiedFilter16417 #preApply1642{background:linear-gradient(90deg,#6d28d9,#9333ea)!important;color:#fff!important;font-size:16px!important;font-weight:900!important;min-height:46px;flex:1;border:1px solid #c4b5fd!important}
+#unifiedFilter16417 #preCancel1642{background:#475569!important;color:#fff!important;min-height:46px}
+#unifiedFilter16417 #preCancel1642:disabled{display:none}
+#unifiedFilter16417 .sfProgress{border:0!important;padding:0!important;margin:2px 0!important;font-size:12px}
+#unifiedFilter16417 progress{width:100%;height:10px;display:block;margin:8px 0}
+#unifiedFilter16417 .ufAIMode{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#unifiedFilter16417 .ufAIMode>label{max-width:100%}
+#unifiedFilter16417 #lblAiCapitalOpt{padding:9px 11px!important;min-height:40px}
+#unifiedFilter16417 .ufInfo{font-size:11px;color:#eed699;line-height:1.5}
+@media(max-width:760px){#unifiedFilter16417 .ufGrid{grid-template-columns:1fr}#unifiedFilter16417{padding:11px}#unifiedFilter16417 .ufTitle{font-size:16px}}
+@media(max-width:380px){#unifiedFilter16417 #aiPre1642 .sfFields{grid-template-columns:1fr!important}}
+</style>
 </head>
 <body class="min-h-screen p-3 md:p-5">
 
@@ -273,8 +316,8 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.16 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
-<div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V16.4.16</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="officialChoiceStatus1645" class="text-amber-300 font-bold" aria-live="polite"></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
+  <div id="layout164"><label for="layoutSelect164">V16.4.19 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+<div class="my-2 p-3 rounded border border-indigo-500 text-xs space-y-2" id="dev15Panel" style="display:none"><b class="text-indigo-300">開發者遠端控制 V16.4.19</b> <button type="button" onclick="document.getElementById('dev15Panel').style.display='none'" class="float-right px-3 py-1 bg-slate-700 rounded">關閉 ×</button><div class="flex flex-wrap gap-2"><input id="dev15User" autocomplete="username" placeholder="開發者帳號" class="bg-slate-800 p-2 rounded w-36"><span class="inline-flex items-center gap-1"><input id="dev15Password" type="password" autocomplete="current-password" placeholder="密碼" class="bg-slate-800 p-2 rounded w-36"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev15Password\',this)">顯示 👁</button></span><button onclick="dev15Login(false)" class="bg-indigo-700 rounded p-2">開發者登入</button><button onclick="dev15Login(true)" class="bg-indigo-700 rounded p-2">本機登入並監控</button></div><div id="officialChoiceStatus1645" class="text-amber-300 font-bold" aria-live="polite"></div><div id="dev151Actions" style="display:none!important" class="flex flex-wrap gap-2"><button onclick="dev15Publish()" class="bg-emerald-800 rounded p-2">發布目前策略至 LINE</button><button onclick="dev15Pull(true)" class="bg-slate-700 rounded p-2">讀取正式策略</button><button onclick="dev15Logout()" class="bg-slate-700 rounded p-2">登出</button></div><div id="dev151Credentials" style="display:none!important" class="flex flex-wrap gap-2"><input id="dev151NewUser" placeholder="新帳號" class="bg-slate-800 p-2 rounded"><span class="inline-flex items-center gap-1"><input id="dev151Old" type="password" placeholder="目前密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Old\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151New" type="password" placeholder="新密碼（至少12字）" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151New\',this)">顯示 👁</button></span><span class="inline-flex items-center gap-1"><input id="dev151Confirm" type="password" placeholder="確認新密碼" class="bg-slate-800 p-2 rounded"><button type="button" class="bg-slate-700 rounded px-2 py-2" aria-pressed="false" onclick="toggle152(\'dev151Confirm\',this)">顯示 👁</button></span><button onclick="change151()" class="bg-indigo-700 p-2 rounded">修改帳密</button></div><div id="dev15Status" class="text-amber-300">未登入；一般分析不影響 LINE</div></div>
 
   <!-- 策略說明三步驟卡片 (可一鍵收合/展開) -->
   <div class="max-w-[1440px] mx-auto mb-2 flex items-center justify-between bg-[#111827] border border-slate-800 rounded-xl px-3.5 py-2">
@@ -956,7 +999,7 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
 <select id="simVolumeBasis164" style="background:#0f172a" aria-label="成交量基準"><option value="buy">買進當日</option><option value="key">關鍵K當日</option><option value="avg">買進前5日均量</option></select>
 <input id="simVolumeLow164" type="number" min="0" value="1000" aria-label="成交量下限或單一門檻" style="width:7em;background:#0f172a"/><input id="simVolumeHigh164" type="number" min="0" value="10000" aria-label="成交量上限" style="width:7em;background:#0f172a"/>
 <button type="button" onclick="applyVolume164()" style="padding:8px;background:#6d28d9;border-radius:6px">套用篩選／重算</button><small id="simVolumeNote164" style="width:100%">不限成交量；關鍵K不存在時不納入該基準。</small></div>
-<section id="aiPre1642" aria-label="AI 智慧股票篩選"><header class="sfHead"><strong>AI 智慧股票篩選</strong><span>同步 A～G 策略及股池</span></header><p class="sfHint">以目前市場條件篩選標的，沿用上次最佳參數並重新分配資金；不是以歷史買進日條件回測。</p><div class="sfGrid"><div class="sfGroup"><h3>01　成交量條件（張）</h3><div class="sfFields"><label>成交量基準<select id="preBasis1642"><option value="today">當日即時成交量</option><option value="1">前一交易日</option><option value="5">近5日均量</option><option value="10">近10日均量</option><option value="20" selected>近20日均量</option></select></label><label>比較方式<select id="preMode1642"><option value="all">不限</option><option value="min">大於等於</option><option value="lt">小於</option><option value="max">小於等於</option><option value="range">區間</option></select></label><label id="sfVolLo">門檻／下限<input id="preLo1642" type="number" min="0" step="1" value="500"></label><label id="sfVolHi">成交量上限<input id="preHi1642" type="number" min="0" step="1" value="10000"></label></div></div><div class="sfGroup"><h3>02　目前股價區間（元）</h3><div class="sfFields"><label>最低股價<input id="priceLo48" type="number" min="0" step="any" placeholder="不限"></label><label>最高股價<input id="priceHi48" type="number" min="0" step="any" placeholder="不限"></label></div><p class="sfHint">空白代表不限；上下限皆包含等於。</p></div></div><div class="sfSummary"><strong>03　待套用條件</strong><div id="sfSummaryText" aria-live="polite"></div></div><div class="sfActions"><button id="preApply1642" type="button" onclick="applyPre1642()">套用篩選／自動重算</button><button id="preCancel1642" type="button" onclick="preCancel1642=true" disabled>中斷快速重算</button></div><div class="sfProgress"><strong>運算狀態</strong><progress id="preProgress1642" max="100" value="0"></progress><div id="preStatus1642" role="status" aria-live="polite">等待套用篩選</div></div></section>
+<section id="aiPre1642" aria-label="AI 智慧股票篩選"><header class="sfHead"><strong>AI 智慧股票篩選</strong><span>同步 A～G 策略及股池</span></header><p class="sfHint">目前均量篩選：依最新行情選股，歷史平倉日量可能較低；若要檢查每筆進場量，請選「買進當日成交量」或「買進前5日均量」。股價仍依目前價格篩選。</p><div class="sfGrid"><div class="sfGroup"><h3>01　成交量條件（張）</h3><div class="sfFields"><label>成交量基準<select id="preBasis1642"><option value="today">當日即時成交量</option><option value="1">前一交易日</option><option value="5">近5日均量</option><option value="10">近10日均量</option><option value="20" selected>近20日均量（目前）</option><option value="buy">買進當日成交量（歷史逐筆）</option><option value="buy5">買進前5日均量（歷史逐筆）</option></select></label><label>比較方式<select id="preMode1642"><option value="all">不限</option><option value="min">大於等於</option><option value="lt">小於</option><option value="max">小於等於</option><option value="range">區間</option></select></label><label id="sfVolLo">門檻／下限<input id="preLo1642" type="number" min="0" step="1" value="500"></label><label id="sfVolHi">成交量上限<input id="preHi1642" type="number" min="0" step="1" value="10000"></label></div></div><div class="sfGroup"><h3>02　目前股價區間（元）</h3><div class="sfFields"><label>最低股價<input id="priceLo48" type="number" min="0" step="any" placeholder="不限"></label><label>最高股價<input id="priceHi48" type="number" min="0" step="any" placeholder="不限"></label></div><p class="sfHint">空白代表不限；上下限皆包含等於。</p></div></div><div class="sfSummary"><strong>03　待套用條件</strong><div id="sfSummaryText" aria-live="polite"></div></div><div class="sfActions"><button id="preApply1642" type="button" onclick="applyPre1642()">套用篩選／自動重算</button><button id="preCancel1642" type="button" onclick="preCancel1642=true" disabled>中斷快速重算</button></div><div class="sfProgress"><strong>運算狀態</strong><progress id="preProgress1642" max="100" value="0"></progress><div id="preStatus1642" role="status" aria-live="polite">等待套用篩選</div></div></section>
 <label>AI 運算模式 <select id="aiMode48" class="bg-slate-800"><option value="smart">智慧擴大尋優</option><option value="quick">快速尋優</option><option value="fresh">強制擴大尋優</option></select></label><label id="lblAiCapitalOpt" class="inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-0.5 rounded bg-slate-800 hover:bg-purple-900/60 border border-purple-400/50 text-purple-200 font-bold transition shadow-sm">
                   <input type="checkbox" id="chkAiCapitalOpt" onchange="toggleAiCapitalStrategyOptimizer()"
                          class="rounded bg-slate-900 border-purple-400 text-purple-500 focus:ring-0" />
@@ -5034,7 +5077,32 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
     function readPre1642(){const mode=preId1642('preMode1642').value,basis=preId1642('preBasis1642').value,lo=Number(preId1642('preLo1642').value),hi=Number(preId1642('preHi1642').value);if(mode!=='all'&&(!preId1642('preLo1642').value||!Number.isFinite(lo)||lo<0||(mode==='range'&&(!preId1642('preHi1642').value||!Number.isFinite(hi)||hi<lo))))throw Error('成交量門檻無效');const priceLo=Number(preId1642("priceLo48").value||0),priceHi=Number(preId1642("priceHi48").value||0);if(priceLo<0||priceHi<0||(priceHi&&priceHi<priceLo))throw Error("股價區間無效");return {mode,basis,lo,hi,priceLo,priceHi};}
     function preMatches1642(v,c){return c.mode==='all'||(Number.isFinite(v)&&v>=0&&(c.mode==='min'?v>=c.lo:c.mode==='lt'?v<c.lo:c.mode==='max'?v<=c.lo:v>=c.lo&&v<=c.hi));}
     function preValue1642(stock,c){if(c.basis==='today')return stock.todayVol==null?NaN:Number(stock.todayVol);const bars=buildStockDailyBarsWithToday(stock),day=lineV14Day(),n=Number(c.basis),vs=bars.filter(b=>b.date!=='今日'&&b.date<day).slice(-n).map(b=>b.vol);return vs.length===n&&vs.every(v=>Number.isFinite(v)&&v>=0)?vs.reduce((a,b)=>a+b,0)/n:NaN;}
-    function stockMatch48(st,c=preCfg1642){const p=Number(st.todayPrice||st.yestClose);return ((!c.priceLo&&!c.priceHi)||(p>0&&p>=(c.priceLo||0)&&(!c.priceHi||p<=c.priceHi)))&&preMatches1642(c.mode==='all'?0:preValue1642(st,c),c);}
+    function stockMatch48(st,c=preCfg1642){const p=Number(st.todayPrice||st.yestClose);const historical=['buy','buy5'].includes(String(c.basis));return ((!c.priceLo&&!c.priceHi)||(p>0&&p>=(c.priceLo||0)&&(!c.priceHi||p<=c.priceHi)))&&(historical||preMatches1642(c.mode==='all'?0:preValue1642(st,c),c));}
+    // V16.4.18：歷史入場量必須逐筆按買進日驗證，不能用今天的成交量代替。
+    function historicalEntryVolume16418(stock,trade,basis){
+      if(!stock||!trade?.buyDate)return NaN;
+      const date=String(trade.buyDate).slice(0,10).replace(/\//g,'-');
+      const bars=(Array.isArray(stock.history)&&stock.history.length?stock.history:stock.realBars||[]);
+      const idx=bars.findIndex(b=>String(b.date==='今日'?stock.latestTradeDate:b.date).slice(0,10).replace(/\//g,'-')===date);
+      if(idx<0)return NaN;
+      if(basis==='buy'){const v=Number(bars[idx].vol);return Number.isFinite(v)&&v>=0?v:NaN;}
+      if(basis==='buy5'){
+        if(idx<5)return NaN;
+        const previous=bars.slice(idx-5,idx).map(b=>Number(b.vol));
+        return previous.every(v=>Number.isFinite(v)&&v>=0)?previous.reduce((a,b)=>a+b,0)/5:NaN;
+      }
+      return NaN;
+    }
+    function smartEntryEvents16418(events,c=preCfg1642){
+      if(c.mode==='all'||!['buy','buy5'].includes(String(c.basis)))return events;
+      const stocks=new Map(rawAllLoadedStocks.map(st=>[String(st.code),st]));
+      return events.filter(t=>preMatches1642(historicalEntryVolume16418(stocks.get(String(t.code)),t,c.basis),c));
+    }
+    function smartBasisVolume16418(stock,trade,c=preCfg1642){
+      if(c.mode==='all'||!stock)return NaN;
+      return ['buy','buy5'].includes(String(c.basis))?historicalEntryVolume16418(stock,trade,c.basis):preValue1642(stock,c);
+    }
+    function smartBasisName16418(c=preCfg1642){return ({today:'當日即時成交量','1':'前一交易日量','5':'目前近5日均量','10':'目前近10日均量','20':'目前近20日均量',buy:'買進當日量',buy5:'買進前5日均量'})[String(c.basis)]||'成交量';}
     function prePool1642(c){return rawAllLoadedStocks.filter(st=>stockMatch48(st,c)&&matchesSimSectorFilter(st,getSelectedSimSectors()));}
     function preHash1642(v){let a=2166136261,b=5381;const x=JSON.stringify(v)||'';for(let i=0;i<x.length;i++){a=Math.imul(a^x.charCodeAt(i),16777619);b=Math.imul(b,33)^x.charCodeAt(i);}return (a>>>0)+':'+(b>>>0);}
     function preOpts1642(sc,pool){return {requireMa20Up:!!sc.reqMaUp,requireSolidRedK:!!sc.reqRed,useGainRange:true,minGain:sc.minG,maxGain:sc.maxG,volOp:'GTE',validVolThreshold:sc.minV,_prefilteredPool:pool,_preExplicit1642:true};}
@@ -5343,7 +5411,7 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
       }
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = applyOutlierTrimToEvents(filterVolume164(capitalWindowEvents(events,startDate,endDate)), trimN, includeFees);
+      const trimRes = applyOutlierTrimToEvents(smartEntryEvents16418(filterVolume164(capitalWindowEvents(events,startDate,endDate))), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const feeRate = includeFees ? 0.001425 * 0.6 : 0;
       const taxRate = includeFees ? 0.003 : 0;
@@ -5552,6 +5620,8 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
       document.getElementById('capitalSimBody')?.classList.remove('hidden','v161-fold');
       simTableMode='SIM';
       await selectAiOptimizedCapitalStrategy(key);
+      // Only an explicit click on an AI capital strategy may synchronize the official LINE strategy.
+      scheduleOfficialSync16419(key);
       const wrap=document.getElementById('simTradesTableWrap');
       if(wrap?.classList.contains('hidden'))toggleSimTradesTable();
       wrap?.classList.remove('v161-fold');
@@ -5868,19 +5938,77 @@ async function change151(){const ids=['dev151NewUser','dev151Old','dev151New','d
 const aiOfficialKey164='w-ai-official-choice-v1645';
 const aiOfficialCapitalIds164=new Set(['simInitCapitalInput','simStartDateInput','simEndDateInput','simLotModeSelect','simPerStockBudgetInput','simProfitRuleSelect','simWithdrawValInput','simIncludeFeesChk','simTrimTopWinnersSelect']);
 let pendingOfficial1645=null;try{const v=JSON.parse(localStorage.getItem(aiOfficialKey164)||'null');if(v&&dev15Keys.includes(v.strategy))pendingOfficial1645=v;}catch(e){}
-function paintOfficial1645(){const el=document.getElementById('officialChoiceStatus1645');if(!el)return;const a=pendingOfficial1645?.strategy,b=dev15Profile?.strategy;el.textContent='實戰待發布：'+(a?getStrategyDisplayName(a):'尚未選擇')+' ｜ LINE 正式：'+(b?getStrategyDisplayName(b)+' · v'+dev15Rev:'尚未讀取')+(a&&b&&a!==b?' ｜ 尚未發布目前選擇':'');}
+function paintOfficial1645(){
+ const el=document.getElementById('officialChoiceStatus1645');if(!el)return;
+ const a=pendingOfficial1645?.strategy,b=dev15Profile?.strategy;
+ const diff=!!a&&!!b&&a!==b;
+ let msg='實戰選擇：'+(a?getStrategyDisplayName(a):'尚未選擇')+' ｜ LINE 後台正式：'+(b?getStrategyDisplayName(b)+' · v'+dev15Rev:'尚未讀取');
+ if(officialSyncState16419==='syncing')msg+=' ｜ 正在同步並核對後台…';
+ else if(officialSyncState16419==='login')msg+=' ｜ 尚未同步：請先登入開發者';
+ else if(officialSyncState16419==='error')msg+=' ｜ ⚠ 同步失敗，正式策略仍以後台為準';
+ else if(diff)msg+=' ｜ ⚠ 目前選擇尚未發布';
+ else if(a&&b&&a===b)msg+=' ｜ ✓ 策略一致';
+ el.textContent=msg;
+}
 function rememberAiOfficial164(key){const a=dev15Capture();if(a.strategy!==key)return;pendingOfficial1645=JSON.parse(JSON.stringify(a));try{localStorage.setItem(aiOfficialKey164,JSON.stringify(pendingOfficial1645));}catch(e){showToast('實戰策略已留於記憶體，永久儲存失敗','error');}paintOfficial1645();}
+
+// V16.4.19: an explicit A-G capital strategy click is the source of the official LINE profile.
+// Background AI completion, page loads and unrelated pool browsing never publish.
+let officialSyncState16419='idle',officialSessionChoice16419=null,officialSyncTicket16419=0;
+let officialSyncTimer16419=null,officialSyncQueue16419=Promise.resolve();
+function sameOfficialProfile16419(a,b){
+ if(!a||!b)return false;
+ return a.strategy===b.strategy&&JSON.stringify(a.fields)===JSON.stringify(b.fields)
+   &&JSON.stringify(a.sectors)===JSON.stringify(b.sectors)
+   &&JSON.stringify(a.manual)===JSON.stringify(b.manual);
+}
+function scheduleOfficialSync16419(key){
+ if(isOfficialEngine16416||!dev15Keys.includes(key))return;
+ if(currentExitStrategy!==key)return;
+ if(pendingOfficial1645?.strategy!==key)rememberAiOfficial164(key);
+ officialSessionChoice16419=key;
+ const ticket=++officialSyncTicket16419;
+ if(officialSyncTimer16419)clearTimeout(officialSyncTimer16419);
+ if(!dev15Token){officialSyncState16419='login';paintOfficial1645();return;}
+ officialSyncState16419='syncing';paintOfficial1645();
+ // Collapse rapid repeated selections, and serialize network writes so an older choice cannot win.
+ officialSyncTimer16419=setTimeout(()=>{
+   officialSyncQueue16419=officialSyncQueue16419.catch(()=>{}).then(async()=>{
+     if(ticket!==officialSyncTicket16419||!dev15Token||currentExitStrategy!==key)return;
+     const tokenAtStart=dev15Token;
+     try{
+       if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('AI／篩選運算尚未結束');
+       const choice=officialChoice164();
+       if(choice.strategy!==key)throw Error('實戰選擇已改變');
+       if(!sameOfficialProfile16419(choice,dev15Profile))await dev15Req('profile',choice);
+       const checked=await dev15Req('profile');
+       if(checked.profile?.strategy!==key||!sameOfficialProfile16419(checked.profile,choice))
+         throw Error('後台策略或參數核對不一致');
+       if(tokenAtStart!==dev15Token)return;
+       dev15Profile=checked.profile;dev15Rev=checked.rev||0;
+       if(ticket!==officialSyncTicket16419){officialSyncState16419='syncing';paintOfficial1645();return;}
+       officialSyncState16419='idle';paintOfficial1645();
+       dev15Status('✅ 已同步 LINE 正式策略：'+getStrategyDisplayName(key)+' · v'+dev15Rev);
+     }catch(e){
+       if(tokenAtStart!==dev15Token||ticket!==officialSyncTicket16419)return;
+       officialSyncState16419='error';paintOfficial1645();
+       dev15Status('❌ LINE 正式策略同步失敗：'+e.message+'；請核對後台，或手動按「發布目前策略至 LINE」');
+     }
+   });
+ },350);
+}
+
 function officialChoice164(){if(!pendingOfficial1645||!dev15Keys.includes(pendingOfficial1645.strategy))throw Error('請先在實戰資金模擬試算選擇策略');const current=dev15Capture(),a=JSON.parse(JSON.stringify(pendingOfficial1645));for(const [id,value] of Object.entries(current.fields)){if(id.startsWith('line')||aiOfficialCapitalIds164.has(id)||id.startsWith('simVolume')||id==='smartFilter48'||(a.strategy===current.strategy&&id==='simPrioritySelect'))a.fields[id]=value;}a.sectors=current.sectors;if(a.strategy===current.strategy)a.manual=current.manual;return a;}
-function restoreOfficialVolume164(fields){if(fields.smartFilter48){const c=JSON.parse(fields.smartFilter48);if(!c||!['all','min','max','lt','range'].includes(c.mode)||!['today','1','5','10','20'].includes(String(c.basis)))throw Error('正式策略的成交量條件無效，請重新發布');preCfg1642=c;}else preCfg1642={mode:'all',basis:'20',lo:500,hi:10000};const ids=['simVolumeMode164','simVolumeBasis164','simVolumeLow164','simVolumeHigh164'];if(!ids.every(id=>fields[id]!==undefined))return;volume164={mode:fields[ids[0]],basis:fields[ids[1]],lo:Number(fields[ids[2]]),hi:Number(fields[ids[3]])};const e=document.getElementById('simVolumeNote164');if(e)e.textContent=volume164.mode==='all'?'不限成交量':'正式成交量條件已套用';}
+function restoreOfficialVolume164(fields){if(fields.smartFilter48){const c=JSON.parse(fields.smartFilter48);if(!c||!['all','min','max','lt','range'].includes(c.mode)||!['today','1','5','10','20','buy','buy5'].includes(String(c.basis)))throw Error('正式策略的成交量條件無效，請重新發布');preCfg1642=c;}else preCfg1642={mode:'all',basis:'20',lo:500,hi:10000};const ids=['simVolumeMode164','simVolumeBasis164','simVolumeLow164','simVolumeHigh164'];if(!ids.every(id=>fields[id]!==undefined))return;volume164={mode:fields[ids[0]],basis:fields[ids[1]],lo:Number(fields[ids[2]]),hi:Number(fields[ids[3]])};const e=document.getElementById('simVolumeNote164');if(e)e.textContent=volume164.mode==='all'?'不限成交量':'正式成交量條件已套用';}
 async function monitorStatus164(){try{const r=await dev15Req('monitor161');const e=document.getElementById('monitorStatus164');if(e)e.textContent='後台：'+(r.engineVersion==='16.4.16'?(r.status||'等待監控'):'前後端版本不符，請更新 C:\\Yfinance 內的 index.js 與 index.html')+' ｜ LINE：'+(r.line?.status||'尚未發送')+' ｜成功 '+(r.line?.accepted||0)+'／失敗 '+(r.line?.failed||0);}catch(e){const el=document.getElementById('monitorStatus164');if(el)el.textContent='後台狀態讀取失敗：'+e.message;}}
 const dev15Status=t=>{document.getElementById('dev15Status').textContent=t;paintOfficial1645();};
 function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}Object.assign(fields,{simVolumeMode164:volume164.mode,simVolumeBasis164:volume164.basis,simVolumeLow164:String(volume164.lo),simVolumeHigh164:String(volume164.hi),smartFilter48:JSON.stringify(preCfg1642)});return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
 async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.error||('HTTP '+r.status));}return r.json();}
 async function dev153LocalLogin(){const r=await fetch('http://127.0.0.1:3105/local-monitor',{method:'POST',cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；請發布策略或讀取正式策略');}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
-async function dev15Publish(){const button=document.querySelector('[onclick="dev15Publish()"]');try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('請等待 AI／篩選完成');const choice=officialChoice164();if(!confirm('發布實戰選擇 '+getStrategyDisplayName(choice.strategy)+' 至正式 LINE 監控？發布本身不會直接群發；後台會依正式策略檢查當日訊號。'))return;if(button)button.disabled=true;const r=await dev15Req('profile',choice);const verified=await dev15Pull(true);if(!verified||verified.rev!==r.rev||verified.profile?.strategy!==choice.strategy||JSON.stringify(verified.profile.fields)!==JSON.stringify(choice.fields))throw Error('發布後未能核對正式策略，請按讀取正式策略確認');await monitorStatus164();dev15Status('已發布並核對 '+getStrategyDisplayName(verified.profile.strategy)+' · v'+verified.rev);}catch(e){dev15Status('發布未確認：'+e.message);}finally{if(button)button.disabled=false;}}
+async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；可在實戰資金模擬點選 A～G 自動同步 LINE');if(officialSessionChoice16419&&pendingOfficial1645?.strategy===officialSessionChoice16419&&currentExitStrategy===officialSessionChoice16419)scheduleOfficialSync16419(officialSessionChoice16419);}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
+async function dev15Publish(){const button=document.querySelector('[onclick="dev15Publish()"]');try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('請等待 AI／篩選完成');const choice=officialChoice164();if(!confirm('發布實戰選擇 '+getStrategyDisplayName(choice.strategy)+' 至正式 LINE 監控？發布本身不會直接群發；後台會依正式策略檢查當日訊號。'))return;if(button)button.disabled=true;const r=await dev15Req('profile',choice);const verified=await dev15Pull(true);if(!verified||verified.rev!==r.rev||verified.profile?.strategy!==choice.strategy||JSON.stringify(verified.profile.fields)!==JSON.stringify(choice.fields))throw Error('發布後未能核對正式策略，請按讀取正式策略確認');await monitorStatus164();officialSyncState16419='idle';dev15Status('已發布並核對 '+getStrategyDisplayName(verified.profile.strategy)+' · v'+verified.rev);}catch(e){dev15Status('發布未確認：'+e.message);}finally{if(button)button.disabled=false;}}
 async function dev15Pull(force){if(!dev15Token)return null;try{const r=await dev15Req('profile');dev15Profile=r.profile||null;dev15Rev=r.rev||0;dev15Status(r.profile?'後台正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+dev15Rev+'（不改變目前實戰選擇）':'尚無正式策略，請先發布');return r;}catch(e){dev15Status('正式策略讀取失敗：'+e.message);return null;}}
-async function dev15Logout(){try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
+async function dev15Logout(){officialSyncTicket16419++;if(officialSyncTimer16419)clearTimeout(officialSyncTimer16419);officialSyncState16419='login';try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
 setInterval(()=>{if(dev15Token)void monitorStatus164();},15000);
 setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);await lineProcessV14();}},15000);
 
@@ -5925,7 +6053,7 @@ function lineTradeAmount161(t,close=false){
  return '\n平倉張數：'+lots+' 張\n買進金額：'+money(buy*lots*1000)+'\n平倉金額：'+money(sell*lots*1000)+'\n實現損益（未扣費）：'+signed((sell-buy)*lots*1000)+(Number.isFinite(t.netProfit)?'\n估算淨損益（扣費）：'+signed(t.netProfit):'');
 }
     async function lineProcessV14(){
-      // V16.4.16: the backend is the sole automatic LINE sender. Retain this path only for the headless engine (which has no developer session).
+      // V16.4.18: the backend is the sole automatic LINE sender. Retain this path only for the headless engine (which has no developer session).
       if(!isOfficialEngine16416||!dev15Monitor)return;
       if(lineV14Busy)return;
       if(!dev15Profile){lineV14Status('尚未發布正式策略');return;}
@@ -5984,6 +6112,7 @@ function lineTradeAmount161(t,close=false){
       if(_lastAiCapitalResultsCache?.some(r=>r.strategyKey===k&&r.capitalSnapshot1644)){await openAiCapitalTrades164(k);return;}
       await selectComparisonStrategyCard(k);
       rememberAiOfficial164(k);
+      scheduleOfficialSync16419(k);
       paintManualCapitalCards();
     }
     function scheduleManualCapitalCards() { paintManualCapitalCards(); }
@@ -6036,7 +6165,7 @@ function lineTradeAmount161(t,close=false){
       });
 
       const trimN = getTrimTopWinnersCount();
-      const trimRes = frozen ? {filteredEvents:[],trimmedItems:_lastAiCapitalResultsCache.find(r=>r.strategyKey===currentExitStrategy).trimmedItems||[]} : applyOutlierTrimToEvents(filterVolume164(capitalWindowEvents(events,startDate,endDate)), trimN, includeFees);
+      const trimRes = frozen ? {filteredEvents:[],trimmedItems:_lastAiCapitalResultsCache.find(r=>r.strategyKey===currentExitStrategy).trimmedItems||[]} : applyOutlierTrimToEvents(smartEntryEvents16418(filterVolume164(capitalWindowEvents(events,startDate,endDate))), trimN, includeFees);
       const effEvents = trimRes.filteredEvents;
       const trimBadge = document.getElementById("simTrimmedInfoBadge");
       if (trimBadge) {
@@ -10745,13 +10874,14 @@ html.mobile164 #capitalOptions164 label{max-width:100%;flex-wrap:wrap}html.mobil
 (()=>{const label=document.getElementById('lblAiCapitalOpt');if(!label)return;const panel=document.createElement('div');panel.id='mobileCapitalProgress164';panel.setAttribute('aria-live','polite');panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><strong>AI 實戰尋優進度</strong><span id="mobileCapitalPct164">0%</span></div><progress id="mobileCapitalBar164" max="100" value="0"></progress><div id="mobileCapitalStage164"></div>';function place(){if(label.nextElementSibling!==panel)label.after(panel);}place();const obs=new MutationObserver(place);obs.observe(document.getElementById('capitalSimBody')||document.body,{childList:true,subtree:true});const old=document.getElementById('capitalAiProgress');if(old&&!old.classList.contains('hidden')){const bar=document.getElementById('capitalAiProgressBar');const txt=document.getElementById('capitalAiProgressText');showAiProgress('capital',bar.value,(txt.textContent||'').replace(/^\d+%\s*·\s*/,''));}})();
 </script>
 <script>
+let historyStrictSell16418=false;
 let historyLimit164=50, historySort164={key:'sellDate',dir:-1}, historyFilters164={};
-const historyCols164=[['seq','#'],['stock','股票／代號'],['netProfit','淨損益'],['pct','報酬率 (%)'],['realTradeNo164','第幾次買入'],['buyDate','買進日'],['buyPrice','買進價'],['sellDate','平倉日'],['sellPrice','平倉價'],['sellVolume412','平倉日成交量（張）'],['lots','張數'],['totalCost','投入本金'],['holdingDays','持有天數'],['reason','出場原因']];
+const historyCols164=[['seq','#'],['stock','股票／代號'],['netProfit','淨損益'],['pct','報酬率 (%)'],['realTradeNo164','第幾次買入'],['buyDate','買進日'],['buyPrice','買進價'],['sellDate','平倉日'],['sellPrice','平倉價'],['sellVolume412','平倉日成交量（張）'],['volumeBasis16418','本次篩選基準量（張）'],['lots','張數'],['totalCost','投入本金'],['holdingDays','持有天數'],['reason','出場原因']];
 function historyDate412(v){return String(v||'').slice(0,10).replace(/\//g,'-');}
 function historySellVolume412(t,stocks){const st=stocks.get(String(t.code)),date=historyDate412(t.sellDate);if(!st||!date)return null;const bars=st.realBars||st.history||[];const bar=bars.find(b=>historyDate412(b.date==='今日'?st.latestTradeDate:b.date)===date);const v=bar?.vol;return v!=null&&v!==''&&Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;}
-function historyRows164(rows,day){const stocks=new Map(rawAllLoadedStocks.map(st=>[String(st.code),st]));return (rows||[]).filter(t=>t.isClosed&&t.sellDate&&historyDate412(t.sellDate)<historyDate412(day)).sort((a,b)=>String(b.sellDate).localeCompare(String(a.sellDate))||String(b.buyDate).localeCompare(String(a.buyDate))).map((t,i)=>({...t,seq:i+1,stock:`${t.code} ${t.name||''}`,sellVolume412:historySellVolume412(t,stocks),sellPrice:t.exitOrNowPrice??t.curP??t.sellPrice,pct:t.netPct??(Number(t.totalCost)>0?Number(t.netProfit)/Number(t.totalCost)*100:null),reason:t.exitReason||t.customRuleText||'已平倉'}));}
+function historyRows164(rows,day){const stocks=new Map(rawAllLoadedStocks.map(st=>[String(st.code),st]));return (rows||[]).filter(t=>t.isClosed&&t.sellDate&&historyDate412(t.sellDate)<historyDate412(day)).sort((a,b)=>String(b.sellDate).localeCompare(String(a.sellDate))||String(b.buyDate).localeCompare(String(a.buyDate))).map((t,i)=>({...t,seq:i+1,stock:`${t.code} ${t.name||''}`,sellVolume412:historySellVolume412(t,stocks),volumeBasis16418:smartBasisVolume16418(stocks.get(String(t.code)),t),sellPrice:t.exitOrNowPrice??t.curP??t.sellPrice,pct:t.netPct??(Number(t.totalCost)>0?Number(t.netProfit)/Number(t.totalCost)*100:null),reason:t.exitReason||t.customRuleText||'已平倉'}));}
 function historyMatch164(v,q){q=String(q||'').trim().toLowerCase();if(!q)return true;const m=q.match(/^(>=|<=|>|<|=)\s*(-?\d+(?:\.\d+)?)$/);if(m){if(v==null||v===''||!Number.isFinite(Number(v)))return false;const a=Number(v),b=Number(m[2]);return m[1]==='>='?a>=b:m[1]==='<='?a<=b:m[1]==='>'?a>b:m[1]==='<'?a<b:a===b;}return String(v??'').toLowerCase().includes(q.replace(/(20\d{2})\/(\d{2})\/(\d{2})/g,'$1-$2-$3'));}
-function historyQuery164(rows,query,filters,sort){return rows.filter(t=>historyMatch164(t.stock,query)&&Object.entries(filters).every(([k,v])=>historyMatch164(t[k],v))).sort((a,b)=>{let x=a[sort.key],y=b[sort.key];if(x==null||y==null)return x==null?(y==null?0:1):-1;const numeric=!['stock','buyDate','sellDate','reason'].includes(sort.key);return sort.dir*(numeric?Number(x)-Number(y):String(x).localeCompare(String(y),'zh-Hant'))||a.seq-b.seq;});}
+function historyQuery164(rows,query,filters,sort){return rows.filter(t=>historyMatch164(t.stock,query)&&Object.entries(filters).every(([k,v])=>historyMatch164(t[k],v))&&(!historyStrictSell16418||preCfg1642.mode==='all'||preMatches1642(t.sellVolume412,preCfg1642))).sort((a,b)=>{let x=a[sort.key],y=b[sort.key];if(x==null||y==null)return x==null?(y==null?0:1):-1;const numeric=!['stock','buyDate','sellDate','reason'].includes(sort.key);return sort.dir*(numeric?Number(x)-Number(y):String(x).localeCompare(String(y),'zh-Hant'))||a.seq-b.seq;});}
 function renderHistoryClosed164(){
  const panel=document.getElementById('historyClosed164'),body=document.getElementById('historyClosedBody164'),wrap=document.getElementById('simTradesTableWrap');if(!panel||!body||!wrap)return;
  const hidden=wrap.classList.contains('hidden');panel.classList.toggle('hidden',hidden);if(hidden)return;
@@ -10761,20 +10891,26 @@ function renderHistoryClosed164(){
  const rows=historyQuery164(all,document.getElementById('historySearch164')?.value,historyFilters164,historySort164);
  const money=n=>n!=null&&Number.isFinite(Number(n))?(Number(n)<0?'−$':Number(n)>0?'+$':'$')+Math.round(Math.abs(Number(n))).toLocaleString('en-US'):'—';
  const sum=k=>rows.reduce((a,t)=>a+(Number(t[k])||0),0),net=sum('netProfit'),wins=rows.filter(t=>Number(t.netProfit)>0).length,losses=rows.filter(t=>Number(t.netProfit)<0).length,cost=sum('totalCost');
- document.getElementById('historyClosedSummary164').textContent=`｜${simTableMode==='SIM'?getStrategyDisplayName(currentExitStrategy):'我的實際庫存'}｜${rows.length}/${all.length} 筆・${sum('lots')} 張・淨損益 ${money(net)}`;
+ document.getElementById('historyClosedSummary164').textContent=`｜${simTableMode==='SIM'?getStrategyDisplayName(currentExitStrategy):'我的實際庫存'}｜${rows.length}/${all.length} 筆${historyStrictSell16418&&preCfg1642.mode!=='all'?'（平倉日量檢視篩選）':''}・${sum('lots')} 張・淨損益 ${money(net)}`;
  if(!panel.open)return;
+ const historyBasisNote=document.getElementById('historyBasisNote16418');if(historyBasisNote)historyBasisNote.textContent=preCfg1642.mode==='all'?'目前未啟用成交量門檻':`目前篩選基準：${smartBasisName16418()}；平倉日量可能不同。額外平倉量篩選只影響此表，不改實戰收益。`;
  document.getElementById('historyStats164').textContent=`符合 ${rows.length} 筆｜獲利 ${wins} 筆｜虧損 ${losses} 筆｜持平 ${rows.length-wins-losses} 筆｜勝率 ${rows.length?(wins/rows.length*100).toFixed(1):'0.0'}%｜交易本金合計 ${money(cost)}｜本金加權報酬率 ${cost>0?(net/cost*100).toFixed(2)+'%':'—'}`;
  body.replaceChildren();
  const num=v=>v!=null&&Number.isFinite(Number(v))?Number(v).toFixed(2):'—';
- rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;tr.dataset.stockCode164=t.code;const vals=[rows.indexOf(t)+1,t.stock,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.realTradeNo164,dateOnly164(t.buyDate),num(t.buyPrice),dateOnly164(t.sellDate),num(t.sellPrice),t.sellVolume412==null?'—':t.sellVolume412.toLocaleString('zh-TW',{maximumFractionDigits:2}),t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(historyCols164[j][0]==='sellVolume412')td.style.color='#7dd3fc';if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,tr.id);});
+ rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;tr.dataset.stockCode164=t.code;const vals=[rows.indexOf(t)+1,t.stock,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.realTradeNo164,dateOnly164(t.buyDate),num(t.buyPrice),dateOnly164(t.sellDate),num(t.sellPrice),t.sellVolume412==null?'—':t.sellVolume412.toLocaleString('zh-TW',{maximumFractionDigits:2}),Number.isFinite(t.volumeBasis16418)?t.volumeBasis16418.toLocaleString('zh-TW',{maximumFractionDigits:2}):'—',t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(['sellVolume412','volumeBasis16418'].includes(historyCols164[j][0])){td.style.color='#7dd3fc';if(historyCols164[j][0]==='volumeBasis16418'&&preCfg1642.mode!=='all')td.title=smartBasisName16418()+'（本次套用依據）';};if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,tr.id);});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=historyCols164.length;td.textContent='沒有符合條件的歷史平倉交易';}
  document.getElementById('historyMore164').classList.toggle('hidden',rows.length<=historyLimit164);
 }
-(()=>{const panel=document.getElementById('historyClosed164'),table=panel.querySelector('table'),head=table.tHead.rows[0];const tools=document.createElement('div');tools.className='historyTools164';tools.innerHTML='<input id="historySearch164" type="search" placeholder="搜尋股票代號或名稱" aria-label="搜尋股票代號或名稱"><button type="button" id="historyReset164">清除篩選</button><label>排序 <select id="historySortField164"></select></label><button type="button" id="historySortDir164">由大／新到小／舊</button><details><summary>各欄位篩選（可輸入 &gt;100、&lt;0）</summary><div id="historyFilterGrid164"></div></details>';table.before(tools);const select=document.getElementById('historySortField164'),grid=document.getElementById('historyFilterGrid164');head.replaceChildren();function refresh(){historyLimit164=50;select.value=historySort164.key;document.getElementById('historySortDir164').textContent=historySort164.dir===-1?'由大／新到小／舊':'由小／舊到大／新';head.querySelectorAll('button').forEach(b=>b.textContent=b.dataset.name+(b.dataset.key===historySort164.key?(historySort164.dir===1?' ▲':' ▼'):' ↕'));renderHistoryClosed164();}for(const [key,name] of historyCols164){const opt=document.createElement('option');opt.value=key;opt.textContent=name;select.append(opt);const th=document.createElement('th'),btn=document.createElement('button');btn.type='button';btn.dataset.key=key;btn.dataset.name=name;btn.onclick=()=>{historySort164={key,dir:historySort164.key===key?-historySort164.dir:-1};refresh();};th.append(btn);head.append(th);const label=document.createElement('label');label.textContent=name;const inp=document.createElement('input');inp.dataset.key=key;inp.placeholder=['buyDate','sellDate'].includes(key)?'YYYY-MM-DD':'篩選';inp.oninput=()=>{historyFilters164[key]=inp.value;refresh();};label.append(inp);grid.append(label);}select.onchange=()=>{historySort164.key=select.value;refresh();};document.getElementById('historySortDir164').onclick=()=>{historySort164.dir*=-1;refresh();};document.getElementById('historySearch164').oninput=refresh;document.getElementById('historyReset164').onclick=()=>{historyFilters164={};document.getElementById('historySearch164').value='';grid.querySelectorAll('input').forEach(i=>i.value='');refresh();};refresh();})();
+(()=>{const panel=document.getElementById('historyClosed164'),table=panel.querySelector('table'),head=table.tHead.rows[0];const tools=document.createElement('div');tools.className='historyTools164';tools.innerHTML='<input id="historySearch164" type="search" placeholder="搜尋股票代號或名稱" aria-label="搜尋股票代號或名稱"><button type="button" id="historyReset164">清除篩選</button><label>排序 <select id="historySortField164"></select></label><button type="button" id="historySortDir164">由大／新到小／舊</button><label class="historySellFilter16418" title="僅篩選歷史平倉清單與清單小計；平倉日資料在進場時尚未知曉，不能用來重算實戰資金績效。"><input type="checkbox" id="historySellOnly16418">平倉日成交量也需符合門檻（僅檢視）</label><span class="historyBasisNote16418" id="historyBasisNote16418"></span><details><summary>各欄位篩選（可輸入 &gt;100、&lt;0）</summary><div id="historyFilterGrid164"></div></details>';table.before(tools);const select=document.getElementById('historySortField164'),grid=document.getElementById('historyFilterGrid164');head.replaceChildren();function refresh(){historyLimit164=50;select.value=historySort164.key;document.getElementById('historySortDir164').textContent=historySort164.dir===-1?'由大／新到小／舊':'由小／舊到大／新';head.querySelectorAll('button').forEach(b=>b.textContent=b.dataset.name+(b.dataset.key===historySort164.key?(historySort164.dir===1?' ▲':' ▼'):' ↕'));renderHistoryClosed164();}for(const [key,name] of historyCols164){const opt=document.createElement('option');opt.value=key;opt.textContent=name;select.append(opt);const th=document.createElement('th'),btn=document.createElement('button');btn.type='button';btn.dataset.key=key;btn.dataset.name=name;btn.onclick=()=>{historySort164={key,dir:historySort164.key===key?-historySort164.dir:-1};refresh();};th.append(btn);head.append(th);const label=document.createElement('label');label.textContent=name;const inp=document.createElement('input');inp.dataset.key=key;inp.placeholder=['buyDate','sellDate'].includes(key)?'YYYY-MM-DD':'篩選';inp.oninput=()=>{historyFilters164[key]=inp.value;refresh();};label.append(inp);grid.append(label);}select.onchange=()=>{historySort164.key=select.value;refresh();};document.getElementById('historySortDir164').onclick=()=>{historySort164.dir*=-1;refresh();};document.getElementById('historySearch164').oninput=refresh;
+const strictSell=document.getElementById('historySellOnly16418');
+strictSell.onchange=()=>{if(preCfg1642.mode==='all'&&strictSell.checked){strictSell.checked=false;showToast('請先套用成交量條件','info');return;}historyStrictSell16418=strictSell.checked;refresh();};
+const refreshBasis16418=()=>{const note=document.getElementById('historyBasisNote16418');if(note)note.textContent=preCfg1642.mode==='all'?'目前未啟用成交量門檻':`目前篩選基準：${smartBasisName16418()}；平倉日量可能不同。額外平倉量篩選只影響此表，不改實戰收益。`;};
+new MutationObserver(refreshBasis16418).observe(document.getElementById('preStatus1642'),{childList:true,subtree:true});refreshBasis16418();
+document.getElementById('historyReset164').onclick=()=>{historyStrictSell16418=false;strictSell.checked=false;historyFilters164={};document.getElementById('historySearch164').value='';grid.querySelectorAll('input').forEach(i=>i.value='');refresh();};refresh();})();
 document.getElementById('historyClosed164').addEventListener('toggle',()=>{if(document.getElementById('historyClosed164').open)renderHistoryClosed164();});
 document.getElementById('historyMore164').addEventListener('click',()=>{historyLimit164+=50;renderHistoryClosed164();});
 </script>
-<style>#historyClosed164 td,#historyClosed164 th{padding:6px;white-space:nowrap}#historyClosed164 tbody tr{border-top:1px solid #334155}html.mobile164 #historyClosed164 td{white-space:normal;overflow-wrap:anywhere}html.mobile164 #historyClosed164 td:nth-child(14){grid-column:1/-1}.historyTools164{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;align-items:center}.historyTools164 input,.historyTools164 select,.historyTools164 button{background:#182438;color:#fff;border:1px solid #64748b;border-radius:5px;padding:7px;max-width:100%;min-width:0}.historyTools164 details{flex-basis:100%}#historyFilterGrid164{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:7px}#historyFilterGrid164 label{display:grid;gap:3px;min-width:0}html.mobile164 .historyTools164 input,html.mobile164 .historyTools164 select,html.mobile164 .historyTools164 button{font-size:16px}#historyClosed164 th button{cursor:pointer}</style>
+<style>#historyClosed164 td,#historyClosed164 th{padding:6px;white-space:nowrap}#historyClosed164 tbody tr{border-top:1px solid #334155}html.mobile164 #historyClosed164 td{white-space:normal;overflow-wrap:anywhere}html.mobile164 #historyClosed164 td:nth-child(15){grid-column:1/-1}.historyTools164{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;align-items:center}.historyTools164 input,.historyTools164 select,.historyTools164 button{background:#182438;color:#fff;border:1px solid #64748b;border-radius:5px;padding:7px;max-width:100%;min-width:0}.historyTools164 details{flex-basis:100%}#historyFilterGrid164{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:7px}#historyFilterGrid164 label{display:grid;gap:3px;min-width:0}html.mobile164 .historyTools164 input,html.mobile164 .historyTools164 select,html.mobile164 .historyTools164 button{font-size:16px}#historyClosed164 th button{cursor:pointer} .historySellFilter16418{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:6px;border:1px solid #0e7490;border-radius:7px;padding:7px 9px;color:#a5f3fc;font-weight:700}.historySellFilter16418 input{accent-color:#06b6d4;min-width:16px;min-height:16px}.historyBasisNote16418{font-size:12px;color:#fcd34d;flex:1 1 100%}</style>
 <style>
 #simSearchTools164:not(.hidden){display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px;background:#142034;border:1px solid #60a5fa;border-radius:8px;color:#e2e8f0;font-size:13px} #simSearchTools164 input{flex:1 1 180px;min-width:0;background:#0b1120;color:white;border:1px solid #64748b;border-radius:6px;padding:8px} #simSearchTools164 button{padding:8px 12px;background:#334155;border-radius:6px} #simStockCount164{color:#93c5fd} html.mobile164 #simSearchTools164{font-size:18px} html.mobile164 #simSearchTools164 input{font-size:18px;flex-basis:150px} html.mobile164 #simSearchTools164 button{min-height:44px}
 </style><script>
@@ -10830,6 +10966,46 @@ function jumpComparisonPool164(key){
 function volumeText411(st){if(!st||st.todayVol==null||!Number.isFinite(Number(st.todayVol)))return '當日量：—';const d=String(st.latestTradeDate||'').slice(0,10);const n=Number(st.todayVol).toLocaleString('zh-TW',{maximumFractionDigits:2});return (d===lineV14Day()?'當日量：':d?d.replace(/-/g,'/')+' 量：':'最新量：')+n+' 張';}
 function refreshVolumeCells411(changed){const map=new Map((changed||rawAllLoadedStocks).map(st=>[String(st.code),st]));for(const el of document.querySelectorAll('.vol411')){const st=map.get(el.dataset.code);if(st){const v=volumeText411(st);if(el.textContent!==v)el.textContent=v;}}}
 (()=>{const specs=[['simTradesTableBody',1],['todayBuyBody163',1],['todayClosedBody162',0]];let queued=false;function decorate(){queued=false;const map=new Map(rawAllLoadedStocks.map(st=>[String(st.code),st]));for(const [id,index] of specs){const body=document.getElementById(id);for(const row of body.rows){const cell=row.cells[index];if(!cell||row.cells.length<2)continue;const code=row.dataset.stockCode164||cell.textContent.trim().match(/^[0-9]{4,6}[A-Z]?\b/)?.[0];if(!code)continue;let el=cell.querySelector('.vol411');if(!el){el=document.createElement('span');el.className='vol411';el.dataset.code=code;cell.append(el);}const text=volumeText411(map.get(code));if(el.textContent!==text)el.textContent=text;}}}function schedule(){if(!queued){queued=true;requestAnimationFrame(decorate);}}for(const [id] of specs){const body=document.getElementById(id);new MutationObserver(schedule).observe(body,{childList:true});}schedule();})();
+</script>
+
+<script id="unifiedFilter16417-script">
+(function(){
+  function initializeUnifiedFilter16417(){
+    const byId=id=>document.getElementById(id);
+    const old=byId('capitalOptions164'),smart=byId('aiPre1642');
+    if(!old||!smart||byId('unifiedFilter16417'))return;
+    const parent=old.parentNode;
+    const panel=document.createElement('section');panel.id='unifiedFilter16417';panel.setAttribute('aria-label','AI實戰條件整合');
+    panel.innerHTML='<div class="ufTitle">🎯 AI 實戰篩選與資金規則（統一設定）</div><p class="ufIntro">同一處設定股票類別、成交量、股價、交易費用及剔除獲利王。按「套用所有條件」後，沿用已完成的 AI 最佳參數，同步重新結算 A～G 及股池；完整尋優請使用原本的 AI 按鈕。</p><div class="ufGrid"><div class="ufCard" id="ufSector16417"><h3>01　股票類別（可複選）</h3><p class="ufHint">「全部」表示不限類股；分類也會套用至 AI 選股範圍。</p></div><div class="ufCard" id="ufMarket16417"><h3>02　成交量與股價條件</h3></div><div class="ufCard" id="ufRule16417"><h3>03　資金試算與風險設定</h3><p class="ufHint">費率、同日買進優先順序及剔除獲利王，都會影響資金模擬淨利。</p></div><div class="ufCard" id="ufAi16417"><h3>04　AI 尋優模式</h3><p class="ufHint">切換策略或套用條件不是重新尋找最佳參數；如要尋找新的最優策略，請啟動完整尋優。</p></div></div><div class="ufBottom" id="ufBottom16417"><div class="ufInfo">提醒：近5／10／20日均量是目前市場篩選，不等於歷史平倉日量。選「買進當日量」或「買進前5日均量」才會逐筆驗證歷史交易；股價區間仍為目前價格。</div></div>';
+    parent.insertBefore(panel,old);
+    function move(node,target,cls){if(!node)return;target.appendChild(node);if(cls)node.classList.add(cls);return node;}
+    const sector=byId('btnSimSectorAll')?.parentElement;
+    move(sector,byId('ufSector16417'),'ufSectorChoices');
+    const repeatSectorLabel=sector?.querySelector('span.font-semibold');if(repeatSectorLabel)repeatSectorLabel.hidden=true;
+    // Preserve all original IDs and direct event handlers.
+    move(smart,byId('ufMarket16417'));
+    const marketTitles=smart.querySelectorAll('.sfGroup h3');if(marketTitles[0])marketTitles[0].textContent='成交量基準與門檻（張）';if(marketTitles[1])marketTitles[1].textContent='目前股價上下限（元）';
+    move(byId('simIncludeFeesChk')?.closest('label'),byId('ufRule16417'),'ufSetting');
+    move(byId('simPrioritySelect')?.closest('label'),byId('ufRule16417'),'ufSetting');
+    move(byId('simTrimTopWinnersSelect')?.closest('label'),byId('ufRule16417'),'ufSetting');
+    move(byId('aiMode48')?.closest('label'),byId('ufAi16417'),'ufSetting');
+    move(byId('lblAiCapitalOpt'),byId('ufAi16417'),'ufSetting');
+    // The primary Apply button remains the same business-logic function (applyPre1642).
+    const summary=smart.querySelector('.sfSummary'),actions=smart.querySelector('.sfActions'),progress=smart.querySelector('.sfProgress');
+    move(summary,byId('ufBottom16417'));
+    const sumTitle=summary?.querySelector('strong');if(sumTitle)sumTitle.textContent='目前篩選條件摘要';
+    move(actions,byId('ufBottom16417'));
+    move(progress,byId('ufBottom16417'));
+    const btn=byId('preApply1642');if(btn)btn.textContent='⚡ 套用所有條件／同步 A～G 策略與股池';
+    // Legacy instant recalculation button duplicated the primary Apply action.
+    const legacyRecalc=[...old.querySelectorAll('button')].find(b=>b.textContent.includes('立即重算'));
+    if(legacyRecalc)legacyRecalc.hidden=true;
+    // Existing hidden historical-volume control must stay in the DOM for older saved profiles.
+    // It remains hidden; no duplicate visible filter is created.
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initializeUnifiedFilter16417,{once:true});
+  else initializeUnifiedFilter16417();
+})();
 </script>
 </body>
 </html>
