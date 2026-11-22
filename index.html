@@ -11638,5 +11638,51 @@ window.addEventListener('load',()=>{
   });
 });
 </script>
+<style id="aiBtnHoverTouch164">
+#lblAiFullOpt,#lblAiCapitalOpt,#preApply1642{
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease,border-color .16s ease!important;
+}
+#lblAiFullOpt:hover,#lblAiCapitalOpt:hover,#preApply1642:hover,
+#lblAiFullOpt.touch-hover-164,#lblAiCapitalOpt.touch-hover-164,#preApply1642.touch-hover-164{
+  transform:translateY(-2px) scale(1.012)!important;
+  border-color:#fde047!important;
+  filter:brightness(1.14)!important;
+  box-shadow:0 0 18px rgba(250,204,21,.6),0 6px 16px rgba(0,0,0,.45)!important;
+}
+#lblAiFullOpt:active,#lblAiCapitalOpt:active,#preApply1642:active,
+#lblAiFullOpt.touch-press-164,#lblAiCapitalOpt.touch-press-164,#preApply1642.touch-press-164{
+  transform:translateY(1px) scale(.985)!important;
+  filter:brightness(1.22)!important;
+  box-shadow:0 0 22px rgba(250,204,21,.8),inset 0 0 10px rgba(255,255,255,.22)!important;
+}
+</style>
+<script id="aiBtnHoverTouchScript164">
+(()=>{
+  const sel='#lblAiFullOpt,#lblAiCapitalOpt,#preApply1642';
+  const btns=()=>[...document.querySelectorAll(sel)];
+  const clearAll=()=>{for(const b of btns()){b.classList.remove('touch-hover-164','touch-press-164');}};
+  const hit=(x,y)=>document.elementFromPoint(x,y)?.closest?.(sel)||null;
+  const setHover=(target,press=false)=>{
+    for(const b of btns()){
+      const on=b===target;
+      b.classList.toggle('touch-hover-164',on);
+      b.classList.toggle('touch-press-164',on&&press);
+    }
+  };
+  document.addEventListener('touchstart',e=>{
+    const t=e.touches[0];if(!t)return;
+    const el=hit(t.clientX,t.clientY);
+    if(el)setHover(el,true);else clearAll();
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    const t=e.touches[0];if(!t)return;
+    const el=hit(t.clientX,t.clientY);
+    if(el)setHover(el,false);else clearAll();
+  },{passive:true});
+  document.addEventListener('touchend',()=>setTimeout(clearAll,120),{passive:true});
+  document.addEventListener('touchcancel',clearAll,{passive:true});
+})();
+</script>
 </body>
 </html>
