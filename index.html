@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.31｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.32｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -279,7 +279,7 @@ html body #aiPre1642 select,html body #aiPre1642 input[type=number]{appearance:n
 #dev15Panel .dev420Eyebrow{color:#a5b4fc;font-size:12px;font-weight:700}
 #dev15Panel .dev420Version{font-size:12px;color:#c4b5fd;background:#332259;border-radius:5px;padding:2px 7px}
 #dev15Panel .dev420Close{background:#243249;border:1px solid #475569;color:#dbeafe;padding:6px 12px;border-radius:8px;white-space:nowrap;flex-shrink:0}
-#dev15Panel .dev420Grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:11px;align-items:start}
+#dev15Panel .dev420Grid{display:grid;grid-template-columns:minmax(0,1fr);gap:11px;align-items:start}
 #dev15Panel .dev420Card{min-width:0;background:#131f33;border:1px solid #394b69;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;align-self:start}
 #dev15Panel .dev420Card h3{font-size:14px;font-weight:800;color:#f6d887;margin:0}
 #dev15Panel .dev420Num{display:inline-grid;place-items:center;font-size:11px;color:#a5d9ff;background:#19385b;border-radius:5px;padding:3px 6px;margin-right:5px}
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.31 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.32 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.31</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.32</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -403,12 +403,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       <div class="dev420Buttons"><button type="button" class="dev420Primary" onclick="dev15Login(false)">開發者登入</button><button type="button" onclick="dev15Login(true)">本機登入並監控</button></div>
       <div id="dev15Status" class="dev420Message" aria-live="polite">未登入；一般分析不影響 LINE</div>
     </section>
-    <section class="dev420Card" aria-label="策略發布">
-      <h3><span class="dev420Num">02</span> LINE 正式策略</h3>
-      <div id="officialChoiceStatus1645" class="dev420StrategyStatus" aria-live="polite">目前實戰選擇與 LINE 已發布策略，請登入後核對。</div>
-      <p class="dev420Hint">僅發布成功才變更正式策略；單純讀取不會覆蓋實戰選擇。</p>
-      <div id="dev151Actions" style="display:none!important" class="dev420Buttons"><button type="button" class="dev420Publish" onclick="dev15Publish()">發布目前策略至 LINE</button><button type="button" onclick="dev15Pull(true)">讀取正式策略</button><button type="button" onclick="dev15Logout()">登出</button></div>
-    </section>
+
   </div>
   <details class="dev420Credentials">
     <summary>🔒 帳號與密碼管理 <span>需要時再展開，不佔用平常操作空間</span></summary>
@@ -1115,6 +1110,12 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
                 <span id="simStatusNote" class="font-mono text-slate-300"></span>
               </div><section id="lineNotifyPanel" class="linePanel420" style="display:none" aria-label="LINE 交易通知">
   <div class="line420Head"><strong>📨 LINE 交易通知</strong><span class="line420Muted">只有正式發布的策略會產生通知</span></div>
+    <section class="dev420Card" aria-label="策略發布">
+      <h3>LINE 正式策略</h3>
+      <div id="officialChoiceStatus1645" class="dev420StrategyStatus" aria-live="polite">目前實戰選擇與 LINE 已發布策略，請登入後核對。</div>
+      <p class="dev420Hint">僅發布成功才變更正式策略；單純讀取不會覆蓋實戰選擇。</p>
+      <div id="dev151Actions" style="display:none!important" class="dev420Buttons"><button type="button" class="dev420Publish" onclick="dev15Publish()">發布為正式策略</button><button type="button" onclick="sendStrategyToFriends(this)">發送目前策略給全體好友</button><button type="button" onclick="dev15Pull(true)">讀取正式策略</button><button type="button" onclick="dev15Logout()">登出</button></div>
+    <p id="strategyBroadcastStatus" role="status"></p></section>
   <div class="line420Options">
     <label><input type="checkbox" id="lineEnabled" checked>啟用</label>
     <label><input type="checkbox" id="lineBUY" checked>買進</label>
@@ -1583,15 +1584,6 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       </div>
 
       <!-- 獨立於 K 線圖上方的 HUD 與快捷控制列（與 K 線完全分離，永不重疊） -->
-      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex flex-col items-stretch gap-2 h-auto shrink-0">
-        <div class="w-full min-w-0 flex flex-col gap-1">
-          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-0.5 w-full h-auto overflow-visible content-start">
-            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
-          </div>
-          <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
-            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
-          </div>
-        </div>
         <div id="chartFloatingControls" class="w-full shrink-0 flex flex-wrap items-center gap-1 bg-slate-900/95 border border-slate-700/80 rounded-lg p-1 shadow">
           <button type="button" onclick="zoomChart(-3)" title="放大 K 線（顯示較少根）"
                   class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-100 text-xs font-bold leading-none">＋</button>
@@ -1602,10 +1594,21 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           <button type="button" id="btnChartFullscreen" onclick="toggleChartFullscreen()" title="佔滿全螢幕放大 / 回復"
                   class="px-2 py-1 rounded bg-indigo-600/85 hover:bg-indigo-500 active:bg-indigo-400 text-white text-[11px] font-bold leading-none">⛶ 放大</button>
         </div>
+      <section id="tradeLedger164" aria-label="個股交易明細" class="bg-slate-950 border border-indigo-500/50 rounded-lg p-2 space-y-2"></section>
+      <div id="chartHudBar" class="bg-[#0b111d] border-x border-b border-slate-800 px-2.5 py-1.5 flex flex-col items-stretch gap-2 h-auto shrink-0">
+        <div class="w-full min-w-0 flex flex-col gap-1">
+          <div id="ohlcHud" class="bg-slate-900/90 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[11px] font-mono flex flex-wrap items-center gap-x-2.5 gap-y-0.5 w-full h-auto overflow-visible content-start">
+            <span class="text-slate-400">請將滑鼠移至 K 棒上查看開高低收、大戶敲進金額、本股內定值倍數與均價</span>
+          </div>
+          <div id="stale5mNotice" class="hidden bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-md px-2.5 py-1 text-[11px] font-medium">
+            ⚠️ 外部免費 5分K 來源目前僅提供至昨日真實有量明細，今日盤中 5分K 將於開盤連線後即時累積
+          </div>
+        </div>
+
       </div>
 
       <!-- 互動式 Canvas K 線圖 + 成交量副圖畫布區（預設拉長至 540px，並支援上下拖拉分隔線與底框縮放） -->
-      <section id="tradeLedger164" aria-label="個股交易明細" class="bg-slate-950 border border-indigo-500/50 rounded-lg p-2 space-y-2"></section>
+
       <div id="chartContainer" style="height: 540px;" class="relative bg-[#080c14] border-x border-b border-slate-800 rounded-b-xl overflow-hidden flex flex-col">
         <!-- 支援手機「長按」拖拉移動的懸浮圖例 -->
         <div id="floatingLegend" style="top: 8px; left: 10px;" title="電腦可直接拖曳；手機長按 0.35 秒即可抓住移動位置"
@@ -6262,6 +6265,29 @@ function dev15Capture(){const fields={};for(const id of dev15Ids){const e=docume
 async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.error||('HTTP '+r.status));}return r.json();}
 async function dev153LocalLogin(){const r=await fetch('http://127.0.0.1:3105/local-monitor',{method:'POST',cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
 async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；可在實戰資金模擬點選 A～G 自動同步 LINE');if(officialSessionChoice16419&&pendingOfficial1645?.strategy===officialSessionChoice16419&&currentExitStrategy===officialSessionChoice16419)scheduleOfficialSync16419(officialSessionChoice16419);}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
+async function sendStrategyToFriends(button){
+  const status=document.getElementById('strategyBroadcastStatus');
+  button.disabled=true;
+  try {
+    if(!dev15Token)throw Error('請先登入開發者帳號');
+    if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('請等待策略運算完成');
+    const choice=officialChoice164();
+    const name=getStrategyDisplayName(choice.strategy);
+    if(!confirm('發布「'+name+'」並傳送策略通知給 LINE 官方帳號全體好友？'))return;
+    status.textContent='正在核對正式策略…';
+    clearTimeout(officialSyncTimer16419);
+    await officialSyncQueue16419.catch(()=>{});
+    if(currentExitStrategy!==choice.strategy)throw Error('選擇已變更，請確認後重新發送');
+    const current=await dev15Req('profile');
+    const published=sameOfficialProfile16419(choice,current.profile)?current:await dev15Req('profile',choice);
+    if(currentExitStrategy!==choice.strategy)throw Error('選擇已變更，請確認後重新發送');
+    status.textContent='正在送交 LINE…';
+    await dev15Req('strategy-announcement',{rev:published.rev,strategy:choice.strategy});
+    status.textContent='LINE 已受理全體好友通知：'+name+' · v'+published.rev;
+    await dev15Pull(false);
+  }catch(e){status.textContent='群發未確認：'+e.message;}
+  finally{button.disabled=false;}
+}
 async function dev15Publish(){const button=document.querySelector('[onclick="dev15Publish()"]');try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('請等待 AI／篩選完成');const choice=officialChoice164();if(!confirm('發布實戰選擇 '+getStrategyDisplayName(choice.strategy)+' 至正式 LINE 監控？發布本身不會直接群發；後台會依正式策略檢查當日訊號。'))return;if(button)button.disabled=true;const r=await dev15Req('profile',choice);const verified=await dev15Pull(true);if(!verified||verified.rev!==r.rev||verified.profile?.strategy!==choice.strategy||JSON.stringify(verified.profile.fields)!==JSON.stringify(choice.fields))throw Error('發布後未能核對正式策略，請按讀取正式策略確認');await monitorStatus164();officialSyncState16419='idle';dev15Status('已發布並核對 '+getStrategyDisplayName(verified.profile.strategy)+' · v'+verified.rev);}catch(e){dev15Status('發布未確認：'+e.message);}finally{if(button)button.disabled=false;}}
 async function dev15Pull(force){if(!dev15Token)return null;try{const r=await dev15Req('profile');dev15Profile=r.profile||null;dev15Rev=r.rev||0;dev15Status(r.profile?'後台正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+dev15Rev+'（不改變目前實戰選擇）':'尚無正式策略，請先發布');return r;}catch(e){dev15Status('正式策略讀取失敗：'+e.message);return null;}}
 async function dev15Logout(){officialSyncTicket16419++;if(officialSyncTimer16419)clearTimeout(officialSyncTimer16419);officialSyncState16419='login';try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
@@ -8377,7 +8403,7 @@ async function deleteManual161(official){try{if(official&&!dev15Token)throw Erro
 async function loadOfficial161(){try{const r=await fetch(new URL(apiUrl).origin+'/official161',{cache:'no-store'});if(r.ok)official161Rows=await r.json();}catch(e){} }
 async function manual161(side,official){try{const code=selectedStockCode;const stock=rawAllLoadedStocks.find(s=>s.code===code)||window._lastCustomInspectedStock;if(!stock||stock.code!==code)throw Error('請先選擇股票');if(official&&!dev15Token)throw Error('請先登入開發者');const p=prompt('成交價格',stock.todayPrice||stock.price||'');if(p===null)return;const price=Number(p);if(!Number.isFinite(price)||price<=0)throw Error('價格不正確');let lots=1,id;const day=lineV14Day(),hm48=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date());if(side==='BUY'){const l=prompt('買進張數','1');if(l===null)return;lots=Number(l);if(!Number.isInteger(lots)||lots<1)throw Error('張數不正確');}else{if(official)await loadOfficial161();const rows=(official?official161Rows:userPortfolioTrades).filter(t=>t.code===code&&!t.isClosed&&(t.strategyKey||'DEFAULT_20MA')===currentExitStrategy&&(official||String(t.id).startsWith('manual161_')));if(!rows.length)throw Error('沒有可平倉持倉');const n=prompt(rows.map((t,i)=>`${i+1}. ${t.buyDate} ${t.buyPrice} 元 × ${t.lots} 張`).join('\n')+'\n輸入序號','1');if(n===null)return;id=rows[Number(n)-1]?.id;if(!id)throw Error('序號不正確');}if(official){if(!confirm('正式手動訊號將依通知模式發送 LINE，確定？'))return;await dev15Req('manual161',{code,side,price,lots,id,strategyKey:currentExitStrategy});await loadOfficial161();showToast('正式交易已儲存，通知進入佇列','success');}else{if(side==='BUY')userPortfolioTrades.push({id:'manual161_'+Date.now(),code,name:stock.name,buyDate:day,buyTime:hm48,entryMarketLots:stock.latestTradeDate===day?stock.todayVol:null,buyPrice:price,lots,isClosed:false,exitOrNowPrice:price,strategyKey:currentExitStrategy});else Object.assign(userPortfolioTrades.find(t=>t.id===id),{isClosed:true,sellDate:day,sellTime:hm48,exitOrNowPrice:price});saveUserPortfolioToStorage();showToast('個人交易已儲存','success');}refreshManual161();}catch(e){showToast(e.message,'error');}}
 function updateManualToolbar161(){const el=document.getElementById('manualToolbar161');if(!el)return;const active=!!dev15Token;el.classList.toggle('developer161',active);el.querySelectorAll('[data-official161]').forEach(x=>x.hidden=!active);}
-window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement('div');el.id='manualToolbar161';const profit=document.createElement('div');profit.id='aiProfit161';profit.hidden=true;el.append(profit);const controls=document.createElement('div');controls.id='manualButtons161';el.append(controls);for(const official of [false,true]){for(const [label,side] of [['買進','BUY'],['賣出','SELL'],['刪除','DELETE']]){const btn=document.createElement('button');btn.type='button';btn.textContent=side==='DELETE'?(official?'刪除正式交易':'刪除個人交易'):(official?'開發者':'個人')+label;btn.className='manualBtn161 '+(side==='BUY'?'buy161':side==='SELL'?'sell161':'delete161');btn.onclick=()=>side==='DELETE'?deleteManual161(official):manual161(side,official);if(official){btn.dataset.official161='1';btn.hidden=true;}controls.append(btn);}}document.getElementById('chartContainer').before(el);updateManualToolbar161();void loadOfficial161();setInterval(()=>{updateManualToolbar161();void loadOfficial161();},15000);});
+window.addEventListener('DOMContentLoaded',()=>{const el=document.createElement('div');el.id='manualToolbar161';const profit=document.createElement('div');profit.id='aiProfit161';profit.hidden=true;el.append(profit);const controls=document.createElement('div');controls.id='manualButtons161';el.append(controls);for(const official of [false,true]){for(const [label,side] of [['買進','BUY'],['賣出','SELL'],['刪除','DELETE']]){const btn=document.createElement('button');btn.type='button';btn.textContent=side==='DELETE'?(official?'刪除正式交易':'刪除個人交易'):(official?'開發者':'個人')+label;btn.className='manualBtn161 '+(side==='BUY'?'buy161':side==='SELL'?'sell161':'delete161');btn.onclick=()=>side==='DELETE'?deleteManual161(official):manual161(side,official);if(official){btn.dataset.official161='1';btn.hidden=true;}controls.append(btn);}}document.getElementById('chartHudBar').before(el);updateManualToolbar161();void loadOfficial161();setInterval(()=>{updateManualToolbar161();void loadOfficial161();},15000);});
 
     function selectStock(code, scrollToChart = false, origin = "POOL", simRowId = "") {
       if(scrollToChart)sim161Context=origin==="SIM"?{code,strategy:currentExitStrategy,rows:structuredClone((simTableMode==="PORTFOLIO"?userPortfolioTrades:lastSimTradesSnapshot).filter(t=>t.code===code))}:null;
@@ -11392,5 +11418,48 @@ html:not(.mobile164) #historyClosed164 th:first-child{width:3%}
 html:not(.mobile164) #historyClosed164 th:nth-child(2){width:8%}
 html:not(.mobile164) #historyClosed164 th:last-child{width:13%}
 </style>
+<style>
+#lineNotifyPanel .dev420Card{display:grid;gap:8px;padding:10px;background:#17243a;border:1px solid #394b69;border-radius:8px}
+#lineNotifyPanel .dev420Card h3{font-weight:bold;color:#f6d887}
+#lineNotifyPanel .dev420Buttons{display:flex;gap:6px;flex-wrap:wrap}
+#lineNotifyPanel .dev420Buttons button{padding:8px;border:1px solid #536986;border-radius:6px;background:#334660;color:white}
+#lineNotifyPanel .dev420Buttons button:nth-child(2){background:#067459;font-weight:bold}
+#lineNotifyPanel .dev420Hint,#strategyBroadcastStatus{color:#bfdbfe;font-size:12px}
+[data-card-size]{position:relative}
+[data-card-size]:not(.v161-fold):not(details:not([open]))::after{content:"";display:block;position:absolute;bottom:0;left:0;right:0;height:9px;cursor:ns-resize;touch-action:none;background:linear-gradient(#7790ad,#7790ad) center bottom 2px / 38px 3px no-repeat;border-bottom:1px solid #526883;z-index:3}
+[data-card-size].userCardHeight:not(.v161-fold):not(details:not([open])){box-sizing:border-box!important;height:var(--card-height)!important;max-height:var(--card-height)!important;min-height:0!important;overflow:auto!important;flex-shrink:0}
+#chartHudBar.userCardHeight:not(.v161-fold) #ohlcHud{height:auto!important;min-height:0!important;max-height:none!important}
+</style>
+<script>
+window.addEventListener('load',()=>{
+  const selector='.ufCard,.dev420Card,#capitalWinner164,#lineNotifyPanel,#todayClosed162,#historyClosed164,#tradeLedger164,#unifiedFilter16417,#todayBuy163,#chartFloatingControls';
+  document.querySelectorAll(selector).forEach(el=>el.dataset.cardSize='');
+  document.querySelectorAll('.v161-collapse').forEach(btn=>btn.parentElement.dataset.cardSize='');
+  let drag=null;
+  function edge(event){
+    for(let el=event.target.closest?.('[data-card-size]');el;el=el.parentElement?.closest('[data-card-size]')){
+      const box=el.getBoundingClientRect();
+      if(!el.matches('.v161-fold,details:not([open])')&&event.clientY<=box.bottom&&event.clientY>=box.bottom-10)return el;
+    }
+  }
+  document.addEventListener('pointerdown',event=>{
+    if(event.button!==0||drag)return;
+    const card=edge(event);
+    if(!card)return;
+    drag={card,id:event.pointerId,y:event.clientY,height:card.getBoundingClientRect().height};
+    card.setPointerCapture(event.pointerId);
+    event.preventDefault();event.stopPropagation();
+  },true);
+  document.addEventListener('pointermove',event=>{
+    if(!drag||drag.id!==event.pointerId)return;
+    drag.card.style.setProperty('--card-height',Math.max(48,drag.height+event.clientY-drag.y)+'px');
+    drag.card.classList.add('userCardHeight');
+    event.preventDefault();
+  });
+  for(const type of ['pointerup','lostpointercapture','pointercancel'])document.addEventListener(type,event=>{
+    if(drag?.id===event.pointerId)drag=null;
+  });
+});
+</script>
 </body>
 </html>
