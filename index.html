@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.40｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.41｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.40 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.41 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.40</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.41</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -5398,8 +5398,8 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
     function preSeed1642(rows,pool){for(const r of rows){const k=r.strategyKey,cfg=_aiCapitalBestParamsMap[k],sc=_aiCapitalBestStep1Map[k];if(!cfg||!sc||!Array.isArray(r.cachedEvents))continue;const by=new Map();for(const ev of r.cachedEvents){const id=String(ev.code);if(!by.has(id))by.set(id,[]);by.get(id).push(ev);}for(const st of pool)preCache1642.set(preKey1642(k,cfg,sc,st),by.get(String(st.code))||[]);}}
     async function applyPre1642(){if(capitalAiBusy||fullAiBusy||preRun1642)return showToast('請等待目前 AI 運算完成','info');if(!rawAllLoadedStocks.length)return showToast('請先同步行情','info');let cfg;try{cfg=readPre1642();}catch(e){return showToast(e.message,'error');}const old=preCfg1642;const oldVolume415=volume164;preCfg1642=cfg;volume164={...volume164,mode:'all'};preStarted1642=Date.now();preReport1642(0,'檢查快取及成交量');if(!_lastAiCapitalResultsCache?.length||!dev15Keys.every(k=>_aiCapitalBestParamsMap[k]&&_aiCapitalBestStep1Map[k])){preId1642('preApply1642').disabled=true;preReport1642(0,'尚無完整快取，執行 AI 尋優；請查看 AI 尋優進度');try{await runAiCapitalStrategyOptimizer(true);}finally{preId1642('preApply1642').disabled=false;}return;}
       capitalAiBusy=true;_aiCapitalLifecycleCache=new Map();preRun1642=true;preCancel1642=false;preId1642('preApply1642').disabled=true;preId1642('preCancel1642').disabled=false;
-      try{const pool=prePool1642(cfg), jobs=[], rows=[];let hits=0,done=0;for(const r of _lastAiCapitalResultsCache){const k=r.strategyKey,pc=_aiCapitalBestParamsMap[k],sc=_aiCapitalBestStep1Map[k],items=[];for(const st of pool){const key=preKey1642(k,pc,sc,st);items.push({st,key});if(preCache1642.has(key))hits++;}jobs.push({r,k,pc,sc,items});}const total=pool.length*jobs.length,missing=total-hits;preReport1642(10,`市場 ${rawAllLoadedStocks.length} 檔／符合 ${pool.length} 檔｜快取 ${hits}、待補 ${missing}（股票×策略）`);await aiYield();
-      for(const job of jobs){const {r,k,pc,sc,items}=job;const all=[];for(const {st,key} of items){if(preCancel1642)throw Error('已中斷');if(!preCache1642.has(key)){const res=await simulateCapitalForStrategy(k,pc,preOpts1642(sc,[st]),r.bestPriority);preCache1642.set(key,res.cachedEvents);done++;preReport1642(10+70*done/Math.max(1,missing),`${r.label}｜${st.code} ${st.name}｜補算 ${done}/${missing}｜快取 ${hits}`,done?(Date.now()-preStarted1642)/1000/done*(missing-done):null);if(done%5===0)await aiYield();}all.push(...preCache1642.get(key));}if(preCancel1642)throw Error('已中斷');const allowed415=new Set(items.map(x=>String(x.st.code)));const result=await simulateCapitalForStrategy(k,pc,{},r.bestPriority,all.filter(t=>allowed415.has(String(t.code))));rows.push({...r,...result});preReport1642(80+19*rows.length/7,`重新分配資金 ${rows.length}/7｜${r.label}｜快取 ${hits}／補算 ${done}`);await aiYield();}
+      try{const curPriority=document.getElementById('simPrioritySelect')?.value||'HIGH_PRICE';const pool=prePool1642(cfg), jobs=[], rows=[];let hits=0,done=0;for(const r of _lastAiCapitalResultsCache){const k=r.strategyKey,pc={..._aiCapitalBestParamsMap[k],priorityMode:curPriority},sc=_aiCapitalBestStep1Map[k],items=[];_aiCapitalBestParamsMap[k]=pc;for(const st of pool){const key=preKey1642(k,pc,sc,st);items.push({st,key});if(preCache1642.has(key))hits++;}jobs.push({r,k,pc,sc,items});}const total=pool.length*jobs.length,missing=total-hits;preReport1642(10,`市場 ${rawAllLoadedStocks.length} 檔／符合 ${pool.length} 檔｜快取 ${hits}、待補 ${missing}（股票×策略）`);await aiYield();
+      for(const job of jobs){const {r,k,pc,sc,items}=job;const all=[];for(const {st,key} of items){if(preCancel1642)throw Error('已中斷');if(!preCache1642.has(key)){const res=await simulateCapitalForStrategy(k,pc,preOpts1642(sc,[st]),curPriority);preCache1642.set(key,res.cachedEvents);done++;preReport1642(10+70*done/Math.max(1,missing),`${r.label}｜${st.code} ${st.name}｜補算 ${done}/${missing}｜快取 ${hits}`,done?(Date.now()-preStarted1642)/1000/done*(missing-done):null);if(done%5===0)await aiYield();}all.push(...preCache1642.get(key));}if(preCancel1642)throw Error('已中斷');const allowed415=new Set(items.map(x=>String(x.st.code)));const result=await simulateCapitalForStrategy(k,pc,{},curPriority,all.filter(t=>allowed415.has(String(t.code))));rows.push({...r,...result,bestPriority:curPriority});preReport1642(80+19*rows.length/7,`重新分配資金 ${rows.length}/7｜${r.label}｜快取 ${hits}／補算 ${done}`);await aiYield();}
       if(preCancel1642)throw Error('已中斷');validateCapital1644(rows);
         const previousProfit=winningCapitalProfit(_lastAiCapitalResultsCache) || readProfitHistory('capital').current;
         capitalFrozen1644=true;_lastAiCapitalResultsCache=rows;
@@ -5463,9 +5463,12 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       const trim=getTrimTopWinnersCount(); const volumeSig=JSON.stringify(volume164);
       try {
         const rows=[];
+        const curPriority=document.getElementById('simPrioritySelect')?.value||'HIGH_PRICE';
         for (const r of _lastAiCapitalResultsCache) {
-          const result=await simulateCapitalForStrategy(r.strategyKey,_aiCapitalBestParamsMap[r.strategyKey],{},r.bestPriority,r.cachedEvents);
-          rows.push({...r,...result});
+          const pc={..._aiCapitalBestParamsMap[r.strategyKey],priorityMode:curPriority};
+          _aiCapitalBestParamsMap[r.strategyKey]=pc;
+          const result=await simulateCapitalForStrategy(r.strategyKey,pc,{},curPriority,r.cachedEvents);
+          rows.push({...r,...result,bestPriority:curPriority});
           showAiProgress('capital',Math.round(rows.length/7*99),'快取資金重算 '+rows.length+'/7');
           await aiYield();
         }
