@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.26｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.27｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -336,6 +336,10 @@ main, #step123Section{align-items:start!important}
 button[data-searching]{background:#992d41!important;color:white!important;border:2px solid #ffaab6!important}
 label.aiOptToggle[data-searching] .aiOptState b{display:none!important}
 label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
+</style><style>
+.profitCompare:not([hidden]){display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:12px 0;padding-top:10px;border-top:1px solid #796680}
+.profitCompare>div{background:#1a192b;border-radius:6px;padding:7px 9px}
+.profitCompare small,.profitCompare b{display:block}.profitCompare small{font-size:13px;color:#ddd6fe}.profitCompare b{font-size:18px;color:white}.profitCompare .priorStrategy{grid-column:1/-1}
 </style></head>
 <body class="min-h-screen p-3 md:p-5">
 
@@ -383,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.26 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.27 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.26</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.27</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -574,7 +578,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
               ⚡ 立即 AI 全條件尋優並套用
             </button>
           </div>
-          <section id="fullWinner" class="searchWinner" aria-live="polite" hidden><b>全條件尋優 · 勝出策略</b><strong></strong><p></p><p></p></section>
+          <section id="fullWinner" class="searchWinner" aria-live="polite" hidden><b>全條件尋優 · 勝出策略</b><strong></strong><p></p><p></p><div id="fullProfitCompare" class="profitCompare" hidden></div></section>
           <div id="aiFullStep1AdviceText" class="text-[11px] font-mono text-slate-300 leading-relaxed">
             點擊「立即 AI 全條件尋優並套用」或切換策略，AI 將聯合回測找出目前策略獲利最佳的 STEP 1 參數組合。
           </div><div id="fullAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><span id="fullAiProgressText"></span><span id="fullAiElapsed16414" class="font-bold text-amber-300 tabular-nums whitespace-nowrap">上次耗時：未記錄</span></div><progress id="fullAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
@@ -1124,7 +1128,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
 </section>
             </div>
 
-<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><strong id="capitalWinnerName"></strong><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
+<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><strong id="capitalWinnerName"></strong><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><div id="capitalProfitCompare" class="profitCompare" hidden></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -2787,13 +2791,54 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if(activeSearch?.stopped) throw searchStopped;
     }
     async function yieldSearch() {await aiYield();checkSearch();}
+    const profitHistory = {};
+    function fullProfitWinner(results) {
+      const entries = Object.entries(results || {}).filter(([,r])=>Number.isFinite(r?.totalProfitNtd));
+      if (!entries.length) return null;
+      const [key,result] = entries.reduce((a,b)=>b[1].totalProfitNtd>a[1].totalProfitNtd?b:a);
+      return {key,amount:result.totalProfitNtd};
+    }
+    function capitalProfitWinner(row) {
+      return row && Number.isFinite(row.totalNetProfit) ? {key:row.strategyKey,amount:row.totalNetProfit} : null;
+    }
+    function readProfitHistory(kind) {
+      if (profitHistory[kind]) return profitHistory[kind];
+      let state;
+      try {state=JSON.parse(localStorage.getItem('w-profit-history-'+kind));} catch {}
+      return profitHistory[kind]=state && Number.isFinite(state.current?.amount) ? state : {};
+    }
+    function recordProfit(kind,current) {
+      if (!current) return;
+      const state={previous:readProfitHistory(kind).current || null,current};
+      profitHistory[kind]=state;
+      try {localStorage.setItem('w-profit-history-'+kind,JSON.stringify(state));} catch {}
+      showProfitComparison(kind,current);
+    }
+    function showProfitComparison(kind,current) {
+      const panel=document.getElementById(kind+'ProfitCompare');
+      const state=readProfitHistory(kind);
+      panel.hidden=!current || state.current?.key!==current.key || state.current?.amount!==current.amount;
+      if (panel.hidden) return;
+      const money=n=>(n<0?'−':n>0?'+':'')+'$'+Math.abs(n).toLocaleString('zh-TW',{maximumFractionDigits:0});
+      const old=state.previous;
+      const diff=old ? current.amount-old.amount : null;
+      panel.replaceChildren();
+      for(const [title,value] of [['上次收益',old?money(old.amount):'首次紀錄'],['本次收益',money(current.amount)],['收益差額',old?money(diff):'—']]){
+        const cell=document.createElement('div'),label=document.createElement('small'),number=document.createElement('b');
+        label.textContent=title;number.textContent=value;
+        if(title==='收益差額' && diff)number.style.color=diff>0?'#fda4af':'#6ee7b7';
+        cell.append(label,number);panel.append(cell);
+      }
+      if(old){const note=document.createElement('small');note.className='priorStrategy';note.textContent='上次勝出策略：'+getStrategyDisplayName(old.key);panel.append(note);}
+    }
     function paintFullWinner(results) {
       const card=document.getElementById('fullWinner');
       const entries=Object.entries(results).filter(([,r])=>Number.isFinite(r?.totalProfitNtd));
-      card.hidden=!entries.some(([,r])=>r.cnt>0);
+      card.hidden=!entries.length;
       if(card.hidden)return;
       const [key,r]=entries.reduce((a,b)=>b[1].totalProfitNtd>a[1].totalProfitNtd?b:a);
-      card.querySelector('strong').textContent=getStrategyDisplayName(key);
+      showProfitComparison('full',{key,amount:r.totalProfitNtd});
+      card.querySelector('strong').textContent=r.cnt?getStrategyDisplayName(key):'無符合交易';
       const [conditions,metrics]=card.querySelectorAll('p');
       conditions.textContent=(r.independent?'':`20MA向上：${r.reqMaUp?'需要':'不限'} ｜ 紅K：${r.reqRed?'需要':'不限'} ｜ 漲幅 ${r.minG}～${r.maxG}% ｜ 成交量 ≥ ${r.minV}% ｜ `)+(r.exitTag||'');
       metrics.textContent=`合計淨利 $${r.totalProfitNtd.toLocaleString()} ｜ 勝率 ${r.winRate}% ｜ ${r.cnt} 檔`;
@@ -3179,7 +3224,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           runPortfolioCapitalSimulation();
         }
       }
-      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();finishFullTimer16414(true);showAiProgress("full",100,`尋優完成 · ${Object.keys(_aiFullStep1PerStrategyMap).length}/7 策略已存檔`); return best;
+      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();finishFullTimer16414(true);recordProfit("full",fullProfitWinner(_aiFullStep1PerStrategyMap));showAiProgress("full",100,`尋優完成 · ${Object.keys(_aiFullStep1PerStrategyMap).length}/7 策略已存檔`); return best;
       } catch(e) { if(e===searchStopped){
         _aiFullStep1PerStrategyMap=oldFull.map;fullV8Key=oldFull.key;_fullStep1Cache.clear();freeze151();
         showAiProgress('full',0,'已停止搜尋');return null;
@@ -5799,6 +5844,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       paintManualCapitalCards();
       if(!winner)return;
       const money=n=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString();
+      showProfitComparison('capital',capitalProfitWinner(winner));
       document.getElementById('capitalWinnerName').textContent=winner.label;
       document.getElementById('capitalWinnerText164').textContent=`最佳條件：${winner.bestTag}\n淨損益：${money(winner.totalNetProfit)} ｜ 報酬率：${winner.totalRoiPct.toFixed(2)}%\n期末總權益：$${Number(winner.finalEquity||0).toLocaleString()}\n上次 AI 尋優／快取試算結果（非即時，未含手動庫存）`;
       document.getElementById('capitalWinnerLink164').onclick=()=>openAiCapitalTrades164(winner.strategyKey);
@@ -5917,6 +5963,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if(stored?.results?.length===7){
         validateCapital1644(stored.results);capitalV8Key=runKey;_lastAiCapitalResultsCache=stored.results;_aiCapitalBestParamsMap=stored.params;_aiCapitalBestStep1Map=stored.step1;capitalFrozen1644=true;preScope1642=null;capitalAiBusy=false;
         renderAiCapitalCompareCardsOnly();const win=stored.results.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a);if(autoSwitch)await selectAiOptimizedCapitalStrategy(win.strategyKey);
+        recordProfit('capital',capitalProfitWinner(win));
         showAiProgress('capital',100,'完整相同條件快取 · 無需重新尋優');return;
       }
       beginAiMemo16416();
@@ -6107,6 +6154,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if (autoSwitch && winner) {
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
+      recordProfit("capital",capitalProfitWinner(winner));
       showAiProgress("capital",100,`七大策略尋優完成｜總耗時 ${Math.round((Date.now()-preStarted1642)/1000)} 秒`);
       } catch(e) { if(e===searchStopped){
         _aiCapitalBestParamsMap=beforeSearch.params;_aiCapitalBestStep1Map=beforeSearch.step1;
@@ -11008,7 +11056,13 @@ window.addEventListener('load',()=>{
  for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
  const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
  try {const dates=JSON.parse(localStorage.getItem('fullBacktestDates')||'{}');document.getElementById('fullDateStart').value=dates.start||'';document.getElementById('fullDateEnd').value=dates.end||'';} catch {}
- for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){paintFullWinner(v.data);_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;
+ if(!readProfitHistory(kind).current){
+   const rows=v.data.results;
+   const baseline=kind==='full'?fullProfitWinner(v.data):Array.isArray(rows)&&rows.length?capitalProfitWinner(rows.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a)):null;
+   if(baseline)recordProfit(kind,baseline);
+ }
+ if(kind==='full'){paintFullWinner(v.data);_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
  for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
