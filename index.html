@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.25｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.26｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -329,7 +329,14 @@ main, #step123Section{align-items:start!important}
 @media(max-width:500px){#dev15Panel.devPanel420{padding:10px}#dev15Panel .dev420Fields,#dev15Panel .dev420CredentialFields{grid-template-columns:1fr}#dev15Panel .dev420Top h2{font-size:15px}#dev15Panel .dev420Top p{font-size:11px}#lineNotifyPanel .line420Head{flex-direction:column;align-items:start;gap:3px}#lineNotifyPanel .line420Actions button{flex:1 1 auto}#dev15Panel .dev420Credentials>summary span{display:block;margin-left:18px}}
 </style>
 
-</head>
+<style>
+.searchWinner,#capitalWinner164{margin:10px 0;padding:15px;border:2px solid #fbbf24;border-radius:10px;background:#27213b;color:white;overflow-wrap:anywhere}
+.searchWinner>b{font-size:14px;color:#fde68a}.searchWinner>strong,#capitalWinnerName{display:block;font-size:clamp(22px,3vw,32px);font-weight:800;line-height:1.3;margin:5px 0}
+.searchWinner p,#capitalWinnerText164{font-size:16px;line-height:1.55}
+button[data-searching]{background:#992d41!important;color:white!important;border:2px solid #ffaab6!important}
+label.aiOptToggle[data-searching] .aiOptState b{display:none!important}
+label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
+</style></head>
 <body class="min-h-screen p-3 md:p-5">
 
   <!-- 頂部通知 Toast -->
@@ -376,10 +383,10 @@ main, #step123Section{align-items:start!important}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.25 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.26 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.25</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.26</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -562,11 +569,12 @@ main, #step123Section{align-items:start!important}
               <label>迄日 <input id="fullDateEnd" type="date" class="bg-slate-800 rounded p-1" onchange="fullDatesChanged()"></label>
               <small>依買進日篩選，含起迄日。留白表示該端不限。</small>
             </fieldset>
-            <button type="button" onclick="runAiFullStep1Optimizer(true, true)"
+            <button type="button" id="fullSearchAction" onclick="if(!stopSearch('full')) runAiFullStep1Optimizer(true,true)"
                     class="px-2.5 py-1 rounded bg-gradient-to-r from-indigo-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white font-bold text-[11px] shadow transition">
               ⚡ 立即 AI 全條件尋優並套用
             </button>
           </div>
+          <section id="fullWinner" class="searchWinner" aria-live="polite" hidden><b>全條件尋優 · 勝出策略</b><strong></strong><p></p><p></p></section>
           <div id="aiFullStep1AdviceText" class="text-[11px] font-mono text-slate-300 leading-relaxed">
             點擊「立即 AI 全條件尋優並套用」或切換策略，AI 將聯合回測找出目前策略獲利最佳的 STEP 1 參數組合。
           </div><div id="fullAiProgress" class="hidden min-w-[180px] w-full text-xs text-indigo-200" aria-live="polite"><div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"><span id="fullAiProgressText"></span><span id="fullAiElapsed16414" class="font-bold text-amber-300 tabular-nums whitespace-nowrap">上次耗時：未記錄</span></div><progress id="fullAiProgressBar" max="100" value="0" style="width:100%;height:10px;accent-color:#818cf8"></progress></div>
@@ -1116,7 +1124,7 @@ main, #step123Section{align-items:start!important}
 </section>
             </div>
 
-<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
+<section id="capitalWinner164" hidden style="border:2px solid #facc15;border-radius:12px;padding:12px;background:#38204d;color:#fff;margin:8px 0" aria-live="polite"><b style="color:#facc15;font-size:1.15em">🏆 AI 尋優最佳策略</b><strong id="capitalWinnerName"></strong><div id="capitalWinnerText164" style="white-space:pre-line;margin:8px 0;font-weight:700"></div><button type="button" id="capitalWinnerLink164" style="background:#facc15;color:#20132a;font-weight:800;padding:10px;border-radius:8px;width:100%">📋 查看可買進股票明細與每筆損益</button></section><div id="manualCapitalStrategies" class="rounded-lg border border-slate-700 p-2 space-y-2"><div class="text-xs font-bold text-amber-300">七大策略選擇（AI 快取）</div><div id="manualCapitalGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs"><button type="button" data-strategy="DEFAULT_20MA" onclick="chooseManualCapitalStrategy('DEFAULT_20MA')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>A. 原版20MA破線</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="SHORT_MA_TRAIL" onclick="chooseManualCapitalStrategy('SHORT_MA_TRAIL')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>B. 賺達標守短均</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="PEAK_TRAILING" onclick="chooseManualCapitalStrategy('PEAK_TRAILING')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>C. 高點回落停利</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="WHALE_SELL_EXIT" onclick="chooseManualCapitalStrategy('WHALE_SELL_EXIT')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>D. 高檔爆量賣出</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="RR_LADDER" onclick="chooseManualCapitalStrategy('RR_LADDER')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>E. 風報比階梯</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_ADAPTIVE" onclick="chooseManualCapitalStrategy('AI_ADAPTIVE')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>F. AI自適應</b><div data-return class="font-mono text-slate-400">等待試算</div></button><button type="button" data-strategy="AI_POWER_90D" onclick="chooseManualCapitalStrategy('AI_POWER_90D')" class="rounded border border-slate-700 bg-slate-900 p-2 text-left min-w-0 break-words"><b>G. AI買賣90天</b><div data-return class="font-mono text-slate-400">等待試算</div></button></div><div id="manualCapitalStatus" class="text-[10px] text-slate-400">不需要開啟 AI 尋優</div></div>
             <!-- 🤖 AI 實戰資金六大策略收益對比結果 -->
             <div id="simAiStrategyCompareBox" class="hidden bg-purple-950/30 border border-purple-500/45 rounded-lg p-2.5 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -1126,7 +1134,7 @@ main, #step123Section{align-items:start!important}
                 </div>
                 <button type="button" onclick="closeAiCapitalCompareBox()" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">收合</button>
               </div>
-              <button type="button" onclick="runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新執行 AI 尋優</button>
+              <button type="button" id="capitalSearchAction" onclick="if(!stopSearch('capital')) runAiCapitalStrategyOptimizer(true)" class="px-2 py-1 rounded bg-purple-700 text-white text-xs">重新執行 AI 尋優</button>
               <div id="v8CapitalQuickCards" class="w-full gap-2" style="display:none;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))"></div>
               <div id="simAiStrategyCompareGrid" class="w-full gap-2 text-[11px]" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))"></div>
             </div>
@@ -2621,6 +2629,7 @@ main, #step123Section{align-items:start!important}
       return {start:document.getElementById('fullDateStart').value, end:document.getElementById('fullDateEnd').value};
     }
     function fullDatesChanged() {
+      document.getElementById('fullWinner').hidden=true;
       const {start,end} = fullDates();
       const message = start && end && start > end ? '起日不可晚於迄日' : '';
       document.getElementById('fullDateEnd').setCustomValidity(message);
@@ -2751,6 +2760,44 @@ main, #step123Section{align-items:start!important}
         }
       }
     }
+    let activeSearch = null;
+    const searchStopped = new Error('已停止搜尋');
+    function setSearchAction(kind, running) {
+      const button = document.getElementById(kind+'SearchAction');
+      const label = document.getElementById(kind==='full'?'lblAiFullOpt':'lblAiCapitalOpt');
+      button.toggleAttribute('data-searching',running);
+      label.toggleAttribute('data-searching',running);
+      button.textContent = running ? '■ 停止搜尋' : kind==='full' ? '⚡ 立即 AI 全條件尋優並套用' : '重新執行 AI 尋優';
+    }
+    function startSearch(kind) {
+      activeSearch = {kind, stopped:false};
+      setSearchAction(kind,true);
+    }
+    function stopSearch(kind) {
+      if(activeSearch?.kind!==kind)return false;
+      activeSearch.stopped=true;
+      document.getElementById(kind+'SearchAction').textContent='正在停止…';
+      return true;
+    }
+    function endSearch(kind) {
+      if(activeSearch?.kind===kind)activeSearch=null;
+      setSearchAction(kind,false);
+    }
+    function checkSearch() {
+      if(activeSearch?.stopped) throw searchStopped;
+    }
+    async function yieldSearch() {await aiYield();checkSearch();}
+    function paintFullWinner(results) {
+      const card=document.getElementById('fullWinner');
+      const entries=Object.entries(results).filter(([,r])=>Number.isFinite(r?.totalProfitNtd));
+      card.hidden=!entries.some(([,r])=>r.cnt>0);
+      if(card.hidden)return;
+      const [key,r]=entries.reduce((a,b)=>b[1].totalProfitNtd>a[1].totalProfitNtd?b:a);
+      card.querySelector('strong').textContent=getStrategyDisplayName(key);
+      const [conditions,metrics]=card.querySelectorAll('p');
+      conditions.textContent=(r.independent?'':`20MA向上：${r.reqMaUp?'需要':'不限'} ｜ 紅K：${r.reqRed?'需要':'不限'} ｜ 漲幅 ${r.minG}～${r.maxG}% ｜ 成交量 ≥ ${r.minV}% ｜ `)+(r.exitTag||'');
+      metrics.textContent=`合計淨利 $${r.totalProfitNtd.toLocaleString()} ｜ 勝率 ${r.winRate}% ｜ ${r.cnt} 檔`;
+    }
     let fullAiBusy = false, capitalAiBusy = false;
     const fullTimer16414 = {start:null, interval:null};
     function paintFullTimer16414(text){const el=document.getElementById('fullAiElapsed16414');if(el)el.textContent=text;}
@@ -2792,7 +2839,7 @@ main, #step123Section{align-items:start!important}
           const res = evaluateFullStep1ComboExact(poolStocks,cfg,false,false,0,10.5,0);
           const candidate = {...res, independent:true, exitPatch:cfg, exitTag:buildExitParamTag(strategyKey,cfg)};
           if (!best || candidate.totalProfitNtd > best.totalProfitNtd) best=candidate;
-          report(++n/16*100, `策略G獨立參數 ${n}/16`); await aiYield();
+          report(++n/16*100, `策略G獨立參數 ${n}/16`); await yieldSearch();
         }
         if (best) _fullStep1Cache.set(fCacheKey,best);
         return best;
@@ -2843,7 +2890,7 @@ main, #step123Section{align-items:start!important}
       const singleCrossItems = [];
       const multiCrossStocks = [];
       for (let idx = 0; idx < poolStocks.length; idx++) {
-        if (idx % 8 === 0) { exReport(0.2 * idx / Math.max(1,poolStocks.length), `整理股票 ${idx}/${poolStocks.length}`); await aiYield(); }
+        if (idx % 8 === 0) { exReport(0.2 * idx / Math.max(1,poolStocks.length), `整理股票 ${idx}/${poolStocks.length}`); await yieldSearch(); }
         const s = poolStocks[idx];
         const bars = buildStockDailyBarsWithToday(s);
         let crossCount = 0;
@@ -2928,7 +2975,7 @@ main, #step123Section{align-items:start!important}
       let best = null;
       let tested = 0;
       for (const [reqMa, reqRed, minG, maxG, minV] of candList) {
-        if (tested % 3 === 0) { exReport(0.2 + 0.7 * tested / candList.length, `粗篩 ${tested}/${candList.length}`); await aiYield(); }
+        if (tested % 3 === 0) { exReport(0.2 + 0.7 * tested / candList.length, `粗篩 ${tested}/${candList.length}`); await yieldSearch(); }
         tested++;
         const res = evalFast(reqMa, reqRed, minG, maxG, minV);
         if (res.cnt === 0) continue;
@@ -2938,7 +2985,7 @@ main, #step123Section{align-items:start!important}
       }
 
       // 第二階段：鎖定粗篩勝出的 MA/紅K 條件，只微調漲幅 ±1% 與成交量 ±50%，最多 9 組。
-      exReport(0.9, "細調進場條件"); await aiYield();
+      exReport(0.9, "細調進場條件"); await yieldSearch();
       if (best) {
         const fineGains = [...new Set([best.minG - 1, best.minG, best.minG + 1]
           .map(v => Math.max(4, Math.min(10, Number(v.toFixed(1))))))];
@@ -2950,14 +2997,14 @@ main, #step123Section{align-items:start!important}
             if (seenKey.has(k)) continue;
             seenKey.add(k);
             const res = evalFast(best.reqMaUp, best.reqRed, fg, best.maxG, fv);
-            await aiYield();
+            await yieldSearch();
             if (res.cnt > 0 && res.totalProfitNtd > best.totalProfitNtd) {
               best = { ...res, score: res.totalProfitNtd };
             }
           }
         }
       }
-        exIndex++; report(80 * exIndex / exitCands.length, "完成一組出場候選"); await aiYield();
+        exIndex++; report(80 * exIndex / exitCands.length, "完成一組出場候選"); await yieldSearch();
         if (best) best = evaluateFullStep1ComboExact(poolStocks, cfg, best.reqMaUp, best.reqRed, best.minG, best.maxG, best.minV);
         if (best && best.cnt > 0 && (!overallBest || best.totalProfitNtd > overallBest.totalProfitNtd)) {
           overallBest = { ...best, exitPatch: { ...cfg }, exitTag: exCand.tag };
@@ -2981,7 +3028,7 @@ main, #step123Section{align-items:start!important}
           for (const val of axis.values) {
             const candPatch = { ...curPatch, ...val };
             const r = evalFullExact(candPatch, curStep1);
-            report(80 + 20 * (++refined / Math.max(1,refineTotal)), `微調出場 ${refined}/${refineTotal}`); await aiYield();
+            report(80 + 20 * (++refined / Math.max(1,refineTotal)), `微調出場 ${refined}/${refineTotal}`); await yieldSearch();
             if (r.cnt > 0 && r.totalProfitNtd > curBestRes.totalProfitNtd) {
               curBestRes = { ...r, exitPatch: candPatch, exitTag: buildExitParamTag(strategyKey, candPatch) };
               bestVal = candPatch;
@@ -3036,8 +3083,7 @@ main, #step123Section{align-items:start!important}
         }
       }
       if(fullV8Key!==aiV8Key()){throw new Error("尋優期間條件已變更，請重新尋優");}
-      aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);
-      for(const k of keys){const r=_aiFullStep1PerStrategyMap[k];if(!r)continue;const cfg={...getExitStrategyConfig(k),...r.exitPatch};const opts={...getCurrentFilterOptions(),requireMa20Up:!!r.reqMaUp,requireSolidRedK:!!r.reqRed,useGainRange:true,minGain:r.minG,maxGain:r.maxG,volOp:'GTE',validVolThreshold:r.minV};for(const st of rawAllLoadedStocks)evaluateStockTrackingLifecycle(st,opts,cfg);await aiYield();}
+      for(const k of keys){const r=_aiFullStep1PerStrategyMap[k];if(!r)continue;const cfg={...getExitStrategyConfig(k),...r.exitPatch};const opts={...getCurrentFilterOptions(),requireMa20Up:!!r.reqMaUp,requireSolidRedK:!!r.reqRed,useGainRange:true,minGain:r.minG,maxGain:r.maxG,volOp:'GTE',validVolThreshold:r.minV};for(const st of rawAllLoadedStocks)evaluateStockTrackingLifecycle(st,opts,cfg);await yieldSearch();}
       _aiFullStep1ModeActive = true;
       if (autoSelectBestStrategy && globalWinnerKey) {
         currentExitStrategy = globalWinnerKey;
@@ -3099,12 +3145,13 @@ main, #step123Section{align-items:start!important}
       if(start && end && start>end){document.getElementById('fullDateEnd').reportValidity();return null;}
       document.getElementById('fullRangeFields').disabled = true;
       fullAiBusy = true;
-      startFullTimer16414();beginAiMemo16416();
+      const oldFull={map:{..._aiFullStep1PerStrategyMap},key:fullV8Key};
+      startSearch("full");startFullTimer16414();beginAiMemo16416();
       try {
       _fullStep1Cache.clear();
       aiV8RefreshFull(aiV8Key());
       showAiProgress('full', 0, '準備尋優');
-      await aiYield();
+      await yieldSearch();
       const adviceEl = document.getElementById("aiFullStep1AdviceText");
       let best = null;
       if (applyToControls && runFilterRender) {
@@ -3119,6 +3166,7 @@ main, #step123Section{align-items:start!important}
         if (adviceEl) adviceEl.innerHTML = `<span class="text-amber-300">⚠️ 尚未載入足夠全市場樣本，請先更新股池資料後再試。</span>`;
         showAiProgress("full",0,"資料不足，未完成"); return null;
       }
+      checkSearch();endSearch("full");paintFullWinner(_aiFullStep1PerStrategyMap);
       renderFullAiAdvice(best);
 
       if (applyToControls) {
@@ -3132,10 +3180,14 @@ main, #step123Section{align-items:start!important}
         }
       }
       aiV8Save("full",fullV8Key,_aiFullStep1PerStrategyMap);freeze151();finishFullTimer16414(true);showAiProgress("full",100,`尋優完成 · ${Object.keys(_aiFullStep1PerStrategyMap).length}/7 策略已存檔`); return best;
-      } catch(e) { showAiProgress("full",0,"尋優失敗："+e.message); console.error(e); return null; } finally { document.getElementById("fullRangeFields").disabled=false; endAiMemo16416();finishFullTimer16414(false); fullAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
+      } catch(e) { if(e===searchStopped){
+        _aiFullStep1PerStrategyMap=oldFull.map;fullV8Key=oldFull.key;_fullStep1Cache.clear();freeze151();
+        showAiProgress('full',0,'已停止搜尋');return null;
+      } showAiProgress("full",0,"尋優失敗："+e.message); console.error(e); return null; } finally { endSearch("full");document.getElementById("fullRangeFields").disabled=false; endAiMemo16416();finishFullTimer16414(false); fullAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
     }
 
     function onAiAutoFullStep1Toggle() {
+      if(stopSearch("full"))return;
       const chk = document.getElementById("chkAiAutoFullStep1");
       if (chk && chk.checked) {
         _aiFullStep1ModeActive = true;
@@ -5546,11 +5598,11 @@ main, #step123Section{align-items:start!important}
       for (let stockIdx = 0; !cachedEvents && stockIdx < sourceStocks.length; stockIdx++) {
         const s = sourceStocks[stockIdx];
         if (!matchesSimSectorFilter(s, sectorMode)) continue;
-        if(strategyKey!=="AI_POWER_90D"&&!canEnter16416(s,filterOpts,lifecycleFilterKey)){aiRunMemo16416.stats.skipped++;if(performance.now()-lastYield16413>=16){await aiYield();lastYield16413=performance.now();}continue;}
+        if(strategyKey!=="AI_POWER_90D"&&!canEnter16416(s,filterOpts,lifecycleFilterKey)){aiRunMemo16416.stats.skipped++;if(performance.now()-lastYield16413>=16){await yieldSearch();lastYield16413=performance.now();}continue;}
         const lc = strategyKey === "AI_POWER_90D" ? null : evaluateStockTrackingLifecycle(s, filterOpts, cfg);
         capitalEvents1643(s,strategyKey,cfg,lc,startDate,endDate,seenKey,events);
         // 每 20 檔讓出主執行緒，避免長時間凍結畫面。
-        if (performance.now()-lastYield16413>=16) {await aiYield();lastYield16413=performance.now();}
+        if (performance.now()-lastYield16413>=16) {await yieldSearch();lastYield16413=performance.now();}
       }
 
       const trimN = getTrimTopWinnersCount();
@@ -5615,6 +5667,7 @@ main, #step123Section{align-items:start!important}
       }
     }
     function toggleAiCapitalStrategyOptimizer() {
+      if(stopSearch("capital"))return;
       const chk = document.getElementById("chkAiCapitalOpt");
       const box = document.getElementById("simAiStrategyCompareBox");
       const isOn = Boolean(chk && chk.checked);
@@ -5746,7 +5799,8 @@ main, #step123Section{align-items:start!important}
       paintManualCapitalCards();
       if(!winner)return;
       const money=n=>(n>=0?'+':'-')+'$'+Math.abs(n).toLocaleString();
-      document.getElementById('capitalWinnerText164').textContent=`最佳策略：${winner.label}\n最佳條件：${winner.bestTag}\n淨損益：${money(winner.totalNetProfit)} ｜ 報酬率：${winner.totalRoiPct.toFixed(2)}%\n期末總權益：$${Number(winner.finalEquity||0).toLocaleString()}\n上次 AI 尋優／快取試算結果（非即時，未含手動庫存）`;
+      document.getElementById('capitalWinnerName').textContent=winner.label;
+      document.getElementById('capitalWinnerText164').textContent=`最佳條件：${winner.bestTag}\n淨損益：${money(winner.totalNetProfit)} ｜ 報酬率：${winner.totalRoiPct.toFixed(2)}%\n期末總權益：$${Number(winner.finalEquity||0).toLocaleString()}\n上次 AI 尋優／快取試算結果（非即時，未含手動庫存）`;
       document.getElementById('capitalWinnerLink164').onclick=()=>openAiCapitalTrades164(winner.strategyKey);
     }
     async function openAiCapitalTrades164(key){
@@ -5846,6 +5900,7 @@ main, #step123Section{align-items:start!important}
       if (rawAllLoadedStocks.length === 0) { showAiProgress("capital",0,"尚未載入股票資料，請先同步行情"); return; }
       if (fullAiBusy || capitalAiBusy) return;
       capitalAiBusy = true;
+      const beforeSearch={params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,full:{..._aiFullStep1PerStrategyMap},key:fullV8Key,filter:preCfg1642,volume:volume164};
       preStarted1642=Date.now();
       const elapsed16416=document.getElementById("capitalElapsed16416");if(elapsed16416)elapsed16416.textContent="已執行：0 秒";const timer16416=setInterval(()=>{if(elapsed16416)elapsed16416.textContent=`已執行：${Math.floor((Date.now()-preStarted1642)/1000)} 秒`;},1000);
       try{preCfg1642=readPre1642();volume164={...volume164,mode:"all"};}catch(e){clearInterval(timer16416);capitalAiBusy=false;showToast(e.message,"error");return;}
@@ -5857,6 +5912,7 @@ main, #step123Section{align-items:start!important}
       const stored=mode48!=='fresh'&&preShown1642?.exactKey16416===exactKey16416?preShown1642:null; if(mode48==="fresh"){_fullStep1Cache.clear(); _aiFullStep1PerStrategyMap={};for(const st of rawAllLoadedStocks){st._lcMulti163?.clear();st._lcCacheKey=null;st._aiPowerMulti16413?.clear();st._aiPowerPlanSig=null;}} sharedStats16413.hits=0;sharedStats16413.misses=0;
       showAiProgress("capital",0,"準備七大策略");
       try {
+      startSearch("capital");
       box.classList.remove("hidden");
       if(stored?.results?.length===7){
         validateCapital1644(stored.results);capitalV8Key=runKey;_lastAiCapitalResultsCache=stored.results;_aiCapitalBestParamsMap=stored.params;_aiCapitalBestStep1Map=stored.step1;capitalFrozen1644=true;preScope1642=null;capitalAiBusy=false;
@@ -5922,7 +5978,6 @@ main, #step123Section{align-items:start!important}
       _aiCapitalBestParamsMap = {};
       _aiCapitalBestStep1Map = {};
       _aiCapitalLifecycleCache = new Map();
-      paintCapitalWinner164(null);
       const optimizerRunId = ++_aiCapitalOptimizerRunId;
       const progressEl = document.getElementById("simAiWinnerSummary");
       if (progressEl) progressEl.textContent = "AI 正在建立共用股票資料快取並進行七大策略尋優…";
@@ -5965,7 +6020,7 @@ main, #step123Section{align-items:start!important}
         if(mode48==="quick") {s1Candidates.splice(d.key === "AI_POWER_90D" ? 1 : 2); cands.splice(2);} else if(d.key==="AI_POWER_90D") {s1Candidates.splice(1);} else { for(const reqMaUp of [false,true]) for(const reqRed of [false,true]) for(const minG of [4,5,6,7,8,9,10]) for(const minV of [50,100,150,200,300,400,450,500]) if(!s1Candidates.some(x=>x.reqMaUp===reqMaUp&&x.reqRed===reqRed&&x.minG===minG&&x.minV===minV))s1Candidates.push({reqMaUp,reqRed,minG,maxG:10.5,minV}); }
         const seenConfigs=new Set();for(let i=0;i<cands.length;){const key=stableConfig16413({...baseCfg,...cands[i].patch});if(seenConfigs.has(key))cands.splice(i,1);else{seenConfigs.add(key);i++;}}
         let simDone=0; const simTotal=cands.length*s1Candidates.length+4;
-        const simulateWithProgress = async (...args) => { const result=await simulateCapitalForStrategy(...args); capReport(0.5+0.5*(++simDone/Math.max(1,simTotal)),`資金回測 ${simDone}/${simTotal}｜交易快取 ${sharedStats16413.hits.toLocaleString()} / 新算 ${sharedStats16413.misses.toLocaleString()}｜無進場訊號略過 ${(aiRunMemo16416?.stats.skipped||0).toLocaleString()}｜${Math.round((Date.now()-preStarted1642)/1000)}秒`); await aiYield(); return result; };
+        const simulateWithProgress = async (...args) => { const result=await simulateCapitalForStrategy(...args); capReport(0.5+0.5*(++simDone/Math.max(1,simTotal)),`資金回測 ${simDone}/${simTotal}｜交易快取 ${sharedStats16413.hits.toLocaleString()} / 新算 ${sharedStats16413.misses.toLocaleString()}｜無進場訊號略過 ${(aiRunMemo16416?.stats.skipped||0).toLocaleString()}｜${Math.round((Date.now()-preStarted1642)/1000)}秒`); await yieldSearch(); return result; };
         for (const c of cands) {
           const testCfg = { ...baseCfg, ...c.patch };
           for (const sc of s1Candidates) {
@@ -6001,14 +6056,14 @@ main, #step123Section{align-items:start!important}
       const finalists=[...results].sort((a,b)=>b.totalNetProfit-a.totalNetProfit).slice(0,mode48==="quick"?3:7);
       for(const [i,row] of finalists.entries()){
         const k=row.strategyKey; let sc=_aiCapitalBestStep1Map[k], patch={...sc.exitPatch}, prio=row.bestPriority;
-        const tryOne=async(nextS,nextP)=>{const res=await simulateCapitalForStrategy(k,nextP,{requireMa20Up:nextS.reqMaUp,requireSolidRedK:nextS.reqRed,useGainRange:true,minGain:nextS.minG,maxGain:nextS.maxG,volOp:'GTE',validVolThreshold:nextS.minV,_prefilteredPool},prio);if(res.totalNetProfit>row.totalNetProfit){Object.assign(row,res);sc=nextS;patch=nextP;}await aiYield();};
+        const tryOne=async(nextS,nextP)=>{const res=await simulateCapitalForStrategy(k,nextP,{requireMa20Up:nextS.reqMaUp,requireSolidRedK:nextS.reqRed,useGainRange:true,minGain:nextS.minG,maxGain:nextS.maxG,volOp:'GTE',validVolThreshold:nextS.minV,_prefilteredPool},prio);if(res.totalNetProfit>row.totalNetProfit){Object.assign(row,res);sc=nextS;patch=nextP;}await yieldSearch();};
         if(k !== "AI_POWER_90D") for(const g of [sc.minG-1,sc.minG+1].filter(x=>x>=4&&x<=10))await tryOne({...sc,minG:g},patch);
         if(k !== "AI_POWER_90D") for(const v of [sc.minV-50,sc.minV+50].filter(x=>x>=50&&x<=500))await tryOne({...sc,minV:v},patch);
         for(const axis of getExitParamAxesForStrategy(k))for(const val of axis.values)await tryOne(sc,{...patch,...val});
         row.bestTag=buildExitParamTag(k,patch);row.s1Best=sc;_aiCapitalBestStep1Map[k]={...sc,exitPatch:patch,exitTag:row.bestTag};_aiCapitalBestParamsMap[k]={...patch,priorityMode:prio};
         showAiProgress('capital',85+14*(i+1)/finalists.length,`策略精調 ${i+1}/${finalists.length}`);
       }
-      validateCapital1644(results);capitalFrozen1644=true;
+      checkSearch();endSearch("capital");validateCapital1644(results);capitalFrozen1644=true;
       _lastAiCapitalResultsCache = results;
       saveCapitalCards1641(results);
       preSeed1642(results,prePoolRun1642.filter(st=>{const q=(preId1642("searchInput")?.value||"").trim().toLowerCase();return preRunSignature1642.get(String(st.code))===preHash1642([st.todayPrice,st.todayVol,st.realBars,st.todayOpen,st.todayHigh,st.todayLow,st.latestTradeDate,st.volRatio,st.yestGainPct,st.todayBigBuyVol,st.todayBigSellVol])&&(!q||String(st.code).toLowerCase().includes(q)||String(st.name).toLowerCase().includes(q));}));preShown1642={codes:prePoolRun1642.map(st=>String(st.code)),results,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,exactKey16416,elapsedSeconds:Math.round((Date.now()-preStarted1642)/1000)};try{await preStore1642(true);preReport1642(100,"完整 AI 尋優完成，增量快取已儲存");}catch(e){preReport1642(100,"完成，但永久快取儲存失敗");}
@@ -6053,7 +6108,13 @@ main, #step123Section{align-items:start!important}
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
       showAiProgress("capital",100,`七大策略尋優完成｜總耗時 ${Math.round((Date.now()-preStarted1642)/1000)} 秒`);
-      } catch(e) { showAiProgress("capital",0,"尋優失敗："+e.message); console.error(e); } finally { clearInterval(timer16416);if(elapsed16416)elapsed16416.textContent=`本次耗時：${Math.floor((Date.now()-preStarted1642)/1000)} 秒`;endAiMemo16416();preScope1642=null; capitalAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
+      } catch(e) { if(e===searchStopped){
+        _aiCapitalBestParamsMap=beforeSearch.params;_aiCapitalBestStep1Map=beforeSearch.step1;
+        _aiFullStep1PerStrategyMap=beforeSearch.full;fullV8Key=beforeSearch.key;_fullStep1Cache.clear();
+        preCfg1642=beforeSearch.filter;volume164=beforeSearch.volume;freeze151();
+        if(!renderAiCapitalCompareCardsOnly())summary.textContent='';
+        showAiProgress('capital',0,'已停止搜尋');return;
+      } showAiProgress("capital",0,"尋優失敗："+e.message); console.error(e); } finally { endSearch("capital");clearInterval(timer16416);if(elapsed16416)elapsed16416.textContent=`本次耗時：${Math.floor((Date.now()-preStarted1642)/1000)} 秒`;endAiMemo16416();preScope1642=null; capitalAiBusy=false; if(pendingTrimRefresh){pendingTrimRefresh=false;setTimeout(onTrimTopWinnersChanged,0);} }
     }
 
 
@@ -10947,7 +11008,7 @@ window.addEventListener('load',()=>{
  for(const id of ['dev15User','dev15Password'])document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void dev15Login(false);}});
  const legend=document.getElementById('floatingLegend'),controls=document.getElementById('chartFloatingControls');if(legend&&controls){legend.style.cssText='position:static';legend.classList.remove('absolute');controls.append(legend);}
  try {const dates=JSON.parse(localStorage.getItem('fullBacktestDates')||'{}');document.getElementById('fullDateStart').value=dates.start||'';document.getElementById('fullDateEnd').value=dates.end||'';} catch {}
- for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ for(const kind of ['full','capital']) {try {const v=JSON.parse(localStorage.getItem('20ma-v160-'+kind)||'null');if(!v?.data)continue;if(kind==='full'){paintFullWinner(v.data);_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
  for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
