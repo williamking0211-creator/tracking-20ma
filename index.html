@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.28｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.29｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.28 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.29 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.28</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.29</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -11146,7 +11146,7 @@ html.mobile164 #capitalOptions164 label{max-width:100%;flex-wrap:wrap}html.mobil
 <script>
 let historyStrictSell16418=false;
 let historyLimit164=50, historySort164={key:'sellDate',dir:-1}, historyFilters164={};
-const historyCols164=[['seq','#'],['stock','股票／代號'],['netProfit','淨損益'],['pct','報酬率 (%)'],['realTradeNo164','第幾次買入'],['buyDate','買進日'],['buyPrice','買進價'],['sellDate','平倉日'],['sellPrice','平倉價'],['sellVolume412','平倉日成交量（張）'],['volumeBasis16418','本次篩選基準量（張）'],['lots','張數'],['totalCost','投入本金'],['holdingDays','持有天數'],['reason','出場原因']];
+const historyCols164=[['seq', '#'], ['stock', '股票／代號'], ['netProfit', '淨損益'], ['pct', '報酬率 (%)'], ['buyDate', '買進日'], ['buyPrice', '買進價'], ['sellDate', '平倉日'], ['sellPrice', '平倉價'], ['holdingDays', '持有天數'], ['totalCost', '投入本金'], ['sellVolume412', '平倉日成交量（張）'], ['volumeBasis16418', '本次篩選基準量（張）'], ['realTradeNo164', '第幾次買入'], ['lots', '張數'], ['reason', '出場原因']];
 function historyDate412(v){return String(v||'').slice(0,10).replace(/\//g,'-');}
 function historySellVolume412(t,stocks){const st=stocks.get(String(t.code)),date=historyDate412(t.sellDate);if(!st||!date)return null;const bars=st.realBars||st.history||[];const bar=bars.find(b=>historyDate412(b.date==='今日'?st.latestTradeDate:b.date)===date);const v=bar?.vol;return v!=null&&v!==''&&Number.isFinite(Number(v))&&Number(v)>=0?Number(v):null;}
 function historyRows164(rows,day,includeToday=false){const stocks=new Map(rawAllLoadedStocks.map(st=>[String(st.code),st]));return (rows||[]).filter(t=>t.isClosed&&t.sellDate&&(historyDate412(t.sellDate)<historyDate412(day)||(includeToday&&historyDate412(t.sellDate)===historyDate412(day)))).sort((a,b)=>String(b.sellDate).localeCompare(String(a.sellDate))||String(b.buyDate).localeCompare(String(a.buyDate))).map((t,i)=>({...t,seq:i+1,stock:`${t.code} ${t.name||''}`,sellVolume412:historySellVolume412(t,stocks),volumeBasis16418:smartBasisVolume16418(stocks.get(String(t.code)),t),sellPrice:t.exitOrNowPrice??t.curP??t.sellPrice,pct:t.netPct??(Number(t.totalCost)>0?Number(t.netProfit)/Number(t.totalCost)*100:null),reason:t.exitReason||t.customRuleText||'已平倉'}));}
@@ -11167,7 +11167,7 @@ function renderHistoryClosed164(){
  document.getElementById('historyStats164').textContent=`符合 ${rows.length} 筆｜獲利 ${wins} 筆｜虧損 ${losses} 筆｜持平 ${rows.length-wins-losses} 筆｜勝率 ${rows.length?(wins/rows.length*100).toFixed(1):'0.0'}%｜交易本金合計 ${money(cost)}｜本金加權報酬率 ${cost>0?(net/cost*100).toFixed(2)+'%':'—'}`;
  body.replaceChildren();
  const num=v=>v!=null&&Number.isFinite(Number(v))?Number(v).toFixed(2):'—';
- rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;tr.dataset.stockCode164=t.code;const vals=[rows.indexOf(t)+1,t.stock,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',t.realTradeNo164,dateOnly164(t.buyDate),num(t.buyPrice),dateOnly164(t.sellDate),num(t.sellPrice),t.sellVolume412==null?'—':t.sellVolume412.toLocaleString('zh-TW',{maximumFractionDigits:2}),Number.isFinite(t.volumeBasis16418)?t.volumeBasis16418.toLocaleString('zh-TW',{maximumFractionDigits:2}):'—',t.lots,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.holdingDays,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(['sellVolume412','volumeBasis16418'].includes(historyCols164[j][0])){td.style.color='#7dd3fc';if(historyCols164[j][0]==='volumeBasis16418'&&preCfg1642.mode!=='all')td.title=smartBasisName16418()+'（本次套用依據）';};if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,tr.id);});
+ rows.slice(0,historyLimit164).forEach(t=>{const tr=body.insertRow();tr.id=`history164-${t.code}-${t.seq}`;tr.dataset.stockCode164=t.code;const vals=[rows.indexOf(t)+1,t.stock,money(t.netProfit),t.pct==null?'—':num(t.pct)+'%',dateOnly164(t.buyDate),num(t.buyPrice),dateOnly164(t.sellDate),num(t.sellPrice),t.holdingDays,t.totalCost==null?'—':'$'+Math.round(Number(t.totalCost)).toLocaleString('en-US'),t.sellVolume412==null?'—':t.sellVolume412.toLocaleString('zh-TW',{maximumFractionDigits:2}),Number.isFinite(t.volumeBasis16418)?t.volumeBasis16418.toLocaleString('zh-TW',{maximumFractionDigits:2}):'—',t.realTradeNo164,t.lots,t.reason];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';td.dataset.label164=historyCols164[j][1];if(['stock','reason'].includes(historyCols164[j][0]))td.dataset.wide164='1';if(['sellVolume412','volumeBasis16418'].includes(historyCols164[j][0])){td.style.color='#7dd3fc';if(historyCols164[j][0]==='volumeBasis16418'&&preCfg1642.mode!=='all')td.title=smartBasisName16418()+'（本次套用依據）';};if(['netProfit','pct'].includes(historyCols164[j][0]))td.style.color=Number(t.netProfit)>0?'#fb7185':Number(t.netProfit)<0?'#34d399':'#cbd5e1';});tr.cells[1].style.cursor='pointer';tr.cells[1].onclick=()=>openStockFromSimList(t.code,tr.id);});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=historyCols164.length;td.textContent='沒有符合條件的歷史平倉交易';}
  document.getElementById('historyMore164').classList.toggle('hidden',rows.length<=historyLimit164);
 }
@@ -11357,6 +11357,18 @@ html body #unifiedFilter16417 label.aiOptToggle:is(#lblAiFullOpt,#lblAiCapitalOp
 .aiOptToggle .aiOptState b:last-child,.aiOptToggle input:checked~.aiOptState b:first-child{display:none}
 .aiOptToggle input:checked~.aiOptState b:last-child{display:inline}
 .aiOptToggle:has(input:checked) .aiOptState{background:#d1fae5;color:#064e3b}
+</style>
+
+<style>
+html:not(.mobile164) main:has(#historyClosed164[open]:not(.hidden)){max-width:100%;width:100%}
+html:not(.mobile164) #stockPoolPanel:has(#historyClosed164[open]:not(.hidden)),
+html:not(.mobile164) #stockPoolPanel:has(#historyClosed164[open]:not(.hidden)) ~ #detailPanelSection{grid-column:1 / -1}
+html:not(.mobile164) #historyClosed164 table{table-layout:fixed;width:100%;min-width:0}
+html:not(.mobile164) #historyClosed164 :is(th,td,th button){white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+html:not(.mobile164) #historyClosed164 :is(th,td){padding:5px 3px}
+html:not(.mobile164) #historyClosed164 th:first-child{width:3%}
+html:not(.mobile164) #historyClosed164 th:nth-child(2){width:8%}
+html:not(.mobile164) #historyClosed164 th:last-child{width:13%}
 </style>
 </body>
 </html>
