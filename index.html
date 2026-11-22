@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.32｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.33｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.32 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.33 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.32</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.33</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -6275,12 +6275,14 @@ async function sendStrategyToFriends(button){
     const name=getStrategyDisplayName(choice.strategy);
     if(!confirm('發布「'+name+'」並傳送策略通知給 LINE 官方帳號全體好友？'))return;
     status.textContent='正在核對正式策略…';
+    const selectionStillMatches=()=>sameOfficialProfile16419(choice,officialChoice164());
     clearTimeout(officialSyncTimer16419);
     await officialSyncQueue16419.catch(()=>{});
-    if(currentExitStrategy!==choice.strategy)throw Error('選擇已變更，請確認後重新發送');
+    if(!selectionStillMatches())throw Error('選擇已變更，請確認後重新發送');
     const current=await dev15Req('profile');
+    if(!selectionStillMatches())throw Error('選擇已變更，請確認後重新發送');
     const published=sameOfficialProfile16419(choice,current.profile)?current:await dev15Req('profile',choice);
-    if(currentExitStrategy!==choice.strategy)throw Error('選擇已變更，請確認後重新發送');
+    if(!selectionStillMatches())throw Error('選擇已變更，請確認後重新發送');
     status.textContent='正在送交 LINE…';
     await dev15Req('strategy-announcement',{rev:published.rev,strategy:choice.strategy});
     status.textContent='LINE 已受理全體好友通知：'+name+' · v'+published.rev;
