@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.27｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.28｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.27 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.28 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.27</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.28</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -2807,9 +2807,13 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       try {state=JSON.parse(localStorage.getItem('w-profit-history-'+kind));} catch {}
       return profitHistory[kind]=state && Number.isFinite(state.current?.amount) ? state : {};
     }
-    function recordProfit(kind,current) {
+    function winningCapitalProfit(rows) {
+      const valid=(rows || []).filter(row=>Number.isFinite(row.totalNetProfit));
+      return valid.length ? capitalProfitWinner(valid.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a)) : null;
+    }
+    function recordProfit(kind,current,previous=readProfitHistory(kind).current) {
       if (!current) return;
-      const state={previous:readProfitHistory(kind).current || null,current};
+      const state={previous:previous || null,current};
       profitHistory[kind]=state;
       try {localStorage.setItem('w-profit-history-'+kind,JSON.stringify(state));} catch {}
       showProfitComparison(kind,current);
@@ -2817,13 +2821,14 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
     function showProfitComparison(kind,current) {
       const panel=document.getElementById(kind+'ProfitCompare');
       const state=readProfitHistory(kind);
-      panel.hidden=!current || state.current?.key!==current.key || state.current?.amount!==current.amount;
+      panel.hidden=!current;
       if (panel.hidden) return;
       const money=n=>(n<0?'−':n>0?'+':'')+'$'+Math.abs(n).toLocaleString('zh-TW',{maximumFractionDigits:0});
-      const old=state.previous;
+      const matches=state.current?.key===current.key && state.current?.amount===current.amount;
+      const old=matches ? state.previous : state.current;
       const diff=old ? current.amount-old.amount : null;
       panel.replaceChildren();
-      for(const [title,value] of [['上次收益',old?money(old.amount):'首次紀錄'],['本次收益',money(current.amount)],['收益差額',old?money(diff):'—']]){
+      for(const [title,value] of [['上次總收益',old?money(old.amount):'無上次紀錄'],['本次總收益',money(current.amount)],['收益差額',old?money(diff):'—']]){
         const cell=document.createElement('div'),label=document.createElement('small'),number=document.createElement('b');
         label.textContent=title;number.textContent=value;
         if(title==='收益差額' && diff)number.style.color=diff>0?'#fda4af':'#6ee7b7';
@@ -5355,7 +5360,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       capitalAiBusy=true;_aiCapitalLifecycleCache=new Map();preRun1642=true;preCancel1642=false;preId1642('preApply1642').disabled=true;preId1642('preCancel1642').disabled=false;
       try{const pool=prePool1642(cfg), jobs=[], rows=[];let hits=0,done=0;for(const r of _lastAiCapitalResultsCache){const k=r.strategyKey,pc=_aiCapitalBestParamsMap[k],sc=_aiCapitalBestStep1Map[k],items=[];for(const st of pool){const key=preKey1642(k,pc,sc,st);items.push({st,key});if(preCache1642.has(key))hits++;}jobs.push({r,k,pc,sc,items});}const total=pool.length*jobs.length,missing=total-hits;preReport1642(10,`市場 ${rawAllLoadedStocks.length} 檔／符合 ${pool.length} 檔｜快取 ${hits}、待補 ${missing}（股票×策略）`);await aiYield();
       for(const job of jobs){const {r,k,pc,sc,items}=job;const all=[];for(const {st,key} of items){if(preCancel1642)throw Error('已中斷');if(!preCache1642.has(key)){const res=await simulateCapitalForStrategy(k,pc,preOpts1642(sc,[st]),r.bestPriority);preCache1642.set(key,res.cachedEvents);done++;preReport1642(10+70*done/Math.max(1,missing),`${r.label}｜${st.code} ${st.name}｜補算 ${done}/${missing}｜快取 ${hits}`,done?(Date.now()-preStarted1642)/1000/done*(missing-done):null);if(done%5===0)await aiYield();}all.push(...preCache1642.get(key));}if(preCancel1642)throw Error('已中斷');const allowed415=new Set(items.map(x=>String(x.st.code)));const result=await simulateCapitalForStrategy(k,pc,{},r.bestPriority,all.filter(t=>allowed415.has(String(t.code))));rows.push({...r,...result});preReport1642(80+19*rows.length/7,`重新分配資金 ${rows.length}/7｜${r.label}｜快取 ${hits}／補算 ${done}`);await aiYield();}
-      if(preCancel1642)throw Error('已中斷');validateCapital1644(rows);capitalFrozen1644=true;_lastAiCapitalResultsCache=rows;preShown1642={codes:pool.map(st=>String(st.code)),results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map};saveCapitalCards1641(rows);renderAiCapitalCompareCardsOnly();try{await preStore1642(true);preReport1642(100,`完成｜讀取 ${hits}、補算 ${done}｜沿用上次最佳參數`);}catch(e){preReport1642(100,'完成，但永久快取儲存失敗；本頁仍可使用');}showAiProgress('capital',100,'快取重算完成（非重新尋優）');window._skipNextAiCapOptInSim=true;runPortfolioCapitalSimulation();applyFiltersAndRender();refreshVolumePanels164();
+      if(preCancel1642)throw Error('已中斷');validateCapital1644(rows);
+        const previousProfit=winningCapitalProfit(_lastAiCapitalResultsCache) || readProfitHistory('capital').current;
+        capitalFrozen1644=true;_lastAiCapitalResultsCache=rows;
+        recordProfit('capital',winningCapitalProfit(rows),previousProfit);preShown1642={codes:pool.map(st=>String(st.code)),results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map};saveCapitalCards1641(rows);renderAiCapitalCompareCardsOnly();try{await preStore1642(true);preReport1642(100,`完成｜讀取 ${hits}、補算 ${done}｜沿用上次最佳參數`);}catch(e){preReport1642(100,'完成，但永久快取儲存失敗；本頁仍可使用');}showAiProgress('capital',100,'快取重算完成（非重新尋優）');window._skipNextAiCapOptInSim=true;runPortfolioCapitalSimulation();applyFiltersAndRender();refreshVolumePanels164();
       }catch(e){preCfg1642=old;volume164=oldVolume415;try{await preStore1642(true);}catch(_){}preReport1642(0,e.message+'；保留上次結果');}finally{capitalAiBusy=false;preRun1642=false;preId1642('preApply1642').disabled=false;preId1642('preCancel1642').disabled=true;}}
 
     let volume164={mode:'all',basis:'buy',lo:1000,hi:10000};
@@ -5422,7 +5430,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           await aiYield();
         }
         if(trim!==getTrimTopWinnersCount()||volumeSig!==JSON.stringify(volume164)){pendingTrimRefresh=true;return true;}
-        validateCapital1644(rows);capitalFrozen1644=true;_lastAiCapitalResultsCache=rows; saveCapitalCards1641(rows); if(preShown1642){preShown1642={...preShown1642,results:rows};try{await preStore1642(true);}catch(e){console.warn(e);}} capitalV8Key=key;
+        validateCapital1644(rows);
+        const previousProfit=winningCapitalProfit(_lastAiCapitalResultsCache) || readProfitHistory('capital').current;
+        capitalFrozen1644=true;_lastAiCapitalResultsCache=rows;
+        recordProfit('capital',winningCapitalProfit(rows),previousProfit); saveCapitalCards1641(rows); if(preShown1642){preShown1642={...preShown1642,results:rows};try{await preStore1642(true);}catch(e){console.warn(e);}} capitalV8Key=key;
         aiV8Save('capital',key,{results:rows,params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,trim});
         renderAiCapitalCompareCardsOnly();
         showAiProgress('capital',100,`成交量條件及${trim ? '剔除前 '+trim+' 名' : '不剔除'}已重新試算（上次 AI 交易快照，非重新尋優）`);
@@ -5946,6 +5957,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if (rawAllLoadedStocks.length === 0) { showAiProgress("capital",0,"尚未載入股票資料，請先同步行情"); return; }
       if (fullAiBusy || capitalAiBusy) return;
       capitalAiBusy = true;
+      const priorCapitalProfit=winningCapitalProfit(_lastAiCapitalResultsCache) || readProfitHistory('capital').current;
       const beforeSearch={params:_aiCapitalBestParamsMap,step1:_aiCapitalBestStep1Map,full:{..._aiFullStep1PerStrategyMap},key:fullV8Key,filter:preCfg1642,volume:volume164};
       preStarted1642=Date.now();
       const elapsed16416=document.getElementById("capitalElapsed16416");if(elapsed16416)elapsed16416.textContent="已執行：0 秒";const timer16416=setInterval(()=>{if(elapsed16416)elapsed16416.textContent=`已執行：${Math.floor((Date.now()-preStarted1642)/1000)} 秒`;},1000);
@@ -5963,7 +5975,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if(stored?.results?.length===7){
         validateCapital1644(stored.results);capitalV8Key=runKey;_lastAiCapitalResultsCache=stored.results;_aiCapitalBestParamsMap=stored.params;_aiCapitalBestStep1Map=stored.step1;capitalFrozen1644=true;preScope1642=null;capitalAiBusy=false;
         renderAiCapitalCompareCardsOnly();const win=stored.results.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a);if(autoSwitch)await selectAiOptimizedCapitalStrategy(win.strategyKey);
-        recordProfit('capital',capitalProfitWinner(win));
+        recordProfit('capital',capitalProfitWinner(win),priorCapitalProfit);
         showAiProgress('capital',100,'完整相同條件快取 · 無需重新尋優');return;
       }
       beginAiMemo16416();
@@ -6154,7 +6166,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if (autoSwitch && winner) {
         showToast(`🤖 AI 實戰資金試算完成！收益最大為「${winner.label}」(${fmtMoney(winner.totalNetProfit)})，已自動為您套用！`, "success");
       }
-      recordProfit("capital",capitalProfitWinner(winner));
+      recordProfit("capital",capitalProfitWinner(winner),priorCapitalProfit);
       showAiProgress("capital",100,`七大策略尋優完成｜總耗時 ${Math.round((Date.now()-preStarted1642)/1000)} 秒`);
       } catch(e) { if(e===searchStopped){
         _aiCapitalBestParamsMap=beforeSearch.params;_aiCapitalBestStep1Map=beforeSearch.step1;
