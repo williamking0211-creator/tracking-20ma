@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.35｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.37｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.35 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.37 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.35</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.37</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -2839,7 +2839,9 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       }
       if(old){const note=document.createElement('small');note.className='priorStrategy';note.textContent='上次勝出策略：'+getStrategyDisplayName(old.key);panel.append(note);}
     }
+    let completedFullResults = {};
     function paintFullWinner(results) {
+      completedFullResults = {...results};
       const card=document.getElementById('fullWinner');
       const entries=Object.entries(results).filter(([,r])=>Number.isFinite(r?.totalProfitNtd));
       card.hidden=!entries.length;
@@ -3406,8 +3408,8 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         const pf = Math.abs(lossSum) > 0 ? (winSum / Math.abs(lossSum)).toFixed(2) : (winSum > 0 ? "∞" : "0.00");
         const winRate = totalTrades > 0 ? ((winCnt / totalTrades) * 100).toFixed(0) : "0";
         let dynLabel = item.label;
-        if (useAiFullCards && aiS1 && aiS1.exitPatch) {
-          const ep = aiS1.exitPatch;
+        {
+          const ep = completedFullResults[item.key]?.exitPatch || cfg;
           if (item.key === 'SHORT_MA_TRAIL' && ep.shortMaPeriod) dynLabel = `B. 賺達標守${ep.shortMaPeriod}MA`;
           else if (item.key === 'PEAK_TRAILING' && ep.peakDrawdownPct) dynLabel = `C. 高點回落${ep.peakDrawdownPct}%`;
           else if (item.key === 'RR_LADDER' && (ep.rrBreakevenRatio || ep.rrTier2Ratio)) dynLabel = `E. 風報比1:${ep.rrBreakevenRatio || 1}/1:${ep.rrTier2Ratio || 3}`;
@@ -3418,14 +3420,17 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
 
       }
       _lastCmpResultsCache = results;
-      if (note && useAiFullCards) note.textContent = "AI 各策略獨立條件｜目前策略依已套用參數｜股池與區間共用結算";
-      if(currentExitStrategy==='AI_POWER_90D'){const g=results.find(r=>r.key==='AI_POWER_90D');const b=_aiFullStep1PerStrategyMap.AI_POWER_90D;if(g&&b&&!g.pending&&!fullDates().start&&!fullDates().end)renderFullAiAdvice({...b,cnt:g.totalTrades,totalProfitNtd:g.net,avgProfitNtd:g.totalTrades?Math.round(g.net/g.totalTrades):0,winRate:Number(g.winRate)});}
+      const winner=fullProfitWinner(completedFullResults);
+      if(note && winner)note.textContent='全條件尋優顯示上次完成結果；目前股池合計為股池四加股池五。';
       const bestNet = Math.max(...results.filter(r=>!r.pending).map(r => r.net));
 
       grid.innerHTML = results.map(r => {
         const isCur = r.key === currentExitStrategy;
-        const isBest = r.net === bestNet && r.totalTrades > 0;
-        const netColor = r.net > 0 ? "text-rose-400" : (r.net < 0 ? "text-emerald-400" : "text-slate-300");
+        const saved=completedFullResults[r.key];
+        const hasSaved=Number.isFinite(saved?.totalProfitNtd);
+        const isBest=winner ? r.key===winner.key : r.net===bestNet&&r.totalTrades>0;
+        const headline=hasSaved?saved.totalProfitNtd:r.net;
+        const netColor=headline>0?'text-rose-400':headline<0?'text-emerald-400':'text-slate-300';
         const p4Color = r.pool4Net > 0 ? "text-cyan-300" : (r.pool4Net < 0 ? "text-emerald-400" : "text-slate-300");
         const p5Color = r.pool5Net > 0 ? "text-rose-300" : (r.pool5Net < 0 ? "text-emerald-400" : "text-slate-300");
         const borderCls = isCur ? "border-2 border-indigo-400 bg-indigo-950/40" : "border border-slate-800 bg-slate-950/80 hover:border-slate-600";
@@ -3433,17 +3438,19 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           <div onclick="jumpComparisonPool164('${r.key}')" class="cursor-pointer rounded-md p-1.5 transition ${borderCls}">
             <div class="flex items-center justify-between gap-1 text-[10px]">
               <span class="font-bold text-slate-200 truncate">${r.label}</span>
-              ${isBest ? '<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">最佳</span>' : ''}
+              ${isBest ? `<span class="px-1 rounded bg-amber-500/25 text-amber-300 font-bold">${winner?'尋優最佳':'股池最佳'}</span>` : ''}
             </div>
-            <div class="${netColor} font-bold text-xs mt-0.5">${r.pending ? "尚未尋優" : (r.aiS1 ? "AI條件 " : "合計 ")+formatMoneyDisplay(r.net)}</div>
+            <div class="${netColor} font-bold text-xs mt-0.5">${hasSaved ? "全條件尋優 "+formatMoneyDisplay(headline) : (winner||r.pending?"尚未尋優":"股池合計 "+formatMoneyDisplay(r.net))}</div>
             <div class="text-[10px] mt-1 space-y-0.5 border-t border-slate-800/80 pt-1 whitespace-nowrap">
+              ${hasSaved?`<div>尋優勝率 ${saved.winRate}% ｜ ${saved.cnt} 檔</div>`:''}
+              <div class="flex justify-between gap-1"><span>目前股池合計</span><b>${formatMoneyDisplay(r.net)}</b></div>
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池四(${r.pool4Cnt}檔):</span><b class="${p4Color}">${formatMoneyDisplay(r.pool4Net)}</b></div>
               <div class="flex justify-between gap-1"><span class="text-slate-400">股池五(${r.pool5Cnt}檔):</span><b class="${p5Color}">${formatMoneyDisplay(r.pool5Net)}</b></div>
             </div>
             <div class="text-[9.5px] text-slate-400 mt-0.5 pt-0.5 border-t border-slate-800/60 whitespace-nowrap">
-              勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
+              股池勝率${r.winRate}% ｜ 賺÷賠:${r.pf}倍
             </div>
-            ${r.aiS1 ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${r.aiS1.exitTag ? r.aiS1.exitTag + '｜' : ''}${r.aiS1.independent ? "STEP 1 不適用" : `20MA(${r.aiS1.reqMaUp ? '✔' : '不限'}) 量≥${r.aiS1.minV}%`}</div>` : ''}
+            ${hasSaved ? `<div class="text-[9px] text-indigo-300 mt-0.5 truncate" title="AI最佳條件">🤖 ${saved.exitTag ? saved.exitTag + '｜' : ''}${saved.independent ? "STEP 1 不適用" : `20MA(${saved.reqMaUp ? '✔' : '不限'}) 量≥${saved.minV}%`}</div>` : ''}
           </div>
         `;
       }).join("");
@@ -11148,7 +11155,7 @@ window.addEventListener('load',()=>{
    const baseline=kind==='full'?fullProfitWinner(v.data):Array.isArray(rows)&&rows.length?capitalProfitWinner(rows.reduce((a,b)=>b.totalNetProfit>a.totalNetProfit?b:a)):null;
    if(baseline)recordProfit(kind,baseline);
  }
- if(kind==='full'){paintFullWinner(v.data);_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
+ if(kind==='full'){paintFullWinner(v.data);_aiFullStep1PerStrategyMap=v.data;fullV8Key=v.key;renderFullAiAdvice(v.data[currentExitStrategy]);_lastCmpResultsCache=null;renderStrategyComparisonSummary(getCurrentFilterOptions());}else{_lastAiCapitalResultsCache=v.data.results;_aiCapitalBestParamsMap=v.data.params;_aiCapitalBestStep1Map=v.data.step1;capitalV8Key=v.key;renderAiCapitalCompareCardsOnly();if(v.data.trim!==getTrimTopWinnersCount())setTimeout(onTrimTopWinnersChanged,0);document.getElementById('simAiStrategyCompareBox')?.classList.remove('hidden');}showAiProgress(kind,100,'已讀取上次存檔 · 手動重新尋優');}catch(e){console.warn(e);}}
  for(const id of ['trackingPoolSummaryBanner','simResultCardsMobile','simTradesTableWrap','simSkippedPanel','chartHudBar','geminiAiResultBox','stockWhaleBaseBanner','stockPoolPanel','strategyCompareBox','simAiStrategyCompareBox','aiPowerPlanBox','aiMarketLearnBox','detailPanelSection','cardStopLossBox','capitalSimBody']) {const el=document.getElementById(id);if(!el)continue;el.style.position='relative';const b=document.createElement('button');b.type='button';b.className='v161-collapse';b.textContent='−';b.setAttribute('aria-label','縮小字卡');b.onclick=e=>{e.stopPropagation();const f=el.classList.toggle('v161-fold');b.textContent=f?'+':'−';b.setAttribute('aria-expanded',String(!f));if(!f&&id==='detailPanelSection')requestAnimationFrame(()=>renderCanvasChart());};el.append(b);}
 });
 </script>
