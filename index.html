@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.52｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.53｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.52 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.53 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.52</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.53</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -1279,6 +1279,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
                     <th onclick="toggleSimTableSort('exitOrNowPrice')" class="sortable-th py-1.5 px-2 text-right">現價 / 平倉價 <span id="simSort-exitOrNowPrice">↕</span></th>
                     <th class="py-1.5 px-2">停損 / 停利價與執行條件</th>
                     <th onclick="toggleSimTableSort('netProfit')" class="sortable-th py-1.5 px-2 text-right">淨損益 <span id="simSort-netProfit">↕</span></th>
+                    <th onclick="toggleSimTableSort('holdingDays')" class="sortable-th py-1.5 px-2 text-center">續抱第幾天 <span id="simSort-holdingDays">↕</span></th>
                     <th onclick="toggleSimTableSort('isClosed')" title="已平倉依平倉日、續抱中依買進日；再次點擊反向排序" class="sortable-th py-1.5 px-2 text-center">狀態 / 手動平倉 <span id="simSort-isClosed">↕</span></th>
                   </tr>
                 </thead>
@@ -4935,6 +4936,21 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       });
     }
 
+    function calcHoldingDays16453(t) {
+      if (Number.isFinite(Number(t?.holdingDays)) && Number(t.holdingDays) >= 1) return Math.round(Number(t.holdingDays));
+      const bd = String(t?.buyDate || "").slice(0, 10).replace(/\//g, "-");
+      if (!bd) return 1;
+      const st = rawAllLoadedStocks.find(s => String(s.code) === String(t.code));
+      if (st) {
+        const bars = buildStockDailyBarsWithToday(st);
+        const bi = bars.findIndex(b => String(b.date === "今日" ? (st.latestTradeDate || lineV14Day()) : b.date).slice(0, 10) >= bd);
+        if (bi >= 0) return Math.max(1, bars.length - bi);
+      }
+      const endMs = Date.parse(lineV14Day());
+      const startMs = Date.parse(bd);
+      return Number.isFinite(endMs) && Number.isFinite(startMs) ? Math.max(1, Math.round((endMs - startMs) / 86400000) + 1) : 1;
+    }
+
     function renderSimTradesTableOnly() {
       const tbody = document.getElementById("simTradesTableBody");
       if (!tbody) return false;
@@ -4979,6 +4995,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
                 <div class="text-[10px] text-cyan-300/90">${pt.autoRule.ruleText}</div>
               </td>
               <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(pt.netProfit)} (${pt.netPct >= 0 ? "+" : ""}${pt.netPct.toFixed(1)}%)</td>
+              <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">第 ${calcHoldingDays16453(pt)} 天</td>
               <td class="py-1.5 px-2 text-center space-y-1" onclick="event.stopPropagation()">
                 <select onchange="updatePortfolioField('${pt.id}', 'isClosed', this.value === '1')" class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-200">
                   <option value="0" ${!pt.isClosed ? 'selected' : ''}>續抱中</option>
@@ -4995,7 +5012,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       }
 
       if (!Array.isArray(lastSimTradesSnapshot)) return false;
-      if (!lastSimTradesSnapshot.length) { tbody.innerHTML='<tr><td colspan="8" class="py-4 text-center text-slate-500">目前成交量及投資條件下無可買進交易</td></tr>'; const count=document.getElementById('simStockCount164');if(count)count.textContent='符合 0 / 0 筆';return true; }
+      if (!lastSimTradesSnapshot.length) { tbody.innerHTML='<tr><td colspan="9" class="py-4 text-center text-slate-500">目前成交量及投資條件下無可買進交易</td></tr>'; const count=document.getElementById('simStockCount164');if(count)count.textContent='符合 0 / 0 筆';return true; }
       tbody.innerHTML = sortSimRows(lastSimTradesSnapshot.filter(t=>!t.isClosed)).map((bt, idx) => {
         const rowId = `sim-row-${bt.code}-${idx}`;
         const pCls = bt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
@@ -5024,6 +5041,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
               <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
             </td>
             <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
+            <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">第 ${calcHoldingDays16453(bt)} 天</td>
             <td class="py-1.5 px-2 text-center space-y-1">
               <div>${stBadge}</div>
               ${!bt.manualSource && !bt.isClosed && bt.strategyKey !== "AI_POWER_90D" ? `<button type="button" onclick="manualCloseSimTrade('${bt.uid}', '${bt.code}', ${bt.exitOrNowPrice}, event)" class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-200 hover:bg-amber-500/35 text-[10px]">🔒 手動平倉</button>` : (bt.isManualClosed ? `<button type="button" onclick="undoManualCloseSimTrade('${bt.uid}', event)" class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 hover:text-white text-[10px]">↺ 恢復追蹤</button>` : '')}
@@ -6835,7 +6853,7 @@ function lineTradeAmount161(t,close=false){
         const tbody = document.getElementById("simTradesTableBody");
         if (tbody) {
           if (portComputed.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="py-5 text-center text-slate-400">尚未加入庫存股票，可點上方「📥 匯入模擬名單為我的庫存」或「➕ 新增庫存股票」</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="py-5 text-center text-slate-400">尚未加入庫存股票，可點上方「📥 匯入模擬名單為我的庫存」或「➕ 新增庫存股票」</td></tr>`;
           } else {
             tbody.innerHTML = sortSimRows(portComputed.filter(t=>!t.isClosed).map(pt => ({ ...pt, exitOrNowPrice: pt.curP }))).map((pt, idx) => {
               const pCls = pt.netProfit >= 0 ? "text-rose-400" : "text-emerald-400";
@@ -6877,6 +6895,7 @@ function lineTradeAmount161(t,close=false){
                            class="w-full bg-slate-950 border border-slate-800 rounded px-1 py-0.5 text-[10px] text-cyan-300" />
                   </td>
                   <td class="py-1.5 px-2 text-right font-bold ${pCls}" ${getTickFlashAttr(pt.code)}>${fmtMoney(pt.netProfit)}<div class="text-[10px]">(${pt.netPct >= 0 ? "+" : ""}${pt.netPct.toFixed(1)}%)</div></td>
+                  <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">第 ${calcHoldingDays16453(pt)} 天</td>
                   <td class="py-1.5 px-2 text-center space-y-1">
                     <select onchange="updatePortfolioField('${pt.id}', 'isClosed', this.value)" class="bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white">
                       <option value="0" ${!pt.isClosed ? 'selected' : ''}>續抱中</option>
@@ -6897,7 +6916,7 @@ function lineTradeAmount161(t,close=false){
       const tbody = document.getElementById("simTradesTableBody");
       if (tbody) {
         if (boughtTrades.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" class="py-4 text-center text-slate-500">此起始日期與資金條件下尚無可買進交易</td></tr>`;
         } else {
           tbody.innerHTML = sortSimRows(boughtTrades.filter(t=>!t.isClosed)).map((bt, idx) => {
             const rowId = `sim-row-${bt.code}-${idx}`;
@@ -6925,6 +6944,7 @@ function lineTradeAmount161(t,close=false){
                   <div class="text-[10px] text-cyan-300/90">${ruleInfo.ruleText}</div>
                 </td>
                 <td class="py-1.5 px-2 text-right font-bold ${pCls}">${fmtMoney(bt.netProfit)} (${((bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) >= 0 ? '+' : '')}${(Number(bt.netPct ?? (bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0)) || 0).toFixed(1)}%)</td>
+                <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">第 ${calcHoldingDays16453(bt)} 天</td>
                 <td class="py-1.5 px-2 text-center space-y-1">
                   <div>${stBadge}</div>
                   ${!bt.manualSource && !bt.isClosed && bt.strategyKey !== "AI_POWER_90D"
@@ -11439,10 +11459,10 @@ const nav=$('nav164');nav?.addEventListener('click',e=>{if(!active)return;const 
 #lblAiCapitalOpt{background:linear-gradient(110deg,#7c3aed,#be185d)!important;color:#fff!important;border:2px solid #facc15!important;box-shadow:0 0 12px #a855f777!important;padding:12px 16px!important;font-size:18px!important;cursor:pointer;border-radius:10px!important}#lblAiCapitalOpt:has(input:checked){background:#065f46!important;border-color:#34d399!important}
 html.mobile164{font-size:23px!important;-webkit-text-size-adjust:100%}html.mobile164 body{font-size:23px!important;min-width:0!important;overflow-x:hidden}html.mobile164 main,html.mobile164 #mobileHome164,html.mobile164 #capitalSimBody,html.mobile164 #simTradesTableWrap{min-width:0!important;width:100%!important;max-width:100%!important}html.mobile164 .text-xs,html.mobile164 .text-sm,html.mobile164 [class*="text-["],html.mobile164 button,html.mobile164 summary,html.mobile164 label{font-size:21px!important;line-height:1.3!important}html.mobile164 input:not([type=checkbox]):not([type=radio]),html.mobile164 select{font-size:22px!important}html.mobile164 #mobileEquity164{font-size:42px!important}html.mobile164 #manualCapitalGrid button{font-size:22px!important}html.mobile164 #nav164 button{font-size:18px!important}html.mobile164 #lblAiCapitalOpt{width:100%;font-size:24px!important;min-height:60px;justify-content:center}
 html.mobile164 table.rwdCards164 tbody tr{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;padding:10px;margin:7px 0;align-items:start}html.mobile164 table.rwdCards164 td{font-size:23px!important;line-height:1.28!important;padding:2px!important;min-width:0!important}html.mobile164 table.rwdCards164 td[data-label164]::before{font-size:16px!important;margin:0 0 2px}html.mobile164 table.rwdCards164 td[data-wide164]{grid-column:auto}html.mobile164 table.rwdCards164 td[colspan]{grid-column:1/-1}html.mobile164 table.rwdCards164 th[onclick]{font-size:17px!important;padding:5px}html.mobile164 table:has(#simTradesTableBody) tbody tr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}html.mobile164 #simTradesTableBody tr td:nth-child(1):not([colspan]){grid-column:1/-1;font-size:17px!important;color:#94a3b8}html.mobile164 #simTradesTableBody tr td:nth-child(1):not([colspan])::before{display:none}html.mobile164 #simTradesTableBody tr td:nth-child(2){grid-column:1/-1;font-weight:bold;font-size:27px!important}html.mobile164 #simTradesTableBody tr td:nth-child(2)::before{display:none}html.mobile164 #simTradesTableBody tr td:nth-child(6){grid-column:1/-1;grid-row:5}html.mobile164 #simTradesTableBody tr td:nth-child(7){font-size:24px!important}html.mobile164 #simTradesTableBody tr td:nth-child(8){align-self:center}html.mobile164 #simTradesTableBody tr td:nth-child(5){grid-row:4;grid-column:1}html.mobile164 #simTradesTableBody tr td:nth-child(7){grid-row:4;grid-column:2}html.mobile164 #simTradesTableBody tr td:nth-child(8){grid-column:1/-1}html.mobile164 #simTradesTableBody tr td:nth-child(8)::before{display:none}html.mobile164 #simTradesTableBody tr td:nth-child(1):not([colspan]){display:none}html.mobile164 #simTradesTableBody tr td:nth-child(2)::before{display:inline;content:attr(data-rank164);margin-right:6px}html.mobile164 #ohlcHud{height:180px!important}html.mobile164 #trackingPoolSummaryBanner table.rwdCards164{min-width:0!important}html.mobile164 #mobileHome164 #btnToggleSimTable{font-size:22px!important}
-</style><script>window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');let raf=0;const decorate=()=>{raf=0;if(!document.documentElement.classList.contains('mobile164'))return;for(const r of b?.rows||[]){if(r.cells.length===8)r.cells[1].dataset.rank164='#'+r.cells[0].textContent.trim();}};const sched=()=>{if(!raf&&document.documentElement.classList.contains('mobile164'))raf=requestAnimationFrame(decorate);};if(b)new MutationObserver(sched).observe(b,{childList:true});sched();});</script><style id="dense164">
+</style><script>window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');let raf=0;const decorate=()=>{raf=0;if(!document.documentElement.classList.contains('mobile164'))return;for(const r of b?.rows||[]){if(r.cells.length>=8)r.cells[1].dataset.rank164='#'+r.cells[0].textContent.trim();}};const sched=()=>{if(!raf&&document.documentElement.classList.contains('mobile164'))raf=requestAnimationFrame(decorate);};if(b)new MutationObserver(sched).observe(b,{childList:true});sched();});</script><style id="dense164">
 html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:auto auto auto;gap:3px 8px!important;padding:7px!important;margin:4px 0!important;align-items:center!important;min-height:0!important}
 html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td{margin:0!important;padding:1px 0!important;line-height:1.18!important;min-height:0!important;font-size:clamp(15px,4.2vw,23px)!important;overflow-wrap:anywhere!important}
-html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(2){grid-area:1/1/2/3!important;font-weight:800}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(5){grid-area:1/3/2/4!important;text-align:right!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(3){grid-area:2/1/3/2!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(4){grid-area:2/2/3/3!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(7){grid-area:2/3/3/4!important;text-align:right!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(6){grid-area:3/1/4/3!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(8){grid-area:3/3/4/4!important;text-align:right!important}html.mobile164 #simTradesTableBody td[data-label164]::before{font-size:clamp(11px,3vw,15px)!important;margin:0!important;line-height:1.1!important}html.mobile164 #simTradesTableBody td div,html.mobile164 #simTradesTableBody td span{font-size:inherit!important;line-height:1.2!important}html.mobile164 #simTradesTableBody td button{font-size:14px!important;min-height:32px!important;padding:3px!important}html.mobile164 #simTradesTableBody td:nth-child(2) div+div{font-size:13px!important;color:#a5b4c8}html.mobile164 #simTradesTableBody td:nth-child(2)::before{display:inline!important;font-size:13px!important}html.mobile164 #simTradesTableWrap{padding:0!important}html.mobile164 body{padding-left:4px!important;padding-right:4px!important}
+html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(2){grid-area:1/1/2/3!important;font-weight:800}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(5){grid-area:1/3/2/4!important;text-align:right!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(3){grid-area:2/1/3/2!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(4){grid-area:2/2/3/3!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(7){grid-area:2/3/3/4!important;text-align:right!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(6){grid-area:3/1/4/3!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(8)) td:nth-child(8){grid-area:3/3/4/4!important;text-align:right!important;color:#fcd34d!important}html.mobile164 #simTradesTableBody tr:has(td:nth-child(9)) td:nth-child(9){grid-column:1/-1!important;text-align:right!important}html.mobile164 #simTradesTableBody td[data-label164]::before{font-size:clamp(11px,3vw,15px)!important;margin:0!important;line-height:1.1!important}html.mobile164 #simTradesTableBody td div,html.mobile164 #simTradesTableBody td span{font-size:inherit!important;line-height:1.2!important}html.mobile164 #simTradesTableBody td button{font-size:14px!important;min-height:32px!important;padding:3px!important}html.mobile164 #simTradesTableBody td:nth-child(2) div+div{font-size:13px!important;color:#a5b4c8}html.mobile164 #simTradesTableBody td:nth-child(2)::before{display:inline!important;font-size:13px!important}html.mobile164 #simTradesTableWrap{padding:0!important}html.mobile164 body{padding-left:4px!important;padding-right:4px!important}
 </style><style id="mobileParamsVisible164">
 html.mobile164 #capitalParams164{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
 html.mobile164 #capitalParams164> *{min-width:0;padding:6px!important}html.mobile164 #capitalParams164> :last-child{grid-column:1/-1}
