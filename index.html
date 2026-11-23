@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.45｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.46｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.45 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.46 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.45</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.46</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -445,7 +445,8 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         </div>
       </div>
 
-      <div class="text-xs text-slate-300 space-y-2.5">
+      <div id="step1LockNotice16446" class="hidden mb-2 rounded-lg border border-amber-400/70 bg-amber-950/60 px-3 py-2 text-xs text-amber-200 font-semibold flex flex-wrap items-center justify-between gap-2"><span>🔒 目前為「G. 🧠 AI買賣90天」獨立模式，不使用 STEP 1 進場條件（已鎖定）。</span><span class="text-[11px] text-amber-300/90">切換回 A～F 任一策略即可解鎖勾選</span></div>
+      <div id="step1Body16446" class="text-xs text-slate-300 space-y-2.5 transition-opacity">
         <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 rounded-lg px-2.5 py-1.5">
           <span class="text-[11px] text-amber-300 font-medium">• 前日收 ≤ 20MA，關鍵K站上20MA且上漲</span>
           <div class="flex flex-wrap items-center gap-3">
@@ -2552,7 +2553,11 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       updateExitStrategyUI.lastStrategy = currentExitStrategy;
       const marker = document.getElementById('gIndependentNotice');
       if (marker) marker.classList.toggle('hidden', !independent);
-      for (const id of ['chkMa20Up','chkSolidRedK','chkGainRange','minGainInput','maxGainInput','volOperatorSelect','volThresholdInput']) { const el=document.getElementById(id); if(el) el.disabled=independent; }
+      const step1Lock = document.getElementById('step1LockNotice16446');
+      if (step1Lock) step1Lock.classList.toggle('hidden', !independent);
+      const step1Body = document.getElementById('step1Body16446');
+      if (step1Body) { step1Body.classList.toggle('opacity-50', independent); step1Body.classList.toggle('cursor-not-allowed', independent); }
+      for (const id of ['chkMa20Up','chkSolidRedK','chkGainRange','minGainInput','maxGainInput','minGainSlider','maxGainSlider','volOperatorSelect','volThresholdInput','volThresholdSlider']) { const el=document.getElementById(id); if(el) el.disabled=independent; }
       const strategies = ['DEFAULT_20MA', 'SHORT_MA_TRAIL', 'PEAK_TRAILING', 'WHALE_SELL_EXIT', 'RR_LADDER', 'AI_ADAPTIVE', 'AI_POWER_90D'];
       strategies.forEach(st => {
         const btn = document.getElementById(`exitBtn-${st}`);
