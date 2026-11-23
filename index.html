@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.51｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.52｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.51 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.52 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.51</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.52</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -4597,10 +4597,11 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         let rawData = null;
         try {
           const sep = apiUrl.includes("?") ? "&" : "?";
+          const isMobileFetch164 = matchMedia("(max-width: 768px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
           rawData = await fetchWithTimeoutRetry(
             `${apiUrl}${sep}_t=${Date.now()}`,
-            (matchMedia("(max-width: 768px)").matches ? 60000 : 30000),
-            1,
+            (isMobileFetch164 ? 90000 : 35000),
+            (isMobileFetch164 ? 2 : 1),
             (curAttempt, maxAtt) => {
               if (statusText) statusText.textContent = `連線重試中 (${curAttempt}/${maxAtt})...`;
             }
