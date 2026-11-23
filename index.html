@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.48｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.49｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.48 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.49 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.48</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.49</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -4255,27 +4255,28 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           const q = qMap.get(s.code);
           if (!q) return;
           if(q.d && s.latestTradeDate && q.d < s.latestTradeDate)return;
-          if (q.p !== s.todayPrice || q.v !== s.todayVol || (q.h>0 && q.h>s.todayHigh) || (q.l>0 && q.l<s.todayLow) || (q.d && q.d > s.latestTradeDate)) {
+          const isNewDay164 = Boolean(q.d && s.latestTradeDate && q.d > s.latestTradeDate);
+          const volIncreased164 = q.v > 0 && (isNewDay164 || q.v > (s.todayVol || 0));
+          if (q.p !== s.todayPrice || volIncreased164 || (q.h>0 && q.h>s.todayHigh) || (q.l>0 && q.l<s.todayLow) || isNewDay164) {
             changed163.push(s);
             if (s.todayPrice > 0 && q.p !== s.todayPrice) {
               globalTickSeq++;
               priceTickState.set(s.code, { dir: q.p > s.todayPrice ? "UP" : "DOWN", ts: nowTs, seq: globalTickSeq });
-              anyChanged = true;
             }
             anyChanged = true;
-            if(q.d && q.d > s.latestTradeDate){s.todayHigh=q.h||q.p;s.todayLow=q.l||q.p;s.todayVol=0;}
+            if(isNewDay164){s.todayHigh=q.h||q.p;s.todayLow=q.l||q.p;s.todayVol=0;}
             s.todayPrice = q.p;
             if (q.o > 0) s.todayOpen = q.o;
             if (q.h > 0) s.todayHigh = Math.max(s.todayHigh || q.h, q.h, q.p);
             if (q.l > 0) s.todayLow = Math.min(s.todayLow || q.l, q.l, q.p);
-            if (q.v > 0) s.todayVol = q.v;
+            if (volIncreased164) s.todayVol = q.v;
             if (Array.isArray(s.realBars) && s.realBars.length > 0) {
               const lastBar = s.realBars[s.realBars.length - 1];
-              if (q.d && q.d !== lastBar.date && q.d > lastBar.date) { s.latestTradeDate=q.d; s.realBars.push({date:q.d,open:q.o||q.p,high:q.h||q.p,low:q.l||q.p,close:q.p,vol:q.v||0,ma20:computeDynamicTodayMa20(s.realBars,q.p,s.yestMa20)}); anyChanged=true; } else if (lastBar.date === s.latestTradeDate) {
+              if (q.d && q.d !== lastBar.date && q.d > lastBar.date) { s.latestTradeDate=q.d; s.realBars.push({date:q.d,open:q.o||q.p,high:q.h||q.p,low:q.l||q.p,close:q.p,vol:q.v||0,ma20:computeDynamicTodayMa20(s.realBars,q.p,s.yestMa20)}); } else if (lastBar.date === s.latestTradeDate) {
                 lastBar.close = q.p;
                 lastBar.high = Math.max(lastBar.high, s.todayHigh, q.p);
                 lastBar.low = Math.min(lastBar.low, s.todayLow, q.p);
-                if (q.v > 0) lastBar.vol = q.v;
+                if (volIncreased164) lastBar.vol = q.v;
               }
             }
             syncStockSortablePnlFields(s);
@@ -4296,7 +4297,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           }
           refreshVolumeCells411(changed163);
           const focus=changed163.find(s=>s.code===selectedStockCode);
-          if(focus&&!document.hidden){const badge=document.getElementById('detailLivePriceBadge');if(badge)badge.textContent=focus.todayPrice.toFixed(2);const last=chartState.bars[chartState.bars.length-1];if(last && last.date===focus.latestTradeDate){last.close=focus.todayPrice;last.high=Math.max(last.high,focus.todayHigh);last.low=Math.min(last.low,focus.todayLow);last.vol=focus.todayVol;if(!uiEditing411())renderCanvasChart();}}
+          if(focus&&!document.hidden){const badge=document.getElementById('detailLivePriceBadge');if(badge)badge.textContent=focus.todayPrice.toFixed(2);const sub=document.getElementById('detailSubTitle');if(sub&&sub.textContent.includes('今日總量'))sub.textContent=sub.textContent.replace(/今日總量\s+.*$/, '今日總量 '+formatVolDisplay(focus.todayVol));const last=chartState.bars[chartState.bars.length-1];if(last && last.date===focus.latestTradeDate){last.close=focus.todayPrice;last.high=Math.max(last.high,focus.todayHigh);last.low=Math.min(last.low,focus.todayLow);if(focus.todayVol>0)last.vol=focus.todayVol;if(!uiEditing411())renderCanvasChart();}}
 
           const tmEl = document.getElementById("detailLiveTimeTag");
           if (tmEl) {
@@ -4314,7 +4315,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if(ws162&&ws162.url!==u.href){ws162.close();ws162=null;}
       if(!ws162||ws162.readyState>=2){try{const w=new WebSocket(u.href);ws162=w;wsLast162=0;wsKey162='';w.onmessage=e=>{if(w!==ws162)return;try{const m=JSON.parse(e.data);wsLast162=Date.now();if(m.type==='quotes')for(const r of m.rows)wsPending162.set(r.c,r);}catch(e){}};w.onerror=()=>w.close();}catch(e){}}
       if(ws162?.readyState===1&&wsKey162!==key){ws162.send(JSON.stringify({type:'subscribe',codes}));wsKey162=key;}
-      if(ws162?.readyState!==1||Date.now()-wsLast162>5000){if(ws162?.readyState===1&&wsLast162&&Date.now()-wsLast162>5000)ws162.close();pollAllLiveQuotes();}
+      if(ws162?.readyState!==1){pollAllLiveQuotes();}
       const cs=window._lastCustomInspectedStock;
       if(cs && selectedStockCode===cs.code && !rawAllLoadedStocks.some(x=>x.code===cs.code)){
         if(!window._lastCustomPoll16448 || Date.now()-window._lastCustomPoll16448>=3000){
