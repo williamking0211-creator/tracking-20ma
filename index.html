@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.49｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.50｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.49 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.50 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.49</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.50</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -1127,6 +1127,13 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
   </div>
   <div class="line420Actions"><label class="line420Mode">通知對象 <select id="line155Mode"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()">儲存通知對象</button><button type="button" class="line420Test" onclick="lineTestV14()">測試 LINE</button><button type="button" onclick="monitorStatus164()">檢查 LINE 狀態</button><span id="line155Status" class="line420ModeStatus">尚未讀取</span></div>
   <details class="line420Details"><summary>查看 LINE 通知及監控狀態</summary><p id="lineStatus">等待通知測試</p><p id="monitorStatus164">尚未讀取後台狀態</p></details>
+  <div id="lineTodayLogBox16450" style="margin-top:6px;padding:10px;border-radius:8px;border:1px solid #1e3a5f;background:#0a1526;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+      <strong style="color:#6ee7b7;font-size:13px;">📋 今日已發送 LINE 通知紀錄 <span id="lineTodayCount16450" style="color:#cbd5e1;font-weight:600;">（登入後自動載入）</span></strong>
+      <button type="button" onclick="loadTodayLineLogs16450()" style="background:#1e3a5f;color:#e2e8f0;border:1px solid #3b82f6;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🔄 重新整理今日紀錄</button>
+    </div>
+    <div id="lineTodayList16450" style="max-height:240px;overflow:auto;display:grid;gap:6px;font-size:12px;color:#cbd5e1;">登入後將自動顯示今天發出的 LINE 通知訊息。</div>
+  </div>
 </section>
             </div>
 
@@ -6366,7 +6373,7 @@ const dev15Status=t=>{document.getElementById('dev15Status').textContent=t;paint
 function dev15Capture(){const fields={};for(const id of dev15Ids){const e=document.getElementById(id);if(e)fields[id]=e.type==='checkbox'?e.checked:e.value;}Object.assign(fields,{simVolumeMode164:volume164.mode,simVolumeBasis164:volume164.basis,simVolumeLow164:String(volume164.lo),simVolumeHigh164:String(volume164.hi),smartFilter48:JSON.stringify(preCfg1642)});return {strategy:currentExitStrategy,fields,sectors:getSelectedSimSectors(),manual:simManualCloseMap};}
 async function dev15Req(route,body){const r=await fetch(dev15Base+'/dev15/'+route,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+dev15Token},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok){const x=await r.json().catch(()=>({}));throw Error(x.error||('HTTP '+r.status));}return r.json();}
 async function dev153LocalLogin(){const r=await fetch('http://127.0.0.1:3105/local-monitor',{method:'POST',cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；可在實戰資金模擬點選 A～G 自動同步 LINE');if(officialSessionChoice16419&&pendingOfficial1645?.strategy===officialSessionChoice16419&&currentExitStrategy===officialSessionChoice16419)scheduleOfficialSync16419(officialSessionChoice16419);}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
+async function dev15Login(local){try{dev15Base=local?'http://127.0.0.1:3000':new URL(apiUrl).origin;if(!local&&!dev15Base.startsWith('https://')&&!/^http:\/\/(localhost|127\.0\.0\.1):3000$/.test(dev15Base))throw Error('請使用 HTTPS API');const pass=document.getElementById('dev15Password');const r=local?await dev153LocalLogin():await dev15Req('login',{user:document.getElementById('dev15User').value.trim(),password:pass.value,monitor:false});pass.value='';dev15Token=r.token;dev15Monitor=r.monitor;visibility151(true);await line155Load();await loadTodayLineLogs16450();dev15Rev=0;dev15Profile=null;await dev15Pull(false);dev15Status((local?'本機監控登入':'遠端登入')+'成功；可在實戰資金模擬點選 A～G 自動同步 LINE');if(officialSessionChoice16419&&pendingOfficial1645?.strategy===officialSessionChoice16419&&currentExitStrategy===officialSessionChoice16419)scheduleOfficialSync16419(officialSessionChoice16419);}catch(e){dev15Status(e.message==='HTTP 401'?'登入失敗：帳號或密碼不符。忘記密碼請在本機執行 reset_dev15.cjs。':e.message==='HTTP 429'?'後台仍為舊版本，請更新 V15.3。':'登入失敗：'+e.message);}}
 async function sendStrategyToFriends(button){
   const status=document.getElementById('strategyBroadcastStatus');
   button.disabled=true;
@@ -6386,7 +6393,7 @@ async function sendStrategyToFriends(button){
     const published=sameOfficialProfile16419(choice,current.profile)?current:await dev15Req('profile',choice);
     if(!selectionStillMatches())throw Error('選擇已變更，請確認後重新發送');
     status.textContent='正在送交 LINE…';
-    await dev15Req('strategy-announcement',{rev:published.rev,strategy:choice.strategy});
+    await dev15Req('strategy-announcement',{rev:published.rev,strategy:choice.strategy});await loadTodayLineLogs16450();
     status.textContent='LINE 已受理全體好友通知：'+name+' · v'+published.rev;
     await dev15Pull(false);
   }catch(e){status.textContent='群發未確認：'+e.message;}
@@ -6394,7 +6401,7 @@ async function sendStrategyToFriends(button){
 }
 async function dev15Publish(){const button=document.querySelector('[onclick="dev15Publish()"]');try{if(!dev15Token)throw Error('請先登入');if(fullAiBusy||capitalAiBusy||preRun1642)throw Error('請等待 AI／篩選完成');const choice=officialChoice164();if(!confirm('發布實戰選擇 '+getStrategyDisplayName(choice.strategy)+' 至正式 LINE 監控？發布本身不會直接群發；後台會依正式策略檢查當日訊號。'))return;if(button)button.disabled=true;const r=await dev15Req('profile',choice);const verified=await dev15Pull(true);if(!verified||verified.rev!==r.rev||verified.profile?.strategy!==choice.strategy||JSON.stringify(verified.profile.fields)!==JSON.stringify(choice.fields))throw Error('發布後未能核對正式策略，請按讀取正式策略確認');await monitorStatus164();officialSyncState16419='idle';dev15Status('已發布並核對 '+getStrategyDisplayName(verified.profile.strategy)+' · v'+verified.rev);}catch(e){dev15Status('發布未確認：'+e.message);}finally{if(button)button.disabled=false;}}
 async function dev15Pull(force){if(!dev15Token)return null;try{const r=await dev15Req('profile');dev15Profile=r.profile||null;dev15Rev=r.rev||0;dev15Status(r.profile?'後台正式 '+getStrategyDisplayName(r.profile.strategy)+' · v'+dev15Rev+'（不改變目前實戰選擇）':'尚無正式策略，請先發布');return r;}catch(e){dev15Status('正式策略讀取失敗：'+e.message);return null;}}
-async function dev15Logout(){officialSyncTicket16419++;if(officialSyncTimer16419)clearTimeout(officialSyncTimer16419);officialSyncState16419='login';try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
+async function dev15Logout(){officialSyncTicket16419++;if(officialSyncTimer16419)clearTimeout(officialSyncTimer16419);officialSyncState16419='login';try{if(dev15Token)await dev15Req('logout',{});}catch(e){}dev15Token='';dev15Monitor=false;dev15Profile=null;dev15Rev=0;visibility151(false);const ltl=document.getElementById('lineTodayList16450');if(ltl)ltl.textContent='已登出；登入後將顯示今日發送的 LINE 通知訊息。';const ltc=document.getElementById('lineTodayCount16450');if(ltc)ltc.textContent='（已登出）';document.getElementById('dev15Panel').style.display='none';dev15Status('已登出');}
 setInterval(()=>{if(dev15Token)void monitorStatus164();},15000);
 setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);await lineProcessV14();}},15000);
 
@@ -6426,8 +6433,27 @@ setInterval(async()=>{if(dev15Monitor&&!lineV14Busy){await dev15Pull(false);awai
     }
     let line155Actual=null;
 async function line155Load(){try{const r=await dev15Req('line-mode');line155Actual=r.mode;document.getElementById('line155Mode').value=r.mode;document.getElementById('line155Status').textContent='已生效：'+(r.mode==='broadcast'?'全體好友':'僅本人');}catch(e){line155Actual=null;document.getElementById('line155Status').textContent='讀取失敗：'+e.message;}}
+async function loadTodayLineLogs16450(){
+  const listEl=document.getElementById('lineTodayList16450'),cntEl=document.getElementById('lineTodayCount16450');
+  if(!listEl||!dev15Token)return;
+  if(cntEl)cntEl.textContent='讀取中…';
+  try{
+    const r=await dev15Req('line-today');
+    const items=Array.isArray(r?.items)?r.items:[];
+    if(cntEl)cntEl.textContent=`（${r?.date||''} 共 ${items.length} 則）`;
+    if(!items.length){listEl.innerHTML='<div style="color:#94a3b8;padding:6px 2px;">今日尚未發出任何 LINE 通知訊息。</div>';return;}
+    const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    listEl.innerHTML=items.map(it=>{
+      const badge=it.mode==='broadcast'?'<span style="background:#065f46;color:#6ee7b7;border:1px solid #10b981;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">全體好友</span>':'<span style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">僅本人</span>';
+      return `<div style="background:#111c30;border:1px solid #334155;border-radius:6px;padding:8px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="color:#fbbf24;font-family:monospace;font-weight:700;">${esc(it.time||'')}</span>${badge}</div><div style="white-space:pre-wrap;line-height:1.45;color:#f1f5f9;">${esc(it.text||'')}</div></div>`;
+    }).join('');
+  }catch(e){
+    if(cntEl)cntEl.textContent='（讀取失敗）';
+    listEl.textContent='無法讀取今日 LINE 通知紀錄（請確認後台 index.js 已更新至 V16.4.25）：'+e.message;
+  }
+}
 async function line155Save(){try{const mode=document.getElementById('line155Mode').value;if(mode==='broadcast'&&!confirm('全體好友將收到正式交易通知及測試訊息，並消耗訊息額度。確定？'))return;await dev15Req('line-mode',{mode});await line155Load();}catch(e){lineV14Status('儲存失敗：'+e.message);}}
-async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Error('無法確認通知對象');if(line155Actual==='broadcast'&&!confirm('確定向全體好友發送測試通知？'))return;const result=await lineV14Post({test:true,mode:line155Actual});if(result.accepted!==true||result.mode!==line155Actual)throw Error('後台版本不符，請更新 V15.6');lineV14Status('LINE API 已受理（'+(result.mode==='broadcast'?'全體好友':'僅本人')+'），請確認手機實際收件');}catch(e){lineV14Status(e.message);}}
+async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Error('無法確認通知對象');if(line155Actual==='broadcast'&&!confirm('確定向全體好友發送測試通知？'))return;const result=await lineV14Post({test:true,mode:line155Actual});if(result.accepted!==true||result.mode!==line155Actual)throw Error('後台版本不符，請更新 V15.6');lineV14Status('LINE API 已受理（'+(result.mode==='broadcast'?'全體好友':'僅本人')+'），請確認手機實際收件');await loadTodayLineLogs16450();}catch(e){lineV14Status(e.message);}}
 function lineTradeAmount161(t,close=false){
  const lots=Number(t.lots), buy=Number(t.buyPrice), sell=Number(t.exitOrNowPrice);
  const valid=Number.isFinite(lots)&&lots>0&&Number.isFinite(buy)&&buy>0;
