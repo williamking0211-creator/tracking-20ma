@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.46｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.48｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.46 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.48 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.46</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.48</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -1551,6 +1551,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
             <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/35 px-2 py-0.5 rounded" title="在 K 棒量柱內顯示內外盤買賣比例，並於今日 K 棒標示富邦逐筆外盤大單與 VWAP 均價線">
               <input type="checkbox" id="chkShowOrderFlow" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-cyan-400 focus:ring-0" />
               <span>🔥 內外盤/大單/VWAP</span>
+            </label>
+            <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-teal-300 bg-teal-500/10 border border-teal-500/35 px-2 py-0.5 rounded" title="依公式 Σ(典型價×成交量)÷Σ成交量 繪製 VWAP 曲線（日K採20日滾動VWAP、5分K採當日盤中累計VWAP）">
+              <input type="checkbox" id="chkShowVwapCurve164" checked onchange="onChartToggleChanged()" class="rounded bg-slate-800 border-slate-600 text-teal-400 focus:ring-0" />
+              <span>📈 VWAP曲線</span>
             </label>
             <label class="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] text-purple-300 bg-purple-500/15 border border-purple-500/35 px-2 py-0.5 rounded" title="在 K 線圖上直接標出 AI 依買賣力道算出「價差最大」的最佳買入 K 與最佳出場 K">
               <input type="checkbox" id="chkShowAiPowerMarkers" checked onchange="syncAiPowerMarkersToggle(this.checked)" class="rounded bg-slate-800 border-slate-600 text-purple-400 focus:ring-0" />
@@ -3408,7 +3412,11 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         let pool5Cnt = 0;
         let pool5Net = 0;
 
-        rawAllLoadedStocks.forEach(s => {
+        const custom164 = window._lastCustomInspectedStock;
+        const targets164 = (custom164 && custom164.code && !rawAllLoadedStocks.some(x => x.code === custom164.code))
+          ? [...rawAllLoadedStocks, custom164]
+          : rawAllLoadedStocks;
+        targets164.forEach(s => {
           if (!( !isOfficialEngine16416 && capitalFrozen1644 && preShown1642?.codes ? preShown1642.codes.includes(String(s.code)) : stockMatch48(s))) return;
           if (activeStep1Sectors.length > 0 && !matchesSimSectorFilter(s, activeStep1Sectors)) return;
           if (keyword && !s.code.toLowerCase().includes(keyword) && !s.name.toLowerCase().includes(keyword)) return;
@@ -4307,6 +4315,13 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if(!ws162||ws162.readyState>=2){try{const w=new WebSocket(u.href);ws162=w;wsLast162=0;wsKey162='';w.onmessage=e=>{if(w!==ws162)return;try{const m=JSON.parse(e.data);wsLast162=Date.now();if(m.type==='quotes')for(const r of m.rows)wsPending162.set(r.c,r);}catch(e){}};w.onerror=()=>w.close();}catch(e){}}
       if(ws162?.readyState===1&&wsKey162!==key){ws162.send(JSON.stringify({type:'subscribe',codes}));wsKey162=key;}
       if(ws162?.readyState!==1||Date.now()-wsLast162>5000){if(ws162?.readyState===1&&wsLast162&&Date.now()-wsLast162>5000)ws162.close();pollAllLiveQuotes();}
+      const cs=window._lastCustomInspectedStock;
+      if(cs && selectedStockCode===cs.code && !rawAllLoadedStocks.some(x=>x.code===cs.code)){
+        if(!window._lastCustomPoll16448 || Date.now()-window._lastCustomPoll16448>=3000){
+          window._lastCustomPoll16448=Date.now();
+          void pollFocusedStockLivePrice(false);
+        }
+      }
     }
     let uiInteractionUntil411=0;
     function uiEditing411(){const a=document.activeElement;return !isOfficialEngine16416&&(Date.now()<uiInteractionUntil411 || !!a?.matches('select,input[type="number"],input[type="date"],input[type="range"],input[type="search"],input[type="text"],textarea'));}
@@ -10208,14 +10223,41 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
       };
 
       const showOrderFlow = (document.getElementById("chkShowOrderFlow")?.checked ?? true);
+      const showVwapCurve = (document.getElementById("chkShowVwapCurve164")?.checked ?? true);
+      if (showVwapCurve && bars.length > 0) {
+        if (is5mTf) {
+          let curDay = "", sumPV = 0, sumV = 0;
+          for (let i = 0; i < bars.length; i++) {
+            const gb = bars[i], d = String(gb.date || "").slice(0, 10);
+            if (d && d !== curDay) { curDay = d; sumPV = 0; sumV = 0; }
+            const tp = (Number(gb.high) + Number(gb.low) + Number(gb.close)) / 3;
+            const v = Math.max(0, Number(gb.vol) || 0);
+            if (Number.isFinite(tp) && tp > 0 && v > 0) { sumPV += tp * v; sumV += v; }
+            gb._vwapCurve = sumV > 0 ? sumPV / sumV : (Number(gb.close) || null);
+          }
+        } else {
+          for (let i = 0; i < bars.length; i++) {
+            let sumPV = 0, sumV = 0;
+            const from = Math.max(0, i - 19);
+            for (let k = from; k <= i; k++) {
+              const kb = bars[k];
+              const tp = (Number(kb.high) + Number(kb.low) + Number(kb.close)) / 3;
+              const v = Math.max(0, Number(kb.vol) || 0);
+              if (Number.isFinite(tp) && tp > 0 && v > 0) { sumPV += tp * v; sumV += v; }
+            }
+            bars[i]._vwapCurve = sumV > 0 ? sumPV / sumV : null;
+          }
+        }
+      }
       const curTickPower = (stock && stock.tickPower && stock.tickPower.source === 'FubonTrades') ? stock.tickPower : null;
-      const ma20Points = [], shortMaPoints = [], ma5VolPoints = [];
+      const ma20Points = [], shortMaPoints = [], ma5VolPoints = [], vwapPoints = [];
       visibleBars.forEach((b, idx) => {
         const cx = padLeft + stepX * idx + stepX / 2;
         const yOpen = priceToY(b.open), yClose = priceToY(b.close), yHigh = priceToY(b.high), yLow = priceToY(b.low);
         const prevGlobalBar = (startIdx + idx) > 0 ? bars[startIdx + idx - 1] : null;
 
         if (b.ma20 && b.ma20 > 0) ma20Points.push({ x: cx, y: priceToY(b.ma20), val: b.ma20, prevVal: prevGlobalBar && prevGlobalBar.ma20 ? prevGlobalBar.ma20 : b.ma20 });
+        if (showVwapCurve && b._vwapCurve && b._vwapCurve > 0) vwapPoints.push({ x: cx, y: priceToY(b._vwapCurve), val: b._vwapCurve });
         if (showShortMaPeriod === 5 && b.ma5 > 0) shortMaPoints.push({ x: cx, y: priceToY(b.ma5), val: b.ma5 });
         else if (showShortMaPeriod === 10 && b.ma10 > 0) shortMaPoints.push({ x: cx, y: priceToY(b.ma10), val: b.ma10 });
         if (b.ma5Vol && b.ma5Vol > 0) ma5VolPoints.push({ x: cx, y: volToY(b.ma5Vol) });
@@ -10330,6 +10372,41 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
           ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
         }
+      }
+
+      if (showVwapCurve && vwapPoints.length >= 2) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padLeft, padTop, width - padLeft - padRight, pricePlotH);
+        ctx.clip();
+        ctx.strokeStyle = "#2dd4bf";
+        ctx.lineWidth = 1.9;
+        ctx.beginPath();
+        vwapPoints.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+        ctx.restore();
+
+        const lastV = vwapPoints[vwapPoints.length - 1];
+        let vLblY = lastV.y + 3;
+        if (typeof placedRightLabelYs !== 'undefined' && Array.isArray(placedRightLabelYs)) {
+          for (const off of [0, -13, 13, -26, 26, -39, 39]) {
+            const candY = lastV.y + 3 + off;
+            if (!placedRightLabelYs.some(py => Math.abs(py - candY) < 12)) {
+              vLblY = candY;
+              break;
+            }
+          }
+          placedRightLabelYs.push(vLblY);
+        }
+        ctx.save();
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillStyle = "#2dd4bf";
+        ctx.textAlign = "left";
+        ctx.fillText(`${is5mTf ? 'VWAP' : '20VWAP'} ${lastV.val.toFixed(2)}`, width - padRight + 6, Math.max(padTop + 10, Math.min(volPlotTop - 10, vLblY)));
+        ctx.restore();
       }
 
       if (!aiOnly && shortMaPoints.length >= 2 && showShortMaPeriod > 0) {
@@ -10902,6 +10979,7 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
         const prevMa = prevBar && prevBar.ma20 ? prevBar.ma20 : bar.ma20;
         const maDiff = Number((bar.ma20 - prevMa).toFixed(2));
         maHtml = `<span class="${maDiff > 0 ? "text-amber-400" : (maDiff < 0 ? "text-sky-400" : "text-slate-200")} font-bold">20MA:${bar.ma20.toFixed(2)}${maDiff > 0 ? "↑" : (maDiff < 0 ? "↓" : "→")}</span>`;
+        if (bar._vwapCurve > 0) maHtml += ` <span class="text-teal-300 font-bold">${chartState.timeframe === '5m' ? 'VWAP' : '20VWAP'}:${bar._vwapCurve.toFixed(2)}</span>`;
       }
 
       const showFlowHud = document.getElementById("chkShowOrderFlow")?.checked ?? true;
