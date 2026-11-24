@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.56｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.57｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.56 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.57 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.56</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.57</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -8450,10 +8450,18 @@ function lineTradeAmount161(t,close=false){
         tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="py-10 text-center text-slate-500">目前此篩選區塊（或所選日期區間）沒有符合條件的標的</td></tr>`;
         return;
       }
+      const isMobRender164 = document.documentElement.classList.contains('mobile164');
+      const mobSig164 = currentFilter + '|' + trackingSubFilter + '|' + (document.getElementById("searchInput")?.value || '');
+      if (window._mobStockSig164 !== mobSig164) { window._mobStockSig164 = mobSig164; window.mobileStockLimit16457 = 60; }
+      const mobLimit164 = isMobRender164 ? (window.mobileStockLimit16457 || 60) : filteredStocks.length;
+      const renderList164 = isMobRender164 && filteredStocks.length > mobLimit164 ? filteredStocks.slice(0, mobLimit164) : filteredStocks;
+      const moreRowHtml164 = renderList164.length < filteredStocks.length
+        ? `<tr id="mobileStockMoreRow16457"><td colspan="${colSpanCount}" class="py-3 text-center"><button type="button" onclick="window.mobileStockLimit16457=(window.mobileStockLimit16457||60)+60;renderTable();" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-sm">載入更多（目前顯示 ${renderList164.length} / ${filteredStocks.length} 檔）</button></td></tr>`
+        : '';
 
       // 股池四 (TRACKING) 與 股池五 (BREAKDOWN) 均採用 7 欄損益表格
       if (isPnlPoolActive()) {
-        tbody.innerHTML = filteredStocks.map(s => {
+        tbody.innerHTML = renderList164.map(s => {
           const t = getPoolTrackInfo(s);
           const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
           if (currentExitStrategy === 'AI_POWER_90D') {
@@ -8580,11 +8588,12 @@ function lineTradeAmount161(t,close=false){
               </td>
               <td class="py-2.5 px-2.5 text-center">${statusBadge}</td>
             </tr>`;
-        }).join("");
+        }).join("") + moreRowHtml164;
+        applyTableTickFlashes(tbody);
         return;
       }
 
-      tbody.innerHTML = filteredStocks.map(s => {
+      tbody.innerHTML = renderList164.map(s => {
         const rowBg = s.code === selectedStockCode ? "bg-blue-900/25" : "hover:bg-slate-800/40";
         const pctColor = s.changePct > 0 ? "text-rose-400" : (s.changePct < 0 ? "text-emerald-400" : "text-slate-400");
         const pctSign = s.changePct > 0 ? "+" : "";
@@ -8641,7 +8650,7 @@ function lineTradeAmount161(t,close=false){
             <td class="py-2.5 px-2 text-right font-mono">${todayPriceCellHtml}</td>
             <td class="py-2.5 px-3 text-center">${badgeHtml}</td>
           </tr>`;
-      }).join("");
+      }).join("") + moreRowHtml164;
       applyTableTickFlashes(tbody);
     }
 
@@ -11537,7 +11546,7 @@ html.mobile164 #capitalOptions164 label{max-width:100%;flex-wrap:wrap}html.mobil
 </style><style>
 #mobileCapitalProgress164{display:none}html.mobile164 #mobileCapitalProgress164[data-visible="1"]{display:block!important;width:100%;flex:0 0 100%;box-sizing:border-box;padding:10px;border:1px solid #a78bfa;border-radius:10px;background:#241345;color:#fff;margin:6px 0;position:relative}#mobileCapitalPct164{font-size:30px;font-weight:800;color:#facc15}#mobileCapitalStage164{font-size:16px;overflow-wrap:anywhere}#mobileCapitalBar164{width:100%;height:14px;accent-color:#a78bfa}
 </style><script>
-(()=>{const label=document.getElementById('lblAiCapitalOpt');if(!label)return;const panel=document.createElement('div');panel.id='mobileCapitalProgress164';panel.setAttribute('aria-live','polite');panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><strong>AI 實戰尋優進度</strong><span id="mobileCapitalPct164">0%</span></div><progress id="mobileCapitalBar164" max="100" value="0"></progress><div id="mobileCapitalStage164"></div>';function place(){if(label.nextElementSibling!==panel)label.after(panel);}place();const obs=new MutationObserver(place);obs.observe(document.getElementById('capitalSimBody')||document.body,{childList:true,subtree:true});const old=document.getElementById('capitalAiProgress');if(old&&!old.classList.contains('hidden')){const bar=document.getElementById('capitalAiProgressBar');const txt=document.getElementById('capitalAiProgressText');showAiProgress('capital',bar.value,(txt.textContent||'').replace(/^\d+%\s*·\s*/,''));}})();
+(()=>{const label=document.getElementById('lblAiCapitalOpt');if(!label)return;const panel=document.createElement('div');panel.id='mobileCapitalProgress164';panel.setAttribute('aria-live','polite');panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><strong>AI 實戰尋優進度</strong><span id="mobileCapitalPct164">0%</span></div><progress id="mobileCapitalBar164" max="100" value="0"></progress><div id="mobileCapitalStage164"></div>';function place(){if(label.nextElementSibling!==panel)label.after(panel);}place();const obs=new MutationObserver(place);obs.observe(label.parentElement||document.getElementById('capitalSimBody')||document.body,{childList:true,subtree:false});const old=document.getElementById('capitalAiProgress');if(old&&!old.classList.contains('hidden')){const bar=document.getElementById('capitalAiProgressBar');const txt=document.getElementById('capitalAiProgressText');showAiProgress('capital',bar.value,(txt.textContent||'').replace(/^\d+%\s*·\s*/,''));}})();
 </script>
 <script>
 let historyStrictSell16418=false;
@@ -11887,7 +11896,7 @@ window.addEventListener('load',()=>{
     }
   }
   document.addEventListener('pointerdown',event=>{
-    if(event.button!==0||drag)return;
+    if(event.button!==0||drag||event.pointerType==='touch'||event.target.closest?.('button,input,select,a,label,summary'))return;
     const card=edge(event);
     if(!card)return;
     drag={card,id:event.pointerId,y:event.clientY,height:card.getBoundingClientRect().height};
@@ -11942,16 +11951,23 @@ window.addEventListener('load',()=>{
     const el=hit(t.clientX,t.clientY);
     if(el)setHover(el,true);else clearAll();
   },{passive:true});
+  let tmRaf164=0, lastTm164=0;
   document.addEventListener('touchmove',e=>{
+    const now=Date.now();
+    if(tmRaf164||now-lastTm164<80)return;
     const t=e.touches[0];if(!t)return;
-    const el=hit(t.clientX,t.clientY);
-    if(el)setHover(el,false);else clearAll();
+    const cx=t.clientX, cy=t.clientY;
+    tmRaf164=requestAnimationFrame(()=>{
+      tmRaf164=0; lastTm164=Date.now();
+      const el=hit(cx,cy);
+      if(el)setHover(el,false);else clearAll();
+    });
   },{passive:true});
   document.addEventListener('touchend',()=>setTimeout(clearAll,120),{passive:true});
   document.addEventListener('touchcancel',clearAll,{passive:true});
 })();
 </script>
-<style id="perf16445">#stockTableBody tr,#simTradesTableBody tr,#historyClosedBody164 tr{content-visibility:auto;contain-intrinsic-size:auto 42px}</style>
+<style id="perf16445">#stockTableBody tr,#simTradesTableBody tr,#historyClosedBody164 tr{content-visibility:auto;contain-intrinsic-size:auto 42px}button,a,label,input,select,summary,.filter-card,#stockTableBody tr,#simTradesTableBody tr{touch-action:manipulation}</style>
 <script id="nextDayWatchScript16451">
 window.nextDayPools16451 = { nextDayWatch: [], observePool: [] };
 window.fetchNextDayPools16451 = async function() {
