@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.53｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.56｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.53 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.56 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.53</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.56</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -928,6 +928,21 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
                 <input type="number" id="aiPowerReevalDaysInput" value="90" min="15" max="180" step="15" onchange="onExitStrategyChanged()"
                        class="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
                 <span class="text-fuchsia-300 font-semibold">天調整一次</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 bg-slate-950 border border-fuchsia-500/40 rounded px-2 py-0.5" title="買進價最大硬停損上限 %（預設 6%，可由 AI 尋優自動測試 4/5/6/8%）">
+                <span class="text-fuchsia-300 font-semibold">硬停損上限：</span>
+                <input type="number" id="aiPowerMaxStopPctInput" value="6" min="2" max="15" step="0.5" onchange="onExitStrategyChanged()"
+                       class="w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-right text-amber-300 font-mono font-bold" />
+                <span class="text-fuchsia-300 font-semibold">%</span>
+              </label>
+              <label class="inline-flex items-center gap-1.5 bg-slate-950 border border-fuchsia-500/40 rounded px-2 py-0.5" title="依買進前14日真實波幅(ATR%)動態調整硬停損（最低3%、最高不超過硬停損上限）">
+                <span class="text-fuchsia-300 font-semibold">ATR波動停損：</span>
+                <select id="aiPowerAtrMultSelect" onchange="onExitStrategyChanged()" class="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-amber-300 font-mono font-bold">
+                  <option value="1.5" selected>1.5×ATR(動態)</option>
+                  <option value="1.2">1.2×ATR(緊)</option>
+                  <option value="2.0">2.0×ATR(寬)</option>
+                  <option value="0">關閉(固定上限%)</option>
+                </select>
               </label>
             </div>
             <div id="aiPower90dStatusText" class="text-[10.5px] font-mono text-slate-300 bg-slate-950/75 rounded px-2 py-1 border border-slate-800">
@@ -1917,6 +1932,8 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         rrTrailMa: document.getElementById("rrTrailMaSelect")?.value || "5",
         rrMaConfirmMode: document.getElementById("rrMaConfirmModeSelect")?.value || "KEY_K",
         aiPowerReevalDays: document.getElementById("aiPowerReevalDaysInput")?.value || "90",
+        aiPowerMaxStopPct: document.getElementById("aiPowerMaxStopPctInput")?.value || "6",
+        aiPowerAtrMult: document.getElementById("aiPowerAtrMultSelect")?.value ?? "1.5",
         chkShowAiPowerMarkers: document.getElementById("chkShowAiPowerMarkers")?.checked ?? true
       };
       safeSetStorage(USER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
@@ -2025,6 +2042,12 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         }
         if (s.aiPowerReevalDays !== undefined && document.getElementById("aiPowerReevalDaysInput")) {
           document.getElementById("aiPowerReevalDaysInput").value = s.aiPowerReevalDays;
+        }
+        if (s.aiPowerMaxStopPct !== undefined && document.getElementById("aiPowerMaxStopPctInput")) {
+          document.getElementById("aiPowerMaxStopPctInput").value = s.aiPowerMaxStopPct;
+        }
+        if (s.aiPowerAtrMult !== undefined && document.getElementById("aiPowerAtrMultSelect")) {
+          document.getElementById("aiPowerAtrMultSelect").value = String(s.aiPowerAtrMult);
         }
         if (typeof s.chkShowAiPowerMarkers === "boolean") {
           const c1 = document.getElementById("chkShowAiPowerMarkers");
@@ -2346,6 +2369,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if (triggerFilterRender) {
         applyFiltersAndRender();
         if (typeof window.fetchNextDayPools16451 === 'function') void window.fetchNextDayPools16451();
+    if (typeof window.fetchBuyTimes16454 === 'function') void window.fetchBuyTimes16454();
       } else if (specialMode === 'POOL_SEARCH') {
         renderTable();
       }
@@ -2543,12 +2567,17 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       const initStopBufferPct = isNaN(rawInitStop) ? 2.0 : Math.min(15, Math.max(0, rawInitStop));
       const entryLimitUpStopAtLow = document.getElementById("chkEntryLimitUpStopAtLow")?.checked ?? true;
       const aiPowerReevalDays = Math.max(15, Math.min(180, parseInt(document.getElementById("aiPowerReevalDaysInput")?.value || "90", 10) || 90));
+      const aiPowerMaxStopPct = Math.max(2, Math.min(15, parseFloat(document.getElementById("aiPowerMaxStopPctInput")?.value || "6") || 6));
+      const rawAtrM = document.getElementById("aiPowerAtrMultSelect")?.value;
+      const aiPowerAtrMult = rawAtrM === undefined ? 1.5 : Math.max(0, Math.min(4, parseFloat(rawAtrM) || 0));
       return {
         strategy,
         globalConfirmMode,
         initStopBufferPct,
         entryLimitUpStopAtLow,
         aiPowerReevalDays,
+        aiPowerMaxStopPct,
+        aiPowerAtrMult,
         useTimeStop,
         timeStopDays,
         shortMaTriggerPct,
@@ -2785,7 +2814,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       if (strategyKey === 'WHALE_SELL_EXIT') return `賺${p.whaleTriggerPct || 12}%/${p.whaleSellMult || 2.0}x黑K${tsTxt}`;
       if (strategyKey === 'RR_LADDER') return `1:${p.rrBreakevenRatio || 1}/1:${p.rrTier2Ratio || 3}${p.rrTier2Action === 'STEP_LADDER' ? '階梯' : (p.rrTier2Action === 'FIXED_TP' ? '直出' : '鎖R')}+${p.rrTrailMa || 5}MA${tsTxt}`;
       if (strategyKey === 'AI_ADAPTIVE') return `AI動態(${stopTxt || '2%'}${cmTxt}${tsTxt})`;
-      if (strategyKey === 'AI_POWER_90D') return `AI買賣${p.aiPowerReevalDays || 90}天(${stopTxt || '2%'}${tsTxt})`;
+      if (strategyKey === 'AI_POWER_90D') { const am = p.aiPowerAtrMult ?? 1.5; return `AI買賣${p.aiPowerReevalDays || 90}天(${stopTxt || '2%'}/${am > 0 ? am + 'xATR・' : ''}上限${p.aiPowerMaxStopPct ?? 6}%${tsTxt})`; }
       return 'AI最佳化';
     }
 
@@ -5031,7 +5060,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
             <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
             <td class="py-1.5 px-2">
               <div class="font-bold text-white">${bt.code} ${bt.name}</div>
-              <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${String(bt.buyDate||"—").replace(/-/g,"/")} 買</div>
+              <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${String(bt.buyDate||"—").replace(/-/g,"/")} ${(typeof resolveBuyTime16454==='function'?resolveBuyTime16454(bt):(bt.buyTime||''))||''} 買</div>
             </td>
             <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
             <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
@@ -5283,7 +5312,8 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       }
       if (tr.strategyKey === 'AI_POWER_90D' || (currentExitStrategy === 'AI_POWER_90D' && simTableMode !== 'PORTFOLIO')) {
         const prefix = tr.aiTradeNo ? `第${tr.aiTradeNo}筆 AI：` : 'AI：';
-        return {stopPrice:0,takeProfitPrice:0,ruleText:prefix+(tr.isClosed ? (tr.exitReason || 'AI賣點平倉') : '等待AI賣點')};
+        const sp = Number(tr.stopLossPrice || tr.initStop || 0);
+        return {stopPrice:Number.isFinite(sp)&&sp>0?sp:0,takeProfitPrice:0,ruleText:prefix+(tr.isClosed ? (tr.exitReason || 'AI賣點平倉') : '等待AI賣點')};
       }
       const s = rawAllLoadedStocks.find(x => x.code === code);
       const t = s ? (s.trackingInfo || s.closedBreakdownInfo) : null;
@@ -5962,6 +5992,12 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         if (bestParamObj.aiPowerReevalDays !== undefined && document.getElementById("aiPowerReevalDaysInput")) {
           document.getElementById("aiPowerReevalDaysInput").value = String(bestParamObj.aiPowerReevalDays);
         }
+        if (bestParamObj.aiPowerMaxStopPct !== undefined && document.getElementById("aiPowerMaxStopPctInput")) {
+          document.getElementById("aiPowerMaxStopPctInput").value = String(bestParamObj.aiPowerMaxStopPct);
+        }
+        if (bestParamObj.aiPowerAtrMult !== undefined && document.getElementById("aiPowerAtrMultSelect")) {
+          document.getElementById("aiPowerAtrMultSelect").value = String(bestParamObj.aiPowerAtrMult);
+        }
       }
     }
 
@@ -6236,6 +6272,19 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           }
         }
 
+        // 策略 G 第二階段：依個股 14 日 ATR 波動停損倍數 (0/1.2/1.5/2.0) 與硬停損上限 % (4/5/6/8) 尋優
+        if (bestRes && d.key === 'AI_POWER_90D') {
+          for (const atrM of [1.2, 1.5, 2.0, 0]) {
+            const testPatch = { ...bestPatch, aiPowerAtrMult: atrM };
+            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...testPatch }, makeOpts(bestS1), bestPriority);
+            if (betterCapitalTrial(simRes, bestRes)) { bestRes = simRes; bestPatch = testPatch; }
+          }
+          for (const maxStop of [4, 5, 6, 8]) {
+            const testPatch = { ...bestPatch, aiPowerMaxStopPct: maxStop };
+            const simRes = await simulateWithProgress(d.key, { ...baseCfg, ...testPatch }, makeOpts(bestS1), bestPriority);
+            if (betterCapitalTrial(simRes, bestRes)) { bestRes = simRes; bestPatch = testPatch; }
+          }
+        }
         // 座標下降微調：測試所有上方參數（初始停損%、進場漲停守低、時間停損、確認K、策略專屬參數、STEP1 細部參數、同日買進優先順序）
         if (bestRes) {
           for (const prio of ['HIGH_PRICE', 'VOL_RATIO', 'GAIN_PCT', 'LOW_PRICE']) {
@@ -6934,7 +6983,7 @@ function lineTradeAmount161(t,close=false){
                 <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
                 <td class="py-1.5 px-2">
                   <div class="font-bold text-white">${bt.code} ${bt.name}</div>
-                  <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${String(bt.buyDate||"—").replace(/-/g,"/")} 買</div>
+                  <div class="text-[10px] text-slate-400">${tradeOrdinal164(bt)}｜${String(bt.buyDate||"—").replace(/-/g,"/")} ${(typeof resolveBuyTime16454==='function'?resolveBuyTime16454(bt):(bt.buyTime||''))||''} 買</div>
                 </td>
                 <td class="py-1.5 px-2 text-right">${bt.lots}張 / ${bt.buyPrice.toFixed(2)}</td>
                 <td class="py-1.5 px-2 text-right text-slate-300">${fmtCash(bt.totalCost)}</td>
@@ -8884,7 +8933,7 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
       const bars = inputBars || buildStockDailyBarsWithToday(stock);
       if (!bars || bars.length < 10) return null;
 
-      const sig = `${stock.code}|v164fix|${cfg.initStopBufferPct}|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
+      const sig = `${stock.code}|v16456|${cfg.initStopBufferPct}|${cfg.aiPowerMaxStopPct ?? 6}|${cfg.aiPowerAtrMult ?? 1.5}|${bars.map(b=>[b.date,b.open,b.high,b.low,b.close,b.vol,b.ma5,b.ma10,b.ma20,b.ma5Vol,b.isToday].join(",")).join(";")}|${stock.tickPower?.source}|${stock.tickPower?.outerPct}`;
       if(!stock._aiPowerMulti16413) Object.defineProperty(stock,'_aiPowerMulti16413',{value:new Map(),configurable:true});
       if(stock._aiPowerMulti16413.has(sig)){sharedStats16413.hits++;return stock._aiPowerMulti16413.get(sig);}
       sharedStats16413.misses++;
@@ -8902,6 +8951,21 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
             if (!pos) {
               if (br.check(i)) {
                 const swingLow = Math.min(b.low, bars[i - 1].low || b.low);
+                const maxStopPct = cfg.aiPowerMaxStopPct ?? 6;
+                const atrMult = cfg.aiPowerAtrMult ?? 1.5;
+                let effStopPct = maxStopPct;
+                if (atrMult > 0 && b.close > 0) {
+                  let trSum = 0, trCnt = 0;
+                  for (let k = Math.max(1, i - 13); k <= i; k++) {
+                    const kb = bars[k], pb = bars[k - 1];
+                    const tr = Math.max(kb.high - kb.low, Math.abs(kb.high - pb.close), Math.abs(kb.low - pb.close));
+                    if (Number.isFinite(tr) && tr >= 0) { trSum += tr; trCnt++; }
+                  }
+                  if (trCnt > 0) {
+                    const atrPct = ((trSum / trCnt) / b.close) * 100;
+                    effStopPct = Math.min(maxStopPct, Math.max(3, atrPct * atrMult));
+                  }
+                }
                 pos = {
                   buyIdx: i,
                   buyDate: b.date,
@@ -8909,7 +8973,7 @@ window.addEventListener('DOMContentLoaded',()=>{updateManualToolbar161();void lo
                   buyPrice: b.close,
                   buyPowerPct: Math.round(buyPowers[i] * 100),
                   maxHigh: b.high,
-                  initStop: Math.max(b.close * 0.94, swingLow * (1-(cfg.initStopBufferPct??1.5)/100))
+                  initStop: Math.max(b.close * (1 - effStopPct / 100), swingLow * (1-(cfg.initStopBufferPct??1.5)/100))
                 };
               }
             } else {
@@ -11432,7 +11496,7 @@ function renderTodayBuy163(){
  const rows = todayBuyRows163(source, lineV14Day());
  const cash=n=>n!=null&&Number.isFinite(Number(n))?'$'+Math.round(Number(n)).toLocaleString('en-US'):'—';
  summary.textContent = poolSummaryText(rows);
- body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const vals=[i+1,`${t.code} ${t.name||''}｜${tradeOrdinal164(t)}`,`${t.buyDate} ${t.buyTime||"時間未記錄"} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.dataset.stockCode164=t.code;tr.id=`todaybuy164-${t.code}-${i}`;tr.onclick=()=>openStockFromSimList(t.code,tr.id);});
+ body.replaceChildren(); rows.forEach((t,i)=>{const tr=body.insertRow();const btTime=typeof resolveBuyTime16454==='function'?resolveBuyTime16454(t):(t.buyTime||'時間未記錄');const vals=[i+1,`${t.code} ${t.name||''}｜${tradeOrdinal164(t)}`,`${t.buyDate} ${btTime||'時間未記錄'} / ${t.buyPrice}`,t.lots,cash(t.totalCost),t.curP??t.exitOrNowPrice??'—',`${cash(t.netProfit)} / ${Number.isFinite(t.netPct)?t.netPct.toFixed(2)+'%':'—'}`,t.entryReason||t.buyReason||'—',t.isClosed?'已平倉':'續抱中'];vals.forEach((v,j)=>{const td=tr.insertCell();td.textContent=v??'—';if(j===6&&Number.isFinite(t.netProfit))td.style.color=t.netProfit>=0?'#fb7185':'#34d399';});tr.cells[1].style.cursor='pointer';tr.dataset.stockCode164=t.code;tr.id=`todaybuy164-${t.code}-${i}`;tr.onclick=()=>openStockFromSimList(t.code,tr.id);});
  if(!rows.length){const td=body.insertRow().insertCell();td.colSpan=9;td.textContent='今日尚無買進交易';}
 }
 window.addEventListener('load',()=>{const b=document.getElementById('simTradesTableBody');let queued411=false;const update=()=>{if(queued411)return;queued411=true;requestAnimationFrame(()=>{queued411=false;renderTodayClosed162();renderTodayBuy163();renderHistoryClosed164();});};if(b)new MutationObserver(update).observe(b,{childList:true});update();});
@@ -11933,6 +11997,46 @@ window.collectConfirmKPreClose16451 = function() {
   return { buyWatch, sellWatch };
 };
 setInterval(() => { if (!document.hidden) void window.fetchNextDayPools16451(); }, 30000);
+</script>
+<script id="buyTimeHelper16454">
+window.backendBuyTimes16454 = { date: '', times: {} };
+window.fetchBuyTimes16454 = async function() {
+  try {
+    const u = apiUrl.replace(/\/stocks(\?.*)?$/, '/buy-times');
+    const r = await fetch(u + '?_t=' + Date.now(), { headers: { 'ngrok-skip-browser-warning': 'true' }, cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d && d.times) {
+      window.backendBuyTimes16454 = { date: String(d.date || ''), times: d.times };
+      if (typeof renderTodayBuy163 === 'function') renderTodayBuy163();
+    }
+  } catch (_) {}
+};
+window.resolveBuyTime16454 = function(t) {
+  if (!t) return '';
+  if (t.buyTime) return String(t.buyTime);
+  const bDate = String(t.buyDate || '').slice(0, 10).replace(/\//g, '-');
+  const code = String(t.code || '');
+  const today = typeof lineV14Day === 'function' ? lineV14Day() : '';
+  if (bDate === today && window.backendBuyTimes16454?.date === today && window.backendBuyTimes16454.times?.[code]) {
+    return window.backendBuyTimes16454.times[code];
+  }
+  const strat = String(t.strategyKey || (typeof currentExitStrategy !== 'undefined' ? currentExitStrategy : '') || 'SIM');
+  const key = `${bDate}|${code}|${strat}`;
+  let map = {};
+  try { map = JSON.parse(localStorage.getItem('w_buy_time_16454') || '{}') || {}; } catch (_) {}
+  if (map[key]) return map[key];
+  if (bDate && bDate === today) {
+    const hm = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
+    map[key] = hm;
+    try {
+      const entries = Object.entries(map).filter(([k]) => k.slice(0, 10) >= today.slice(0, 8) + '01').slice(-200);
+      localStorage.setItem('w_buy_time_16454', JSON.stringify(Object.fromEntries(entries)));
+    } catch (_) {}
+    return hm;
+  }
+  return '';
+};
 </script>
 </body>
 </html>
