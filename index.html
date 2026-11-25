@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.62｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.63｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.62 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.63 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.62</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.63</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -1156,7 +1156,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
     <label><input type="checkbox" id="lineKEY" checked>關鍵K</label>
     <label><input type="checkbox" id="lineREPORT" checked>14:00報告</label>
   </div>
-  <div class="line420Actions"><label class="line420Mode">通知對象 <select id="line155Mode"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()">儲存通知對象</button><button type="button" class="line420Test" onclick="lineTestV14()">測試 LINE</button><button type="button" onclick="monitorStatus164()">檢查 LINE 狀態</button><span id="line155Status" class="line420ModeStatus">尚未讀取</span></div>
+  <div class="line420Actions"><label class="line420Mode">通知對象 <select id="line155Mode"><option value="personal">僅本人</option><option value="broadcast" selected>全體好友</option></select></label><button type="button" onclick="line155Save()">儲存通知對象</button><button type="button" class="line420Test" onclick="lineTestV14()">測試 LINE</button><button type="button" class="line420Test" style="background:#0369a1;border-color:#38bdf8" onclick="tgTest16463()">測試 TG</button><button type="button" onclick="monitorStatus164()">檢查 LINE 狀態</button><span id="line155Status" class="line420ModeStatus">尚未讀取</span></div>
   <details class="line420Details"><summary>查看 LINE 通知及監控狀態</summary><p id="lineStatus">等待通知測試</p><p id="monitorStatus164">尚未讀取後台狀態</p></details>
   <div id="lineTodayLogBox16450" style="margin-top:6px;padding:10px;border-radius:8px;border:1px solid #1e3a5f;background:#0a1526;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
@@ -6551,7 +6551,7 @@ async function loadTodayLineLogs16450(){
     if(!items.length){listEl.innerHTML='<div style="color:#94a3b8;padding:6px 2px;">今日尚未發出任何 LINE 通知訊息。</div>';return;}
     const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     listEl.innerHTML=items.map(it=>{
-      const badge=it.mode==='broadcast'?'<span style="background:#065f46;color:#6ee7b7;border:1px solid #10b981;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">全體好友</span>':'<span style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">僅本人</span>';
+      const badge=(it.channel==='TG'?'<span style="background:#0369a1;color:#bae6fd;border:1px solid #38bdf8;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">Telegram</span>':(it.channel==='LINE+TG'?'<span style="background:#0e7490;color:#a5f3fc;border:1px solid #22d3ee;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">LINE+TG</span> ':'')+(it.mode==='broadcast'?'<span style="background:#065f46;color:#6ee7b7;border:1px solid #10b981;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">全體好友</span>':'<span style="background:#1e3a8a;color:#93c5fd;border:1px solid #3b82f6;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;">僅本人</span>'));
       return `<div style="background:#111c30;border:1px solid #334155;border-radius:6px;padding:8px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><span style="color:#fbbf24;font-family:monospace;font-weight:700;">${esc(it.time||'')}</span>${badge}</div><div style="white-space:pre-wrap;line-height:1.45;color:#f1f5f9;">${esc(it.text||'')}</div></div>`;
     }).join('');
   }catch(e){
@@ -6561,6 +6561,7 @@ async function loadTodayLineLogs16450(){
 }
 async function line155Save(){try{const mode=document.getElementById('line155Mode').value;if(mode==='broadcast'&&!confirm('全體好友將收到正式交易通知及測試訊息，並消耗訊息額度。確定？'))return;await dev15Req('line-mode',{mode});await line155Load();}catch(e){lineV14Status('儲存失敗：'+e.message);}}
 async function lineTestV14(){try{await line155Load();if(!line155Actual)throw Error('無法確認通知對象');if(line155Actual==='broadcast'&&!confirm('確定向全體好友發送測試通知？'))return;const result=await lineV14Post({test:true,mode:line155Actual});if(result.accepted!==true||result.mode!==line155Actual)throw Error('後台版本不符，請更新 V15.6');lineV14Status('LINE API 已受理（'+(result.mode==='broadcast'?'全體好友':'僅本人')+'），請確認手機實際收件');await loadTodayLineLogs16450();}catch(e){lineV14Status(e.message);}}
+async function tgTest16463(){try{lineV14Status('正在發送 Telegram 測試通知…');const r=await dev15Req('tg-test',{});lineV14Status('TG 已發送（Chat ID：'+(r.chats||[]).join(', ')+'）');await loadTodayLineLogs16450();}catch(e){lineV14Status('TG 失敗：'+e.message);}}
 function lineTradeAmount161(t,close=false){
  const lots=Number(t.lots), buy=Number(t.buyPrice), sell=Number(t.exitOrNowPrice);
  const valid=Number.isFinite(lots)&&lots>0&&Number.isFinite(buy)&&buy>0;
