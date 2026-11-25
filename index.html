@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>W交易系統 V16.4.63｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.65｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -387,10 +387,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label for="layoutSelect164">V16.4.63 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label for="layoutSelect164">V16.4.65 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.63</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.65</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -5056,7 +5056,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         const priceLine = [
           ruleInfo.stopPrice > 0 ? `<span class="text-yellow-300">停損:${ruleInfo.stopPrice.toFixed(2)}</span>` : "",
           ruleInfo.takeProfitPrice > 0 ? `<span class="text-rose-300">停利:${ruleInfo.takeProfitPrice.toFixed(2)}</span>` : ""
-        ].filter(Boolean).join(" / ") || `<span class="text-slate-400">動態追蹤</span>`;
+        ].filter(Boolean).join(" / ");
         const rowKey = `${bt.code}_${bt.buyDate}`;
         const hasManualMc = Boolean(simManualCloseMap[rowKey]);
         return `
@@ -5316,14 +5316,21 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
       }
       if (tr.strategyKey === 'AI_POWER_90D' || (currentExitStrategy === 'AI_POWER_90D' && simTableMode !== 'PORTFOLIO')) {
         const prefix = tr.aiTradeNo ? `第${tr.aiTradeNo}筆 ` : '';
-        const sp = Number(tr.stopLossPrice || tr.initStop || 0);
-        let openRule = tr.aiSellRule ? `賣點：${tr.aiSellRule}` : (tr.exitReason && tr.exitReason !== '等待AI賣點' ? tr.exitReason : '');
-        if (!tr.isClosed && !openRule) {
-          const stObj = rawAllLoadedStocks.find(x => x.code === code);
-          const p = stObj ? computeAiBuySellPowerOptimalPlan(stObj) : null;
-          if (p?.sellRule?.name) openRule = `賣點：${p.sellRule.name}`;
+        let sp = Number(tr.initialStopPrice || tr.stopLossPrice || tr.initStop || 0);
+        const stObj = rawAllLoadedStocks.find(x => x.code === code);
+        const p = !tr.isClosed && stObj ? computeAiBuySellPowerOptimalPlan(stObj) : null;
+        if (!(sp > 0) && p?.trades?.length) {
+          const mt = p.trades.find(x => String(x.buyDate) === String(tr.buyDate)) || p.trades[p.trades.length - 1];
+          if (mt?.initStop > 0) sp = Number(mt.initStop);
         }
-        return {stopPrice:Number.isFinite(sp)&&sp>0?sp:0,takeProfitPrice:0,ruleText:prefix+(tr.isClosed ? (tr.exitReason || 'AI賣點平倉') : (openRule || 'AI動態賣點'))};
+        const validSp = Number.isFinite(sp) && sp > 0 ? sp : 0;
+        let openRule = '';
+        if (!tr.isClosed) {
+          const detailDesc = p?.sellRule?.planDesc && p?.lastBar ? p.sellRule.planDesc(p.lastBar) : (tr.aiSellRule || p?.sellRule?.name || (tr.exitReason && !['等待AI賣點','期末續抱','LINE訊號續抱'].includes(tr.exitReason) ? tr.exitReason : ''));
+          const stopCond = validSp > 0 ? `收盤≤${validSp.toFixed(2)}停損` : '';
+          openRule = [stopCond, detailDesc].filter(Boolean).join('；或 ');
+        }
+        return {stopPrice:validSp,takeProfitPrice:0,ruleText:prefix+(tr.isClosed ? (tr.exitReason || 'AI賣點平倉') : (openRule || '依AI買賣規則'))};
       }
       const s = rawAllLoadedStocks.find(x => x.code === code);
       const t = s ? (s.trackingInfo || s.closedBreakdownInfo) : null;
@@ -7047,7 +7054,7 @@ function lineTradeAmount161(t,close=false){
             const priceLine = [
               ruleInfo.stopPrice > 0 ? `<span class="text-yellow-300">停損:${ruleInfo.stopPrice.toFixed(2)}</span>` : "",
               ruleInfo.takeProfitPrice > 0 ? `<span class="text-rose-300">停利:${ruleInfo.takeProfitPrice.toFixed(2)}</span>` : ""
-            ].filter(Boolean).join(" / ") || `<span class="text-slate-400">動態追蹤</span>`;
+            ].filter(Boolean).join(" / ");
             return `
               <tr id="${rowId}" onclick="openStockFromSimList('${bt.code}', '${rowId}')" class="hover:bg-slate-800/60 cursor-pointer transition">
                 <td class="py-1.5 px-1.5 text-center text-slate-400 font-bold">${idx + 1}</td>
