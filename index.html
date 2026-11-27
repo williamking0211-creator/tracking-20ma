@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>W交易系統 V16.4.69｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.71｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -390,10 +390,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.69 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.71 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.69</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.71</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -4349,7 +4349,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           // Fast path: patch existing quote cells only; full strategy pass is independent.
           for(const s of changed163){
             const row=document.getElementById('stock-row-'+s.code);
-            if(!row || !row.getClientRects().length)continue;
+            if(!row)continue;
             const t=getPoolTrackInfo(s), pnl=isPnlPoolActive();
             if(pnl && (!t || t.isClosed || currentExitStrategy==='AI_POWER_90D'))continue;
             const cell=row.cells[pnl?2:4];
@@ -4358,7 +4358,7 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
           }
           refreshVolumeCells411(changed163);
           const focus=changed163.find(s=>s.code===selectedStockCode);
-          if(focus&&!document.hidden){const badge=document.getElementById('detailLivePriceBadge');if(badge)badge.textContent=focus.todayPrice.toFixed(2);const sub=document.getElementById('detailSubTitle');if(sub&&sub.textContent.includes('今日總量'))sub.textContent=sub.textContent.replace(/今日總量\s+.*$/, '今日總量 '+formatVolDisplay(focus.todayVol));const last=chartState.bars[chartState.bars.length-1];if(last && last.date===focus.latestTradeDate){last.close=focus.todayPrice;last.high=Math.max(last.high,focus.todayHigh);last.low=Math.min(last.low,focus.todayLow);if(focus.todayVol>0)last.vol=focus.todayVol;if(!uiEditing411())renderCanvasChart();}}
+          if(focus&&!document.hidden){const badge=document.getElementById('detailLivePriceBadge');if(badge)badge.textContent=focus.todayPrice.toFixed(2);const sub=document.getElementById('detailSubTitle');if(sub&&sub.textContent.includes('今日總量'))sub.textContent=sub.textContent.replace(/今日總量\s+.*$/, '今日總量 '+formatVolDisplay(focus.todayVol));const last=chartState.bars[chartState.bars.length-1];if(last && last.date===focus.latestTradeDate){last.close=focus.todayPrice;last.high=Math.max(last.high,focus.todayHigh);last.low=Math.min(last.low,focus.todayLow);if(focus.todayVol>0)last.vol=focus.todayVol;if(!uiEditing411()&&(!document.documentElement.classList.contains('mobile164')||nowTs-(window._lastMobChart16470||0)>=1000)){window._lastMobChart16470=nowTs;renderCanvasChart();}}}
 
           const tmEl = document.getElementById("detailLiveTimeTag");
           if (tmEl) {
@@ -4387,8 +4387,9 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
     }
     let uiInteractionUntil411=0;
     function uiEditing411(){const a=document.activeElement;return !isOfficialEngine16416&&(Date.now()<uiInteractionUntil411 || !!a?.matches('select,input[type="number"],input[type="date"],input[type="range"],input[type="search"],input[type="text"],textarea'));}
-    for(const type of ['pointerdown','input','change','keydown']) document.addEventListener(type,e=>{if(e.target.closest?.('input,select,textarea,label,button,summary'))uiInteractionUntil411=Date.now()+700;},true);
-    setInterval(()=>{if(fullAiBusy||capitalAiBusy||stockSync161)return;const now=Date.now();if(wsPending162.size && now-lastFlush163 >= (document.hidden?5000:perfModes163[perf163])){lastFlush163=now;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);}if(dirty163&&now-lastStrategy163>=5000&&!document.hidden&&!uiEditing411()){dirty163=false;lastStrategy163=now;applyFiltersAndRender();}},250);
+    for(const type of ['pointerdown','input','change','keydown']) document.addEventListener(type,e=>{if(e.target.closest?.('input,select,textarea,label,button,summary'))uiInteractionUntil411=Date.now()+900;},true);
+    for(const type of ['touchstart','touchmove','scroll','wheel']) window.addEventListener(type,()=>{if(document.documentElement.classList.contains('mobile164'))uiInteractionUntil411=Math.max(uiInteractionUntil411,Date.now()+1500);},{passive:true,capture:true});
+    setInterval(()=>{if(fullAiBusy||capitalAiBusy||stockSync161)return;const now=Date.now();const isMob=document.documentElement.classList.contains('mobile164');const flushGap=document.hidden?5000:(isMob?Math.max(1000,perfModes163[perf163]):perfModes163[perf163]);if(wsPending162.size && now-lastFlush163 >= flushGap && !(isMob&&uiEditing411())){lastFlush163=now;const rows=[...wsPending162.values()];wsPending162.clear();applyQuoteRows162(rows);}const stratGap=isMob?15000:5000;if(dirty163&&now-lastStrategy163>=stratGap&&!document.hidden&&!uiEditing411()){dirty163=false;lastStrategy163=now;applyFiltersAndRender();}},250);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)lastStrategy163=0;});
     setInterval(()=>{if(focusedDailyQueued164&&!fullAiBusy&&!capitalAiBusy&&!isFocusedPolling){focusedDailyQueued164=false;void pollFocusedStockLivePrice(true);}},2000);
     async function pollFocusedStockLivePrice(forceDaily=false) {
@@ -6609,7 +6610,7 @@ function lineTradeAmount161(t,close=false){
         }
         for(const k of snap.keys)add('KEY',k.code,k.date,'🔥 關鍵K\n'+k.code+' '+k.name+'｜'+k.date+'\n收盤 '+k.price);
         const hm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
-        if(hm>='14:00'&&document.getElementById('lineREPORT')?.checked){const r=snap.report;events.push({id:'REPORT:'+day,text:'📊 實戰模擬每日報告 '+day+'\n'+snap.strategy+'\n今日買進 '+snap.trades.filter(t=>t.buyDate===day).length+' 筆｜平倉 '+snap.trades.filter(t=>t.isClosed&&t.sellDate===day).length+' 筆\n起始資金 '+r.initCapital+'\n總權益 '+Math.round(r.equity)+'\n已實現 '+Math.round(r.realizedProfit)+'\n未實現（估算） '+Math.round(r.unrealizedProfit)+'\n累計報酬 '+r.totalRoiPct.toFixed(2)+'%\n剩餘現金 '+Math.round(r.availableCash)+'\n持倉 '+r.holdingCnt+' 筆'});}
+        if(hm>='14:00'&&document.getElementById('lineREPORT')?.checked){const r=snap.report;const tc=snap.trades.filter(t=>t.isClosed&&t.sellDate===day);const tcPnl=Math.round(tc.reduce((s,t)=>s+Number(t.netProfit||0),0));const realPnl=Math.round(Number(r.realizedProfit||0));const histPnl=realPnl-tcPnl;const sgn=n=>(n>0?'+':'')+n;events.push({id:'REPORT:'+day,text:'📊 實戰模擬每日報告 '+day+'\n'+snap.strategy+'\n今日買進 '+snap.trades.filter(t=>t.buyDate===day).length+' 筆｜平倉 '+tc.length+' 筆\n起始資金 '+r.initCapital+'\n總權益 '+Math.round(r.equity)+'\n今日平倉損益 '+sgn(tcPnl)+'\n歷史平倉損益 '+sgn(histPnl)+'\n已實現損益 '+sgn(realPnl)+'（歷史平倉+當日平倉）\n未實現（估算） '+sgn(Math.round(r.unrealizedProfit||0))+'\n累計報酬 '+r.totalRoiPct.toFixed(2)+'%\n剩餘現金 '+Math.round(r.availableCash)+'\n持倉 '+r.holdingCnt+' 筆'});}
         if(events.length)await lineV14Post({events});
         localStorage.setItem('lineV14Baseline',JSON.stringify({config:snap.config,ids:[...new Set([...(prev?.config===snap.config?prev.ids:[]),...ids])]}));
         lineV14Status(!prev||prev.config!==snap.config?'已建立基準，當日訊號已檢查':'監控中 · '+hm);
@@ -7170,6 +7171,10 @@ function lineTradeAmount161(t,close=false){
     }
 
     function applyFiltersAndRender() {
+      const _isMob16470 = document.documentElement.classList.contains('mobile164');
+      const _lockEls16470 = _isMob16470 ? ['simTradesTableWrap','stockTableContainer','todayBuy163','todayClosed162'].map(id=>document.getElementById(id)).filter(Boolean) : [];
+      for(const el of _lockEls16470){const h=el.offsetHeight;if(h>40)el.style.minHeight=h+'px';}
+      if(_lockEls16470.length) requestAnimationFrame(()=>{for(const el of _lockEls16470)el.style.minHeight='';});
       const _liveCfg = getExitStrategyConfig();
       const _liveStopFactor = 1 - (_liveCfg.initStopBufferPct / 100);
       rawAllLoadedStocks.forEach(s => {
@@ -12128,7 +12133,7 @@ window.addEventListener('load',()=>{
   document.addEventListener('touchcancel',clearAll,{passive:true});
 })();
 </script>
-<style id="perf16445">#stockTableBody tr,#simTradesTableBody tr,#historyClosedBody164 tr{content-visibility:auto;contain-intrinsic-size:auto 42px}button,a,label,input,select,summary,.filter-card,#stockTableBody tr,#simTradesTableBody tr{touch-action:manipulation}</style>
+<style id="perf16445">html.mobile164 body,html.mobile164 main,html.mobile164 #mobileHome164{overflow-anchor:none}#stockTableBody tr,#simTradesTableBody tr,#historyClosedBody164 tr{content-visibility:auto;contain-intrinsic-size:auto 42px}button,a,label,input,select,summary,.filter-card,#stockTableBody tr,#simTradesTableBody tr{touch-action:manipulation}</style>
 <script id="nextDayWatchScript16451">
 window.nextDayPools16451 = { nextDayWatch: [], observePool: [] };
 window.fetchNextDayPools16451 = async function() {
@@ -12249,7 +12254,7 @@ window.resolveBuyTime16454 = function(t) {
 };
 </script>
 <script id="verSync16467">
-(()=>{const v='V16.4.69';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
+(()=>{const v='V16.4.71';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
 </script>
 </body>
 </html>
