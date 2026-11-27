@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>W交易系統 V16.4.68｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.69｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -390,10 +390,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.68 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.69 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.68</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.69</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -6855,11 +6855,55 @@ function lineTradeAmount161(t,close=false){
       if (!isOfficialEngine16416 && Array.isArray(window.officialSignals16461?.items) && window.officialSignals16461.items.length) {
         const sigs = window.officialSignals16461.items.filter(sg => sg && sg.strategyKey === currentExitStrategy && sg.date <= endDate && sg.date >= startDate);
         const stMap164 = new Map(rawAllLoadedStocks.map(s => [String(s.code), s]));
+        const sigDay164 = String(window.officialSignals16461.date || '');
+        if (sigDay164 && sigs.length) {
+          const officialBuyKeys = new Set(sigs.filter(x => x.side === 'BUY' && x.date === sigDay164).map(x => `${x.code}|${x.buyDate || sigDay164}`));
+          const officialSellKeys = new Set(sigs.filter(x => x.side === 'SELL' && x.date === sigDay164).map(x => `${x.code}|${x.buyDate || ''}`));
+          for (let i = boughtTrades.length - 1; i >= 0; i--) {
+            const bt = boughtTrades[i];
+            if (!bt || bt.manualSource) continue;
+            if (String(bt.buyDate || '') === sigDay164 && !officialBuyKeys.has(`${bt.code}|${bt.buyDate}`)) {
+              boughtTrades.splice(i, 1);
+              continue;
+            }
+            if (bt.isClosed && String(bt.sellDate || '') === sigDay164 && !officialSellKeys.has(`${bt.code}|${bt.buyDate || ''}`)) {
+              const st = stMap164.get(String(bt.code));
+              const curP = Number(st?.todayPrice || bt.curP || bt.buyPrice);
+              const lots = Number(bt.lots || 1);
+              const sellGross = curP * lots * 1000;
+              const sellFee = includeFees ? (Math.round(sellGross * 0.001425 * 0.6) + Math.round(sellGross * 0.003)) : 0;
+              bt.isClosed = false;
+              bt.sellDate = null;
+              bt.sellTime = '';
+              bt.curP = curP;
+              bt.exitOrNowPrice = curP;
+              bt.exitReason = '官方續抱中';
+              bt.netProfit = (sellGross - sellFee) - (bt.totalCost || (bt.buyPrice * lots * 1000));
+              bt.netPct = bt.totalCost > 0 ? (bt.netProfit / bt.totalCost) * 100 : 0;
+            }
+          }
+        }
         for (const sg of sigs) {
           if (sg.side === 'BUY') {
             const match = boughtTrades.find(t => String(t.code) === String(sg.code) && String(t.buyDate) === String(sg.buyDate));
             if (match) {
-              if (!match.buyTime && sg.time) match.buyTime = sg.time;
+              if (sg.time) match.buyTime = sg.time;
+              if (sg.buyPrice > 0) {
+                const lots = Number(sg.lots || match.lots || 1);
+                const buyGross = sg.buyPrice * lots * 1000;
+                const buyFee = includeFees ? Math.round(buyGross * 0.001425 * 0.6) : 0;
+                const curP = Number(match.curP ?? match.exitOrNowPrice ?? sg.buyPrice);
+                const sellGross = curP * lots * 1000;
+                const sellFee = includeFees ? (Math.round(sellGross * 0.001425 * 0.6) + Math.round(sellGross * 0.003)) : 0;
+                match.buyPrice = sg.buyPrice;
+                match.lots = lots;
+                match.totalCost = buyGross + buyFee;
+                match.netProfit = (sellGross - sellFee) - match.totalCost;
+                match.netPct = match.totalCost > 0 ? (match.netProfit / match.totalCost) * 100 : 0;
+              }
+              if (sg.stopLossPrice > 0) match.stopLossPrice = sg.stopLossPrice;
+              if (sg.entryReason) match.entryReason = sg.entryReason;
+              match.isLockedLineSignal164 = true;
             } else if (sg.buyPrice > 0) {
               const st = stMap164.get(String(sg.code));
               const curP = Number(st?.todayPrice || sg.buyPrice);
@@ -6908,6 +6952,7 @@ function lineTradeAmount161(t,close=false){
               match.exitReason = sg.exitReason || '官方訊號平倉';
               match.netProfit = (sellGross - sellFee) - (match.totalCost || (match.buyPrice * lots * 1000));
               match.netPct = match.totalCost > 0 ? (match.netProfit / match.totalCost) * 100 : 0;
+              match.isLockedLineSignal164 = true;
             } else if (!boughtTrades.some(t => String(t.code) === String(sg.code) && String(t.buyDate) === String(sg.buyDate) && t.isClosed && String(t.sellDate || '') === String(sDate))) {
               const st = stMap164.get(String(sg.code));
               const lots = Number(sg.lots || 1);
@@ -12204,7 +12249,7 @@ window.resolveBuyTime16454 = function(t) {
 };
 </script>
 <script id="verSync16467">
-(()=>{const v='V16.4.68';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
+(()=>{const v='V16.4.69';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
 </script>
 </body>
 </html>
