@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>W交易系統 V16.4.75｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
+  <title>W交易系統 V16.4.76｜關鍵K・突破20MA實戰決策與尾盤監控儀表板</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     body {
@@ -343,7 +343,58 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
 .profitCompare:not([hidden]){display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:12px 0;padding-top:10px;border-top:1px solid #796680}
 .profitCompare>div{background:#1a192b;border-radius:6px;padding:7px 9px}
 .profitCompare small,.profitCompare b{display:block}.profitCompare small{font-size:13px;color:#ddd6fe}.profitCompare b{font-size:18px;color:white}.profitCompare .priorStrategy{grid-column:1/-1}
-</style><style>#manualToolbar161 #manualButtons161{flex:1 0 100%;width:100%;display:flex;flex-wrap:wrap;justify-content:flex-start;overflow:visible}#manualToolbar161 #manualButtons161 button{flex:0 1 auto;min-height:32px}</style></head>
+</style><style>#manualToolbar161 #manualButtons161{flex:1 0 100%;width:100%;display:flex;flex-wrap:wrap;justify-content:flex-start;overflow:visible}#manualToolbar161 #manualButtons161 button{flex:0 1 auto;min-height:32px}</style><style id="poolReadability16476">
+html:not(.mobile164) #todayBuy163 table,
+html:not(.mobile164) #todayClosed162 table,
+html:not(.mobile164) #simTradesTableWrap table{
+  width:auto!important;
+  min-width:0!important;
+  border-collapse:collapse;
+}
+html:not(.mobile164) #simTradesTableWrap{
+  overflow-x:auto;
+}
+html:not(.mobile164) #todayBuy163 th,
+html:not(.mobile164) #todayClosed162 th,
+html:not(.mobile164) #simTradesTableWrap th{
+  font-size:13px!important;
+  padding:8px 14px!important;
+  white-space:nowrap;
+}
+html:not(.mobile164) #todayBuy163 td,
+html:not(.mobile164) #todayClosed162 td,
+html:not(.mobile164) #simTradesTableWrap td{
+  font-size:14px!important;
+  padding:8px 14px!important;
+  line-height:1.4!important;
+}
+html:not(.mobile164) #simTradesTableBody td div[class*="text-[10px]"],
+html:not(.mobile164) #tradePools .vol411{
+  font-size:12px!important;
+  line-height:1.35!important;
+}
+html:not(.mobile164) #historyClosed164 table{
+  table-layout:auto!important;
+  width:auto!important;
+  min-width:0!important;
+}
+html:not(.mobile164) #historyClosed164 th,
+html:not(.mobile164) #historyClosed164 th button{
+  font-size:12.5px!important;
+  padding:6px 9px!important;
+  white-space:nowrap!important;
+}
+html:not(.mobile164) #historyClosed164 td{
+  font-size:13.5px!important;
+  padding:7px 9px!important;
+  white-space:nowrap!important;
+}
+html:not(.mobile164) #historyClosed164 td:last-child{
+  white-space:normal!important;
+  min-width:170px;
+}
+</style>
+</head>
 <body class="min-h-screen p-3 md:p-5">
 
   <!-- 頂部通知 Toast -->
@@ -390,10 +441,10 @@ label.aiOptToggle[data-searching] .aiOptState::after{content:"■ 停止搜尋"}
         🔄 刷新報價
       </button>
     </div>
-  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.75 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
+  <div id="layout164"><label id="layoutVerLabel164" for="layoutSelect164">V16.4.76 版面</label><select id="layoutSelect164"><option value="auto">自動偵測</option><option value="mobile">手機版</option><option value="desktop">電腦版</option></select><span id="layoutStatus164" aria-live="polite"></span></div></header>
 <section id="dev15Panel" class="devPanel420" style="display:none" aria-label="開發者遠端控制">
   <div class="dev420Top">
-    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.75</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
+    <div><div class="dev420Eyebrow">🔐 W交易系統 · 開發者設定</div><h2>開發者遠端控制 <span class="dev420Version">V16.4.76</span></h2><p>登入、策略發布、LINE 通知及帳密管理，依功能分區操作。</p></div>
     <button type="button" class="dev420Close" onclick="document.getElementById('dev15Panel').style.display='none'">✕ 關閉</button>
   </div>
   <div class="dev420Grid">
@@ -12225,7 +12276,7 @@ window.resolveBuyTime16454 = function(t) {
 };
 </script>
 <script id="verSync16467">
-(()=>{const v='V16.4.75';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
+(()=>{const v='V16.4.76';window.W_UI_VERSION=v;const lb=document.getElementById('layoutVerLabel164')||document.querySelector('label[for="layoutSelect164"]');if(lb)lb.textContent=v+' 版面';document.querySelectorAll('.dev420Version').forEach(el=>{el.textContent=v;});})();
 </script>
 </body>
 </html>
